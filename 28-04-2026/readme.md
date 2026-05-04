@@ -1,0 +1,2 @@
+--> basic postgresql queries
+--> select, where clause, group by, order by, having clause
