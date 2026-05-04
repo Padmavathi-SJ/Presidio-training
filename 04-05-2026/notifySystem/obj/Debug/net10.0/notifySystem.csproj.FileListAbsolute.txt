@@ -1,0 +1,15 @@
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/bin/Debug/net10.0/notifySystem
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/bin/Debug/net10.0/notifySystem.deps.json
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/bin/Debug/net10.0/notifySystem.runtimeconfig.json
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/bin/Debug/net10.0/notifySystem.dll
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/bin/Debug/net10.0/notifySystem.pdb
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.GeneratedMSBuildEditorConfig.editorconfig
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.AssemblyInfoInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.AssemblyInfo.cs
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.csproj.CoreCompileInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.sourcelink.json
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.dll
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/refint/notifySystem.dll
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.pdb
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.genruntimeconfig.cache
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/ref/notifySystem.dll
