@@ -13,3 +13,10 @@
 /Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.pdb
 /Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.genruntimeconfig.cache
 /Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/ref/notifySystem.dll
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/bin/Debug/net10.0/DotNetEnv.dll
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/bin/Debug/net10.0/Microsoft.Extensions.Configuration.dll
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/bin/Debug/net10.0/Microsoft.Extensions.Configuration.Abstractions.dll
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/bin/Debug/net10.0/Microsoft.Extensions.Primitives.dll
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/bin/Debug/net10.0/Sprache.dll
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySystem.csproj.AssemblyReference.cache
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/notifySystem/obj/Debug/net10.0/notifySy.A6644430.Up2Date

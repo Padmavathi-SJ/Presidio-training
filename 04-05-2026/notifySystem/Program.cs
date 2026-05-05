@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DotNetEnv;
 using NotifySystem.Models;
 using NotifySystem.Services;
 using NotifySystem.Notifications;
@@ -9,13 +10,16 @@ namespace NotifySystem
 {
     class Program{
         static async Task Main(string[] args){
-            // configure SMTP with your credentials
+            // load environment variables from .env file
+            Env.Load();
+
+            // configure SMTP from .env credentials
             var smtpConfig = new SmtpConfig{
-                Host = "smtp.gmail.com",
-                Port = 587,
-                SenderEmail = "padmavathisj2005@gmail.com",
-                SenderPassword = "izqvhduaqfhtlvcl",
-                EnableSsl = true
+                Host = Environment.GetEnvironmentVariable("SMTP_HOST") ?? "smtp.gmail.com",
+                Port = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587"),
+                SenderEmail = Environment.GetEnvironmentVariable("SMTP_SENDER_EMAIL") ?? string.Empty,
+                SenderPassword = Environment.GetEnvironmentVariable("SMTP_SENDER_PASSWORD") ?? string.Empty,
+                EnableSsl = bool.Parse(Environment.GetEnvironmentVariable("SMTP_ENABLE_SSL") ?? "true")
             };
 
             // create users
