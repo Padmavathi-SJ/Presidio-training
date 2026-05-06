@@ -1,0 +1,5 @@
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/BankApp/obj/Debug/net10.0/BankApp.GeneratedMSBuildEditorConfig.editorconfig
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/BankApp/obj/Debug/net10.0/BankApp.AssemblyInfoInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/BankApp/obj/Debug/net10.0/BankApp.AssemblyInfo.cs
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/BankApp/obj/Debug/net10.0/BankApp.csproj.CoreCompileInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/04-05-2026/BankApp/obj/Debug/net10.0/BankApp.sourcelink.json

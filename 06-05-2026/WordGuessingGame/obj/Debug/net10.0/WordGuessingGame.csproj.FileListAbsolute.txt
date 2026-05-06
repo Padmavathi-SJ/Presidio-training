@@ -1,0 +1,15 @@
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/bin/Debug/net10.0/WordGuessingGame
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/bin/Debug/net10.0/WordGuessingGame.deps.json
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/bin/Debug/net10.0/WordGuessingGame.runtimeconfig.json
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/bin/Debug/net10.0/WordGuessingGame.dll
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/bin/Debug/net10.0/WordGuessingGame.pdb
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/obj/Debug/net10.0/WordGuessingGame.GeneratedMSBuildEditorConfig.editorconfig
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/obj/Debug/net10.0/WordGuessingGame.AssemblyInfoInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/obj/Debug/net10.0/WordGuessingGame.AssemblyInfo.cs
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/obj/Debug/net10.0/WordGuessingGame.csproj.CoreCompileInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/obj/Debug/net10.0/WordGuessingGame.sourcelink.json
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/obj/Debug/net10.0/WordGuessingGame.dll
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/obj/Debug/net10.0/refint/WordGuessingGame.dll
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/obj/Debug/net10.0/WordGuessingGame.pdb
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/obj/Debug/net10.0/WordGuessingGame.genruntimeconfig.cache
+/Users/padmavathisj/Documents/Presidio-Training/06-05-2026/WordGuessingGame/obj/Debug/net10.0/ref/WordGuessingGame.dll
