@@ -1,0 +1,51 @@
+# .env file - Contains sensitive credentials
+.env
+*.env
+.env.*
+!.env.example
+
+# Build outputs
+bin/
+obj/
+Debug/
+Release/
+*.exe
+*.dll
+*.pdb
+*.dll.config
+*.exe.config
+
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Visual Studio
+.vs/
+*.swp
+*.tmp
+*.tmp_proj
+*.log
+
+
+
+
+# Logs
+logs/
+*.log
+nlog-*.log
+
+
+
+
+# JSON data files (if you want to exclude user data from git)
+users.json
+notifications.json
+ *.json
+
+
+# Backup files
+*.backup
+*.old
+*~
+
