@@ -1,0 +1,12 @@
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/obj/Debug/net10.0/NotificationSystem.DataAccess.GeneratedMSBuildEditorConfig.editorconfig
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/obj/Debug/net10.0/NotificationSystem.DataAccess.AssemblyInfoInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/obj/Debug/net10.0/NotificationSystem.DataAccess.AssemblyInfo.cs
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/obj/Debug/net10.0/NotificationSystem.DataAccess.csproj.CoreCompileInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/obj/Debug/net10.0/NotificationSystem.DataAccess.sourcelink.json
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/bin/Debug/net10.0/NotificationSystem.DataAccess.deps.json
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/bin/Debug/net10.0/NotificationSystem.DataAccess.dll
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/bin/Debug/net10.0/NotificationSystem.DataAccess.pdb
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/obj/Debug/net10.0/NotificationSystem.DataAccess.dll
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/obj/Debug/net10.0/refint/NotificationSystem.DataAccess.dll
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/obj/Debug/net10.0/NotificationSystem.DataAccess.pdb
+/Users/padmavathisj/Documents/Presidio-Training/08-05-2026/NotificationSystem/NotificationSystem.DataAccess/obj/Debug/net10.0/ref/NotificationSystem.DataAccess.dll

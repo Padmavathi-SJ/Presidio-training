@@ -1,0 +1,15 @@
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/obj/Debug/net10.0/delegate.GeneratedMSBuildEditorConfig.editorconfig
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/obj/Debug/net10.0/delegate.AssemblyInfoInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/obj/Debug/net10.0/delegate.AssemblyInfo.cs
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/obj/Debug/net10.0/delegate.csproj.CoreCompileInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/obj/Debug/net10.0/delegate.sourcelink.json
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/bin/Debug/net10.0/delegate
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/bin/Debug/net10.0/delegate.deps.json
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/bin/Debug/net10.0/delegate.runtimeconfig.json
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/bin/Debug/net10.0/delegate.dll
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/bin/Debug/net10.0/delegate.pdb
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/obj/Debug/net10.0/delegate.dll
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/obj/Debug/net10.0/refint/delegate.dll
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/obj/Debug/net10.0/delegate.pdb
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/obj/Debug/net10.0/delegate.genruntimeconfig.cache
+/Users/padmavathisj/Documents/Presidio-Training/07-05-2026/delegate/obj/Debug/net10.0/ref/delegate.dll

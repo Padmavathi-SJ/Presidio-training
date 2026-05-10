@@ -67,7 +67,7 @@ Notification System";
 
                     Console.WriteLine($"SMTP Host: {_smtpConfig.Host}:{_smtpConfig.Port}");
                     Console.WriteLine($"Sender: {_smtpConfig.SenderEmail}");
-                    Console.WriteLine($"SSL Enabled: {_smtpConfig.EnableSsl}");
+                   
 
                     // configure SMTP client
                     using (var client = new SmtpClient(_smtpConfig.Host, _smtpConfig.Port)){
@@ -85,12 +85,12 @@ Notification System";
             catch (SmtpException ex){
                 Console.WriteLine($"SMTP error: {ex.StatusCode}");
                 Console.WriteLine($"Message: {ex.Message}");
-                Console.WriteLine($"Please check your SMTP credentials and network connection");
+                
                 throw;
             }
             catch (Exception ex){
                 Console.WriteLine($"Email failed: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                
                 throw;
             }
         }

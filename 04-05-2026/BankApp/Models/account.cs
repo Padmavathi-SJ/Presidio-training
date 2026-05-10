@@ -4,8 +4,8 @@ namespace BankApp.Models
 {
     public enum AccountType
     {
-        Savings = 1,  // FIXED: Use comma, not semicolon
-        Current = 2   // FIXED: Use comma, not semicolon
+        Savings = 1, 
+        Current = 2
     }
 
     public class Account
@@ -31,7 +31,7 @@ namespace BankApp.Models
             get => _phone;
             set
             {
-                // FIXED: Logic corrected - was using != and wrong method name
+               
                 if (value.Length != 10 || !long.TryParse(value, out _))
                     throw new ArgumentException("Phone number must be 10 digits");
                 _phone = value;
@@ -45,12 +45,12 @@ namespace BankApp.Models
             set
             {
                 if (value < 0)
-                    throw new ArgumentException("Balance cannot be negative");  // FIXED: spelling
+                    throw new ArgumentException("Balance cannot be negative");  
                 _balance = value;
             }
         }
 
-        public DateTime DateOfBirth { get; set; }  // FIXED: Correct property syntax
+        public DateTime DateOfBirth { get; set; }  
         public AccountType accType { get; set; }
 
         // Constructors
