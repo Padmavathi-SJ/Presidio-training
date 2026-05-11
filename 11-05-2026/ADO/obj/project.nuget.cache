@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "sQng8JzriQM=",
+  "success": true,
+  "projectFilePath": "/Users/padmavathisj/Documents/Presidio-Training/09-05-2026/ADO/ADO.csproj",
+  "expectedPackageFiles": [
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/10.0.0/microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.logging.abstractions/10.0.0/microsoft.extensions.logging.abstractions.10.0.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/npgsql/10.0.0/npgsql.10.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
