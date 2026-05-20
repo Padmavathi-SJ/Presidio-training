@@ -1,0 +1,120 @@
+
+# ===================
+# Environment Files
+# ===================
+# Ignore all .env files anywhere in the project
+.env
+**/.env
+*.env
+**/*.env
+
+# Environment configuration files
+.env.*
+!.env.example
+!.env.template
+
+
+
+# Visual Studio / IDE
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.sln.docstates
+
+# ===================
+# .NET specific
+# ===================
+*.dll
+*.exe
+*.pdb
+*.mdb
+*.cache
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+
+
+
+
+
+# ===================
+# Logs
+# ===================
+/logs/
+*.log
+*.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ===================
+# OS generated files
+# ===================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.bak
+*.tmp
+*~
+
+# ===================
+# User-specific files
+# ===================
+*.rsuser
+*.suo
+*.userosscache
+*.sln.ide
+*.sln.ide/
+
+# ===================
+# NuGet
+# ===================
+*.nupkg
+*.snupkg
+packages/
+!packages/repositories.config
+
+# ===================
+# Publish profiles
+# ===================
+*.pubxml.user
+*.pubxml.user.*
+
+# ===================
+# Code coverage
+# ===================
+*.coverage
+*.coverage.xml
+*.dotCover
+*.trx
+
+# ===================
+# Backup files
+# ===================
+*.bak
+*.backup
+*~
+
+# ===================
+# Certificate files
+# ===================
+*.pfx
+*.p12
+*.snk
+
+# ===================
+# Local configuration
+# ===================
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+EOF

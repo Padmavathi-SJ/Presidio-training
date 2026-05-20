@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="LibrarySystem.Business/LibrarySystem.Business.csproj" />
+  <Project Path="LibrarySystem.DataAccess/LibrarySystem.DataAccess.csproj" />
+  <Project Path="LibrarySystem.Presentation/LibrarySystem.Presentation.csproj" />
+</Solution>
