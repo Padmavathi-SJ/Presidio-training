@@ -1,0 +1,43 @@
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio
+.vs/
+.vscode/
+
+# Configuration files with secrets
+appsettings.json
+appsettings.Development.json
+appsettings.Production.json
+secrets.json
+
+# EF Core migrations - optional (some teams commit these)
+# Migrations/
+
+# Logs
+*.log
+logs/
+
+# NuGet packages
+packages/
+*.nupkg
+
+# Rider
+.idea/
+*.sln.iml
