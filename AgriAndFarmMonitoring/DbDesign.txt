@@ -1,0 +1,190 @@
+
+-- FARM MANAGEMENT PLATFORM
+-- Crop Monitoring + Worker Management + Yield Reports
+
+-- 1. CROP MONITORING TABLES
+
+-- Fields/Land parcels
+CREATE TABLE fields (
+    id SERIAL PRIMARY KEY,
+    field_name VARCHAR(100) NOT NULL,
+    location VARCHAR(200),
+    area_hectares DECIMAL(10,2),
+    soil_type VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Crop cycles (each planting season)
+CREATE TABLE crop_cycles (
+    id SERIAL PRIMARY KEY,
+    field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
+    crop_type VARCHAR(50),  -- WHEAT, MAIZE, RICE, HAZELNUT
+    planting_date DATE,
+    expected_harvest_date DATE,
+    growth_stage VARCHAR(50),  -- GERMINATION, VEGETATIVE, FLOWERING, MATURITY
+    status VARCHAR(30) DEFAULT 'ACTIVE',  -- ACTIVE, HARVESTED, FAILED
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- IoT Sensor readings (simulated)
+CREATE TABLE sensor_readings (
+    id BIGSERIAL PRIMARY KEY,
+    field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
+    crop_cycle_id INTEGER REFERENCES crop_cycles(id) ON DELETE CASCADE,
+    sensor_type VARCHAR(50),  -- SOIL_MOISTURE, SOIL_TEMP, AIR_TEMP, HUMIDITY
+    value DECIMAL(10,2),
+    unit VARCHAR(20),
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Automatic alerts from thresholds
+CREATE TABLE alerts (
+    id SERIAL PRIMARY KEY,
+    field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
+    crop_cycle_id INTEGER REFERENCES crop_cycles(id),
+    alert_type VARCHAR(50),  -- DROUGHT, WATERLOG, HEAT_STRESS
+    severity VARCHAR(20),    -- LOW, MEDIUM, HIGH
+    message TEXT,
+    is_resolved BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Manual field observations by workers
+CREATE TABLE observations (
+    id SERIAL PRIMARY KEY,
+    field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
+    crop_cycle_id INTEGER REFERENCES crop_cycles(id),
+    worker_id INTEGER,  -- References workers table
+    observation_date DATE DEFAULT CURRENT_DATE,
+    crop_health VARCHAR(20),  -- EXCELLENT, GOOD, AVERAGE, POOR
+    pest_detected BOOLEAN DEFAULT FALSE,
+    pest_type VARCHAR(100),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Weather data from external API
+CREATE TABLE weather_data (
+    id SERIAL PRIMARY KEY,
+    field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
+    temperature DECIMAL(5,2),
+    humidity DECIMAL(5,2),
+    rainfall_mm DECIMAL(6,2),
+    wind_speed DECIMAL(5,2),
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+-- 2. WORKER MANAGEMENT TABLES
+
+
+-- Workers/Employees
+CREATE TABLE workers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    phone VARCHAR(20),
+    role VARCHAR(50),  -- MANAGER, SUPERVISOR, OPERATOR, LABOR
+    hire_date DATE DEFAULT CURRENT_DATE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tasks assigned to workers
+CREATE TABLE tasks (
+    id SERIAL PRIMARY KEY,
+    worker_id INTEGER REFERENCES workers(id) ON DELETE CASCADE,
+    field_id INTEGER REFERENCES fields(id),
+    crop_cycle_id INTEGER REFERENCES crop_cycles(id),
+    task_name VARCHAR(100) NOT NULL,  -- IRRIGATION, FERTILIZING, HARVESTING, MONITORING
+    assigned_date DATE DEFAULT CURRENT_DATE,
+    due_date DATE,
+    status VARCHAR(30) DEFAULT 'PENDING',  -- PENDING, IN_PROGRESS, COMPLETED
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Daily attendance tracking
+CREATE TABLE attendance (
+    id SERIAL PRIMARY KEY,
+    worker_id INTEGER REFERENCES workers(id) ON DELETE CASCADE,
+    date DATE DEFAULT CURRENT_DATE,
+    check_in TIME,
+    check_out TIME,
+    status VARCHAR(20) DEFAULT 'PRESENT',  -- PRESENT, ABSENT, LATE
+    UNIQUE(worker_id, date)
+);
+
+
+-- 3. YIELD REPORTS TABLES
+
+
+-- Harvest records
+CREATE TABLE harvests (
+    id SERIAL PRIMARY KEY,
+    field_id INTEGER REFERENCES fields(id),
+    crop_cycle_id INTEGER REFERENCES crop_cycles(id),
+    harvested_by INTEGER REFERENCES workers(id),  -- Who harvested
+    harvest_date DATE NOT NULL,
+    quantity_kg DECIMAL(12,2) NOT NULL,
+    quality_grade VARCHAR(10),  -- A, B, C
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Quality checks on harvest
+CREATE TABLE quality_checks (
+    id SERIAL PRIMARY KEY,
+    harvest_id INTEGER REFERENCES harvests(id) ON DELETE CASCADE,
+    checked_by INTEGER REFERENCES workers(id),
+    check_date DATE DEFAULT CURRENT_DATE,
+    moisture_pct DECIMAL(5,2),
+    defect_pct DECIMAL(5,2),
+    final_grade VARCHAR(10),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Aggregated yield reports
+CREATE TABLE yield_reports (
+    id SERIAL PRIMARY KEY,
+    crop_cycle_id INTEGER REFERENCES crop_cycles(id),
+    report_date DATE DEFAULT CURRENT_DATE,
+    total_yield_kg DECIMAL(12,2),
+    yield_per_hectare_kg DECIMAL(10,2),
+    avg_quality_grade VARCHAR(10),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- INDEXES FOR PERFORMANCE
+
+
+-- Crop Monitoring indexes
+CREATE INDEX idx_sensor_field_time ON sensor_readings(field_id, recorded_at DESC);
+CREATE INDEX idx_sensor_type ON sensor_readings(sensor_type);
+CREATE INDEX idx_alerts_active ON alerts(field_id, is_resolved);
+CREATE INDEX idx_observations_field ON observations(field_id, observation_date);
+
+-- Worker Management indexes
+CREATE INDEX idx_tasks_worker ON tasks(worker_id, status);
+CREATE INDEX idx_tasks_field ON tasks(field_id);
+CREATE INDEX idx_attendance_date ON attendance(date);
+CREATE INDEX idx_attendance_worker ON attendance(worker_id, date);
+
+-- Yield indexes
+CREATE INDEX idx_harvests_crop ON harvests(crop_cycle_id);
+CREATE INDEX idx_harvests_date ON harvests(harvest_date);
+CREATE INDEX idx_yield_reports_crop ON yield_reports(crop_cycle_id);
+
+
+-- FOREIGN KEY RELATIONSHIPS (Summary)
+
+
+-- observations.worker_id -> workers.id
+-- tasks.worker_id -> workers.id
+-- tasks.field_id -> fields.id
+-- tasks.crop_cycle_id -> crop_cycles.id
+-- attendance.worker_id -> workers.id
+-- harvests.harvested_by -> workers.id
+-- quality_checks.checked_by -> workers.id

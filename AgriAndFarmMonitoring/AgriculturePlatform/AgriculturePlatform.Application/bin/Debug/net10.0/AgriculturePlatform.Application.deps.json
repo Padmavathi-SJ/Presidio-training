@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "AgriculturePlatform.Application/1.0.0": {
+        "dependencies": {
+          "AgriculturePlatform.Domain": "1.0.0"
+        },
+        "runtime": {
+          "AgriculturePlatform.Application.dll": {}
+        }
+      },
+      "AgriculturePlatform.Domain/1.0.0": {
+        "runtime": {
+          "AgriculturePlatform.Domain.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "AgriculturePlatform.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AgriculturePlatform.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

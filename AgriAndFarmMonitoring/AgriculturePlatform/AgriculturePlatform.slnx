@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="AgriculturePlatform.API/AgriculturePlatform.API.csproj" />
+  <Project Path="AgriculturePlatform.Application/AgriculturePlatform.Application.csproj" />
+  <Project Path="AgriculturePlatform.Domain/AgriculturePlatform.Domain.csproj" />
+  <Project Path="AgriculturePlatform.Infrastructure/AgriculturePlatform.Infrastructure.csproj" />
+</Solution>

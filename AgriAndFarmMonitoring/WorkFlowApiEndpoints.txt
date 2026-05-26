@@ -1,0 +1,38 @@
+// ===== CROP MONITORING =====
+GET    /api/fields                      // List all fields
+GET    /api/fields/{id}                 // Field details
+GET    /api/fields/{id}/sensors/latest  // Latest sensor readings
+GET    /api/fields/{id}/sensors/history // Sensor history
+GET    /api/fields/{id}/alerts          // Active alerts
+POST   /api/observations                // Add manual observation
+GET    /api/weather/{fieldId}           // Current weather
+
+// ===== WORKER MANAGEMENT =====
+GET    /api/workers                     // List all workers
+POST   /api/workers                     // Add worker
+GET    /api/workers/{id}/tasks          // Worker's tasks
+POST   /api/tasks                       // Assign task
+PUT    /api/tasks/{id}/complete         // Complete task
+POST   /api/attendance/checkin          // Check-in
+POST   /api/attendance/checkout         // Check-out
+GET    /api/attendance/today            // Today's attendance
+
+// ===== YIELD REPORTS =====
+GET    /api/harvests                    // List all harvests
+POST   /api/harvests                    // Record harvest
+GET    /api/harvests/{id}/quality       // Quality check details
+POST   /api/quality-checks              // Add quality check
+GET    /api/yield/reports               // Get yield reports
+GET    /api/yield/{fieldId}             // Yield by field
+GET    /api/yield/compare              // Compare seasons
+
+
+
+1. Worker John (ID:1) checks in → attendance table
+2. John assigned task "IRRIGATION" for Field North → tasks table
+3. IoT simulator generates soil moisture reading → sensor_readings table
+4. Low moisture triggers alert → alerts table
+5. John adds observation about dry soil → observations table
+6. Harvest time → harvests table (quantity: 12500kg, grade: A)
+7. Quality check performed → quality_checks table
+8. System generates yield report → yield_reports table
