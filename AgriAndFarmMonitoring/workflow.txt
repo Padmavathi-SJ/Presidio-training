@@ -1,0 +1,242 @@
+Roles: 
+  Admin
+  Worker
+
+Admin:
+ 
+--> Admin need to handle:    --> Worker need to hadle:
+ 1. fields                    1. their feilds
+ 2. crop_cycles               2. crop cycles in each of their feilds
+ 2. sensor_readings           3. sensor reading of each crop type in a feild 
+ 3. alerts                    4. weather data of each crop type in a feild
+ 4. observations              5. Alerts of each crop type in a field
+ 5. weather data              6. woker can add, edit, delete observation of each crop_type in a field
+ 6. worker                    7. harvests (can add, edit, delete)(admin approval needed)
+ 7. tasks                     8. quality checks (can add, edit, delete)(admin approval needed)
+ 8. harvests                  9. yield reports (...)
+ 9. quality checks
+ 10. yield-reports
+
+
+ADMIN :
+
+----- CROP MONITORING -----
+
+1. Fields:
+  -> add new field
+  -> update and delete exsting by feild id, 
+  -> get all feilds
+  -> get feild by id, name, soil_type, location
+  -> Get fields by status (ACTIVE, FALLOW, PREPARING, MAINTENANCE, RETIRED)
+  -> Get field statistics (total area, active crops count)
+  -> Bulk import fields (Excel)
+
+
+2. Crop Cycles:
+--> under each feild (1 to many relationships -> 1 feild can have more than 1 crop cycles)
+  -> add new crop cycle
+  -> get all crop cycles
+  -> get crop cycle by id
+  -> get crop cycles by feild_id, crop_type, growth_stage, status, expected_harvest_date
+  -> update and delete crop cycle
+  -> Get active crop cycles only
+  -> Get overdue crop cycles (past expected harvest date)
+ 
+
+3. Sensor readings:
+--> each crop_cycle may get sensor_readings in each feild 
+  -> get all sensor_readings
+  -> get readings by feild_id, crop_cycle_id, sensor_type
+  -> Get latest readings per field
+  -> Get readings by date range
+  -> Get threshold violations (alerts triggered)
+  -> Export sensor data for analysis
+  -> Get average readings per day/week/month
+
+4. Alerts:
+--> each crop_cycle may get alerts in each feild 
+ -> get all alerts
+ -> get alerts by feild_id, crop_cycle_id, alert_type, severity
+ -> Get unresolved alerts only
+ -> Resolve alerts (mark as resolved)
+ -> Get alert statistics (count by type, severity)
+ -> Configure alert thresholds per crop type
+ -> Send email notifications for critical alerts
+
+5. observations
+--> each crop_cycle will get observations in each feild 
+ -> get observation by each feild
+ -> get observations of each crop_cycle of each feilds.
+ -> Get observations by worker_id
+ -> Get observations by date range
+ -> Get pest detection statistics
+ -> Delete invalid observations
+
+6. Weather Data
+--> get weather data of each field.
+  -> Get weather forecast (external API integration)
+  -> Get weather history by date range
+  -> Configure weather API settings
+  -> Manual weather data entry
+  -> Get weather alerts (storm, frost, heavy rain)
+
+--> Dashboard & Analytics
+
+-> Real-time dashboard with key metrics
+-> Total fields count & total area
+-> Active crop cycles count
+-> Active alerts count (by severity)
+-> Today's tasks count
+-> Harvest this month total
+-> Revenue this month
+-> Graphs: crop yield trends, alert trends, worker performance
+-> Weather widget for each field
+
+-> notification bar with all notifications classified with types:
+  -> sensor readings
+  -> alerts notifications
+  -> workers activities
+  -> and all
+
+-> cards with each modal/section
+  -> total active workers
+  -> total feilds -> feild container can have the total crop cycles and their crop Cycles details
+  -> for each crop cycle and feidl total assigned workers
+  -> current sensor Readings
+  -> current weather data
+  -> critical current alerts
+  -> pending approvals 
+
+-> for each thing I can make each seperate page with their own dashboards and inner nav bars.
+
+
+---- WORKERS MANAGEMENT ----
+7. workers
+  -> admin can create, update, delete workers
+  -> get all works, get by status, and joined-date
+  -> Get workers by role (MANAGER, SUPERVISOR, OPERATOR, LABOR)
+  -> Reset worker password
+  -> Worker login history
+  -> Deactivate/activate worker
+
+8. Tasks
+  -> admin can assign task for workers
+  -> can update and delete assigned tasks
+  -> get all tasks, active tasks,
+  -> gte by worker, by feild, by crop_cycle in a feild
+  -> get tasks by status, assigned date and due_date.
+  -> Get overdue tasks
+  -> Reassign tasks to different worker
+  -> Bulk task assignment
+  -> Task completion history
+
+
+9. harvests
+  -> can add harvest data
+  -> get all harvests data
+  -> get by feild_id, crop_cycle_id, date, date ranges, quality_grade
+  -> get hervests by worker_id
+  -> admin can edit and delete harvest data
+  -> Approve/reject worker-submitted harvests
+  -> Calculate total yield per field per season
+  -> Yield comparison with previous seasons
+
+10. quality_checks
+  -> can add quality_check data
+  -> get all qaulity checks data
+  -> get quality checks data checked by worker_id
+  -> by date & date ranges
+  -> can update and delete quality check data
+  -> Approve/reject worker-submitted quality checks
+  -> Get quality statistics (pass rate, defect trends)
+
+11. Yield reports
+  -> admin can generate report by date ranges, by field_id
+  -> get all reports
+  -> Get yield report by crop_type
+  -> Get yield report by season
+  -> Export reports as PDF/Excel
+  -> Schedule automatic report generation (weekly/monthly)
+  -> Compare yields across different fields
+
+
+------ WORKER ------
+
+---- Crop Monitoring -----
+
+1. Worker's Assigned Fields
+  -> View their assigned fields only
+  -> Cannot see other workers' fields
+  -> View field basic information
+
+2. Crop Cycles in Their Fields
+  -> View crop cycles in each of their fields
+  -> View growth stage progression
+  -> Cannot create/edit/delete crop cycles
+
+3. Sensor Readings
+  -> View sensor reading of each crop type in their fields
+  -> View real-time sensor data
+  -> View sensor history (last 7 days)
+  -> Cannot modify sensor readings
+
+4. Weather Data
+  -> View weather data of each field they're assigned to
+  -> View weather forecast
+  -> Cannot modify weather data
+
+5. Alerts
+  -> View alerts of each crop type in their fields
+  -> Acknowledge alerts (mark as seen)
+  -> Get push notifications for critical alerts
+
+6. Observations (CRUD with restrictions)
+  -> Add observation of each crop_type in a field
+  -> Edit their own observations
+  -> Add photos with observations
+  -> Mark pest detection
+
+---- WORKER MANAGEMENT -----
+
+7. Worker Profile
+  -> View own profile
+  -> Update own profile (name, phone, password)
+  
+8. Tasks Management
+  -> View tasks assigned to them
+  -> Update task status (PENDING → IN_PROGRESS → COMPLETED)
+  -> Add completion notes
+  -> View task history
+
+
+---- YIELD REPORTS (WITH ADMIN APPROVAL) -----
+
+10. Harvests (CRUD with Admin Approval)
+  -> Add harvest data (requires admin approval)
+  -> Edit own harvest data (requires admin approval)
+  -> Delete own harvest data (requires admin approval)
+  -> View harvest history of their fields
+  -> Cannot approve own harvests
+  -> See approval status (PENDING, APPROVED, REJECTED)
+
+11. Quality Checks (CRUD with Admin Approval)
+  -> Add quality check data (requires admin approval)
+  -> Edit own quality check data (requires admin approval)
+  -> Delete own quality check data (requires admin approval)
+  -> View quality check history
+  -> Cannot approve own checks
+
+12. Yield Reports (Read-only)
+  -> View yield reports for their fields
+  -> Filter reports by date range
+  -> Cannot generate or modify reports
+
+13. Worker Dashboard (NEW)
+  -> View today's assigned tasks
+  -> View pending approvals
+  -> View recent alerts for their fields
+  -> Notification center
+
+
+
+

@@ -1,0 +1,42 @@
+Architecture flow:
+
+1. Models
+3. DTOs
+
+2. Database context
+
+Repository Interfaces 
+repositories (implementation)
+
+Service Interfaces
+Services (implementation)
+
+controllers
+
+middlewares
+
+validations for all input values, form data
+
+flters
+
+exceptions handling
+
+filters
+
+cros, rate limiting
+
+JWT
+
+Auth0
+
+AutoMapper
+
+Logging
+
+program.cs -> entry file
+
+testing project
+--> to test repositories, services, and controllers
+
+
+

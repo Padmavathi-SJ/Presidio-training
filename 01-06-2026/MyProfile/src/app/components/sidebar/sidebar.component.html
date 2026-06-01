@@ -1,0 +1,79 @@
+<!-- Mobile Menu Button - Only shows on small screens -->
+<div class="md:hidden fixed top-2 left-2 z-50">
+  <button 
+    (click)="toggleMobileMenu()"
+    class="p-2 rounded-md bg-[var(--secondary-bg)] text-white"
+  >
+    {{ mobileMenuOpen ? '✕' : '☰' }}
+  </button>
+</div>
+
+<!-- Sidebar Navigation - Hidden on mobile unless menu is open -->
+<div class="fixed top-0 left-0 h-screen w-16 flex flex-col items-center bg-[var(--secondary-bg)] shadow-lg transition-all duration-300 z-40"
+     [class.translate-x-0]="mobileMenuOpen"
+     [class.-translate-x-full]="!mobileMenuOpen"
+     [class.md:translate-x-0]="true">
+  
+  <!-- Developer's Profile Image -->
+  <div class="mt-3 w-10 h-10 rounded-full overflow-hidden cursor-pointer hover:opacity-80 transition">
+    <img src="assets/padma-clg.png" alt="Developer Profile" class="w-full h-full object-cover" />
+  </div>
+
+  <!-- Profile Icon / Hire Me -->
+  <div class="relative mt-3 w-8 h-8 cursor-pointer group" (click)="openProfilePanel()">
+    <img
+      src="assets/graduation.png"
+      alt="Profile Panel"
+      class="w-full h-full object-cover hover:opacity-80 transition"
+    />
+    <span class="absolute left-12 top-1/2 -translate-y-1/2 text-white text-sm px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap bg-[var(--secondary-bg)]">
+      Hire Me
+    </span>
+  </div>
+
+  <!-- Sidebar Icons -->
+  <div class="flex flex-col flex-1 justify-center space-y-6 items-center mt-6">
+    <!-- Using routerLink for better navigation -->
+    <a routerLink="/" 
+       routerLinkActive="active" 
+       (click)="closeMobileMenu()" 
+       class="hover:opacity-80 transition duration-300 cursor-pointer">
+      <img src="assets/home-button.png" alt="Home" class="w-6 h-6" />
+    </a>
+    
+    <a routerLink="/profile" 
+       routerLinkActive="active" 
+       (click)="closeMobileMenu()" 
+       class="hover:opacity-80 transition duration-300 cursor-pointer">
+      <img src="assets/information.png" alt="Profile" class="w-6 h-6" />
+    </a>
+    
+    <a routerLink="/skills" 
+       routerLinkActive="active" 
+       (click)="closeMobileMenu()" 
+       class="hover:opacity-80 transition duration-300 cursor-pointer">
+      <img src="assets/pencil.png" alt="Skills" class="w-6 h-6" />
+    </a>
+    
+    <a routerLink="/projects" 
+       routerLinkActive="active" 
+       (click)="closeMobileMenu()" 
+       class="hover:opacity-80 transition duration-300 cursor-pointer">
+      <img src="assets/idea.png" alt="Projects" class="w-6 h-6" />
+    </a>
+    
+    <a routerLink="/contact" 
+       routerLinkActive="active" 
+       (click)="closeMobileMenu()" 
+       class="hover:opacity-80 transition duration-300 cursor-pointer">
+      <img src="assets/contact-us.png" alt="Contact" class="w-6 h-6" />
+    </a>
+  </div>
+</div>
+
+<!-- Profile Panel Component -->
+<app-profile-panel 
+  *ngIf="isOpen" 
+  [isOpen]="isOpen" 
+  (close)="closeProfilePanel()">
+</app-profile-panel>

@@ -1,0 +1,21 @@
+<div class="skills-container">
+  <div class="skills-header">
+    <h2 class="skills-title">Technical Skills</h2>
+    <p class="skills-subtitle">Technologies I work with</p>
+  </div>
+  
+  <div class="skills-grid">
+    <div *ngFor="let skill of skills; let i = index" class="skill-card" [style.animation-delay]="i * 0.1 + 's'">
+      <div class="skill-icon-wrapper">
+        <img [src]="skill.icon" [alt]="skill.name" class="skill-icon">
+      </div>
+      <div class="skill-info">
+        <h3 class="skill-name">{{ skill.name }}</h3>
+        <div class="skill-level">
+          <div class="skill-level-bar" [style.width.%]="skill.level"></div>
+        </div>
+        <span class="skill-percentage">{{ skill.level }}%</span>
+      </div>
+    </div>
+  </div>
+</div>

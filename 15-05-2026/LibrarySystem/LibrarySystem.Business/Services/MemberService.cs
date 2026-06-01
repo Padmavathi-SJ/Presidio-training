@@ -97,6 +97,7 @@ public async Task<(bool Success, int MemberId)> LoginWithDetailsAsync(string ema
 
     return (true, member.Id);
 }
+     
         public async Task<Member> AddMemberAsync(Member member)
         {
             if (member == null)

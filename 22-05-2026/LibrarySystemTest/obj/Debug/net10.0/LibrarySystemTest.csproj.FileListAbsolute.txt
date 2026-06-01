@@ -197,3 +197,6 @@
 /Users/padmavathisj/Documents/Presidio-Training/22-05-2026/LibrarySystemTest/obj/Debug/net10.0/LibrarySystemTest.pdb
 /Users/padmavathisj/Documents/Presidio-Training/22-05-2026/LibrarySystemTest/obj/Debug/net10.0/LibrarySystemTest.genruntimeconfig.cache
 /Users/padmavathisj/Documents/Presidio-Training/22-05-2026/LibrarySystemTest/obj/Debug/net10.0/ref/LibrarySystemTest.dll
+/Users/padmavathisj/Documents/Presidio-Training/22-05-2026/LibrarySystemTest/bin/Debug/net10.0/Castle.Core.dll
+/Users/padmavathisj/Documents/Presidio-Training/22-05-2026/LibrarySystemTest/bin/Debug/net10.0/Moq.dll
+/Users/padmavathisj/Documents/Presidio-Training/22-05-2026/LibrarySystemTest/bin/Debug/net10.0/runtimes/win/lib/net6.0/System.Diagnostics.EventLog.Messages.dll

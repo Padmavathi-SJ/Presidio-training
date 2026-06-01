@@ -1,0 +1,4 @@
+/* Add styles for profile panel if needed */
+:host {
+  display: block;
+}

@@ -4,6 +4,7 @@
 
 -- 1. CROP MONITORING TABLES
 
+
 -- Fields/Land parcels
 CREATE TABLE fields (
     id SERIAL PRIMARY KEY,
@@ -105,17 +106,6 @@ CREATE TABLE tasks (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Daily attendance tracking
-CREATE TABLE attendance (
-    id SERIAL PRIMARY KEY,
-    worker_id INTEGER REFERENCES workers(id) ON DELETE CASCADE,
-    date DATE DEFAULT CURRENT_DATE,
-    check_in TIME,
-    check_out TIME,
-    status VARCHAR(20) DEFAULT 'PRESENT',  -- PRESENT, ABSENT, LATE
-    UNIQUE(worker_id, date)
-);
-
 
 -- 3. YIELD REPORTS TABLES
 
@@ -169,8 +159,6 @@ CREATE INDEX idx_observations_field ON observations(field_id, observation_date);
 -- Worker Management indexes
 CREATE INDEX idx_tasks_worker ON tasks(worker_id, status);
 CREATE INDEX idx_tasks_field ON tasks(field_id);
-CREATE INDEX idx_attendance_date ON attendance(date);
-CREATE INDEX idx_attendance_worker ON attendance(worker_id, date);
 
 -- Yield indexes
 CREATE INDEX idx_harvests_crop ON harvests(crop_cycle_id);
@@ -188,3 +176,227 @@ CREATE INDEX idx_yield_reports_crop ON yield_reports(crop_cycle_id);
 -- attendance.worker_id -> workers.id
 -- harvests.harvested_by -> workers.id
 -- quality_checks.checked_by -> workers.id
+
+
+-- ENUM TYPES FOR FARM MANAGEMENT PLATFORM
+-- Crop Monitoring + Worker Management + Yield Reports
+
+
+-- 1. CROP MONITORING ENUMS
+
+
+-- Crop types
+CREATE TYPE crop_type_enum AS ENUM (
+    'WHEAT',
+    'MAIZE', 
+    'RICE',
+    'BARLEY',
+    'SOYBEAN',
+    'COTTON',
+    'HAZELNUT',
+    'POTATO',
+    'TOMATO',
+    'ONION',
+    'GRAPE',
+    'APPLE'
+);
+
+-- Growth stages
+CREATE TYPE growth_stage_enum AS ENUM (
+    'GERMINATION',    -- Seed sprouting (0-10 days)
+    'SEEDLING',       -- Early growth (10-20 days)
+    'VEGETATIVE',     -- Leaf/stem growth (20-60 days)
+    'FLOWERING',      -- Flower/bloom stage (60-80 days)
+    'FRUITING',       -- Fruit development (80-100 days)
+    'MATURITY',       -- Ready for harvest (100-120 days)
+    'HARVESTED'       -- Harvest completed
+);
+
+-- Field status
+CREATE TYPE field_status_enum AS ENUM (
+    'ACTIVE',         -- Currently in use
+    'FALLOW',         -- Resting/not planted
+    'PREPARING',      -- Being prepared for planting
+    'MAINTENANCE',    -- Under maintenance
+    'RETIRED'         -- No longer in use
+);
+
+-- Soil types
+CREATE TYPE soil_type_enum AS ENUM (
+    'CLAY',           -- Heavy, water-retentive
+    'SANDY',          -- Light, well-draining
+    'SILTY',          -- Fertile, moisture-retentive
+    'LOAMY',          -- Ideal, balanced
+    'PEATY',          -- High organic matter
+    'CHALKY'          -- Alkaline, stony
+);
+
+-- Sensor types
+CREATE TYPE sensor_type_enum AS ENUM (
+    'SOIL_MOISTURE',   -- Soil water content (%)
+    'SOIL_TEMP',       -- Soil temperature (°C)
+    'AIR_TEMP',        -- Air temperature (°C)
+    'AIR_HUMIDITY',    -- Relative humidity (%)
+    'LIGHT_INTENSITY', -- Light/lux level (lux)
+    'SOIL_PH',         -- Soil acidity (pH)
+    'NPK_NITROGEN',    -- Nitrogen level (ppm)
+    'NPK_PHOSPHORUS',  -- Phosphorus level (ppm)
+    'NPK_POTASSIUM',   -- Potassium level (ppm)
+    'WIND_SPEED',      -- Wind velocity (m/s)
+    'RAINFALL',        -- Precipitation (mm)
+    'LEAF_WETNESS'     -- Leaf moisture (%)
+);
+
+-- Alert types
+CREATE TYPE alert_type_enum AS ENUM (
+    'DROUGHT_STRESS',        -- Low soil moisture
+    'WATERLOGGED',           -- Excess water
+    'HEAT_STRESS',           -- High temperature
+    'COLD_STRESS',           -- Low temperature/frost
+    'NUTRIENT_DEFICIENCY',   -- Low NPK levels
+    'PEST_INFESTATION',      -- Pest detected
+    'DISEASE_OUTBREAK',      -- Crop disease
+    'WEED_PRESSURE',         -- High weed growth
+    'SOIL_PH_ALERT',         -- pH out of range
+    'HARVEST_READY',         -- Crop ready for harvest
+    'IRRIGATION_NEEDED',     -- Water required
+    'FERTILIZER_NEEDED'      -- Fertilizer required
+);
+
+-- Alert severity levels
+CREATE TYPE alert_severity_enum AS ENUM (
+    'LOW',       -- Informational, monitor only
+    'MEDIUM',    -- Action recommended
+    'HIGH',      -- Action required soon
+    'CRITICAL'   -- Immediate action required
+);
+
+-- Crop health status
+CREATE TYPE crop_health_enum AS ENUM (
+    'EXCELLENT',   -- Perfect condition
+    'GOOD',        -- Slightly below optimal
+    'AVERAGE',     -- Acceptable condition
+    'POOR',        -- Significant issues
+    'CRITICAL'     -- Severe problems
+);
+
+-- Weather conditions
+CREATE TYPE weather_condition_enum AS ENUM (
+    'CLEAR',
+    'CLOUDY',
+    'RAINY',
+    'STORMY',
+    'SNOWY',
+    'FOGGY',
+    'WINDY'
+);
+
+
+
+-- 2. WORKER MANAGEMENT ENUMS
+
+
+-- Task types
+CREATE TYPE task_type_enum AS ENUM (
+    'IRRIGATION',
+    'FERTILIZING',
+    'PEST_CONTROL',
+    'WEEDING',
+    'PRUNING',
+    'HARVESTING',
+    'MONITORING',
+    'MAINTENANCE',
+    'SOIL_PREPARATION',
+    'PLANTING',
+    'QUALITY_CHECK'
+);
+
+-- Task priority
+CREATE TYPE task_priority_enum AS ENUM (
+    'LOW',       -- Can be done anytime
+    'MEDIUM',    -- Normal priority
+    'HIGH',      -- Should be done soon
+    'URGENT'     -- Must be done immediately
+);
+
+-- Task status
+CREATE TYPE task_status_enum AS ENUM (
+    'PENDING',      -- Not started
+    'IN_PROGRESS',  -- Work in progress
+    'COMPLETED',    -- Successfully finished
+    'CANCELLED',    -- Task cancelled
+    'OVERDUE',      -- Past due date
+    'REASSIGNED'    -- Moved to another worker
+);
+
+
+
+-- 3. YIELD REPORTS ENUMS
+
+-- Quality grades
+CREATE TYPE quality_grade_enum AS ENUM (
+    'A_PLUS',   -- Premium quality (best price)
+    'A',        -- Excellent quality
+    'B',        -- Good quality
+    'C',        -- Average quality
+    'D',        -- Poor quality
+    'REJECTED'  -- Not suitable for sale
+);
+
+--optional
+-- Report types
+CREATE TYPE report_type_enum AS ENUM (
+    'DAILY',
+    'WEEKLY',
+    'MONTHLY',
+    'QUARTERLY',
+    'SEASONAL',
+    'YEARLY'
+);
+
+--optional
+-- Harvest method
+CREATE TYPE harvest_method_enum AS ENUM (
+    'MANUAL',      -- Hand-picked
+    'MECHANICAL',  -- Machine harvested
+    'SEMI_MECHANICAL',
+    'COMBINE'      -- Combined harvester
+);
+
+
+
+-- 5. IRRIGATION & RESOURCE MANAGEMENT ENUMS
+
+
+-- Irrigation types
+CREATE TYPE irrigation_type_enum AS ENUM (
+    'DRIP',          -- Drip irrigation
+    'SPRINKLER',     -- Overhead sprinklers
+    'FLOOD',         -- Flood/furrow irrigation
+    'CENTER_PIVOT',  -- Circular irrigation system
+    'SUBSURFACE'     -- Underground drip lines
+);
+
+-- Fertilizer types
+CREATE TYPE fertilizer_type_enum AS ENUM (
+    'UREA',
+    'DAP',
+    'NPK_20_20_20',
+    'POTASH',
+    'COMPOST',
+    'MANURE',
+    'LIQUID_FERTILIZER',
+    'FOLIAR_SPRAY'
+);
+
+-- Pesticide types
+CREATE TYPE pesticide_type_enum AS ENUM (
+    'INSECTICIDE',
+    'FUNGICIDE',
+    'HERBICIDE',
+    'RODENTICIDE',
+    'BACTERICIDE',
+    'NEMATICIDE'
+);
+
+

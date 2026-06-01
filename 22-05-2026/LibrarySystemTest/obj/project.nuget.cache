@@ -1,10 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "B1aoYzDsDUc=",
+  "dgSpecHash": "bhV5thu7Oj0=",
   "success": true,
   "projectFilePath": "/Users/padmavathisj/Documents/Presidio-Training/22-05-2026/LibrarySystemTest/LibrarySystemTest.csproj",
   "expectedPackageFiles": [
     "/Users/padmavathisj/.nuget/packages/bcrypt.net-next/4.2.0/bcrypt.net-next.4.2.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/castle.core/5.1.1/castle.core.5.1.1.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/coverlet.collector/6.0.2/coverlet.collector.6.0.2.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.applicationinsights/2.23.0/microsoft.applicationinsights.2.23.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.aspnetcore.openapi/10.0.7/microsoft.aspnetcore.openapi.10.0.7.nupkg.sha512",
@@ -34,6 +35,7 @@
     "/Users/padmavathisj/.nuget/packages/microsoft.testing.platform.msbuild/2.1.0/microsoft.testing.platform.msbuild.2.1.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.testplatform.objectmodel/18.0.1/microsoft.testplatform.objectmodel.18.0.1.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.testplatform.testhost/17.13.0/microsoft.testplatform.testhost.17.13.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/moq/4.20.72/moq.4.20.72.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/newtonsoft.json/13.0.1/newtonsoft.json.13.0.1.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/npgsql/10.0.2/npgsql.10.0.2.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/npgsql.entityframeworkcore.postgresql/10.0.1/npgsql.entityframeworkcore.postgresql.10.0.1.nupkg.sha512",
@@ -43,7 +45,8 @@
     "/Users/padmavathisj/.nuget/packages/swashbuckle.aspnetcore/10.1.7/swashbuckle.aspnetcore.10.1.7.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/swashbuckle.aspnetcore.swagger/10.1.7/swashbuckle.aspnetcore.swagger.10.1.7.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/swashbuckle.aspnetcore.swaggergen/10.1.7/swashbuckle.aspnetcore.swaggergen.10.1.7.nupkg.sha512",
-    "/Users/padmavathisj/.nuget/packages/swashbuckle.aspnetcore.swaggerui/10.1.7/swashbuckle.aspnetcore.swaggerui.10.1.7.nupkg.sha512"
+    "/Users/padmavathisj/.nuget/packages/swashbuckle.aspnetcore.swaggerui/10.1.7/swashbuckle.aspnetcore.swaggerui.10.1.7.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/system.diagnostics.eventlog/6.0.0/system.diagnostics.eventlog.6.0.0.nupkg.sha512"
   ],
   "logs": []
 }

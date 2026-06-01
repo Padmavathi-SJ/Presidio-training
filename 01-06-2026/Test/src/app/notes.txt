@@ -1,0 +1,8 @@
+commands used
+
+angular - component based architecture
+
+ng new -> to create a new project
+ng serve -> to run the project
+ng test -> to test the components
+ng g c <component name> -> to create a new component
