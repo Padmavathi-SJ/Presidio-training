@@ -1,0 +1,145 @@
+/* Profile Panel Base Styles */
+.profile-panel {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Transform classes */
+.translate-x-0 {
+  transform: translateX(0);
+}
+
+.-translate-x-full {
+  transform: translateX(-100%);
+}
+
+/* Close Button */
+.close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background-color: rgba(55, 65, 81, 1);
+  transform: scale(1.05);
+}
+
+/* Profile Image Container */
+.profile-image-container {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.profile-image-container:hover {
+  transform: scale(1.02);
+}
+
+/* Download Button */
+.download-btn {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.download-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Styles */
+@media (min-width: 768px) {
+  .profile-panel {
+    width: 50%;
+    height: 100%;
+    border-right: 1px solid rgba(55, 65, 81, 1);
+  }
+}
+
+@media (min-width: 1024px) {
+  .profile-panel {
+    width: 33.333333%;
+  }
+}
+
+@media (min-width: 1280px) {
+  .profile-panel {
+    width: 25%;
+  }
+}
+
+/* Custom Scrollbar */
+.profile-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.profile-panel::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.profile-panel::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 4px;
+}
+
+.profile-panel::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
+}
+
+/* Animation for overlay */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fixed.inset-0 {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Image optimization */
+img {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Text styles */
+.text-gray-300 {
+  color: #d1d5db;
+}
+
+.text-gray-400 {
+  color: #9ca3af;
+}
+
+.text-blue-400 {
+  color: #60a5fa;
+}
+
+/* Border styles */
+.border-gray-700 {
+  border-color: #374151;
+}
+
+/* Break words for email */
+.break-all {
+  word-break: break-all;
+}
+
+/* Hover effects */
+.hover\:bg-gray-700:hover {
+  background-color: #374151;
+}
+
+.hover\:bg-blue-600:hover {
+  background-color: #2563eb;
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}

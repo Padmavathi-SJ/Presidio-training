@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './home/home';
-import { ProfileComponent } from './profile/profile';
-import { SkillsComponent } from './skills/skills';
-import { ProjectsComponent } from './projects/projects';
-import { ContactComponent } from './contact/contact';
+import { HomeComponent } from './home/home.component';
+import { ProfileComponent } from './components/profile/profile.component';
+import { SkillsComponent } from './components/skills/skills.component';
+import { ProjectsComponent } from './components/projects/projects.component';
+import { ContactComponent } from './components/contact/contact.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -11,5 +11,5 @@ export const routes: Routes = [
   { path: 'skills', component: SkillsComponent },
   { path: 'projects', component: ProjectsComponent },
   { path: 'contact', component: ContactComponent },
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: '' } // Wildcard route redirects to home
 ];

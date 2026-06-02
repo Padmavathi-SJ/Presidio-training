@@ -1,0 +1,103 @@
+/* Profile Component Styles */
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* Image hover effects */
+.relative.w-40.h-40 {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.relative.w-40.h-40:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 35px #1E90FF;
+}
+
+/* Text box animations */
+.px-4.py-2 {
+  transition: all 0.3s ease;
+}
+
+.px-4.py-2:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px #00BFFF;
+}
+
+.px-4.py-2:last-of-type:hover {
+  box-shadow: 0 0 20px #FF4500;
+}
+
+/* Custom color classes - use standard class names instead of escaped ones */
+.text-cyan {
+  color: #00FFC6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .md\:relative.md\:-left-6 {
+    position: static;
+    margin-top: 0.75rem;
+  }
+}
+
+/* Smooth scrolling for the section */
+.profile-section {
+  scroll-margin-top: 80px;
+}
+
+/* Typography enhancements */
+.text-gray-200 {
+  color: #e5e7eb;
+}
+
+.text-white {
+  color: #ffffff;
+}
+
+/* Shadow utilities */
+.shadow-\[0_0_25px_\#1E90FF\] {
+  box-shadow: 0 0 25px #1E90FF;
+}
+
+.shadow-\[0_0_15px_\#00BFFF\] {
+  box-shadow: 0 0 15px #00BFFF;
+}
+
+.shadow-\[0_0_15px_\#FF4500\] {
+  box-shadow: 0 0 15px #FF4500;
+}
+
+/* Animation on scroll */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Optional: Add a subtle gradient background on hover */
+.relative.w-40.h-40::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(30,144,255,0.2) 0%, rgba(0,255,198,0.2) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.relative.w-40.h-40:hover::before {
+  opacity: 1;
+}

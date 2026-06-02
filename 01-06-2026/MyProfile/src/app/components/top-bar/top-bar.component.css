@@ -1,0 +1,95 @@
+/* Top Bar Container */
+.top-bar {
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Social Icons */
+.social-icon {
+  transition: all 0.3s ease;
+  filter: brightness(0) saturate(100%) invert(85%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(85%);
+}
+
+.social-link:hover .social-icon {
+  filter: brightness(0) saturate(100%) invert(88%) sepia(73%) saturate(462%) hue-rotate(102deg) brightness(101%) contrast(101%);
+  transform: translateY(-2px);
+}
+
+/* Tooltip Styles */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  background-color: var(--secondary-bg);
+  color: var(--accent-color);
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -40px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  border: 1px solid var(--accent-color);
+}
+
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--accent-color) transparent transparent transparent;
+}
+
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.social-link:hover {
+  transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .top-bar {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .tooltip-text {
+    font-size: 10px;
+    padding: 3px 6px;
+    margin-left: -30px;
+  }
+}
+
+/* Active state */
+.social-link:active {
+  transform: scale(0.95);
+}
+
+/* Ensure images are crisp */
+img {
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}

@@ -7,7 +7,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "MyProfile": {
+    "myprofile": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -22,13 +22,16 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "src/assets",
+                "output": "/assets"
               },
-              "src/assets"
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
             ],
             "styles": [
-              "src/styles.css",
-               "node_modules/bootstrap-icons/font/bootstrap-icons.css"
+              "src/styles.css"
             ]
           },
           "configurations": {
@@ -59,10 +62,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "MyProfile:build:production"
+              "buildTarget": "myprofile:build:production"
             },
             "development": {
-              "buildTarget": "MyProfile:build:development"
+              "buildTarget": "myprofile:build:development"
             }
           },
           "defaultConfiguration": "development"

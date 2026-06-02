@@ -1,0 +1,9 @@
+
+
+<div *ngIf="!loading; else loaderTemplate">
+  <router-outlet />
+</div>
+
+<ng-template #loaderTemplate>
+  <app-loader />
+</ng-template>

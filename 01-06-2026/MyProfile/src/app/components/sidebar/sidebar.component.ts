@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { ProfilePanelComponent } from '../profile-panel/profile-panel';
+import { ProfilePanelComponent } from '../profile-panel/profile-panel.component';
 
 @Component({
   selector: 'app-sidebar',
@@ -14,7 +14,7 @@ export class SidebarComponent {
   isOpen: boolean = false;
   mobileMenuOpen: boolean = false;
 
-  constructor(private router: Router) {} // Inject Router
+  constructor(public router: Router) {}
 
   toggleMobileMenu(): void {
     this.mobileMenuOpen = !this.mobileMenuOpen;
@@ -32,8 +32,12 @@ export class SidebarComponent {
     this.isOpen = false;
   }
 
-  navigateTo(path: string): void {
-    this.router.navigate([path]);
+  navigateTo(sectionId: string): void {
+    // Scroll to section instead of routing
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
     this.closeMobileMenu();
   }
 }

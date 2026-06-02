@@ -1,0 +1,48 @@
+<div class="relative flex flex-col md:flex-row">
+  <app-sidebar></app-sidebar>
+
+  <div class="flex flex-col w-full md:ml-16">
+    <app-top-bar></app-top-bar>
+
+    <!-- Responsive quote -->
+    <p class="text-center text-sm sm:text-base md:text-lg font-semibold text-[var(--accent-color)] mt-2 sm:mt-4 px-2 sm:px-4">
+      <span class="text-xl sm:text-2xl md:text-3xl text-yellow-400 font-extrabold">"</span>
+      If you <span class="text-yellow-400 font-bold">shine</span> like a 
+      <span class="text-orange-500 font-bold"> Sun</span>, first 
+      <span class="text-red-500 font-bold"> burn</span> like a 
+      <span class="text-orange-500 font-bold"> Sun</span>.
+      <span class="text-xl sm:text-2xl md:text-3xl text-yellow-400 font-extrabold">"</span>
+    </p>
+
+    <!-- Main content with responsive padding -->
+    <div class="h-full p-2 sm:p-4 md:p-6">
+      <section id="home" class="min-h-[90vh] sm:min-h-screen bg-transparent flex items-center justify-center">
+        <app-home-banner></app-home-banner>
+      </section>
+
+      <hr class="border-[var(--accent-color)] opacity-30 my-2 sm:my-4 w-full" />
+
+      <section id="about" class="min-h-[90vh] sm:min-h-screen bg-transparent flex items-center justify-center py-4">
+        <app-profile></app-profile>
+      </section>
+
+      <hr class="border-[var(--accent-color)] opacity-30 my-2 sm:my-4 w-full" />
+
+      <section id="skills" class="min-h-[90vh] sm:min-h-screen bg-transparent py-4">
+        <app-skills></app-skills>
+      </section>
+
+      <hr class="border-[var(--accent-color)] opacity-30 my-2 sm:my-4 w-full" />
+
+      <section id="projects" class="min-h-[90vh] sm:min-h-screen bg-transparent py-4">
+        <app-projects></app-projects>
+      </section>
+
+      <hr class="border-[var(--accent-color)] opacity-30 my-2 sm:my-4 w-full" />
+
+      <section id="contact" class="min-h-[90vh] sm:min-h-screen bg-transparent py-4">
+        <app-contact></app-contact>
+      </section>
+    </div>
+  </div>
+</div>

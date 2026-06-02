@@ -1,0 +1,192 @@
+/* Project Card Styles */
+.project-card {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.project-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(153, 194, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.project-card:hover::before {
+  left: 100%;
+}
+
+/* Modal Styles */
+.project-modal {
+  animation: modalFadeIn 0.3s ease-out;
+  max-height: 90vh;
+  scrollbar-width: thin;
+}
+
+.project-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.project-modal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.project-modal::-webkit-scrollbar-thumb {
+  background: #99c2ff;
+  border-radius: 4px;
+}
+
+/* Gallery Image */
+.gallery-image {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gallery-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+}
+
+/* Navigation Buttons */
+.nav-btn {
+  transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+  transform: scale(1.1);
+  background-color: #2563eb;
+}
+
+/* GitHub Link */
+.github-link {
+  text-decoration: none;
+  background: rgba(59, 130, 246, 0.2);
+  backdrop-filter: blur(5px);
+}
+
+.github-link:hover {
+  background: #3b82f6;
+  transform: translateY(-2px);
+}
+
+/* Close Button */
+.close-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+}
+
+.close-btn:hover {
+  background: rgba(55, 65, 81, 1);
+  transform: scale(1.05);
+}
+
+/* Zoom Button */
+.zoom-btn {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.zoom-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+}
+
+/* Animations */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Line clamp for description */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .project-card {
+    padding: 0.5rem;
+  }
+  
+  .gallery-image {
+    max-height: 250px;
+  }
+  
+  .nav-btn {
+    padding: 0.5rem;
+  }
+  
+  .nav-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Loading skeleton animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Image gallery indicator dots (optional) */
+.gallery-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.gallery-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.gallery-dot.active {
+  background: #3b82f6;
+  width: 24px;
+  border-radius: 4px;
+}
+
+.gallery-dot:hover {
+  background: #60a5fa;
+  transform: scale(1.2);
+}
+
+/* Smooth scrolling for modal */
+.project-modal {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}

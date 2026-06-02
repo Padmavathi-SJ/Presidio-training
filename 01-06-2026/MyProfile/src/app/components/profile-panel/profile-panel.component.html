@@ -1,0 +1,79 @@
+<!-- Overlay -->
+@if (isOpen) {
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
+    (click)="closePanel()"
+  ></div>
+}
+
+<!-- Profile Panel -->
+<div
+  class="profile-panel fixed top-0 left-0 w-full h-[100dvh] bg-gray-900 text-white shadow-xl transition-transform duration-300 ease-in-out z-[10000] p-4 overflow-y-auto"
+  [class.translate-x-0]="isOpen"
+  [class.-translate-x-full]="!isOpen"
+>
+  <!-- Close Button -->
+  <button
+    (click)="closePanel()"
+    class="close-btn absolute top-4 right-4 text-white text-xl cursor-pointer rounded-full w-8 h-8 flex items-center justify-center transition hover:bg-gray-700"
+  >
+    ✕
+  </button>
+
+  <!-- Main Content Container -->
+  <div class="flex flex-col items-center h-full justify-between py-4">
+    
+    <!-- Top Section -->
+    <div class="w-full flex flex-col items-center">
+      
+      <!-- Profile Image -->
+      <div class="profile-image-container w-28 h-36 md:w-48 md:h-60 overflow-hidden rounded-lg shadow-lg">
+        <img 
+          src="assets/padma.jpeg" 
+          alt="Developer Profile" 
+          class="w-full h-full object-cover rounded-md" 
+        />
+      </div>
+
+      <!-- Contact Details -->
+      <div class="mt-4 text-center w-full px-2">
+        <h3 class="text-lg font-semibold text-blue-400">PADMAVATHI S J</h3>
+        <h4 class="text-sm font-semibold text-gray-300 mt-1">Computer Science and Engineering</h4>
+        <p class="text-xs text-gray-400 mt-1">Bannari Amman Institute of Technology</p>
+        <p class="text-xs text-gray-400 mt-1">Sathyamangalam, Erode-638401, Tamil Nadu, India</p>
+      </div>
+
+      <!-- Contact Icons -->
+      <div class="mt-4 flex flex-col items-center space-y-2 w-full px-4">
+        <div class="flex items-center space-x-2 w-full justify-center">
+          <img src="assets/call.png" alt="Phone" class="w-5 h-5" />
+          <span class="text-sm text-gray-300">+91 8300770817</span>
+        </div>
+        <div class="flex items-center space-x-2 w-full justify-center">
+          <img src="assets/gmail.png" alt="Email" class="w-5 h-5" />
+          <span class="text-sm text-gray-300 break-all">padmavathisj2005@gmail.com</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Section -->
+    <div class="w-full mt-auto">
+      <div class="text-center border-t border-gray-700 pt-4 w-full">
+        <p class="text-xs md:text-sm text-gray-400 px-2">
+          Passionate Full Stack Developer skilled in Angular, Node.js, and Cloud Technologies.
+        </p>
+        <p class="text-xs md:text-sm text-gray-400 mt-1 px-2">
+          Building scalable and efficient applications with modern web technologies.
+        </p>
+        <div class="mt-4 mb-2">
+          <button
+            (click)="downloadResume()"
+            class="download-btn inline-block bg-blue-500 hover:bg-blue-600 py-2 px-4 rounded-md text-white text-sm md:text-base transition transform hover:scale-105"
+          >
+            Download Resume
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

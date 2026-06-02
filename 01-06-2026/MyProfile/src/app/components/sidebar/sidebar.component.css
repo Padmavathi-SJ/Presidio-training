@@ -1,15 +1,10 @@
-:host {
-  display: block;
+/* Sidebar Container */
+.sidebar {
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease-in-out;
 }
 
-/* Transition utilities */
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
-}
-
-/* Transform utilities */
+/* Transform classes for mobile menu */
 .translate-x-0 {
   transform: translateX(0);
 }
@@ -18,68 +13,56 @@
   transform: translateX(-100%);
 }
 
-/* Active route styling */
-.active img {
-  filter: brightness(0) saturate(100%) invert(88%) sepia(73%) saturate(462%) hue-rotate(102deg) brightness(101%) contrast(101%);
-  opacity: 1;
-}
-
-/* Hover effects */
-.hover\:opacity-80:hover {
-  opacity: 0.8;
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-
-/* Responsive utilities */
+/* Responsive */
 @media (min-width: 768px) {
   .md\:translate-x-0 {
     transform: translateX(0) !important;
   }
 }
 
-/* Z-index utilities */
-.z-40 {
-  z-index: 40;
+/* Active route styling */
+.nav-icon.active img {
+  filter: brightness(0) saturate(100%) invert(88%) sepia(73%) saturate(462%) hue-rotate(102deg) brightness(101%) contrast(101%);
+  transform: scale(1.1);
 }
 
-.z-50 {
-  z-index: 50;
+/* Hover effects */
+.nav-icon:hover img {
+  transform: scale(1.1);
+  filter: brightness(0) saturate(100%) invert(88%) sepia(73%) saturate(462%) hue-rotate(102deg) brightness(101%) contrast(101%);
 }
 
-/* Optional: Add tooltip styling */
+/* Custom scrollbar for sidebar if needed */
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: var(--primary-bg);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--accent-color);
+  border-radius: 4px;
+}
+
+/* Tooltip styling */
 .group:hover .group-hover\:opacity-100 {
   opacity: 1;
-}
-
-.group-hover\:opacity-100 {
-  opacity: 0;
-  transition: opacity 0.3s ease;
 }
 
 /* Ensure images don't get distorted */
 img {
   max-width: 100%;
   height: auto;
+  display: block;
 }
 
-/* Add smooth scrolling for the sidebar */
-.Sidebar {
-  overflow-y: auto;
-  scrollbar-width: thin;
+/* Animation for menu button */
+button {
+  transition: all 0.3s ease;
 }
 
-.Sidebar::-webkit-scrollbar {
-  width: 4px;
-}
-
-.Sidebar::-webkit-scrollbar-track {
-  background: var(--primary-bg);
-}
-
-.Sidebar::-webkit-scrollbar-thumb {
-  background: var(--accent-color);
-  border-radius: 4px;
+button:hover {
+  transform: scale(1.05);
 }

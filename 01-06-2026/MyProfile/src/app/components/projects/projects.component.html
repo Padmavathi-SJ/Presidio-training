@@ -1,0 +1,108 @@
+<div class="flex flex-col items-center py-8 md:py-16 px-4 sm:px-6 md:px-8 lg:px-16 bg-transparent">
+  
+  <h2 class="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-200 mb-6 md:mb-12">Projects</h2>
+
+  <!-- Projects Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 w-full max-w-6xl">
+    @for (project of projects; track project.name) {
+      <div class="project-card relative flex items-center border border-[#99c2ff] rounded-lg sm:rounded-xl p-2 sm:p-3
+                  bg-[rgba(255,255,255,0.05)] backdrop-blur-lg shadow-sm md:shadow-md transition-all 
+                  transform hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/50 cursor-pointer"
+           (click)="openProjectModal(project)">
+        
+        <img [src]="project.image" [alt]="project.name" 
+             class="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 object-cover rounded-md shadow-sm mr-3 sm:mr-4" />
+        
+        <div class="flex-1 min-w-0">
+          <h3 class="text-sm sm:text-base md:text-lg font-medium text-gray-100 truncate">{{ project.name }}</h3>
+          <p class="text-gray-400 text-xs sm:text-sm line-clamp-2">{{ project.description }}</p>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Project Modal -->
+  @if (selectedProject) {
+    <div class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4"
+         (click)="closeProjectModal()">
+      
+      <div class="project-modal bg-[rgba(255,255,255,0.08)] backdrop-blur-lg p-4 sm:p-5 rounded-lg shadow-lg max-w-full w-full sm:max-w-2xl md:max-w-3xl relative border border-[#99c2ff] max-h-[90vh] overflow-y-auto"
+           (click)="$event.stopPropagation()">
+        
+        <!-- GitHub Link -->
+        <a [href]="selectedProject.repoLink"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="github-link absolute top-2 left-2 px-2 py-1 sm:px-3 sm:py-1.5 border border-blue-400 text-white rounded-md text-xs sm:text-sm transition-all hover:bg-blue-400 hover:text-black hover:shadow-md hover:shadow-blue-500/50 z-10">
+          View GitHub
+        </a>
+
+        <!-- Close Button -->
+        <button class="close-btn absolute top-2 right-2 text-white text-xl sm:text-2xl p-1 sm:p-1.5 hover:bg-gray-700 rounded-full transition-colors z-10"
+                (click)="closeProjectModal()">
+          ✕
+        </button>
+
+        <!-- Project Title -->
+        <h3 class="text-xl sm:text-2xl font-bold text-center text-gray-200 mt-6 sm:mt-0">{{ selectedProject.name }}</h3>
+        
+        <!-- Project Role -->
+        <p class="mt-2 sm:mt-4 text-white text-sm sm:text-base text-center">{{ selectedProject.role }}</p>
+
+        <!-- Gallery Carousel -->
+        <div class="relative w-full h-auto mt-4 sm:mt-6">
+          <!-- Previous Button -->
+          <button class="nav-btn prev-btn absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 text-white p-2 sm:p-3 bg-blue-600 rounded-full hover:bg-blue-500 z-10 transition-all shadow-md hover:shadow-lg hover:scale-105"
+                  (click)="handlePrev()">
+            ❮
+          </button>
+          
+          <!-- Current Image -->
+          <div class="relative w-full flex justify-center">
+            <img [src]="selectedProject.gallery[currentImageIndex]"
+                 [alt]="selectedProject.name"
+                 class="gallery-image w-full max-w-md h-auto max-h-[300px] sm:max-h-[350px] md:max-h-[400px] object-contain rounded-lg shadow-md border border-[#99c2ff] cursor-pointer hover:shadow-lg transition-shadow"
+                 (click)="openZoomedImage(selectedProject.gallery[currentImageIndex])" />
+          </div>
+          
+          <!-- Next Button -->
+          <button class="nav-btn next-btn absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 text-white p-2 sm:p-3 bg-blue-600 rounded-full hover:bg-blue-500 z-10 transition-all shadow-md hover:shadow-lg hover:scale-105"
+                  (click)="handleNext()">
+            ❯
+          </button>
+        </div>
+
+        <!-- Image Counter -->
+        <div class="mt-4 text-center text-xs sm:text-sm text-gray-300">
+          {{ currentImageIndex + 1 }} of {{ selectedProject.gallery.length }}
+        </div>
+
+        <!-- Zoom Button -->
+        <div class="mt-4 flex justify-center">
+          <button class="zoom-btn flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs sm:text-sm transition-all"
+                  (click)="openZoomedImage(selectedProject.gallery[currentImageIndex])">
+            🔍 Zoom Image
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Zoomed Image Modal -->
+  @if (zoomedImage) {
+    <div class="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-[60] p-4"
+         (click)="closeZoomedImage()">
+      
+      <div class="relative max-w-full max-h-full">
+        <img [src]="zoomedImage" 
+             alt="Zoomed" 
+             class="max-w-full max-h-[90vh] object-contain rounded-lg" />
+        
+        <button class="absolute top-2 right-2 text-white text-xl sm:text-2xl bg-black bg-opacity-50 rounded-full p-2 sm:p-3 hover:bg-opacity-70 transition-colors"
+                (click)="closeZoomedImage(); $event.stopPropagation()">
+          ✕
+        </button>
+      </div>
+    </div>
+  }
+</div>
