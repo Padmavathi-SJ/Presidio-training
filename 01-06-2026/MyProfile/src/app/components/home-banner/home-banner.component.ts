@@ -10,45 +10,54 @@ import { CommonModule } from '@angular/common';
 })
 export class HomeBannerComponent implements OnInit, OnDestroy {
   displayText: string = '';
-  private currentIndex: number = 0;
-  private isDeleting: boolean = false;
-  private intervalId: any;
-  
   private fullText: string = 'If you want to shine like a Sun, first burn like a Sun!';
-  private typeSpeed: number = 80;
-  private deleteSpeed: number = 40;
-  private delaySpeed: number = 2000;
+  private index: number = 0;
+  private isTyping: boolean = true;
+  private intervalId: any;
+  private timeoutId: any;
 
   ngOnInit() {
-    this.startTypewriter();
+    this.startTyping();
   }
 
   ngOnDestroy() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
     }
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
   }
 
-  private startTypewriter() {
+  private startTyping() {
     this.intervalId = setInterval(() => {
-      if (!this.isDeleting && this.currentIndex <= this.fullText.length) {
-        // Typing
-        this.displayText = this.fullText.substring(0, this.currentIndex);
-        this.currentIndex++;
-        
-        if (this.currentIndex > this.fullText.length) {
-          this.isDeleting = true;
-        }
-      } else if (this.isDeleting && this.currentIndex >= 0) {
-        // Deleting
-        this.displayText = this.fullText.substring(0, this.currentIndex);
-        this.currentIndex--;
-        
-        if (this.currentIndex < 0) {
-          this.isDeleting = false;
-          this.currentIndex = 0;
+      if (this.isTyping) {
+        if (this.index < this.fullText.length) {
+          this.displayText += this.fullText.charAt(this.index);
+          this.index++;
+        } else {
+          // Completed typing, wait then delete
+          this.isTyping = false;
+          this.timeoutId = setTimeout(() => {
+            this.startDeleting();
+          }, 2000);
+          clearInterval(this.intervalId);
         }
       }
-    }, this.isDeleting ? this.deleteSpeed : this.typeSpeed);
+    }, 80);
+  }
+
+  private startDeleting() {
+    this.intervalId = setInterval(() => {
+      if (this.displayText.length > 0) {
+        this.displayText = this.displayText.slice(0, -1);
+      } else {
+        // Finished deleting, restart typing
+        this.isTyping = true;
+        this.index = 0;
+        clearInterval(this.intervalId);
+        this.startTyping();
+      }
+    }, 50);
   }
 }

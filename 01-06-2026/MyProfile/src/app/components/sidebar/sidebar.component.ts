@@ -36,7 +36,9 @@ export class SidebarComponent {
     // Scroll to section instead of routing
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: 'smooth',
+        block: 'start'
+       });
     }
     this.closeMobileMenu();
   }

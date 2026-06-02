@@ -190,3 +190,42 @@ a:focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
+
+/* Pulse animation for live indicator */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Learning badge styling */
+.project-card .absolute {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Dashed border animation */
+.border-dashed {
+  animation: borderPulse 2s ease-in-out infinite;
+}
+
+@keyframes borderPulse {
+  0%, 100% {
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    border-color: rgba(59, 130, 246, 0.8);
+  }
+}
+
+/* Hover effect for the live projects note */
+.inline-flex:hover {
+  transform: translateY(-2px);
+  transition: transform 0.3s ease;
+}

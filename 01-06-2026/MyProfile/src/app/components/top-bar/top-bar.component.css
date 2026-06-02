@@ -5,15 +5,17 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Social Icons */
+/* Social Icons - Fixed filter */
 .social-icon {
   transition: all 0.3s ease;
-  filter: brightness(0) saturate(100%) invert(85%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(85%);
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
+/* Hover effect - scale only, no filter that hides icons */
 .social-link:hover .social-icon {
-  filter: brightness(0) saturate(100%) invert(88%) sepia(73%) saturate(462%) hue-rotate(102deg) brightness(101%) contrast(101%);
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.05);
 }
 
 /* Tooltip Styles */
@@ -40,6 +42,7 @@
   transition: opacity 0.3s;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   border: 1px solid var(--accent-color);
+  pointer-events: none;
 }
 
 .tooltip-text::after {
@@ -63,6 +66,7 @@
   align-items: center;
   justify-content: center;
   transition: transform 0.3s ease;
+  cursor: pointer;
 }
 
 .social-link:hover {
@@ -70,6 +74,13 @@
 }
 
 /* Responsive adjustments */
+@media (min-width: 768px) {
+  .social-icon {
+    width: 32px;
+    height: 32px;
+  }
+}
+
 @media (max-width: 768px) {
   .top-bar {
     padding-left: 1rem;
@@ -81,6 +92,11 @@
     padding: 3px 6px;
     margin-left: -30px;
   }
+  
+  .social-icon {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 /* Active state */
@@ -88,8 +104,9 @@
   transform: scale(0.95);
 }
 
-/* Ensure images are crisp */
+/* Remove problematic filters */
 img {
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
+  max-width: 100%;
+  height: auto;
+  display: block;
 }

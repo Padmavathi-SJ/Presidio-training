@@ -18,14 +18,17 @@ export class SkillsComponent implements OnInit, AfterViewInit {
   skillsData: Skill[] = [
     { name: "C", icon: "assets/letter-c.png", level: 85 },
     { name: "Java", icon: "assets/java.png", level: 90 },
+    { name: "C#", icon: "assets/csharp.png", level: 90 },
     { name: "HTML", icon: "assets/html-5.png", level: 95 },
     { name: "CSS", icon: "assets/css-3.png", level: 95 },
     { name: "JavaScript", icon: "assets/java-script.png", level: 80 },
+    { name: "Angular", icon: "assets/angular.png", level: 70 },
     { name: "React JS", icon: "assets/react.png", level: 85 },
     { name: "Node JS", icon: "assets/nodejs.png", level: 80 },
     { name: "Express JS", icon: "assets/express.png", level: 85 },
     { name: "SQL", icon: "assets/sql-server.png", level: 90 },
     { name: "MySQL", icon: "assets/mysql.png", level: 85 },
+    { name: "PostgreSQL", icon: "assets/postgresql.png", level: 95 },
     { name: "Git", icon: "assets/git.png", level: 95 },
     { name: "GitHub", icon: "assets/github.png", level: 90 },
     { name: "Docker", icon: "assets/docker.png", level: 80 },
@@ -37,12 +40,10 @@ export class SkillsComponent implements OnInit, AfterViewInit {
   constructor(private el: ElementRef) {}
 
   ngOnInit() {
-    // Add scroll animation observer
     this.addScrollAnimation();
   }
 
   ngAfterViewInit() {
-    // Trigger initial animation if component is already in view
     this.checkVisibility();
   }
 

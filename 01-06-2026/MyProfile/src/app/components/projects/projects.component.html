@@ -1,6 +1,24 @@
 <div class="flex flex-col items-center py-8 md:py-16 px-4 sm:px-6 md:px-8 lg:px-16 bg-transparent">
   
-  <h2 class="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-200 mb-6 md:mb-12">Projects</h2>
+  <div class="text-center mb-6 md:mb-12">
+    <h2 class="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-200 mb-3">Projects</h2>
+    
+    <!-- New text added here -->
+    <div class="space-y-2">
+      <p class="text-yellow-400 text-sm sm:text-base font-medium">
+        📚 Learning Based Projects
+      </p>
+      <div class="inline-flex items-center gap-2 bg-blue-500/10 backdrop-blur-sm px-4 py-2 rounded-full border border-blue-400/30">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+        </span>
+        <span class="text-blue-300 text-xs sm:text-sm">
+          🚀 Live projects will be updated soon!
+        </span>
+      </div>
+    </div>
+  </div>
 
   <!-- Projects Grid -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 w-full max-w-6xl">
@@ -9,6 +27,11 @@
                   bg-[rgba(255,255,255,0.05)] backdrop-blur-lg shadow-sm md:shadow-md transition-all 
                   transform hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/50 cursor-pointer"
            (click)="openProjectModal(project)">
+        
+        <!-- Learning badge -->
+        <div class="absolute -top-2 -right-2 bg-yellow-500 text-black text-xs font-bold px-2 py-0.5 rounded-full shadow-lg z-10">
+          Learning
+        </div>
         
         <img [src]="project.image" [alt]="project.name" 
              class="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 object-cover rounded-md shadow-sm mr-3 sm:mr-4" />
@@ -21,6 +44,18 @@
     }
   </div>
 
+  <!-- Note about live projects -->
+  <div class="mt-8 md:mt-12 text-center">
+    <div class="inline-flex items-center gap-3 bg-[rgba(255,255,255,0.05)] backdrop-blur-sm px-6 py-3 rounded-xl border border-dashed border-blue-400/50">
+      <svg class="w-5 h-5 text-blue-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+      </svg>
+      <span class="text-gray-300 text-sm md:text-base">
+        More exciting projects are in development. <span class="text-blue-400 font-semibold">Stay tuned!</span>
+      </span>
+    </div>
+  </div>
+
   <!-- Project Modal -->
   @if (selectedProject) {
     <div class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4"
@@ -28,6 +63,11 @@
       
       <div class="project-modal bg-[rgba(255,255,255,0.08)] backdrop-blur-lg p-4 sm:p-5 rounded-lg shadow-lg max-w-full w-full sm:max-w-2xl md:max-w-3xl relative border border-[#99c2ff] max-h-[90vh] overflow-y-auto"
            (click)="$event.stopPropagation()">
+        
+        <!-- Learning Projects Badge in Modal -->
+        <div class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-yellow-500/20 backdrop-blur-sm text-yellow-400 text-xs font-medium px-3 py-1 rounded-full border border-yellow-500/50">
+          📚 Learning Project
+        </div>
         
         <!-- GitHub Link -->
         <a [href]="selectedProject.repoLink"
@@ -44,7 +84,7 @@
         </button>
 
         <!-- Project Title -->
-        <h3 class="text-xl sm:text-2xl font-bold text-center text-gray-200 mt-6 sm:mt-0">{{ selectedProject.name }}</h3>
+        <h3 class="text-xl sm:text-2xl font-bold text-center text-gray-200 mt-10 sm:mt-8">{{ selectedProject.name }}</h3>
         
         <!-- Project Role -->
         <p class="mt-2 sm:mt-4 text-white text-sm sm:text-base text-center">{{ selectedProject.role }}</p>
@@ -83,6 +123,13 @@
                   (click)="openZoomedImage(selectedProject.gallery[currentImageIndex])">
             🔍 Zoom Image
           </button>
+        </div>
+        
+        <!-- Note in Modal -->
+        <div class="mt-4 pt-3 border-t border-gray-700 text-center">
+          <p class="text-xs text-gray-400">
+            ⚡ This is a learning-based project. Live version coming soon!
+          </p>
         </div>
       </div>
     </div>

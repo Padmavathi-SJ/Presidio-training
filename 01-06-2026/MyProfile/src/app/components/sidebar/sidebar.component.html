@@ -16,7 +16,7 @@
   
   <!-- Developer's Profile Image -->
   <div class="mt-3 w-10 h-10 rounded-full overflow-hidden cursor-pointer hover:opacity-80 transition-all duration-300">
-    <img src="assets/padma-clg.png" alt="Developer Profile" class="w-full h-full object-cover" />
+    <img src="assets/padma.jpeg" alt="Developer Profile" class="w-full h-full object-cover" />
   </div>
 
   <!-- Profile Icon / Hire Me -->
@@ -33,31 +33,31 @@
 
   <!-- Sidebar Icons -->
   <div class="flex flex-col flex-1 justify-center space-y-6 items-center mt-6">
-    <a (click)="navigateTo('/')" 
+    <a (click)="navigateTo('home')" 
        class="nav-icon hover:opacity-80 transition-all duration-300 cursor-pointer"
        [class.active]="router.url === '/'">
       <img src="assets/home-button.png" alt="Home" class="w-6 h-6" />
     </a>
     
-    <a (click)="navigateTo('/profile')" 
+    <a (click)="navigateTo('profile')" 
        class="nav-icon hover:opacity-80 transition-all duration-300 cursor-pointer"
        [class.active]="router.url === '/profile'">
       <img src="assets/information.png" alt="Profile" class="w-6 h-6" />
     </a>
     
-    <a (click)="navigateTo('/skills')" 
+    <a (click)="navigateTo('skills')" 
        class="nav-icon hover:opacity-80 transition-all duration-300 cursor-pointer"
        [class.active]="router.url === '/skills'">
       <img src="assets/pencil.png" alt="Skills" class="w-6 h-6" />
     </a>
     
-    <a (click)="navigateTo('/projects')" 
+    <a (click)="navigateTo('projects')" 
        class="nav-icon hover:opacity-80 transition-all duration-300 cursor-pointer"
        [class.active]="router.url === '/projects'">
       <img src="assets/idea.png" alt="Projects" class="w-6 h-6" />
     </a>
     
-    <a (click)="navigateTo('/contact')" 
+    <a (click)="navigateTo('contact')" 
        class="nav-icon hover:opacity-80 transition-all duration-300 cursor-pointer"
        [class.active]="router.url === '/contact'">
       <img src="assets/contact-us.png" alt="Contact" class="w-6 h-6" />
