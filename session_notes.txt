@@ -1,0 +1,133 @@
+How sessions work:
+
+1. User logs in with username/password.
+2. Server validates credentials.
+3. Server creates a session and stores it in memory, a database, or a cache.
+4. Server sends a session ID to the browser (usually in a cookie).
+5. For every subsequent request:
+
+   * Browser sends the session ID cookie.
+   * Server looks up the session data.
+   * If valid, the user is authenticated.
+
+Example:
+
+User Login
+    ↓
+Server Creates Session
+    ↓
+Session ID = abc123
+    ↓
+Browser Stores Cookie
+
+Future Requests:
+Cookie: sessionId=abc123
+    ↓
+Server checks session store
+    ↓
+User authenticated
+
+
+---
+
+--> What Problems Did Sessions Have?
+
+  -> 1. Server Memory/Storage Dependency
+
+The server must store session data.
+
+ex:
+User 1 -> Session
+User 2 -> Session
+User 3 -> Session
+
+1 Million Users -> 1 Million Sessions
+
+----> As the number of users grows, session storage becomes expensive.
+
+
+   -> 2. Difficult Horizontal Scaling
+
+--> Suppose you have multiple servers:
+
+          Load Balancer
+           /        \
+      Server A    Server B
+
+  -> User logs in through Server A.
+
+  -> Session is stored on:
+          Server A Memory
+
+Next request may reach Server B.
+
+        Server B
+        --> Session not found
+
+
+
+   -> 3. State Management Overhead
+
+Sessions make the server "stateful".
+
+The server must remember:
+
+Session ID
+User Data
+Expiration Time
+Permissions
+
+  --> Managing millions of active sessions can become challenging.
+
+
+ 
+
+--> Why JWT Became Popular
+
+JWT is "tateless"
+
+After login:
+
+User Login
+    ↓
+Server Generates JWT
+    ↓
+Client Stores Token
+
+
+Every request:
+
+Authorization: Bearer <token>
+
+Server verifies the token signature.
+
+No database lookup is required for authentication.
+
+
+  -->  JWT Advantages
+
+   1. Stateless
+
+   2. No session storage required.
+
+Server A
+Server B
+Server C
+
+All can verify the token.
+
+   3. Easier Scaling
+
+Load Balancer
+     ↓
+Any Server
+     ↓
+Verify JWT
+
+
+So the issue wasn't that sessions were "wrong." 
+Sessions worked very well and still do. 
+JWT became popular because
+  -> it simplifies scaling, 
+  -> distributed systems, 
+  -> SPAs, mobile apps, and microservice architectures by removing the need for centralized session storage.

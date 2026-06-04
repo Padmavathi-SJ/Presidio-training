@@ -1,8 +1,19 @@
 {
   "version": 2,
-  "dgSpecHash": "bCwZPphxrgY=",
+  "dgSpecHash": "JfNbJ0ugZTQ=",
   "success": true,
   "projectFilePath": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/AgriculturePlatform.Application.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/Users/padmavathisj/.nuget/packages/microsoft.entityframeworkcore/10.0.0-preview.2.25163.8/microsoft.entityframeworkcore.10.0.0-preview.2.25163.8.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.entityframeworkcore.abstractions/10.0.0-preview.2.25163.8/microsoft.entityframeworkcore.abstractions.10.0.0-preview.2.25163.8.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.caching.abstractions/10.0.0-preview.2.25163.2/microsoft.extensions.caching.abstractions.10.0.0-preview.2.25163.2.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.caching.memory/10.0.0-preview.2.25163.2/microsoft.extensions.caching.memory.10.0.0-preview.2.25163.2.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.dependencyinjection/10.0.0-preview.2.25163.2/microsoft.extensions.dependencyinjection.10.0.0-preview.2.25163.2.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/10.0.0-preview.2.25163.2/microsoft.extensions.dependencyinjection.abstractions.10.0.0-preview.2.25163.2.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.logging/10.0.0-preview.2.25163.2/microsoft.extensions.logging.10.0.0-preview.2.25163.2.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.logging.abstractions/10.0.0-preview.2.25163.2/microsoft.extensions.logging.abstractions.10.0.0-preview.2.25163.2.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.options/10.0.0-preview.2.25163.2/microsoft.extensions.options.10.0.0-preview.2.25163.2.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.primitives/10.0.0-preview.2.25163.2/microsoft.extensions.primitives.10.0.0-preview.2.25163.2.nupkg.sha512"
+  ],
   "logs": []
 }

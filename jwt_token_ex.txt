@@ -1,0 +1,418 @@
+This is one of the most confusing parts of JWT initially. Let's break it down step by step and see what is actually happening.
+
+---
+
+ Step 1: JWT Structure
+
+A JWT has 3 parts:
+
+   " HEADER.PAYLOAD.SIGNATURE "
+
+
+Example:
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+.
+eyJ1c2VySWQiOjEsInJvbGUiOiJ1c2VyIn0
+.
+abc123xyz456signature
+
+
+The dots (`.`) separate the three parts.
+
+
+ Step 2: Header
+
+Original JSON:
+json
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+
+JWT converts this JSON into Base64Url format:
+
+   --> eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+
+This is the first part.
+
+
+ Step 3: Payload
+
+Original JSON:
+
+```json
+{
+  "userId": 1,
+  "role": "user"
+}
+```
+
+Converted to Base64Url:
+
+   --> eyJ1c2VySWQiOjEsInJvbGUiOiJ1c2VyIn0
+
+
+This is the second part.
+
+
+ Step 4: Secret Key
+
+Suppose your server has:
+
+```env
+JWT_SECRET=mySuperSecretKey123
+```
+
+Only the server knows this.
+
+
+
+# Step 5: Creating Signature
+
+The JWT library does something like:
+
+data =
+base64(header)
++
+"."
++
+base64(payload)
+
+Result:
+
+```text
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+.
+eyJ1c2VySWQiOjEsInJvbGUiOiJ1c2VyIn0
+```
+
+Then:
+
+```text
+HMACSHA256(
+   data,
+   JWT_SECRET
+)
+```
+
+Using:
+
+```text
+JWT_SECRET=mySuperSecretKey123
+```
+
+Produces:
+
+```text
+abc123xyz456signature
+```
+
+(Not the real output, just an example.)
+
+---
+
+# Step 6: Final JWT
+
+Server combines:
+
+```text
+HEADER
+.
+PAYLOAD
+.
+SIGNATURE
+```
+
+Result:
+
+```text
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+.
+eyJ1c2VySWQiOjEsInJvbGUiOiJ1c2VyIn0
+.
+abc123xyz456signature
+```
+
+This whole string is sent to the client.
+
+---
+
+# Step 7: Client Sends Token Back
+
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1Ni...
+```
+
+The server receives the complete token.
+
+---
+
+# Step 8: How Does Verification Work?
+
+Suppose attacker changes:
+
+```json
+{
+  "userId": 1,
+  "role": "user"
+}
+```
+
+to
+
+```json
+{
+  "userId": 1,
+  "role": "admin"
+}
+```
+
+Payload changes.
+
+New payload becomes:
+
+```text
+NEW_PAYLOAD
+```
+
+But signature remains:
+
+```text
+OLD_SIGNATURE
+```
+
+because attacker doesn't know the secret key.
+
+---
+
+# Step 9: Server Verification
+
+When you call:
+
+```javascript
+jwt.verify(token, JWT_SECRET)
+```
+
+the library internally does:
+
+### Split Token
+
+```javascript
+const parts = token.split(".");
+```
+
+Result:
+
+```javascript
+parts[0] = HEADER
+parts[1] = PAYLOAD
+parts[2] = SIGNATURE
+```
+
+---
+
+### Recreate Signature
+
+Take:
+
+```text
+HEADER.PAYLOAD
+```
+
+and compute:
+
+```text
+HMACSHA256(
+   HEADER.PAYLOAD,
+   JWT_SECRET
+)
+```
+
+using the server's secret.
+
+Server gets:
+
+```text
+NEW_SIGNATURE
+```
+
+---
+
+### Compare Signatures
+
+Compare:
+
+```text
+Token Signature
+=
+abc123xyz456signature
+```
+
+with
+
+```text
+Server Generated Signature
+=
+abc123xyz456signature
+```
+
+If equal:
+
+```text
+VALID TOKEN
+```
+
+Otherwise:
+
+```text
+INVALID TOKEN
+```
+
+---
+
+# Visual Example
+
+Token received:
+
+```text
+AAA.BBB.CCC
+```
+
+Where:
+
+```text
+AAA = Header
+BBB = Payload
+CCC = Signature
+```
+
+Server does:
+
+```text
+Generate Signature(
+    AAA.BBB,
+    JWT_SECRET
+)
+```
+
+Result:
+
+```text
+CCC
+```
+
+Compare:
+
+```text
+Generated CCC == Token CCC
+```
+
+If:
+
+```text
+true
+```
+
+then token is genuine.
+
+---
+
+# Important Point
+
+The server is **not extracting the secret from the token**.
+
+Many beginners think:
+
+```text
+Token → Secret → Verify
+```
+
+No.
+
+The secret is never inside the token.
+
+Instead:
+
+```text
+Server Secret
++
+Token Header
++
+Token Payload
+↓
+Generate Signature Again
+↓
+Compare
+```
+
+---
+
+# Real Analogy
+
+Imagine a teacher signs a certificate.
+
+Certificate:
+
+```text
+Name: Padma
+Role: Student
+```
+
+Teacher stamp:
+
+```text
+Official School Seal
+```
+
+Now anyone can read:
+
+```text
+Name: Padma
+Role: Student
+```
+
+But nobody can create the official seal.
+
+When the certificate is presented later:
+
+1. Look at the data.
+2. Check the seal.
+3. Verify seal is authentic.
+
+JWT signature works similarly.
+
+---
+
+# One More Important Clarification
+
+JWT is **not encrypted by default**.
+
+Anyone can decode:
+
+```text
+Header
+Payload
+```
+
+using online JWT decoders.
+
+For example:
+
+```json
+{
+  "userId": 1,
+  "email": "padma@gmail.com",
+  "role": "user"
+}
+```
+
+can be read by anyone who has the token.
+
+What they **cannot do** is modify the payload and produce a valid signature without knowing:
+
+```env
+JWT_SECRET
+```
+
+That is the key idea behind JWT authentication. The payload is readable, but the signature proves that the payload has not been altered since the server created it.

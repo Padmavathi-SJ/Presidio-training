@@ -1,0 +1,425 @@
+Absolutely. Understanding JWT becomes much easier when you follow the complete flow from login to accessing protected resources.
+
+# 1. What is JWT?
+
+JWT (**JSON Web Token**) is a compact string that contains information about a user and is digitally signed by the server.
+
+A JWT looks like:
+
+```text
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+.
+eyJ1c2VySWQiOjEwMSwidXNlcm5hbWUiOiJwYWRtYSIsInJvbGUiOiJVc2VyIn0
+.
+k8rB5a4X8q8mWv9xN7jK9P2L5Y6A1B2C3D4E5F6G7H8
+```
+
+It consists of:
+
+```text
+Header.Payload.Signature
+```
+
+---
+
+# 2. Login Flow
+
+Suppose the user enters:
+
+```text
+Username: padma
+Password: 123456
+```
+
+Frontend sends:
+
+```http
+POST /login
+
+{
+    "username":"padma",
+    "password":"123456"
+}
+```
+
+---
+
+# 3. Server Verifies Credentials
+
+Backend checks:
+
+```sql
+SELECT * FROM users
+WHERE username='padma'
+```
+
+Suppose the user exists.
+
+```json
+{
+  "id": 1,
+  "username": "padma",
+  "role": "user"
+}
+```
+
+Password matches.
+
+Server now generates a JWT.
+
+---
+
+# 4. JWT Generation
+
+### Node.js Example
+
+```javascript
+const jwt = require("jsonwebtoken");
+
+const payload = {
+    userId: 1,
+    username: "padma",
+    role: "user"
+};
+
+const token = jwt.sign(
+    payload,
+    process.env.JWT_SECRET,
+    {
+        expiresIn: "7d"
+    }
+);
+```
+
+Generated token:
+
+```text
+eyJhbGciOiJIUzI1Ni...
+```
+
+---
+
+# 5. What's Inside the Token?
+
+### Header
+
+```json
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+```
+
+Meaning:
+
+```text
+Algorithm = HS256
+Type = JWT
+```
+
+---
+
+### Payload
+
+```json
+{
+  "userId": 1,
+  "username": "padma",
+  "role": "user",
+  "iat": 1780470297,
+  "exp": 1781075097
+}
+```
+
+Contains user information.
+
+---
+
+### Signature
+
+Created using:
+
+```text
+Header
++
+Payload
++
+Secret Key
+```
+
+Example:
+
+```javascript
+HMACSHA256(
+    header + payload,
+    SECRET_KEY
+)
+```
+
+This signature prevents tampering.
+
+---
+
+# 6. Server Sends JWT Back
+
+Response:
+
+```json
+{
+    "token":"eyJhbGciOiJIUzI1Ni..."
+}
+```
+
+---
+
+# 7. Where is the Token Stored?
+
+Common options:
+
+### Local Storage
+
+```javascript
+localStorage.setItem("token", token);
+```
+
+Stored inside browser.
+
+---
+
+### Session Storage
+
+```javascript
+sessionStorage.setItem("token", token);
+```
+
+Removed when tab closes.
+
+---
+
+### HttpOnly Cookie (Most Secure)
+
+Server:
+
+```http
+Set-Cookie:
+token=eyJ...
+HttpOnly
+Secure
+SameSite=Strict
+```
+
+Browser stores it automatically.
+
+JavaScript cannot access it.
+
+---
+
+# 8. Accessing Protected APIs
+
+User clicks:
+
+```text
+View Profile
+```
+
+Frontend sends:
+
+```http
+GET /profile
+
+Authorization:
+Bearer eyJhbGciOiJIUzI1Ni...
+```
+
+---
+
+# 9. Backend Receives Request
+
+Example middleware:
+
+```javascript
+const token =
+req.headers.authorization.split(" ")[1];
+```
+
+Gets:
+
+```text
+eyJhbGciOiJIUzI1Ni...
+```
+
+---
+
+# 10. Token Verification
+
+```javascript
+jwt.verify(
+    token,
+    process.env.JWT_SECRET
+);
+```
+
+Server checks:
+
+### Signature Valid?
+
+```text
+YES
+```
+
+### Expired?
+
+```text
+NO
+```
+
+### Tampered?
+
+```text
+NO
+```
+
+Then decode payload.
+
+```json
+{
+  "userId":1,
+  "username":"padma",
+  "role":"user"
+}
+```
+
+---
+
+# 11. User is Authenticated
+
+Middleware attaches user:
+
+```javascript
+req.user = decoded;
+```
+
+Now controller can use:
+
+```javascript
+req.user.userId
+req.user.role
+```
+
+Example:
+
+```javascript
+app.get('/profile', authMiddleware, (req,res)=>{
+    res.json({
+        userId:req.user.userId
+    });
+});
+```
+
+---
+
+# Complete Communication Flow
+
+```text
+┌──────────┐
+│ Frontend │
+└────┬─────┘
+     │
+     │ Username + Password
+     ▼
+┌──────────┐
+│ Backend  │
+└────┬─────┘
+     │
+     │ Validate User
+     ▼
+ Database
+     │
+     ▼
+ Generate JWT
+     │
+     ▼
+ Send Token
+     │
+     ▼
+┌──────────┐
+│ Frontend │
+└────┬─────┘
+     │
+ Store Token
+     │
+     ▼
+ Future Requests
+ Authorization:
+ Bearer Token
+     │
+     ▼
+┌──────────┐
+│ Backend  │
+└────┬─────┘
+     │
+ Verify Token
+     │
+     ▼
+ Allow Access
+```
+
+---
+
+# Why Doesn't the Backend Store the Token?
+
+With sessions:
+
+```text
+Server Memory
+    ↓
+Session Data
+```
+
+Backend must remember every user.
+
+With JWT:
+
+```text
+Token contains user information
+```
+
+The server only needs the secret key:
+
+```text
+JWT_SECRET=mysecretkey
+```
+
+It can verify any valid token without storing it.
+
+This is why JWT is called **stateless authentication**.
+
+---
+
+# Your Token Example
+
+You shared:
+
+```json
+{
+  "userId": 1,
+  "role": "user",
+  "email": "padmavathisj2005@gmail.com",
+  "company_id": 1,
+  "iat": 1780470297,
+  "exp": 1781075097
+}
+```
+
+Meaning:
+
+* `userId` → 1
+* `role` → user
+* `email` → user's email
+* `company_id` → 1
+* `iat` → issued at time
+* `exp` → expiration time
+
+When your Angular/React application sends this token in the `Authorization` header, the backend verifies the signature using the same secret key that was used when the token was created. If verification succeeds and the token has not expired, the request is treated as authenticated.
+
+

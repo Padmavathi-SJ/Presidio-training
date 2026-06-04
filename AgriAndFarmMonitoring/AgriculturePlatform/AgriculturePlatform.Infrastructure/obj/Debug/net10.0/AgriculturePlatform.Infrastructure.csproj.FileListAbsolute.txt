@@ -1,4 +1,5 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/bin/Debug/net10.0/AgriculturePlatform.Infrastructure.deps.json
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/bin/Debug/net10.0/AgriculturePlatform.Infrastructure.runtimeconfig.json
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/bin/Debug/net10.0/AgriculturePlatform.Infrastructure.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/bin/Debug/net10.0/AgriculturePlatform.Infrastructure.pdb
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/bin/Debug/net10.0/AgriculturePlatform.Application.dll
@@ -15,4 +16,5 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net10.0/AgriculturePlatform.Infrastructure.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net10.0/refint/AgriculturePlatform.Infrastructure.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net10.0/AgriculturePlatform.Infrastructure.pdb
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net10.0/AgriculturePlatform.Infrastructure.genruntimeconfig.cache
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net10.0/ref/AgriculturePlatform.Infrastructure.dll

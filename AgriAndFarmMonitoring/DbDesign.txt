@@ -1,58 +1,107 @@
-
 -- FARM MANAGEMENT PLATFORM
 -- Crop Monitoring + Worker Management + Yield Reports
 
--- 1. CROP MONITORING TABLES
+--- Admin
 
+-- Companies table (each company/organization)
+CREATE TABLE companies (
+    id SERIAL PRIMARY KEY,
+    company_name VARCHAR(200) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    phone VARCHAR(20),
+    address TEXT,
+    city VARCHAR(100),
+    state VARCHAR(100),
+    country VARCHAR(100),
+    postal_code VARCHAR(20),
+    is_active BOOLEAN DEFAULT TRUE,
+    logo_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- Admin table for platform administrators
+CREATE TABLE admins (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,  -- Hashed password (bcrypt)
+    phone VARCHAR(20),
+    is_active BOOLEAN DEFAULT TRUE,
+    last_login TIMESTAMP,
+    password_reset_token VARCHAR(255),     -- For password reset functionality
+    password_reset_expires TIMESTAMP,      -- Token expiration time
+    created_by INTEGER REFERENCES admins(id), -- Which admin created this admin
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 1. CROP MONITORING TABLES
 
 -- Fields/Land parcels
 CREATE TABLE fields (
     id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     field_name VARCHAR(100) NOT NULL,
     location VARCHAR(200),
     area_hectares DECIMAL(10,2),
     soil_type VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Crop cycles (each planting season)
 CREATE TABLE crop_cycles (
     id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
     crop_type VARCHAR(50),  -- WHEAT, MAIZE, RICE, HAZELNUT
     planting_date DATE,
     expected_harvest_date DATE,
     growth_stage VARCHAR(50),  -- GERMINATION, VEGETATIVE, FLOWERING, MATURITY
     status VARCHAR(30) DEFAULT 'ACTIVE',  -- ACTIVE, HARVESTED, FAILED
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- IoT Sensor readings (simulated)
 CREATE TABLE sensor_readings (
     id BIGSERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
     crop_cycle_id INTEGER REFERENCES crop_cycles(id) ON DELETE CASCADE,
     sensor_type VARCHAR(50),  -- SOIL_MOISTURE, SOIL_TEMP, AIR_TEMP, HUMIDITY
     value DECIMAL(10,2),
     unit VARCHAR(20),
-    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Automatic alerts from thresholds
 CREATE TABLE alerts (
     id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
     crop_cycle_id INTEGER REFERENCES crop_cycles(id),
     alert_type VARCHAR(50),  -- DROUGHT, WATERLOG, HEAT_STRESS
     severity VARCHAR(20),    -- LOW, MEDIUM, HIGH
     message TEXT,
     is_resolved BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Manual field observations by workers
 CREATE TABLE observations (
     id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
     crop_cycle_id INTEGER REFERENCES crop_cycles(id),
     worker_id INTEGER,  -- References workers table
@@ -61,18 +110,22 @@ CREATE TABLE observations (
     pest_detected BOOLEAN DEFAULT FALSE,
     pest_type VARCHAR(100),
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Weather data from external API
 CREATE TABLE weather_data (
     id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
     temperature DECIMAL(5,2),
     humidity DECIMAL(5,2),
     rainfall_mm DECIMAL(6,2),
     wind_speed DECIMAL(5,2),
-    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -83,18 +136,23 @@ CREATE TABLE weather_data (
 -- Workers/Employees
 CREATE TABLE workers (
     id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE,
     phone VARCHAR(20),
     role VARCHAR(50),  -- MANAGER, SUPERVISOR, OPERATOR, LABOR
     hire_date DATE DEFAULT CURRENT_DATE,
     is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tasks assigned to workers
 CREATE TABLE tasks (
     id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     worker_id INTEGER REFERENCES workers(id) ON DELETE CASCADE,
     field_id INTEGER REFERENCES fields(id),
     crop_cycle_id INTEGER REFERENCES crop_cycles(id),
@@ -103,7 +161,8 @@ CREATE TABLE tasks (
     due_date DATE,
     status VARCHAR(30) DEFAULT 'PENDING',  -- PENDING, IN_PROGRESS, COMPLETED
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -113,6 +172,8 @@ CREATE TABLE tasks (
 -- Harvest records
 CREATE TABLE harvests (
     id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     field_id INTEGER REFERENCES fields(id),
     crop_cycle_id INTEGER REFERENCES crop_cycles(id),
     harvested_by INTEGER REFERENCES workers(id),  -- Who harvested
@@ -120,51 +181,139 @@ CREATE TABLE harvests (
     quantity_kg DECIMAL(12,2) NOT NULL,
     quality_grade VARCHAR(10),  -- A, B, C
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Quality checks on harvest
 CREATE TABLE quality_checks (
     id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     harvest_id INTEGER REFERENCES harvests(id) ON DELETE CASCADE,
     checked_by INTEGER REFERENCES workers(id),
     check_date DATE DEFAULT CURRENT_DATE,
     moisture_pct DECIMAL(5,2),
     defect_pct DECIMAL(5,2),
     final_grade VARCHAR(10),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Aggregated yield reports
 CREATE TABLE yield_reports (
     id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE NOT NULL,
     crop_cycle_id INTEGER REFERENCES crop_cycles(id),
     report_date DATE DEFAULT CURRENT_DATE,
     total_yield_kg DECIMAL(12,2),
     yield_per_hectare_kg DECIMAL(10,2),
     avg_quality_grade VARCHAR(10),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+--- LOGS ------
+
+-- Audit logs for tracking all activities
+CREATE TABLE audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+    admin_id INTEGER REFERENCES admins(id),
+    worker_id INTEGER REFERENCES workers(id),
+    action VARCHAR(100) NOT NULL, -- CREATE, UPDATE, DELETE, LOGIN, LOGOUT
+    entity_type VARCHAR(50), -- FIELD, CROP_CYCLE, WORKER, HARVEST, etc.
+    entity_id INTEGER,
+    old_value JSONB,
+    new_value JSONB,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Notifications
+CREATE TABLE notifications (
+    id BIGSERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+    admin_id INTEGER REFERENCES admins(id),
+    worker_id INTEGER REFERENCES workers(id),
+    title VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50), -- ALERT, TASK, REMINDER, SYSTEM
+    is_read BOOLEAN DEFAULT FALSE,
+    action_url VARCHAR(500),
+    metadata JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 
 -- INDEXES FOR PERFORMANCE
 
+-- Company indexes
+CREATE INDEX idx_companies_code ON companies(company_code);
+CREATE INDEX idx_companies_active ON companies(is_active);
 
--- Crop Monitoring indexes
+-- Admin indexes
+CREATE INDEX idx_admins_company ON admins(company_id);
+CREATE INDEX idx_admins_email ON admins(email);
+CREATE INDEX idx_admins_role ON admins(role);
+
+-- Fields indexes (with multi-tenant)
+CREATE INDEX idx_fields_company ON fields(company_id);
+CREATE INDEX idx_fields_admin ON fields(admin_id);
+CREATE INDEX idx_fields_company_status ON fields(company_id, status);
+
+-- Crop cycles indexes
+CREATE INDEX idx_crop_cycles_company ON crop_cycles(company_id);
+CREATE INDEX idx_crop_cycles_field ON crop_cycles(field_id);
+CREATE INDEX idx_crop_cycles_status ON crop_cycles(status);
+
+-- Sensor readings indexes
 CREATE INDEX idx_sensor_field_time ON sensor_readings(field_id, recorded_at DESC);
+CREATE INDEX idx_sensor_company ON sensor_readings(company_id, recorded_at DESC);
 CREATE INDEX idx_sensor_type ON sensor_readings(sensor_type);
+
+-- Alerts indexes
+CREATE INDEX idx_alerts_company ON alerts(company_id);
 CREATE INDEX idx_alerts_active ON alerts(field_id, is_resolved);
-CREATE INDEX idx_observations_field ON observations(field_id, observation_date);
+CREATE INDEX idx_alerts_company_unresolved ON alerts(company_id, is_resolved);
 
--- Worker Management indexes
+-- Workers indexes
+CREATE INDEX idx_workers_company ON workers(company_id);
+CREATE INDEX idx_workers_email ON workers(email);
+CREATE INDEX idx_workers_role ON workers(role);
+
+-- Tasks indexes
 CREATE INDEX idx_tasks_worker ON tasks(worker_id, status);
-CREATE INDEX idx_tasks_field ON tasks(field_id);
+CREATE INDEX idx_tasks_company ON tasks(company_id);
+CREATE INDEX idx_tasks_status_due ON tasks(status, due_date);
 
--- Yield indexes
+-- Harvests indexes
+CREATE INDEX idx_harvests_company ON harvests(company_id);
 CREATE INDEX idx_harvests_crop ON harvests(crop_cycle_id);
 CREATE INDEX idx_harvests_date ON harvests(harvest_date);
+CREATE INDEX idx_harvests_approval ON harvests(approval_status);
+
+-- Quality checks indexes
+CREATE INDEX idx_quality_checks_company ON quality_checks(company_id);
+CREATE INDEX idx_quality_checks_harvest ON quality_checks(harvest_id);
+CREATE INDEX idx_quality_checks_approval ON quality_checks(approval_status);
+
+-- Yield reports indexes
+CREATE INDEX idx_yield_reports_company ON yield_reports(company_id);
 CREATE INDEX idx_yield_reports_crop ON yield_reports(crop_cycle_id);
 
+-- Audit logs indexes
+CREATE INDEX idx_audit_company ON audit_logs(company_id, created_at DESC);
+CREATE INDEX idx_audit_admin ON audit_logs(admin_id);
+CREATE INDEX idx_audit_entity ON audit_logs(entity_type, entity_id);
+CREATE INDEX idx_audit_date ON audit_logs(created_at DESC);
+
+-- Notifications indexes
+CREATE INDEX idx_notifications_company ON notifications(company_id);
+CREATE INDEX idx_notifications_admin ON notifications(admin_id);
+CREATE INDEX idx_notifications_worker ON notifications(worker_id, is_read);
 
 -- FOREIGN KEY RELATIONSHIPS (Summary)
 
@@ -173,7 +322,7 @@ CREATE INDEX idx_yield_reports_crop ON yield_reports(crop_cycle_id);
 -- tasks.worker_id -> workers.id
 -- tasks.field_id -> fields.id
 -- tasks.crop_cycle_id -> crop_cycles.id
--- attendance.worker_id -> workers.id
+
 -- harvests.harvested_by -> workers.id
 -- quality_checks.checked_by -> workers.id
 
