@@ -114,3 +114,28 @@ public enum WeatherConditionEnum
     FOGGY,
     WINDY
 }
+
+// Weather alert types (for external weather warnings)
+public enum WeatherAlertTypeEnum
+{
+    STORM,          // Thunderstorm, cyclone, hurricane
+    FROST,          // Freezing conditions
+    HEAT_WAVE,      // Extreme high temperatures
+    HEAVY_RAIN,     // Excessive rainfall, flood risk
+    HIGH_WIND,      // Strong winds, storm conditions
+    DROUGHT,        // Extended dry period
+    HAIL,           // Hailstorm risk
+    TORNADO,        // Tornado warning
+    FLOOD,          // Flooding risk
+    WILDFIRE        // Fire risk due to dry conditions
+}
+
+
+// Weather alert severity (for external weather warnings)
+public enum WeatherAlertSeverityEnum
+{
+    ADVISORY,       // Minor weather event
+    WATCH,          // Conditions are favorable for severe weather
+    WARNING,        // Severe weather is imminent or occurring
+    EMERGENCY       // Extreme threat to life and property
+}

@@ -18,7 +18,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0-preview.2.25163.8")
+                .HasAnnotation("ProductVersion", "8.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -31,13 +31,16 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
                         .HasColumnType("integer");
 
                     b.Property<string>("Email")
@@ -45,7 +48,13 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastLogin")
@@ -75,14 +84,17 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("Id");
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
 
-                    b.HasIndex("CompanyId");
+                    b.HasKey("Id");
 
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("FarmId");
 
                     b.HasIndex("IsActive");
 
@@ -91,11 +103,11 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.AuditLog", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Action")
                         .IsRequired()
@@ -105,11 +117,17 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<int?>("AdminId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("EntityId")
                         .HasColumnType("integer");
@@ -118,15 +136,27 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<int?>("FarmId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("IpAddress")
                         .HasMaxLength(45)
                         .HasColumnType("character varying(45)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<JsonDocument>("NewValue")
                         .HasColumnType("jsonb");
 
                     b.Property<JsonDocument>("OldValue")
                         .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
 
                     b.Property<string>("UserAgent")
                         .HasColumnType("text");
@@ -142,14 +172,14 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("WorkerId");
 
-                    b.HasIndex("CompanyId", "CreatedAt");
-
                     b.HasIndex("EntityType", "EntityId");
+
+                    b.HasIndex("FarmId", "CreatedAt");
 
                     b.ToTable("AuditLogs");
                 });
 
-            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Company", b =>
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -164,11 +194,6 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("CompanyName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
                     b.Property<string>("Country")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -176,11 +201,28 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Email")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("FarmName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<string>("LogoUrl")
@@ -198,24 +240,30 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<decimal?>("TotalLandHectares")
+                        .HasColumnType("numeric");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Companies");
+                    b.ToTable("Farms");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Notification", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ActionUrl")
                         .HasColumnType("text");
@@ -223,11 +271,23 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<int?>("AdminId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
@@ -248,6 +308,12 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("WorkerId")
                         .HasColumnType("integer");
 
@@ -255,9 +321,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("AdminId");
 
-                    b.HasIndex("CompanyId");
-
                     b.HasIndex("CreatedAt");
+
+                    b.HasIndex("FarmId");
 
                     b.HasIndex("WorkerId", "IsRead");
 
@@ -279,17 +345,29 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("CropCycleId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("FieldId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsResolved")
                         .HasColumnType("boolean");
@@ -307,6 +385,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AdminId");
@@ -315,7 +396,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("Severity");
 
-                    b.HasIndex("CompanyId", "IsResolved");
+                    b.HasIndex("FarmId", "IsResolved");
 
                     b.HasIndex("FieldId", "IsResolved");
 
@@ -333,18 +414,27 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<int>("AdminId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
 
                     b.Property<string>("CropType")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("ExpectedHarvestDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("FieldId")
                         .HasColumnType("integer");
@@ -352,6 +442,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<string>("GrowthStage")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("PlantingDate")
                         .HasColumnType("timestamp with time zone");
@@ -363,6 +456,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AdminId");
@@ -371,7 +467,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("PlantingDate");
 
-                    b.HasIndex("CompanyId", "Status");
+                    b.HasIndex("FarmId", "Status");
 
                     b.ToTable("CropCycles");
                 });
@@ -391,20 +487,40 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("FieldName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<double?>("Latitude")
+                        .HasPrecision(10, 8)
+                        .HasColumnType("double precision");
+
                     b.Property<string>("Location")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<double?>("Longitude")
+                        .HasPrecision(11, 8)
+                        .HasColumnType("double precision");
 
                     b.Property<string>("SoilType")
                         .HasMaxLength(50)
@@ -417,13 +533,16 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AdminId");
 
                     b.HasIndex("FieldName");
 
-                    b.HasIndex("CompanyId", "Status");
+                    b.HasIndex("FarmId", "Status");
 
                     b.ToTable("Fields");
                 });
@@ -439,11 +558,11 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<int>("AdminId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("CropCycleId")
                         .HasColumnType("integer");
@@ -452,8 +571,20 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("FieldId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text");
@@ -471,6 +602,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("WorkerId")
                         .HasColumnType("integer");
 
@@ -478,9 +612,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("AdminId");
 
-                    b.HasIndex("CompanyId");
-
                     b.HasIndex("CropCycleId");
+
+                    b.HasIndex("FarmId");
 
                     b.HasIndex("WorkerId");
 
@@ -491,23 +625,38 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.SensorReading", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AdminId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CompanyId")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
                         .HasColumnType("integer");
 
                     b.Property<int>("CropCycleId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("FieldId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("RecordedAt")
                         .HasColumnType("timestamp with time zone");
@@ -523,6 +672,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.Property<decimal?>("Value")
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
@@ -535,11 +687,119 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("SensorType");
 
-                    b.HasIndex("CompanyId", "RecordedAt");
+                    b.HasIndex("FarmId", "RecordedAt");
 
                     b.HasIndex("FieldId", "RecordedAt");
 
                     b.ToTable("SensorReadings");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.WeatherAlert", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("AcknowledgedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("AcknowledgedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AdminId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("AlertTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AlertType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FieldId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsAcknowledged")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<double?>("RainfallMm")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<double?>("Temperature")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("WindSpeed")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("double precision");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcknowledgedBy");
+
+                    b.HasIndex("AdminId");
+
+                    b.HasIndex("AlertTime");
+
+                    b.HasIndex("AlertType");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("FieldId");
+
+                    b.HasIndex("IsAcknowledged");
+
+                    b.HasIndex("Severity");
+
+                    b.HasIndex("FarmId", "FieldId");
+
+                    b.ToTable("WeatherAlerts");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.WeatherData", b =>
@@ -553,43 +813,61 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<int>("AdminId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Condition")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("FieldId")
                         .HasColumnType("integer");
 
-                    b.Property<decimal?>("Humidity")
+                    b.Property<double?>("Humidity")
                         .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
+                        .HasColumnType("double precision");
 
-                    b.Property<decimal?>("RainfallMm")
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<double?>("RainfallMm")
                         .HasPrecision(6, 2)
-                        .HasColumnType("numeric(6,2)");
+                        .HasColumnType("double precision");
 
                     b.Property<DateTime>("RecordedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal?>("Temperature")
+                    b.Property<double?>("Temperature")
                         .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
+                        .HasColumnType("double precision");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal?>("WindSpeed")
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("WindSpeed")
                         .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
+                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AdminId");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("FarmId");
 
                     b.HasIndex("FieldId", "RecordedAt");
 
@@ -607,16 +885,25 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<int>("AdminId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("HireDate")
                         .HasColumnType("timestamp with time zone");
@@ -624,10 +911,20 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
@@ -640,6 +937,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AdminId");
@@ -649,9 +949,82 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("IsActive");
 
-                    b.HasIndex("CompanyId", "Role");
+                    b.HasIndex("FarmId", "Role");
 
                     b.ToTable("Workers");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.WorkerFieldAssignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AdminId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("AssignedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FieldId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WorkerId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdminId");
+
+                    b.HasIndex("AssignedDate");
+
+                    b.HasIndex("FieldId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("WorkerId");
+
+                    b.HasIndex("FarmId", "WorkerId", "FieldId");
+
+                    b.ToTable("WorkerFieldAssignments");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.WorkerTask", b =>
@@ -668,20 +1041,32 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime>("AssignedDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("CropCycleId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("FieldId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text");
@@ -701,6 +1086,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.Property<int>("WorkerId")
                         .HasColumnType("integer");
 
@@ -712,7 +1100,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FieldId");
 
-                    b.HasIndex("CompanyId", "Status");
+                    b.HasIndex("FarmId", "Status");
 
                     b.HasIndex("Status", "DueDate");
 
@@ -742,13 +1130,22 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<int?>("ApprovedBy")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
                     b.Property<int>("CropCycleId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FarmId")
                         .HasColumnType("integer");
 
                     b.Property<int>("FieldId")
@@ -759,6 +1156,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Property<int?>("HarvestedBy")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text");
@@ -774,6 +1174,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AdminId");
@@ -788,7 +1191,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("HarvestedBy");
 
-                    b.HasIndex("CompanyId", "HarvestDate");
+                    b.HasIndex("FarmId", "HarvestDate");
 
                     b.ToTable("Harvests");
                 });
@@ -820,15 +1223,24 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<int?>("CheckedBy")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
 
                     b.Property<decimal?>("DefectPct")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("FinalGrade")
                         .HasMaxLength(10)
@@ -837,12 +1249,18 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<int>("HarvestId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal?>("MoisturePct")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -854,7 +1272,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("CheckedBy");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("FarmId");
 
                     b.HasIndex("HarvestId");
 
@@ -876,14 +1294,26 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
                     b.Property<int>("CropCycleId")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("ReportDate")
                         .HasColumnType("timestamp with time zone");
@@ -899,6 +1329,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.Property<decimal?>("YieldPerHectareKg")
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
@@ -909,27 +1342,27 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("CropCycleId");
 
-                    b.HasIndex("CompanyId", "ReportDate");
+                    b.HasIndex("FarmId", "ReportDate");
 
                     b.ToTable("YieldReports");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", b =>
                 {
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
-                        .WithMany("Admins")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", "Creator")
                         .WithMany("CreatedAdmins")
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Company");
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany("Admins")
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Creator");
+
+                    b.Navigation("Farm");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.AuditLog", b =>
@@ -938,9 +1371,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .WithMany("AuditLogs")
                         .HasForeignKey("AdminId");
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
                         .WithMany("AuditLogs")
-                        .HasForeignKey("CompanyId")
+                        .HasForeignKey("FarmId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("AgriculturePlatform.Domain.Entities.WorkerManagement.Worker", "Worker")
@@ -949,7 +1382,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
+                    b.Navigation("Farm");
 
                     b.Navigation("Worker");
                 });
@@ -960,9 +1393,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .WithMany("Notifications")
                         .HasForeignKey("AdminId");
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
                         .WithMany("Notifications")
-                        .HasForeignKey("CompanyId")
+                        .HasForeignKey("FarmId")
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("AgriculturePlatform.Domain.Entities.WorkerManagement.Worker", "Worker")
@@ -971,7 +1404,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
+                    b.Navigation("Farm");
 
                     b.Navigation("Worker");
                 });
@@ -984,15 +1417,15 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
-                        .WithMany("Alerts")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", "CropCycle")
                         .WithMany("Alerts")
                         .HasForeignKey("CropCycleId");
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany("Alerts")
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.Field", "Field")
                         .WithMany("Alerts")
@@ -1002,9 +1435,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
-
                     b.Navigation("CropCycle");
+
+                    b.Navigation("Farm");
 
                     b.Navigation("Field");
                 });
@@ -1017,9 +1450,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
                         .WithMany("CropCycles")
-                        .HasForeignKey("CompanyId")
+                        .HasForeignKey("FarmId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1031,7 +1464,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
+                    b.Navigation("Farm");
 
                     b.Navigation("Field");
                 });
@@ -1044,15 +1477,15 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
                         .WithMany("Fields")
-                        .HasForeignKey("CompanyId")
+                        .HasForeignKey("FarmId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
+                    b.Navigation("Farm");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.Observation", b =>
@@ -1063,15 +1496,15 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
-                        .WithMany("Observations")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", "CropCycle")
                         .WithMany("Observations")
                         .HasForeignKey("CropCycleId");
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany("Observations")
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.Field", "Field")
                         .WithMany("Observations")
@@ -1085,9 +1518,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
-
                     b.Navigation("CropCycle");
+
+                    b.Navigation("Farm");
 
                     b.Navigation("Field");
 
@@ -1102,15 +1535,15 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
-                        .WithMany("SensorReadings")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", "CropCycle")
                         .WithMany("SensorReadings")
                         .HasForeignKey("CropCycleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany("SensorReadings")
+                        .HasForeignKey("FarmId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1122,9 +1555,43 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
-
                     b.Navigation("CropCycle");
+
+                    b.Navigation("Farm");
+
+                    b.Navigation("Field");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.WeatherAlert", b =>
+                {
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", "Acknowledger")
+                        .WithMany()
+                        .HasForeignKey("AcknowledgedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", "Admin")
+                        .WithMany()
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany()
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.Field", "Field")
+                        .WithMany()
+                        .HasForeignKey("FieldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Acknowledger");
+
+                    b.Navigation("Admin");
+
+                    b.Navigation("Farm");
 
                     b.Navigation("Field");
                 });
@@ -1137,9 +1604,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
                         .WithMany("WeatherData")
-                        .HasForeignKey("CompanyId")
+                        .HasForeignKey("FarmId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1151,7 +1618,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
+                    b.Navigation("Farm");
 
                     b.Navigation("Field");
                 });
@@ -1164,15 +1631,50 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
                         .WithMany("Workers")
-                        .HasForeignKey("CompanyId")
+                        .HasForeignKey("FarmId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
+                    b.Navigation("Farm");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.WorkerFieldAssignment", b =>
+                {
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", "Admin")
+                        .WithMany()
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany()
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.Field", "Field")
+                        .WithMany()
+                        .HasForeignKey("FieldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.WorkerManagement.Worker", "Worker")
+                        .WithMany()
+                        .HasForeignKey("WorkerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Admin");
+
+                    b.Navigation("Farm");
+
+                    b.Navigation("Field");
+
+                    b.Navigation("Worker");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.WorkerTask", b =>
@@ -1183,15 +1685,15 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
-                        .WithMany("Tasks")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", "CropCycle")
                         .WithMany("Tasks")
                         .HasForeignKey("CropCycleId");
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany("Tasks")
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.Field", "Field")
                         .WithMany("Tasks")
@@ -1205,9 +1707,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
-
                     b.Navigation("CropCycle");
+
+                    b.Navigation("Farm");
 
                     b.Navigation("Field");
 
@@ -1227,15 +1729,15 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasForeignKey("ApprovedBy")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
-                        .WithMany("Harvests")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", "CropCycle")
                         .WithMany("Harvests")
                         .HasForeignKey("CropCycleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany("Harvests")
+                        .HasForeignKey("FarmId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1254,9 +1756,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Navigation("Approver");
 
-                    b.Navigation("Company");
-
                     b.Navigation("CropCycle");
+
+                    b.Navigation("Farm");
 
                     b.Navigation("Field");
 
@@ -1281,9 +1783,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasForeignKey("CheckedBy")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
                         .WithMany("QualityChecks")
-                        .HasForeignKey("CompanyId")
+                        .HasForeignKey("FarmId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1299,7 +1801,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Navigation("Checker");
 
-                    b.Navigation("Company");
+                    b.Navigation("Farm");
 
                     b.Navigation("Harvest");
                 });
@@ -1312,23 +1814,23 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Company", "Company")
-                        .WithMany("YieldReports")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", "CropCycle")
                         .WithMany("YieldReports")
                         .HasForeignKey("CropCycleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany("YieldReports")
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Admin");
 
-                    b.Navigation("Company");
-
                     b.Navigation("CropCycle");
+
+                    b.Navigation("Farm");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", b =>
@@ -1362,7 +1864,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Navigation("YieldReports");
                 });
 
-            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Company", b =>
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", b =>
                 {
                     b.Navigation("Admins");
 

@@ -40,3 +40,42 @@ testing project
 
 
 --> entities, completed
+
+
+--> Development Flow:
+
+  admin panel
+---------------
+
+registration and LOGIN
+for registration need to write repository, services, jwt implementation, DTO, validation, exceptions, controller
+--> Admin company creation & registration, login done
+--> admin comany creation and registration done in a single request
+--> jwt implemented for admin
+
+
+---- Admin FIELDS ----
+
+DTOs (Request/Response)
+Interfaces (Repository, Service)
+Repository Implementation
+Service Implementation
+Validators
+Controller
+Pagination & Filtering
+Custom Exceptions
+Bulk Import Helper
+Excel Service
+Response Wrapper
+
+--> Additional:
+
+Pagination
+Sorting
+Filtering
+Soft Delete pattern
+Audit logging
+Caching (optional)
+Unit of Work pattern
+Specification pattern
+Result pattern for API responses

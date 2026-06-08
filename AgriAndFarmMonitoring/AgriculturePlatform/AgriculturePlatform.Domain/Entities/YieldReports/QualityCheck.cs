@@ -1,14 +1,13 @@
-// Domain/Entities/YieldReports/QualityCheck.cs
 using AgriculturePlatform.Domain.Enums;
 using AgriculturePlatform.Domain.Entities.AdminEntities;
 using AgriculturePlatform.Domain.Entities.WorkerManagement;
+using AgriculturePlatform.Domain.Common;
 
 namespace AgriculturePlatform.Domain.Entities.YieldReports;
 
-public class QualityCheck
+public class QualityCheck : BaseEntity
 {
-    public int Id { get; set; }
-    public int CompanyId { get; set; }
+    public int FarmId { get; set; }
     public int AdminId { get; set; }
     public int HarvestId { get; set; }
     public int? CheckedBy { get; set; }
@@ -19,11 +18,9 @@ public class QualityCheck
     public string? ApprovalStatus { get; set; } = "PENDING";
      public int? ApprovedBy { get; set; }  
     public DateTime? ApprovedAt { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
     
     // Navigation properties
-    public virtual Company? Company { get; set; }
+    public virtual Farm? Farm { get; set; }
     public virtual Admin? Admin { get; set; }
     public virtual Admin? Approver { get; set; } 
     public virtual Harvest? Harvest { get; set; }

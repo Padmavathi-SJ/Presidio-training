@@ -1,0 +1,15 @@
+<!-- /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/Directory.Build.props -->
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Global package versions -->
+    <PackageReference Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0-preview.2.25163.2" />
+    <PackageReference Update="Microsoft.Extensions.Options" Version="10.0.0-preview.2.25163.2" />
+    <PackageReference Update="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0-preview.2.25163.2" />
+  </ItemGroup>
+</Project>

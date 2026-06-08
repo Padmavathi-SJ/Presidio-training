@@ -3,7 +3,7 @@ Roles:
   Worker
 
 Admin:
- 
+
 --> Admin need to handle:    --> Worker need to hadle:
  1. fields                    1. their feilds
  2. crop_cycles               2. crop cycles in each of their feilds
@@ -24,7 +24,7 @@ ADMIN :
 
 1. Fields:
   -> add new field
-  -> update and delete exsting by feild id, 
+  -> update and delete the exsting by feild id, 
   -> get all feilds
   -> get feild by id, name, soil_type, location
   -> Get fields by status (ACTIVE, FALLOW, PREPARING, MAINTENANCE, RETIRED)
@@ -79,6 +79,7 @@ ADMIN :
   -> Configure weather API settings
   -> Manual weather data entry
   -> Get weather alerts (storm, frost, heavy rain)
+
 
 --> Dashboard & Analytics
 

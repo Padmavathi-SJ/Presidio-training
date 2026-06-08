@@ -33,5 +33,6 @@ public enum TaskStatusEnum
     COMPLETED,    // Successfully finished
     CANCELLED,    // Task cancelled
     OVERDUE,      // Past due date
-    REASSIGNED    // Moved to another worker
+    REASSIGNED,
+    ACTIVE   // Moved to another worker
 }

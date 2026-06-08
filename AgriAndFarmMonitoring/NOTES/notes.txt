@@ -1,0 +1,35 @@
+-->ICollection<T> -> it is used for navigation properties in ECore to represent one-to-many relationships.
+--> IColection<T> provides a flexible way to work with collections without depending on a specifc implementation like List<T>
+ -> it supports Adding items, removing, iterating items, counting items.
+
+public virtual ICollection<CropCycle> CropCycles { get; set; }
+
+public virtual ICollection<CropCycle> CropCycles { get; set; } = new List<CropCycle>();
+
+--> why initiaize with new List<T> -> prevents null reference errors
+--> without initialization: 
+Field field = new();
+field.CropCycles.Add(new CropCycle()); // NullReferenceException
+
+--> with initialization
+
+
+ virtual -> allows EF Core to create runtime proxies for:
+-> lazy loading
+-> change tracking
+-> crop cycles data is loaded only when accessed.
+without virtual, lazy loading may not work
+
+IEnumerable<T> -> read-only iteration
+ICollection<T> -> basic add/remove collection
+IList<T> -> indexed collection
+list<T> - concrete implementation
+
+--> DateTime.UtcNow -> current date and time in UTC (Coordinated Universal Time), and a global standard time independent of time zones.
+in india - UTC + 5.30
+in London - UTC + 0
+
+-> about validators:
+-->ForRule -> which data need to validate (like name, email, phonenum, ...)
+
+-> 

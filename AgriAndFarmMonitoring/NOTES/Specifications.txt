@@ -1,0 +1,172 @@
+Specification Pattern
+
+---> What is Specification Pattern?
+
+The Specification Pattern is a design pattern 
+that encapsulates query logic in a reusable, 
+composable class. It separates the logic for 
+finding entities from the repository implementation.
+
+--> Why Use Specification Pattern?
+Without Specification:                    With Specification:
+┌─────────────────────────┐              ┌─────────────────────────┐
+│ Repository has 50+       │              │ Repository has 5-10     │
+│ methods like:            │              │ generic methods:        │
+│ - GetActiveFields()      │              │ - Find(specification)    │
+│ - GetFieldsBySoilType()  │              │ - FindAll(specification) │
+│ - GetFieldsByArea()      │              └─────────────────────────┘
+│ - GetFieldsByName()      │                           │
+│ - GetFieldsByStatus()    │                           │
+│ - etc... (many methods)  │                           ▼
+└─────────────────────────┘              ┌─────────────────────────┐
+                                         │ Specifications are      │
+                                         │ reusable and composable│
+                                         │ - FieldSpecification    │
+                                         │ - ActiveFieldSpec       │
+                                         │ - BySoilTypeSpec        │
+                                         └─────────────────────────┘
+
+
+// WITHOUT Specification (Bad - Repository has many methods)
+public interface IFieldRepository
+{
+    Task<Field> GetById(int id);
+    Task<List<Field>> GetAll();
+    Task<List<Field>> GetByStatus(string status);
+    Task<List<Field>> GetBySoilType(string soilType);
+    Task<List<Field>> GetByAreaRange(decimal min, decimal max);
+    Task<List<Field>> GetByName(string name);
+    Task<List<Field>> GetActiveFields();
+    // ... 20+ more methods!
+}
+
+// WITH Specification (Good - Repository is simple)
+public interface IFieldRepository
+{
+    Task<Field> FindOne(ISpecification<Field> spec);
+    Task<List<Field>> FindAll(ISpecification<Field> spec);
+}
+
+// Now create specifications as needed
+var activeFields = new FieldSpecification(farmId).WithStatus("ACTIVE");
+var largeFields = new FieldSpecification(farmId).WithMinArea(10);
+var combined = activeFields.And(largeFields); // Reusable!
+
+---> How BaseSpecification Works
+// BaseSpecification.cs - The foundation
+public abstract class BaseSpecification<T>
+{
+    // WHERE clause (e.g., f => f.FarmId == 1)
+    public Expression<Func<T, bool>>? Criteria { get; private set; }
+    
+    // INCLUDE for eager loading (e.g., Include(f => f.CropCycles))
+    public List<Expression<Func<T, object>>> Includes { get; } = new();
+    
+    // ORDER BY (e.g., f => f.CreatedAt)
+    public Expression<Func<T, object>>? OrderBy { get; private set; }
+    
+    // PAGING (Skip, Take)
+    public int Skip { get; private set; }
+    public int Take { get; private set; }
+    
+    // Add WHERE condition
+    protected void AddCriteria(Expression<Func<T, bool>> criteria)
+    {
+        Criteria = criteria;
+    }
+    
+    // Add INCLUDE (join)
+    protected void AddInclude(Expression<Func<T, object>> includeExpression)
+    {
+        Includes.Add(includeExpression);
+    }
+    
+    // Add ORDER BY
+    protected void ApplyOrderBy(Expression<Func<T, object>> orderByExpression)
+    {
+        OrderBy = orderByExpression;
+    }
+    
+    // Add PAGING
+    protected void ApplyPaging(int skip, int take)
+    {
+        Skip = skip;
+        Take = take;
+    }
+}
+
+---> FieldSpecification Example
+public class FieldSpecification : BaseSpecification<Field>
+{
+    // Constructor builds the query dynamically
+    public FieldSpecification(int farmId, string? searchTerm, string? soilType, string? status)
+    {
+        // ALWAYS filter by farm (multi-tenancy)
+        AddCriteria(f => f.FarmId == farmId);
+        
+        // Add search filter if provided
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            AddCriteria(f => f.FieldName.Contains(searchTerm) || 
+                            (f.Location != null && f.Location.Contains(searchTerm)));
+        }
+        
+        // Add soil type filter if provided
+        if (!string.IsNullOrWhiteSpace(soilType))
+        {
+            AddCriteria(f => f.SoilType != null && f.SoilType.ToString() == soilType);
+        }
+        
+        // Add status filter if provided
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            AddCriteria(f => f.Status != null && f.Status.ToString() == status);
+        }
+        
+        // Always include related data
+        AddInclude(f => f.Farm);
+        AddInclude(f => f.CropCycles);
+    }
+}
+
+---> How Repository Uses Specification
+// In FieldRepository.cs
+public async Task<PagedResult<Field>> GetPagedAsync(/* params */)
+{
+    // Create specification with all filters
+    var specification = new FieldSpecification(farmId, searchTerm, soilType, status);
+    
+    // Build query using specification
+    var query = _context.Fields.Where(specification.Criteria!);
+    
+    // Apply includes (joins)
+    foreach (var include in specification.Includes)
+    {
+        query = query.Include(include);
+    }
+    
+    // Apply ordering
+    query = specification.OrderBy != null 
+        ? query.OrderBy(specification.OrderBy)
+        : query.OrderByDescending(f => f.CreatedAt);
+    
+    // Apply paging
+    var items = await query
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+    
+    return items;
+}
+
+Benefits of Specification Pattern
+
+Benefit	                 Explanation
+
+Reusability	         Same specification can be used in multiple places
+Composability	     Combine multiple specifications with And()/Or()
+Testability	         Test query logic independently
+Maintainability	     Change query logic in one place
+No Query Logic 
+in Repositories	      Repositories stay simple
+

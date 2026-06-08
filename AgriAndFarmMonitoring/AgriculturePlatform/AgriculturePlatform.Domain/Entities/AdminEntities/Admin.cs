@@ -1,15 +1,13 @@
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
 using AgriculturePlatform.Domain.Entities.WorkerManagement;
 using AgriculturePlatform.Domain.Entities.YieldReports;
-
+using AgriculturePlatform.Domain.Common;
 
 namespace AgriculturePlatform.Domain.Entities.AdminEntities;
 
-
-public class Admin
+public class Admin : BaseEntity
 {
-    public int Id { get; set; }
-    public int CompanyId { get; set; }
+    public int FarmId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
@@ -18,12 +16,9 @@ public class Admin
     public DateTime? LastLogin { get; set; }
     public string? PasswordResetToken { get; set; }
     public DateTime? PasswordResetExpires { get; set; }
-    public int? CreatedBy { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
-
+  
     // Navigation properties
-    public virtual Company? Company { get; set; }
+    public virtual Farm? Farm { get; set; }
     public virtual Admin? Creator { get; set; }
     public virtual ICollection<Admin> CreatedAdmins { get; set; } = new List<Admin>();
     public virtual ICollection<Field> Fields { get; set; } = new List<Field>();

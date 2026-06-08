@@ -1,13 +1,64 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using FluentValidation;
+using AutoMapper;
 using AgriculturePlatform.Infrastructure.Context;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Application.Services;
+using AgriculturePlatform.Infrastructure.Repositories;
+using AgriculturePlatform.Application.Validators;
+using Microsoft.OpenApi.Models;
+using AgriculturePlatform.API.BackgroundServices;
+using AgriculturePlatform.Application.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddControllers();
+// Add services
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Add Swagger
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "Farm Management Platform API", 
+        Version = "v1",
+        Description = "API for managing farms, crops, workers, and yields"
+    });
+    
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -24,24 +75,130 @@ builder.Services.AddCors(options =>
     });
 });
 
+// JWT Configuration
+var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "your-super-secret-key-minimum-32-characters-long";
+var jwtIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "AgriculturePlatform";
+var jwtAudience = builder.Configuration["JwtSettings:Audience"] ?? "AgriculturePlatformClients";
+var expiryDays = int.Parse(builder.Configuration["JwtSettings:ExpiryDays"] ?? "7");
+
+// Register JWT Service
+builder.Services.AddSingleton<IJwtService>(provider =>
+    new JwtService(jwtSecretKey, jwtIssuer, jwtAudience, expiryDays));
+
+// Add AuditLog Service
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+
+// Add AutoMapper - Manual configuration
+var mapperConfig = new MapperConfiguration(cfg =>
+{
+    cfg.AddProfile<FieldMappingProfile>();
+    cfg.AddProfile<CropCycleMappingProfile>();
+    cfg.AddProfile<WorkerMappingProfile>();
+    cfg.AddProfile<WorkerProfileMappingProfile>();
+    cfg.AddProfile<WorkerFieldAssignmentMappingProfile>();
+    cfg.AddProfile<WorkerFieldMappingProfile>();
+    cfg.AddProfile<WeatherMappingProfile>();
+    cfg.AddProfile<TaskMappingProfile>();
+
+});
+
+var mapper = mapperConfig.CreateMapper();
+builder.Services.AddSingleton<IMapper>(mapper);
+
+// Register all validators from assembly
+builder.Services.AddValidatorsFromAssemblyContaining<CreateFieldValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateTaskValidator>();
+
+// Add Excel service
+builder.Services.AddScoped<IExcelService, ExcelService>();
+
+// Register Repositories
+builder.Services.AddScoped<IFarmRepository, FarmRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IFieldRepository, FieldRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<ICropCycleRepository, CropCycleRepository>();
+builder.Services.AddScoped<IWorkerRepository, WorkerRepository>();
+builder.Services.AddScoped<IWorkerFieldAssignmentRepository, WorkerFieldAssignmentRepository>();
+builder.Services.AddScoped<IWeatherRepository, WeatherRepository>();
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+// Add WeatherAlert repository if you have one
+// builder.Services.AddScoped<IWeatherAlertRepository, WeatherAlertRepository>();
+
+// Register Services
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IFieldService, FieldService>();
+builder.Services.AddScoped<ICropCycleService, CropCycleService>();
+builder.Services.AddScoped<IWorkerService, WorkerService>();
+builder.Services.AddScoped<IWorkerAuthService, WorkerAuthService>();
+builder.Services.AddScoped<IWorkerProfileService, WorkerProfileService>();
+builder.Services.AddScoped<IWorkerFieldAssignmentService, WorkerFieldAssignmentService>();
+builder.Services.AddScoped<IWorkerFieldService, WorkerFieldService>();
+builder.Services.AddScoped<IWeatherService, WeatherService>();
+builder.Services.AddSingleton<IWeatherApiService, WeatherApiService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IExcelTaskService, ExcelTaskService>();
+
+// Background Service
+builder.Services.AddHostedService<WeatherUpdateBackgroundService>();
+
+// Add JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey))
+        };
+        
+        // Add event handlers for debugging
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("Token validated successfully");
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                Console.WriteLine($"Challenge: {context.Error}, {context.ErrorDescription}");
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 // Configure pipeline
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Farm Management API v1");
+    c.RoutePrefix = "swagger";
+});
 
-// Create database automatically
+// Create database
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.EnsureCreated();  // Creates database and tables
+    dbContext.Database.EnsureCreated();
 }
 
-app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
