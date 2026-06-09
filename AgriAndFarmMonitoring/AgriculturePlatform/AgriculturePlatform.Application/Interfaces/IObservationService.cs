@@ -1,0 +1,29 @@
+// AgriculturePlatform.Application/Interfaces/IObservationService.cs
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Observation;
+
+namespace AgriculturePlatform.Application.Interfaces;
+
+public interface IObservationService
+{
+    // Worker operations
+    Task<ApiResponse<ObservationDto>> CreateObservationAsync(CreateObservationDto dto, int farmId, int workerId);
+    Task<ApiResponse<ObservationDto>> UpdateOwnObservationAsync(int id, UpdateObservationDto dto, int workerId, int farmId);
+    Task<ApiResponse<bool>> DeleteOwnObservationAsync(int id, int workerId, int farmId);
+    
+    // Admin operations
+    Task<ApiResponse<ObservationDto>> UpdateObservationAsync(int id, UpdateObservationDto dto, int farmId, int adminId);
+    Task<ApiResponse<bool>> DeleteObservationAsync(int id, int farmId, int adminId);
+    Task<ApiResponse<PagedResult<ObservationDto>>> GetAllObservationsAsync(ObservationFilterDto filter, int farmId);
+    Task<ApiResponse<ObservationDto>> GetObservationByIdAsync(int id, int farmId);
+    Task<ApiResponse<IEnumerable<ObservationDto>>> GetObservationsByFieldAsync(int fieldId, int farmId);
+    Task<ApiResponse<IEnumerable<ObservationDto>>> GetObservationsByCropCycleAsync(int cropCycleId, int farmId);
+    Task<ApiResponse<IEnumerable<ObservationDto>>> GetObservationsByWorkerAsync(int workerId, int farmId);
+    Task<ApiResponse<IEnumerable<ObservationDto>>> GetObservationsByDateRangeAsync(int farmId, DateTime fromDate, DateTime toDate);
+    
+    // Statistics
+    Task<ApiResponse<ObservationStatisticsDto>> GetPestStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate);
+    
+    // Validation
+    Task<bool> ValidateObservationOwnershipAsync(int observationId, int workerId, int farmId);
+}

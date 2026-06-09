@@ -25,9 +25,10 @@ public class AppDbContext : DbContext
     public DbSet<CropCycle> CropCycles { get; set; }
     public DbSet<SensorReading> SensorReadings { get; set; }
     public DbSet<Alert> Alerts { get; set; }
+    public DbSet<AlertThreshold> AlertThresholds { get; set; }  // ADD THIS
     public DbSet<Observation> Observations { get; set; }
     public DbSet<WeatherData> WeatherData { get; set; }
-    public DbSet<WeatherAlert> WeatherAlerts { get; set; }  // ← FIXED: Plural name
+    public DbSet<WeatherAlert> WeatherAlerts { get; set; }
     
     // Worker Management DbSets
     public DbSet<Worker> Workers { get; set; }
@@ -97,8 +98,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.AreaHectares).HasPrecision(10, 2);
             entity.Property(e => e.SoilType).HasConversion<string>().HasMaxLength(50);
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
-            entity.Property(e => e.Latitude).HasPrecision(10, 8);  // Optional: Add precision
-            entity.Property(e => e.Longitude).HasPrecision(11, 8); // Optional: Add precision
+            entity.Property(e => e.Latitude).HasPrecision(10, 8);
+            entity.Property(e => e.Longitude).HasPrecision(11, 8);
             
             entity.HasOne(e => e.Farm)
                   .WithMany(f => f.Fields)
@@ -149,6 +150,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.SensorType).HasConversion<string>().HasMaxLength(50);
             entity.Property(e => e.Value).HasPrecision(10, 2);
             entity.Property(e => e.Unit).HasMaxLength(20);
+            entity.Property(e => e.RecordedAt).HasColumnType("timestamp with time zone");
             
             entity.HasOne(e => e.Farm)
                   .WithMany(f => f.SensorReadings)
@@ -159,6 +161,22 @@ public class AppDbContext : DbContext
                   .WithMany(a => a.SensorReadings)
                   .HasForeignKey(e => e.AdminId)
                   .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany(f => f.SensorReadings)
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.CropCycle)
+                  .WithMany(c => c.SensorReadings)
+                  .HasForeignKey(e => e.CropCycleId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            // Relationship with Alerts
+            entity.HasMany(e => e.Alerts)
+                  .WithOne()
+                  .HasForeignKey("SensorReadingId")
+                  .OnDelete(DeleteBehavior.SetNull);
                   
             entity.HasIndex(e => new { e.FieldId, e.RecordedAt });
             entity.HasIndex(e => new { e.FarmId, e.RecordedAt });
@@ -173,15 +191,65 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.AlertType).HasConversion<string>().HasMaxLength(50);
             entity.Property(e => e.Severity).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.Message).HasMaxLength(1000);
+            entity.Property(e => e.SensorValue).HasPrecision(10, 2);
+            entity.Property(e => e.ThresholdValue).HasPrecision(10, 2);
+            entity.Property(e => e.ResolvedAt).HasColumnType("timestamp with time zone");
             
             entity.HasOne(e => e.Farm)
                   .WithMany(f => f.Alerts)
                   .HasForeignKey(e => e.FarmId)
                   .OnDelete(DeleteBehavior.Cascade);
                   
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.Alerts)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany(f => f.Alerts)
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.CropCycle)
+                  .WithMany(c => c.Alerts)
+                  .HasForeignKey(e => e.CropCycleId)
+                  .OnDelete(DeleteBehavior.SetNull);
+                  
             entity.HasIndex(e => new { e.FarmId, e.IsResolved });
             entity.HasIndex(e => new { e.FieldId, e.IsResolved });
             entity.HasIndex(e => e.Severity);
+            entity.HasIndex(e => e.AlertType);
+        });
+        
+        // =============================================
+        // ALERT THRESHOLD CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<AlertThreshold>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CropType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.GrowthStage).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.SensorType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.MinValue).HasPrecision(10, 2);
+            entity.Property(e => e.MaxValue).HasPrecision(10, 2);
+            entity.Property(e => e.Severity).HasMaxLength(20);
+            entity.Property(e => e.NotificationEmails).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany()
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany()
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.CropType, e.GrowthStage, e.SensorType })
+                  .IsUnique();
+            entity.HasIndex(e => e.IsActive);
         });
         
         // =============================================
@@ -276,7 +344,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.PasswordHash).HasMaxLength(255); 
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.Role).HasMaxLength(50);
-            entity.Property(e => e.LastLoginAt);
+            entity.Property(e => e.LastLoginAt).HasColumnType("timestamp with time zone");
             
             entity.HasOne(e => e.Farm)
                   .WithMany(f => f.Workers)
@@ -475,9 +543,7 @@ public class AppDbContext : DbContext
         });
     }
     
-    // Auto-update timestamps
-// In AppDbContext.cs, override SaveChangesAsync to convert all DateTimes to UTC
-
+    // Auto-update timestamps and convert DateTimes to UTC
 public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
 {
     var entries = ChangeTracker.Entries()
@@ -503,6 +569,7 @@ public override async Task<int> SaveChangesAsync(CancellationToken cancellationT
             }
         }
         
+        // Handle UpdatedAt
         if (entityEntry.State == EntityState.Modified)
         {
             var updatedAtProperty = entityEntry.Entity.GetType().GetProperty("UpdatedAt");
@@ -512,6 +579,7 @@ public override async Task<int> SaveChangesAsync(CancellationToken cancellationT
             }
         }
         
+        // Handle CreatedAt
         if (entityEntry.State == EntityState.Added)
         {
             var createdAtProperty = entityEntry.Entity.GetType().GetProperty("CreatedAt");
@@ -528,5 +596,6 @@ public override async Task<int> SaveChangesAsync(CancellationToken cancellationT
     
     return await base.SaveChangesAsync(cancellationToken);
 }
+
 
 }

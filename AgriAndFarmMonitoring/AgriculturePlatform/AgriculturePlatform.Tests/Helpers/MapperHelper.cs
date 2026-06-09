@@ -18,6 +18,11 @@ public static class MapperHelper
             cfg.AddProfile<WorkerFieldMappingProfile>();
             cfg.AddProfile<WeatherMappingProfile>();
             cfg.AddProfile<TaskMappingProfile>(); 
+            cfg.AddProfile<WorkerTaskMappingProfile>();
+            cfg.AddProfile<SensorMappingProfile>();
+            cfg.AddProfile<AlertMappingProfile>();
+            
+
         });
         
         return config.CreateMapper();

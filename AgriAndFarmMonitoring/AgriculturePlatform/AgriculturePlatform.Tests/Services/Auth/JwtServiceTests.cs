@@ -13,7 +13,7 @@ public class JwtServiceTests
     private readonly string _secretKey = "this-is-a-very-long-secret-key-for-testing-purposes-only";
     private readonly string _issuer = "TestIssuer";
     private readonly string _audience = "TestAudience";
-    private readonly int _expiryDays = 7;
+    private readonly int _expiryDays = 7d;
 
     public JwtServiceTests()
     {

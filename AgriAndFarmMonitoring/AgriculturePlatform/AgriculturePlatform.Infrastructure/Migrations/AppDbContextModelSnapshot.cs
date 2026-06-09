@@ -373,12 +373,115 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Message")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<long?>("SensorReadingId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal?>("SensorValue")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
                     b.Property<string>("Severity")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal?>("ThresholdValue")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdminId");
+
+                    b.HasIndex("AlertType");
+
+                    b.HasIndex("CropCycleId");
+
+                    b.HasIndex("SensorReadingId");
+
+                    b.HasIndex("Severity");
+
+                    b.HasIndex("FarmId", "IsResolved");
+
+                    b.HasIndex("FieldId", "IsResolved");
+
+                    b.ToTable("Alerts");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.AlertThreshold", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AdminId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CropType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("GrowthStage")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("MaxValue")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<decimal>("MinValue")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<string>("NotificationEmails")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("SensorType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
@@ -392,15 +495,12 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("AdminId");
 
-                    b.HasIndex("CropCycleId");
+                    b.HasIndex("IsActive");
 
-                    b.HasIndex("Severity");
+                    b.HasIndex("FarmId", "CropType", "GrowthStage", "SensorType")
+                        .IsUnique();
 
-                    b.HasIndex("FarmId", "IsResolved");
-
-                    b.HasIndex("FieldId", "IsResolved");
-
-                    b.ToTable("Alerts");
+                    b.ToTable("AlertThresholds");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", b =>
@@ -625,11 +725,11 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.SensorReading", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<int>("AdminId")
                         .HasColumnType("integer");
@@ -1419,7 +1519,8 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", "CropCycle")
                         .WithMany("Alerts")
-                        .HasForeignKey("CropCycleId");
+                        .HasForeignKey("CropCycleId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
                         .WithMany("Alerts")
@@ -1433,6 +1534,11 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.SensorReading", null)
+                        .WithMany("Alerts")
+                        .HasForeignKey("SensorReadingId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Admin");
 
                     b.Navigation("CropCycle");
@@ -1440,6 +1546,25 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Navigation("Farm");
 
                     b.Navigation("Field");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.AlertThreshold", b =>
+                {
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", "Admin")
+                        .WithMany()
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany()
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Admin");
+
+                    b.Navigation("Farm");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", b =>
@@ -1925,6 +2050,11 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Navigation("Tasks");
 
                     b.Navigation("WeatherData");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.SensorReading", b =>
+                {
+                    b.Navigation("Alerts");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.Worker", b =>

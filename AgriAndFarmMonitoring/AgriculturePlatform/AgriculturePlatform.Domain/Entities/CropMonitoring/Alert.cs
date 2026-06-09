@@ -1,6 +1,7 @@
+// AgriculturePlatform.Domain/Entities/CropMonitoring/Alert.cs
+using AgriculturePlatform.Domain.Common;
 using AgriculturePlatform.Domain.Enums;
 using AgriculturePlatform.Domain.Entities.AdminEntities;
-using AgriculturePlatform.Domain.Common;
 
 namespace AgriculturePlatform.Domain.Entities.CropMonitoring;
 
@@ -15,6 +16,8 @@ public class Alert : BaseEntity
     public string? Message { get; set; }
     public bool IsResolved { get; set; } = false;
     public DateTime? ResolvedAt { get; set; }
+    public decimal? SensorValue { get; set; }
+    public decimal? ThresholdValue { get; set; }
     
     // Navigation properties
     public virtual Farm? Farm { get; set; }

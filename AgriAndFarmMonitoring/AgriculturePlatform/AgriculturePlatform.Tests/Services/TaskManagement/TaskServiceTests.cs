@@ -1,12 +1,16 @@
 // AgriculturePlatform.Tests/Services/TaskManagement/TaskServiceTests.cs
 using FluentAssertions;
 using Moq;
+using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Application.DTOs.Task;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Application.Services;
 using AgriculturePlatform.Domain.Entities.WorkerManagement;
 using AgriculturePlatform.Domain.Enums;
 using AgriculturePlatform.Tests.Helpers;
+
+// Using alias must be at the top, outside the namespace
+using DomainWorkerTask = AgriculturePlatform.Domain.Entities.WorkerManagement.WorkerTask;
 
 namespace AgriculturePlatform.Tests.Services.TaskManagement;
 
@@ -37,7 +41,7 @@ public class TaskServiceTests
             _fieldRepositoryMock.Object,
             _cropCycleRepositoryMock.Object,
             _auditLogServiceMock.Object,
-            _excelTaskServiceMock.Object,  // ← ADD THIS
+            _excelTaskServiceMock.Object,
             mapper);
     }
 
@@ -58,7 +62,7 @@ public class TaskServiceTests
         
         var worker = TestHelper.CreateTestWorker(1, farmId, adminId);
         var field = TestHelper.CreateTestField(1, farmId, adminId);
-        var createdTask = new WorkerTask
+        var createdTask = new DomainWorkerTask
         {
             Id = 1,
             WorkerId = 1,
@@ -70,7 +74,7 @@ public class TaskServiceTests
             .ReturnsAsync(worker);
         _fieldRepositoryMock.Setup(r => r.GetByIdAsync(createDto.FieldId.Value, farmId, false))
             .ReturnsAsync(field);
-        _taskRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<WorkerTask>()))
+        _taskRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<DomainWorkerTask>()))
             .ReturnsAsync(createdTask);
 
         // Act
@@ -87,9 +91,9 @@ public class TaskServiceTests
     {
         // Arrange
         int farmId = 1;
-        var overdueTasks = new List<WorkerTask>
+        var overdueTasks = new List<DomainWorkerTask>
         {
-            new WorkerTask { Id = 1, DueDate = DateTime.UtcNow.AddDays(-1), Status = TaskStatusEnum.PENDING }
+            new DomainWorkerTask { Id = 1, DueDate = DateTime.UtcNow.AddDays(-1), Status = TaskStatusEnum.PENDING }
         };
         
         _taskRepositoryMock.Setup(r => r.GetOverdueTasksAsync(farmId))
@@ -111,7 +115,7 @@ public class TaskServiceTests
         int id = 1, farmId = 1, adminId = 1;
         string newStatus = "COMPLETED";
         
-        var task = new WorkerTask
+        var task = new DomainWorkerTask
         {
             Id = id,
             Status = TaskStatusEnum.PENDING,
@@ -120,7 +124,7 @@ public class TaskServiceTests
         
         _taskRepositoryMock.Setup(r => r.GetByIdAsync(id, farmId))
             .ReturnsAsync(task);
-        _taskRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<WorkerTask>()))
+        _taskRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<DomainWorkerTask>()))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -138,7 +142,7 @@ public class TaskServiceTests
         // Arrange
         int id = 1, newWorkerId = 2, farmId = 1, adminId = 1;
         
-        var task = new WorkerTask
+        var task = new DomainWorkerTask
         {
             Id = id,
             WorkerId = 1,
@@ -150,7 +154,7 @@ public class TaskServiceTests
             .ReturnsAsync(task);
         _workerRepositoryMock.Setup(r => r.GetByIdAsync(newWorkerId, farmId, false))
             .ReturnsAsync(newWorker);
-        _taskRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<WorkerTask>()))
+        _taskRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<DomainWorkerTask>()))
             .Returns(Task.CompletedTask);
 
         // Act

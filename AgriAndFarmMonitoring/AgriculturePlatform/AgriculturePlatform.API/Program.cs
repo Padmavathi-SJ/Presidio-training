@@ -12,6 +12,8 @@ using AgriculturePlatform.Application.Validators;
 using Microsoft.OpenApi.Models;
 using AgriculturePlatform.API.BackgroundServices;
 using AgriculturePlatform.Application.Mappings;
+using AgriculturePlatform.API.Hubs;
+using AgriculturePlatform.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +90,12 @@ builder.Services.AddSingleton<IJwtService>(provider =>
 // Add AuditLog Service
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
+// ✅ SignalR - ONLY ONCE and BEFORE building the app
+builder.Services.AddSignalR();
+
+// Background IoT Simulator
+builder.Services.AddHostedService<IoTSimulatorBackgroundService>();
+
 // Add AutoMapper - Manual configuration
 var mapperConfig = new MapperConfiguration(cfg =>
 {
@@ -99,6 +107,10 @@ var mapperConfig = new MapperConfiguration(cfg =>
     cfg.AddProfile<WorkerFieldMappingProfile>();
     cfg.AddProfile<WeatherMappingProfile>();
     cfg.AddProfile<TaskMappingProfile>();
+    cfg.AddProfile<WorkerTaskMappingProfile>();
+    cfg.AddProfile<SensorMappingProfile>();
+    cfg.AddProfile<AlertMappingProfile>();
+    cfg.AddProfile<ObservationMappingProfile>();
 
 });
 
@@ -108,6 +120,12 @@ builder.Services.AddSingleton<IMapper>(mapper);
 // Register all validators from assembly
 builder.Services.AddValidatorsFromAssemblyContaining<CreateFieldValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateTaskValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateWorkerTaskStatusValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<SensorReadingFilterValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<AlertFilterValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateObservationValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateObservationValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<ObservationFilterValidator>();
 
 // Add Excel service
 builder.Services.AddScoped<IExcelService, ExcelService>();
@@ -122,8 +140,10 @@ builder.Services.AddScoped<IWorkerRepository, WorkerRepository>();
 builder.Services.AddScoped<IWorkerFieldAssignmentRepository, WorkerFieldAssignmentRepository>();
 builder.Services.AddScoped<IWeatherRepository, WeatherRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
-// Add WeatherAlert repository if you have one
-// builder.Services.AddScoped<IWeatherAlertRepository, WeatherAlertRepository>();
+builder.Services.AddScoped<ISensorReadingRepository, SensorReadingRepository>();
+builder.Services.AddScoped<IAlertRepository, AlertRepository>();
+builder.Services.AddScoped<IAlertThresholdRepository, AlertThresholdRepository>();
+builder.Services.AddScoped<IObservationRepository, ObservationRepository>();
 
 // Register Services
 builder.Services.AddScoped<IAdminService, AdminService>();
@@ -138,6 +158,13 @@ builder.Services.AddScoped<IWeatherService, WeatherService>();
 builder.Services.AddSingleton<IWeatherApiService, WeatherApiService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IExcelTaskService, ExcelTaskService>();
+builder.Services.AddScoped<IWorkerTaskService, WorkerTaskService>();
+builder.Services.AddScoped<ISensorReadingService, SensorReadingService>();
+builder.Services.AddScoped<IAlertService, AlertService>();
+builder.Services.AddScoped<IIoTSimulatorService, IoTSimulatorService>();
+builder.Services.AddScoped<IAlertNotificationService, AlertNotificationService>();
+builder.Services.AddScoped<IObservationService, ObservationService>();
+
 
 // Background Service
 builder.Services.AddHostedService<WeatherUpdateBackgroundService>();
@@ -196,6 +223,10 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.EnsureCreated();
 }
+
+// ✅ Map Hubs - This is CORRECT after building the app
+app.MapHub<MonitoringHub>("/monitoringHub");
+app.MapHub<SensorHub>("/sensorHub");
 
 app.UseCors("AllowAll");
 app.UseAuthentication();

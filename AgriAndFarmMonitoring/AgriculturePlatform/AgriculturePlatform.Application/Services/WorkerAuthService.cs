@@ -20,7 +20,7 @@ public class WorkerAuthService : IWorkerAuthService
     private readonly string _secretKey;
     private readonly string _issuer;
     private readonly string _audience;
-    private readonly int _expiryMinutes;
+    private readonly int _expiryDays;  // Keep as int
 
     public WorkerAuthService(
         IWorkerRepository workerRepository,
@@ -34,7 +34,10 @@ public class WorkerAuthService : IWorkerAuthService
         _secretKey = configuration["JwtSettings:SecretKey"] ?? "your-super-secret-key-minimum-32-characters-long";
         _issuer = configuration["JwtSettings:Issuer"] ?? "AgriculturePlatform";
         _audience = configuration["JwtSettings:Audience"] ?? "AgriculturePlatformClients";
-        _expiryMinutes = int.Parse(configuration["JwtSettings:ExpiryMinutes"] ?? "60");
+        
+        // FIX: Parse the string value correctly
+        var expiryDaysStr = configuration["JwtSettings:ExpiryDays"];
+        _expiryDays = string.IsNullOrEmpty(expiryDaysStr) ? 7 : int.Parse(expiryDaysStr);
     }
 
     public async Task<WorkerAuthResponseDto> LoginAsync(WorkerLoginDto dto, string ipAddress)
@@ -88,7 +91,7 @@ public class WorkerAuthService : IWorkerAuthService
             FarmId = worker.FarmId,
             FarmName = farm.FarmName,
             Role = worker.Role ?? "WORKER",
-            ExpiresAt = DateTime.UtcNow.AddMinutes(_expiryMinutes)
+            ExpiresAt = DateTime.UtcNow.AddDays(_expiryDays)  // Use AddDays for days
         };
     }
 
@@ -113,7 +116,7 @@ public class WorkerAuthService : IWorkerAuthService
             issuer: _issuer,
             audience: _audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_expiryMinutes),
+            expires: DateTime.UtcNow.AddDays(_expiryDays),  // Use AddDays for days
             signingCredentials: credentials
         );
 
