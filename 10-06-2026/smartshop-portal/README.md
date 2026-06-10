@@ -24,3 +24,10 @@ An Angular e-commerce application demonstrating routing, API integration, RxJS, 
 2. Install dependencies
    ```bash
    npm install
+
+## Running the Application
+
+## Development Server
+
+  ```bash 
+    ng serve
