@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { ProductService, Product } from '../services/product.service';
@@ -11,40 +11,41 @@ import { ProductService, Product } from '../services/product.service';
   styleUrls: ['./products.component.css']
 })
 export class ProductsComponent implements OnInit {
-  products: Product[] = [];
-  loading: boolean = true;
-  errorMessage: string = '';
-
-  constructor(
-    private productService: ProductService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
+  // Signals for reactive state
+  products = signal<Product[]>([]);
+  loading = signal<boolean>(true);
+  errorMessage = signal<string>('');
+  
+  // Computed signals (derived values)
+  productCount = computed(() => this.products().length);
+  hasProducts = computed(() => this.products().length > 0);
+  showError = computed(() => this.errorMessage() !== '');
+  
+  // Dependency injection using inject() function (new way)
+  private productService = inject(ProductService);
+  private router = inject(Router);
 
   ngOnInit(): void {
     this.loadProducts();
   }
 
   loadProducts(): void {
-    this.loading = true;
-    this.errorMessage = '';
+    this.loading.set(true);
+    this.errorMessage.set('');
     
     this.productService.getProducts().subscribe({
       next: (products) => {
-        this.products = products;
-        this.loading = false;
-        this.cdr.detectChanges();
+        this.products.set(products);
+        this.loading.set(false);
       },
       error: (error) => {
-        this.errorMessage = error.message;
-        this.loading = false;
-        this.cdr.detectChanges();
+        this.errorMessage.set(error.message);
+        this.loading.set(false);
       }
     });
   }
 
   viewProductDetails(productId: number): void {
-    // Navigate to the correct route within dashboard
     this.router.navigate(['/dashboard/products', productId]);
   }
 }

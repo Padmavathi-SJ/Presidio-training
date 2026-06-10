@@ -1,5 +1,6 @@
 .detail-page {
   max-width: 1000px;
+  margin: 0 auto;
 }
 
 /* States */
@@ -11,13 +12,15 @@
   padding: 48px 20px;
   color: #6b7280;
   font-size: 13px;
-
-  i { font-size: 28px; color: #d1d5db; }
-
-  &.state-error { color: #b91c1c; i { color: #fca5a5; } }
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+.state-block.state-error {
+  color: #b91c1c;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 .spinner {
   width: 28px;
@@ -43,10 +46,10 @@
   cursor: pointer;
   margin-bottom: 16px;
   transition: background 0.15s;
+}
 
-  i { font-size: 13px; }
-
-  &:hover { background: #f9fafb; }
+.back-btn:hover {
+  background: #f9fafb;
 }
 
 /* Card */
@@ -72,13 +75,13 @@
   overflow: hidden;
   background: #f3f4f6;
   height: 280px;
+}
 
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
+.main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .thumb-row {
@@ -92,11 +95,19 @@
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 6px;
-  border: 0.5px solid #e5e7eb;
+  border: 2px solid #e5e7eb;
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: all 0.15s;
+}
 
-  &:hover { border-color: #4f46e5; }
+.thumb:hover {
+  border-color: #4f46e5;
+  transform: scale(1.02);
+}
+
+.thumb.active {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
 }
 
 /* Info */
@@ -106,14 +117,12 @@
   gap: 14px;
 }
 
-.product-meta {
-  h1 {
-    font-size: 20px;
-    font-weight: 500;
-    color: #111827;
-    margin: 0 0 4px;
-    line-height: 1.3;
-  }
+.product-meta h1 {
+  font-size: 20px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 4px;
+  line-height: 1.3;
 }
 
 .meta-sub {
@@ -137,23 +146,21 @@
   font-weight: 500;
   padding: 3px 8px;
   border-radius: 20px;
+}
 
-  i { font-size: 10px; }
+.badge.badge-rating {
+  background: #fef9c3;
+  color: #a16207;
+}
 
-  &.badge-rating {
-    background: #fef9c3;
-    color: #a16207;
-  }
+.badge.badge-ok {
+  background: #dcfce7;
+  color: #166534;
+}
 
-  &.badge-ok {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  &.badge-low {
-    background: #fee2e2;
-    color: #991b1b;
-  }
+.badge.badge-low {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 /* Price */
@@ -213,10 +220,10 @@
   cursor: pointer;
   margin-top: auto;
   transition: background 0.15s;
+}
 
-  i { font-size: 16px; }
-
-  &:hover { background: #4338ca; }
+.btn-add-cart:hover {
+  background: #4338ca;
 }
 
 /* Buttons (shared) */
@@ -233,8 +240,10 @@
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s;
+}
 
-  &:hover { background: #4338ca; }
+.btn-primary:hover {
+  background: #4338ca;
 }
 
 @media (max-width: 768px) {
