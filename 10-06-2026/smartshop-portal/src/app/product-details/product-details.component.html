@@ -1,0 +1,79 @@
+<div class="detail-page">
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="state-block">
+    <div class="spinner"></div>
+    <span>Loading product…</span>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="errorMessage" class="state-block state-error">
+    <i class="ti ti-alert-circle"></i>
+    <span>{{ errorMessage }}</span>
+    <button class="btn-primary" (click)="loadProductDetails()">Retry</button>
+  </div>
+
+  <!-- No data -->
+  <div *ngIf="!loading && !errorMessage && !product" class="state-block">
+    <i class="ti ti-box-off"></i>
+    <span>Product not found.</span>
+  </div>
+
+  <!-- Content -->
+  <ng-container *ngIf="!loading && !errorMessage && product">
+    <button class="back-btn" (click)="goBack()">
+      <i class="ti ti-arrow-left"></i> Back
+    </button>
+
+    <div class="detail-card">
+      <!-- Gallery -->
+      <div class="gallery">
+        <div class="main-image">
+          <img [src]="product.thumbnail" [alt]="product.title" />
+        </div>
+        <div class="thumb-row" *ngIf="product.images?.length">
+          <img
+            *ngFor="let img of product.images.slice(0, 4)"
+            [src]="img"
+            [alt]="product.title"
+            class="thumb"
+          />
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="product-info">
+        <div class="product-meta">
+          <h1>{{ product.title }}</h1>
+          <p class="meta-sub">{{ product.brand }} · {{ product.category }}</p>
+        </div>
+
+        <div class="badges">
+          <span class="badge badge-rating">
+            <i class="ti ti-star-filled"></i>{{ product.rating }}
+          </span>
+          <span class="badge" [class.badge-low]="product.stock < 10" [class.badge-ok]="product.stock >= 10">
+            {{ product.stock < 10 ? 'Low stock' : 'In stock' }} · {{ product.stock }} units
+          </span>
+        </div>
+
+        <div class="price-row">
+          <span class="price">${{ product.price }}</span>
+          <span class="discount-badge" *ngIf="product.discountPercentage > 0">
+            −{{ product.discountPercentage }}% OFF
+          </span>
+        </div>
+
+        <div class="description">
+          <p class="desc-label">Description</p>
+          <p class="desc-text">{{ product.description }}</p>
+        </div>
+
+        <button class="btn-add-cart">
+          <i class="ti ti-shopping-cart"></i> Add to cart
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+</div>

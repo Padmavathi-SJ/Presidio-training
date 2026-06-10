@@ -1,0 +1,16 @@
+<header class="app-header" *ngIf="currentUser">
+  <div class="header-inner">
+    <div class="logo">
+      <i class="ti ti-shopping-bag logo-icon"></i>
+      <span class="logo-text">SmartShop</span>
+    </div>
+    <div class="user-section">
+      <div class="user-meta">
+        <span class="welcome">{{ welcomeMessage }}</span>
+        <span class="username">@{{ currentUser.username }}</span>
+      </div>
+      <div class="avatar">{{ currentUser.firstName[0] }}{{ currentUser.lastName[0] }}</div>
+      <button class="logout-btn" (click)="logout()">Logout</button>
+    </div>
+  </div>
+</header>

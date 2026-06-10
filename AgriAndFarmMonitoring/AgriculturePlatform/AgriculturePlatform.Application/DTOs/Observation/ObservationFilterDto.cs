@@ -1,4 +1,4 @@
-// AgriculturePlatform.Application/DTOs/Observation/ObservationFilterDto.cs
+// Application/DTOs/Observation/ObservationFilterDto.cs - Add validation filter
 namespace AgriculturePlatform.Application.DTOs.Observation;
 
 public class ObservationFilterDto
@@ -15,4 +15,7 @@ public class ObservationFilterDto
     public int? PageSize { get; set; } = 20;
     public string? SortBy { get; set; } = "ObservationDate";
     public bool IsDescending { get; set; } = true;
+    
+    // NEW: Filter by validation status
+    public string? ValidationStatus { get; set; } // pending, verified, questioned, invalid
 }

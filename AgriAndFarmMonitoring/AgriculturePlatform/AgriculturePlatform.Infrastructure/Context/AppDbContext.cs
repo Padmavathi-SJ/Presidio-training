@@ -252,24 +252,91 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.IsActive);
         });
         
-        // =============================================
-        // OBSERVATION CONFIGURATION
-        // =============================================
-        modelBuilder.Entity<Observation>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.CropHealth).HasConversion<string>().HasMaxLength(20);
-            entity.Property(e => e.PestType).HasMaxLength(100);
-            
-            entity.HasOne(e => e.Farm)
-                  .WithMany(f => f.Observations)
-                  .HasForeignKey(e => e.FarmId)
-                  .OnDelete(DeleteBehavior.Cascade);
-                  
-            entity.HasIndex(e => new { e.FieldId, e.ObservationDate });
-            entity.HasIndex(e => e.WorkerId);
-        });
-        
+  // =============================================
+// OBSERVATION CONFIGURATION - UPDATED WITH VALIDATION FIELDS
+// =============================================
+modelBuilder.Entity<Observation>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    // Basic properties
+    entity.Property(e => e.CropHealth)
+          .HasConversion<string>()
+          .HasMaxLength(20);
+    entity.Property(e => e.PestType)
+          .HasMaxLength(100);
+    entity.Property(e => e.Notes)
+          .HasMaxLength(1000);
+    entity.Property(e => e.ObservationDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    
+    // NEW: Validation and comments fields
+    entity.Property(e => e.ValidationStatus)
+          .IsRequired()
+          .HasMaxLength(20)
+          .HasDefaultValue("pending")
+          .HasComment("pending, verified, questioned, invalid");
+    entity.Property(e => e.AdminNotes)
+          .HasMaxLength(1000)
+          .HasComment("Admin's questions or comments on the observation");
+    entity.Property(e => e.WorkerResponse)
+          .HasMaxLength(1000)
+          .HasComment("Worker's response to admin questions");
+    entity.Property(e => e.FlagReason)
+          .HasMaxLength(50)
+          .HasComment("outlier, inconsistent_data, missing_info, duplicate");
+    entity.Property(e => e.ValidatedAt)
+          .HasColumnType("timestamp with time zone")
+          .HasComment("When the observation was validated");
+    
+    // Relationships
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.Observations)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()  // Admin doesn't have an Observations collection
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.Field)
+          .WithMany(f => f.Observations)
+          .HasForeignKey(e => e.FieldId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.CropCycle)
+          .WithMany(cc => cc.Observations)
+          .HasForeignKey(e => e.CropCycleId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Worker)
+          .WithMany(w => w.Observations)
+          .HasForeignKey(e => e.WorkerId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    // NEW: Validator relationship
+    entity.HasOne(e => e.Validator)
+          .WithMany()  // Admin doesn't have a ValidatedObservations collection
+          .HasForeignKey(e => e.ValidatedBy)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    // Indexes for performance
+    entity.HasIndex(e => new { e.FieldId, e.ObservationDate })
+          .HasDatabaseName("IX_Observations_Field_Date");
+    entity.HasIndex(e => e.WorkerId)
+          .HasDatabaseName("IX_Observations_WorkerId");
+    entity.HasIndex(e => e.ValidationStatus)
+          .HasDatabaseName("IX_Observations_ValidationStatus");
+    entity.HasIndex(e => new { e.FarmId, e.ValidationStatus })
+          .HasDatabaseName("IX_Observations_Farm_ValidationStatus");
+    entity.HasIndex(e => e.ValidatedBy)
+          .HasDatabaseName("IX_Observations_ValidatedBy");
+    entity.HasIndex(e => e.ObservationDate)
+          .HasDatabaseName("IX_Observations_Date");
+}); 
+
         // =============================================
         // WEATHER DATA CONFIGURATION
         // =============================================
@@ -420,36 +487,103 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.AssignedDate);
         });
         
-        // =============================================
-        // HARVEST CONFIGURATION
-        // =============================================
-        modelBuilder.Entity<Harvest>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.QuantityKg).HasPrecision(12, 2);
-            entity.Property(e => e.QualityGrade).HasConversion<string>().HasMaxLength(10);
-            entity.Property(e => e.ApprovalStatus).HasMaxLength(20);
-            
-            entity.HasOne(e => e.Farm)
-                  .WithMany(f => f.Harvests)
-                  .HasForeignKey(e => e.FarmId)
-                  .OnDelete(DeleteBehavior.Cascade);
-            
-            entity.HasOne(e => e.Harvester)
-                  .WithMany(w => w.Harvests)
-                  .HasForeignKey(e => e.HarvestedBy)
-                  .OnDelete(DeleteBehavior.Restrict);
-                  
-            entity.HasOne(e => e.Approver)
-                  .WithMany()
-                  .HasForeignKey(e => e.ApprovedBy)
-                  .OnDelete(DeleteBehavior.Restrict);
-                  
-            entity.HasIndex(e => new { e.FarmId, e.HarvestDate });
-            entity.HasIndex(e => e.CropCycleId);
-            entity.HasIndex(e => e.ApprovalStatus);
-        });
-        
+// =============================================
+// HARVEST CONFIGURATION - UPDATED WITH ALL FIELDS
+// =============================================
+modelBuilder.Entity<Harvest>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    // Basic properties
+    entity.Property(e => e.QuantityKg)
+          .HasPrecision(12, 2)
+          .IsRequired();
+    entity.Property(e => e.QualityGrade)
+          .HasConversion<string>()
+          .HasMaxLength(10);
+    entity.Property(e => e.HarvestMethod)
+          .HasConversion<string>()
+          .HasMaxLength(20);
+    entity.Property(e => e.HarvestDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    
+    // Approval Workflow properties
+    entity.Property(e => e.ApprovalStatus)
+          .HasMaxLength(20)
+          .HasDefaultValue("PENDING");
+    entity.Property(e => e.RejectionReason)
+          .HasMaxLength(500);
+    entity.Property(e => e.AdminNotes)
+          .HasMaxLength(1000);
+    entity.Property(e => e.WorkerResponse)
+          .HasMaxLength(1000);
+    entity.Property(e => e.ApprovedAt)
+          .HasColumnType("timestamp with time zone");
+    
+    // Financial and tracking properties
+    entity.Property(e => e.PricePerKg)
+          .HasPrecision(10, 2);
+    entity.Property(e => e.BatchNumber)
+          .HasMaxLength(50);
+    entity.Property(e => e.Notes)
+          .HasMaxLength(1000);
+    
+    // Computed property - ignore for database
+    entity.Ignore(e => e.TotalValue);
+    
+    // Relationships
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.Harvests)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.Field)
+          .WithMany()
+          .HasForeignKey(e => e.FieldId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.CropCycle)
+          .WithMany(cc => cc.Harvests)
+          .HasForeignKey(e => e.CropCycleId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.Harvester)
+          .WithMany(w => w.Harvests)
+          .HasForeignKey(e => e.HarvestedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Submitter)
+          .WithMany()
+          .HasForeignKey(e => e.SubmittedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Approver)
+          .WithMany()
+          .HasForeignKey(e => e.ApprovedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    // Indexes for performance
+    entity.HasIndex(e => new { e.FarmId, e.HarvestDate })
+          .HasDatabaseName("IX_Harvests_Farm_Date");
+    entity.HasIndex(e => e.CropCycleId)
+          .HasDatabaseName("IX_Harvests_CropCycleId");
+    entity.HasIndex(e => e.ApprovalStatus)
+          .HasDatabaseName("IX_Harvests_ApprovalStatus");
+    entity.HasIndex(e => e.SubmittedBy)
+          .HasDatabaseName("IX_Harvests_SubmittedBy");
+    entity.HasIndex(e => e.HarvestedBy)
+          .HasDatabaseName("IX_Harvests_HarvestedBy");
+    entity.HasIndex(e => e.BatchNumber)
+          .HasDatabaseName("IX_Harvests_BatchNumber");
+});
+
+
         // =============================================
         // QUALITY CHECK CONFIGURATION
         // =============================================

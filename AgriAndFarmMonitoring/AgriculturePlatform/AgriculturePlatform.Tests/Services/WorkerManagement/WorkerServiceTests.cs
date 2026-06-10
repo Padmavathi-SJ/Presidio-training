@@ -33,7 +33,7 @@ public class WorkerServiceTests
             {"JwtSettings:SecretKey", TestHelper.TestJwtSecretKey},
             {"JwtSettings:Issuer", "TestIssuer"},
             {"JwtSettings:Audience", "TestAudience"},
-            {"JwtSettings:ExpiryDays", 7d}
+            {"JwtSettings:ExpiryDays", "7"}
         };
         
         _configuration = new ConfigurationBuilder()

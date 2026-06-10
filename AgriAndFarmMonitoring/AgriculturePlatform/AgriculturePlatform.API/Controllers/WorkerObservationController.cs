@@ -16,13 +16,16 @@ public class WorkerObservationController : ControllerBase
 {
     private readonly IObservationService _observationService;
     private readonly IWorkerFieldAssignmentRepository _assignmentRepository;
+    private readonly IWorkerRepository _workerRepository;  // ← ADD THIS
 
     public WorkerObservationController(
         IObservationService observationService,
-        IWorkerFieldAssignmentRepository assignmentRepository)
+        IWorkerFieldAssignmentRepository assignmentRepository,
+        IWorkerRepository workerRepository)  // ← Add to constructor
     {
         _observationService = observationService;
         _assignmentRepository = assignmentRepository;
+        _workerRepository = workerRepository;  // ← Initialize
     }
 
     private int GetCurrentFarmId() => int.Parse(User.FindFirst("farmId")?.Value ?? "0");
@@ -69,7 +72,17 @@ public class WorkerObservationController : ControllerBase
 
         var farmId = GetCurrentFarmId();
         var workerId = GetCurrentWorkerId();
-        var result = await _observationService.CreateObservationAsync(dto, farmId, workerId);
+        
+        // Get the worker to retrieve the AdminId
+        var worker = await _workerRepository.GetByIdAsync(workerId, farmId);
+        if (worker == null)
+        {
+            return BadRequest(new { message = "Worker not found" });
+        }
+        
+        var adminId = worker.AdminId;  // ← Get AdminId from the worker
+        
+        var result = await _observationService.CreateObservationAsync(dto, farmId, workerId, adminId);
         
         if (!result.Success)
             return BadRequest(result);

@@ -9,7 +9,6 @@ using AgriculturePlatform.Domain.Entities.CropMonitoring;
 using AgriculturePlatform.Domain.Enums;
 using AgriculturePlatform.Tests.Helpers;
 
-// Add using alias to resolve ambiguity
 using DomainObservation = AgriculturePlatform.Domain.Entities.CropMonitoring.Observation;
 
 namespace AgriculturePlatform.Tests.Services.Observation;
@@ -54,18 +53,18 @@ public class ObservationServiceTests
             Notes = "Crop looking healthy",
             ObservationDate = DateTime.UtcNow
         };
-        int farmId = 1, workerId = 1;
+        int farmId = 1, workerId = 1, adminId = 1;
         
-        var field = TestHelper.CreateTestField(1, farmId, 1);
-        var createdObservation = new DomainObservation { Id = 1, FieldId = 1 };  // Use alias
+        var field = TestHelper.CreateTestField(1, farmId, adminId);
+        var createdObservation = new DomainObservation { Id = 1, FieldId = 1 };
         
         _fieldRepositoryMock.Setup(r => r.GetByIdAsync(createDto.FieldId, farmId, false))
             .ReturnsAsync(field);
-        _observationRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<DomainObservation>()))  // Use alias
+        _observationRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<DomainObservation>()))
             .ReturnsAsync(createdObservation);
 
         // Act
-        var result = await _observationService.CreateObservationAsync(createDto, farmId, workerId);
+        var result = await _observationService.CreateObservationAsync(createDto, farmId, workerId, adminId);
 
         // Assert
         result.Should().NotBeNull();
@@ -78,13 +77,13 @@ public class ObservationServiceTests
     {
         // Arrange
         var createDto = new CreateObservationDto { FieldId = 999 };
-        int farmId = 1, workerId = 1;
+        int farmId = 1, workerId = 1, adminId = 1;
         
         _fieldRepositoryMock.Setup(r => r.GetByIdAsync(createDto.FieldId, farmId, false))
             .ReturnsAsync((Field?)null);
 
         // Act
-        var result = await _observationService.CreateObservationAsync(createDto, farmId, workerId);
+        var result = await _observationService.CreateObservationAsync(createDto, farmId, workerId, adminId);
 
         // Assert
         result.Success.Should().BeFalse();
@@ -164,7 +163,6 @@ public class ObservationServiceTests
     {
         // Arrange
         int farmId = 1;
-        // Use ObservationStatisticsDto instead of ObservationStatistics
         var stats = new ObservationStatisticsDto
         {
             TotalObservations = 10,

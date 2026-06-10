@@ -21,6 +21,8 @@ public static class MapperHelper
             cfg.AddProfile<WorkerTaskMappingProfile>();
             cfg.AddProfile<SensorMappingProfile>();
             cfg.AddProfile<AlertMappingProfile>();
+            cfg.AddProfile<ObservationMappingProfile>();
+            cfg.AddProfile<HarvestMappingProfile>();
             
 
         });

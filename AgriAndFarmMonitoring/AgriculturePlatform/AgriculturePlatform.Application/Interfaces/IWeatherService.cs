@@ -1,6 +1,8 @@
 // AgriculturePlatform.Application/Interfaces/IWeatherService.cs
 using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Application.DTOs.Weather;
+using AgriculturePlatform.Application.DTOs.Harvest; 
+using AgriculturePlatform.Domain.Entities.YieldReports;
 
 namespace AgriculturePlatform.Application.Interfaces;
 

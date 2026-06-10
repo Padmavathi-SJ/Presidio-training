@@ -1,4 +1,4 @@
-// AgriculturePlatform.Application/DTOs/Observation/ObservationDto.cs
+// Application/DTOs/Observation/ObservationDto.cs
 namespace AgriculturePlatform.Application.DTOs.Observation;
 
 public class ObservationDto
@@ -20,4 +20,27 @@ public class ObservationDto
     public List<string>? ImageUrls { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    
+    // ===== NEW VALIDATION FIELDS =====
+    public string ValidationStatus { get; set; } = "pending";
+    public string? AdminNotes { get; set; }
+    public string? WorkerResponse { get; set; }
+    public int? ValidatedBy { get; set; }
+    public string? ValidatorName { get; set; }
+    public DateTime? ValidatedAt { get; set; }
+    public string? FlagReason { get; set; }
+    
+    // Computed properties for UI
+    public bool IsPending => ValidationStatus == "pending";
+    public bool IsVerified => ValidationStatus == "verified";
+    public bool IsQuestioned => ValidationStatus == "questioned";
+    public bool IsInvalid => ValidationStatus == "invalid";
+    public string StatusBadgeColor => ValidationStatus switch
+    {
+        "verified" => "green",
+        "pending" => "yellow",
+        "questioned" => "orange",
+        "invalid" => "red",
+        _ => "gray"
+    };
 }

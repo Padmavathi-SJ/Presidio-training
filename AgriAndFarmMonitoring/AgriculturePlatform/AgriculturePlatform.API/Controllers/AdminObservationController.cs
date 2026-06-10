@@ -5,6 +5,8 @@ using System.Security.Claims;
 using AgriculturePlatform.Application.DTOs.Observation;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.API.Filters;
+using AgriculturePlatform.API.Services;
+using AgriculturePlatform.Application.Common;
 
 namespace AgriculturePlatform.API.Controllers;
 
@@ -15,10 +17,13 @@ namespace AgriculturePlatform.API.Controllers;
 public class AdminObservationController : ControllerBase
 {
     private readonly IObservationService _observationService;
+     private readonly ObservationStatisticsFormatter _statisticsFormatter;
 
-    public AdminObservationController(IObservationService observationService)
+    public AdminObservationController(IObservationService observationService,
+     ObservationStatisticsFormatter statisticsFormatter)
     {
         _observationService = observationService;
+        _statisticsFormatter = statisticsFormatter;
     }
 
     private int GetCurrentFarmId() => int.Parse(User.FindFirst("farmId")?.Value ?? "0");
@@ -73,23 +78,88 @@ public class AdminObservationController : ControllerBase
         return Ok(result);
     }
 
-    // GET: api/admin/farms/{farmId}/observations/date-range
-    [HttpGet("date-range")]
-    public async Task<IActionResult> GetByDateRange([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
+
+// GET: api/admin/farms/{farmId}/observations/date-range
+[HttpGet("date-range")]
+public async Task<IActionResult> GetByDateRange([FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
+{
+    var farmId = GetCurrentFarmId();
+    
+    DateTime fromDateUtc;
+    DateTime toDateUtc;
+    
+    if (fromDate.HasValue && toDate.HasValue)
     {
-        var farmId = GetCurrentFarmId();
-        var result = await _observationService.GetObservationsByDateRangeAsync(farmId, fromDate, toDate);
-        return Ok(result);
+        // If only date is provided (no time), set to full day range
+        if (fromDate.Value.TimeOfDay == TimeSpan.Zero && toDate.Value.TimeOfDay == TimeSpan.Zero)
+        {
+            fromDateUtc = fromDate.Value.ToUniversalTime().Date;
+            toDateUtc = toDate.Value.ToUniversalTime().Date.AddDays(1).AddSeconds(-1);
+        }
+        else
+        {
+            fromDateUtc = fromDate.Value.ToUniversalTime();
+            toDateUtc = toDate.Value.ToUniversalTime();
+        }
     }
+    else if (fromDate.HasValue)
+    {
+        fromDateUtc = fromDate.Value.ToUniversalTime().Date;
+        toDateUtc = fromDateUtc.AddDays(1).AddSeconds(-1);
+    }
+    else if (toDate.HasValue)
+    {
+        toDateUtc = toDate.Value.ToUniversalTime().Date.AddDays(1).AddSeconds(-1);
+        fromDateUtc = toDateUtc.AddDays(-7);
+    }
+    else
+    {
+        // Default to last 7 days
+        toDateUtc = DateTime.UtcNow;
+        fromDateUtc = toDateUtc.AddDays(-7);
+    }
+    
+    var result = await _observationService.GetObservationsByDateRangeAsync(farmId, fromDateUtc, toDateUtc);
+    return Ok(result);
+}
+
 
     // GET: api/admin/farms/{farmId}/observations/statistics/pest
+
+
+    
     [HttpGet("statistics/pest")]
-    public async Task<IActionResult> GetPestStatistics([FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
+    public async Task<IActionResult> GetPestStatistics(
+        [FromQuery] DateTime? fromDate = null, 
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] string? format = null)
     {
         var farmId = GetCurrentFarmId();
         var result = await _observationService.GetPestStatisticsAsync(farmId, fromDate, toDate);
-        return Ok(result);
+        
+        if (!result.Success || result.Data == null)
+            return NotFound(result);
+        
+        return format?.ToLower() switch
+        {
+            "simple" => Ok(new { result.Success, result.Message, Data = FormatSimple(result.Data) }),
+            "chart" => Ok(new { result.Success, result.Message, Data = _statisticsFormatter.FormatForChartJs(result.Data) }),
+            _ => Ok(new { result.Success, result.Message, Data = _statisticsFormatter.FormatForDisplay(result.Data) })
+        };
     }
+    
+    private object FormatSimple(ObservationStatisticsDto data)
+    {
+        return new
+        {
+            data.TotalObservations,
+            data.ObservationsWithPest,
+            data.ObservationsWithoutPest,
+            data.PestPercentage,
+            TopPests = data.PestTypeDistribution.OrderByDescending(x => x.Value).Take(3)
+        };
+    }
+
 
     // PUT: api/admin/farms/{farmId}/observations/{id}
     [HttpPut("{id}")]
@@ -118,4 +188,83 @@ public class AdminObservationController : ControllerBase
             
         return Ok(result);
     }
+
+
+// GET: api/admin/farms/{farmId}/observations/pending-validation
+[HttpGet("pending-validation")]
+public async Task<IActionResult> GetPendingValidations([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+{
+    var farmId = GetCurrentFarmId();
+    var pagination = new PaginationParams { Page = page, PageSize = pageSize };
+    var result = await _observationService.GetPendingValidationsAsync(farmId, pagination);
+    return Ok(result);
+}
+
+// GET: api/admin/farms/{farmId}/observations/questioned
+[HttpGet("questioned")]
+public async Task<IActionResult> GetQuestionedObservations([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+{
+    var farmId = GetCurrentFarmId();
+    var pagination = new PaginationParams { Page = page, PageSize = pageSize };
+    var result = await _observationService.GetQuestionedObservationsAsync(farmId, pagination);
+    return Ok(result);
+}
+
+// POST: api/admin/farms/{farmId}/observations/{id}/validate
+[HttpPost("{id}/validate")]
+public async Task<IActionResult> ValidateObservation(int id, [FromBody] ObservationValidationDto validation)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var result = await _observationService.ValidateObservationAsync(id, validation, farmId, adminId);
+    
+    if (!result.Success)
+        return BadRequest(result);
+        
+    return Ok(result);
+}
+
+// GET: api/admin/farms/{farmId}/observations/statistics/validation-summary
+[HttpGet("statistics/validation-summary")]
+public async Task<IActionResult> GetValidationSummary()
+{
+    var farmId = GetCurrentFarmId();
+    
+    // Get all observations with pagination to get counts
+    var allObservations = await _observationService.GetAllObservationsAsync(new ObservationFilterDto { PageSize = 1 }, farmId);
+    
+    // Get pending validations
+    var pendingResult = await _observationService.GetPendingValidationsAsync(farmId, new PaginationParams { PageSize = 1 });
+    
+    // Get questioned observations
+    var questionedResult = await _observationService.GetQuestionedObservationsAsync(farmId, new PaginationParams { PageSize = 1 });
+    
+    // Get verified observations (you need to add this method or calculate)
+    var verifiedCount = await GetCountByValidationStatus(farmId, "verified");
+    
+    // Get invalid observations
+    var invalidCount = await GetCountByValidationStatus(farmId, "invalid");
+    
+    return Ok(new
+    {
+        Total = allObservations.Data?.TotalCount ?? 0,
+        Pending = pendingResult.Data?.TotalCount ?? 0,
+        Questioned = questionedResult.Data?.TotalCount ?? 0,
+        Verified = verifiedCount,
+        Invalid = invalidCount
+    });
+}
+
+// Helper method to get count by validation status
+private async Task<int> GetCountByValidationStatus(int farmId, string validationStatus)
+{
+    var filter = new ObservationFilterDto 
+    { 
+        ValidationStatus = validationStatus,
+        PageSize = 1 
+    };
+    var result = await _observationService.GetAllObservationsAsync(filter, farmId);
+    return result.Data?.TotalCount ?? 0;
+}
+
 }

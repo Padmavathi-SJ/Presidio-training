@@ -1,0 +1,48 @@
+<div class="profile-page" *ngIf="currentUser">
+
+  <div class="section-header">
+    <h2>My profile</h2>
+  </div>
+
+  <div class="profile-card">
+
+    <!-- Avatar row -->
+    <div class="avatar-row">
+      <div class="avatar-wrap">
+        <img
+          *ngIf="currentUser.image; else initials"
+          [src]="currentUser.image"
+          [alt]="currentUser.firstName"
+          class="avatar-img"
+        />
+        <ng-template #initials>
+          <div class="avatar-initials">
+            {{ currentUser.firstName[0] }}{{ currentUser.lastName[0] }}
+          </div>
+        </ng-template>
+      </div>
+      <div class="avatar-meta">
+        <p class="full-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</p>
+        <p class="handle">@{{ currentUser.username }}</p>
+      </div>
+      
+    </div>
+
+    <!-- Fields -->
+    <div class="info-list">
+      <div class="info-row">
+        <span class="info-label"><i class="ti ti-mail"></i> Email</span>
+        <span class="info-value">{{ currentUser.email }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label"><i class="ti ti-gender-female"></i> Gender</span>
+        <span class="info-value">{{ currentUser.gender | titlecase }}</span>
+      </div>
+      <div class="info-row last">
+        <span class="info-label"><i class="ti ti-calendar"></i> Member since</span>
+        <span class="info-value">2024</span>
+      </div>
+    </div>
+
+  </div>
+</div>

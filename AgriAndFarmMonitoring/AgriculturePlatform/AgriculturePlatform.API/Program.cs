@@ -9,6 +9,7 @@ using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Application.Services;
 using AgriculturePlatform.Infrastructure.Repositories;
 using AgriculturePlatform.Application.Validators;
+using AgriculturePlatform.Application.Validators.Harvest; 
 using Microsoft.OpenApi.Models;
 using AgriculturePlatform.API.BackgroundServices;
 using AgriculturePlatform.Application.Mappings;
@@ -90,7 +91,7 @@ builder.Services.AddSingleton<IJwtService>(provider =>
 // Add AuditLog Service
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
-// ✅ SignalR - ONLY ONCE and BEFORE building the app
+// SignalR - ONLY ONCE and BEFORE building the app
 builder.Services.AddSignalR();
 
 // Background IoT Simulator
@@ -111,12 +112,16 @@ var mapperConfig = new MapperConfiguration(cfg =>
     cfg.AddProfile<SensorMappingProfile>();
     cfg.AddProfile<AlertMappingProfile>();
     cfg.AddProfile<ObservationMappingProfile>();
+    cfg.AddProfile<HarvestMappingProfile>();
 
 });
 
 var mapper = mapperConfig.CreateMapper();
 builder.Services.AddSingleton<IMapper>(mapper);
 
+builder.Services.AddValidatorsFromAssembly(typeof(CreateFieldValidator).Assembly);
+
+/*
 // Register all validators from assembly
 builder.Services.AddValidatorsFromAssemblyContaining<CreateFieldValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateTaskValidator>();
@@ -126,7 +131,11 @@ builder.Services.AddValidatorsFromAssemblyContaining<AlertFilterValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateObservationValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateObservationValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<ObservationFilterValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateHarvestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateHarvestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<HarvestApprovalValidator>();
 
+*/
 // Add Excel service
 builder.Services.AddScoped<IExcelService, ExcelService>();
 
@@ -144,6 +153,8 @@ builder.Services.AddScoped<ISensorReadingRepository, SensorReadingRepository>();
 builder.Services.AddScoped<IAlertRepository, AlertRepository>();
 builder.Services.AddScoped<IAlertThresholdRepository, AlertThresholdRepository>();
 builder.Services.AddScoped<IObservationRepository, ObservationRepository>();
+builder.Services.AddScoped<IHarvestRepository, HarvestRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
 // Register Services
 builder.Services.AddScoped<IAdminService, AdminService>();
@@ -164,6 +175,11 @@ builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<IIoTSimulatorService, IoTSimulatorService>();
 builder.Services.AddScoped<IAlertNotificationService, AlertNotificationService>();
 builder.Services.AddScoped<IObservationService, ObservationService>();
+builder.Services.AddScoped<IHarvestService, HarvestService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+
+builder.Services.AddScoped<ObservationStatisticsFormatter>();
 
 
 // Background Service

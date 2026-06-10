@@ -1,4 +1,4 @@
-// AgriculturePlatform.Application/DTOs/Observation/UpdateObservationDto.cs
+// Application/DTOs/Observation/UpdateObservationDto.cs
 namespace AgriculturePlatform.Application.DTOs.Observation;
 
 public class UpdateObservationDto

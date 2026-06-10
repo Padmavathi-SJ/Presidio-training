@@ -1,0 +1,42 @@
+<div class="login-container">
+  <div class="login-card">
+    <h2>SmartShop Portal</h2>
+    <h3>Login</h3>
+    
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input 
+          type="text" 
+          id="username" 
+          [(ngModel)]="username" 
+          name="username"
+          required>
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          [(ngModel)]="password" 
+          name="password"
+          required>
+      </div>
+      
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+      
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Logging in...' : 'Login' }}
+      </button>
+    </form>
+    
+    <div class="demo-credentials">
+      <p>Demo Credentials:</p>
+      <p>Username: kminchelle</p>
+      <p>Password: 0lelplR</p>
+    </div>
+  </div>
+</div>

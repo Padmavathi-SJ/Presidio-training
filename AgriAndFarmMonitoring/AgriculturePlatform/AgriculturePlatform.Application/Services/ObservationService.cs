@@ -37,60 +37,61 @@ public class ObservationService : IObservationService
     // WORKER OPERATIONS
     // =============================================
 
-    public async Task<ApiResponse<ObservationDto>> CreateObservationAsync(CreateObservationDto dto, int farmId, int workerId)
+// AgriculturePlatform.Application/Services/ObservationService.cs
+
+public async Task<ApiResponse<ObservationDto>> CreateObservationAsync(CreateObservationDto dto, int farmId, int workerId, int adminId)
+{
+    // Validate field
+    var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
+    if (field == null)
     {
-        // Validate field
-        var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
-        if (field == null)
-        {
-            return ApiResponse<ObservationDto>.Fail($"Field with ID {dto.FieldId} not found");
-        }
-
-        // Validate crop cycle if provided
-        if (dto.CropCycleId.HasValue)
-        {
-            var cropCycle = await _cropCycleRepository.GetByIdAsync(dto.CropCycleId.Value, farmId);
-            if (cropCycle == null)
-            {
-                return ApiResponse<ObservationDto>.Fail($"Crop cycle with ID {dto.CropCycleId} not found");
-            }
-        }
-
-        var observation = new Observation
-        {
-            FarmId = farmId,
-            FieldId = dto.FieldId,
-            CropCycleId = dto.CropCycleId,
-            WorkerId = workerId,
-            ObservationDate = dto.ObservationDate.ToUniversalTime(),
-            CropHealth = !string.IsNullOrWhiteSpace(dto.CropHealth) 
-                ? Enum.Parse<CropHealthEnum>(dto.CropHealth, true) 
-                : null,
-            PestDetected = dto.PestDetected,
-            PestType = dto.PestType,
-            Notes = dto.Notes,
-            CreatedBy = workerId,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var created = await _observationRepository.CreateAsync(observation);
-        
-        // FIXED: LogCreateAsync with correct parameters (6 parameters + 2 optional)
-        await _auditLogService.LogCreateAsync(
-            farmId,           // farmId
-            null,             // adminId (null for worker)
-            "Observation",    // entityType
-            created.Id,       // entityId
-            created,          // entity
-            null,             // ipAddress (optional)
-            null);            // userAgent (optional)
-
-        var result = _mapper.Map<ObservationDto>(created);
-        result.FieldName = field.FieldName;
-        
-        return ApiResponse<ObservationDto>.Ok(result, "Observation created successfully");
+        return ApiResponse<ObservationDto>.Fail($"Field with ID {dto.FieldId} not found");
     }
 
+    // Validate crop cycle if provided
+    if (dto.CropCycleId.HasValue)
+    {
+        var cropCycle = await _cropCycleRepository.GetByIdAsync(dto.CropCycleId.Value, farmId);
+        if (cropCycle == null)
+        {
+            return ApiResponse<ObservationDto>.Fail($"Crop cycle with ID {dto.CropCycleId} not found");
+        }
+    }
+
+    var observation = new Observation
+    {
+        FarmId = farmId,
+        AdminId = adminId,  // ← Now set from the worker's AdminId
+        FieldId = dto.FieldId,
+        CropCycleId = dto.CropCycleId,
+        WorkerId = workerId,
+        ObservationDate = dto.ObservationDate.ToUniversalTime(),
+        CropHealth = !string.IsNullOrWhiteSpace(dto.CropHealth) 
+            ? Enum.Parse<CropHealthEnum>(dto.CropHealth, true) 
+            : null,
+        PestDetected = dto.PestDetected,
+        PestType = dto.PestType,
+        Notes = dto.Notes,
+        CreatedBy = workerId,
+        CreatedAt = DateTime.UtcNow
+    };
+
+    var created = await _observationRepository.CreateAsync(observation);
+    
+    await _auditLogService.LogCreateAsync(
+        farmId,           
+        adminId,          // ← AdminId from worker
+        "Observation",    
+        created.Id,       
+        created,          
+        null,             
+        null);            
+
+    var result = _mapper.Map<ObservationDto>(created);
+    result.FieldName = field.FieldName;
+    
+    return ApiResponse<ObservationDto>.Ok(result, "Observation created successfully");
+}
     public async Task<ApiResponse<ObservationDto>> UpdateOwnObservationAsync(int id, UpdateObservationDto dto, int workerId, int farmId)
     {
         // Verify ownership
@@ -254,6 +255,7 @@ public class ObservationService : IObservationService
             filter.PestDetected,
             filter.FromDate,
             filter.ToDate,
+            filter.ValidationStatus,
             filter.IncludeDeleted ?? false,
             paginationParams);
 
@@ -342,4 +344,149 @@ public class ObservationService : IObservationService
     {
         return await _observationRepository.IsOwnerAsync(observationId, workerId, farmId);
     }
+
+
+
+
+// =============================================
+// WORKER RESPONSE OPERATIONS
+// =============================================
+
+public async Task<ApiResponse<ObservationDto>> RespondToAdminAsync(int id, ObservationWorkerResponseDto response, int farmId, int workerId)
+{
+    // Verify ownership
+    if (!await _observationRepository.IsOwnerAsync(id, workerId, farmId))
+    {
+        return ApiResponse<ObservationDto>.Fail("You don't have permission to respond to this observation");
+    }
+
+    var observation = await _observationRepository.GetByIdAsync(id, farmId);
+    if (observation == null)
+    {
+        return ApiResponse<ObservationDto>.Fail($"Observation with ID {id} not found");
+    }
+    
+    // Only allow response if status is "questioned"
+    if (observation.ValidationStatus != "questioned")
+    {
+        return ApiResponse<ObservationDto>.Fail("Can only respond to observations that have been questioned by admin");
+    }
+    
+    var oldStatus = observation.ValidationStatus;
+    var oldResponse = observation.WorkerResponse;
+    
+    observation.WorkerResponse = response.WorkerResponse;
+    observation.ValidationStatus = "pending";  // Back to pending for re-review
+    observation.UpdatedAt = DateTime.UtcNow;
+    observation.UpdatedBy = workerId;
+    
+    await _observationRepository.UpdateAsync(observation);
+    
+    // Log the response
+    await _auditLogService.LogUpdateAsync(
+        farmId, null, "Observation", observation.Id,
+        new { ValidationStatus = oldStatus, WorkerResponse = oldResponse },
+        new { ValidationStatus = "pending", WorkerResponse = response.WorkerResponse });
+    
+    var result = _mapper.Map<ObservationDto>(observation);
+    return ApiResponse<ObservationDto>.Ok(result, "Response submitted, awaiting admin review");
 }
+
+// =============================================
+// ADMIN VALIDATION OPERATIONS
+// =============================================
+
+public async Task<ApiResponse<ObservationDto>> ValidateObservationAsync(int id, ObservationValidationDto validation, int farmId, int adminId)
+{
+    var observation = await _observationRepository.GetByIdAsync(id, farmId);
+    if (observation == null)
+    {
+        return ApiResponse<ObservationDto>.Fail($"Observation with ID {id} not found");
+    }
+    
+    var oldStatus = observation.ValidationStatus;
+    var oldNotes = observation.AdminNotes;
+    
+    observation.ValidationStatus = validation.ValidationStatus;
+    observation.AdminNotes = validation.AdminNotes;
+    observation.FlagReason = validation.FlagReason;
+    observation.ValidatedBy = adminId;
+    observation.ValidatedAt = DateTime.UtcNow;
+    observation.UpdatedAt = DateTime.UtcNow;
+    observation.UpdatedBy = adminId;
+    
+    // If marking as questioned, clear any previous response
+    if (validation.ValidationStatus == "questioned")
+    {
+        observation.WorkerResponse = null;
+    }
+    
+    await _observationRepository.UpdateAsync(observation);
+    
+    // Log validation
+    await _auditLogService.LogUpdateAsync(
+        farmId, adminId, "Observation", observation.Id,
+        new { ValidationStatus = oldStatus, AdminNotes = oldNotes },
+        new { ValidationStatus = validation.ValidationStatus, AdminNotes = validation.AdminNotes });
+    
+    // Create notification for worker if questioned
+    if (validation.ValidationStatus == "questioned" && observation.WorkerId.HasValue)
+    {
+        // TODO: Call notification service
+        // await _notificationService.CreateNotificationAsync(...)
+    }
+    
+    var result = _mapper.Map<ObservationDto>(observation);
+    return ApiResponse<ObservationDto>.Ok(result, $"Observation {validation.ValidationStatus}");
+}
+
+public async Task<ApiResponse<PagedResult<ObservationDto>>> GetPendingValidationsAsync(int farmId, PaginationParams pagination)
+{
+    var observations = await _observationRepository.GetPendingValidationsAsync(farmId);
+    
+    var paged = observations
+        .Skip((pagination.Page - 1) * pagination.PageSize)
+        .Take(pagination.PageSize)
+        .ToList();
+    
+    var dtos = _mapper.Map<List<ObservationDto>>(paged);
+    
+    var result = new PagedResult<ObservationDto>
+    {
+        Items = dtos,
+        TotalCount = observations.Count(),
+        Page = pagination.Page,
+        PageSize = pagination.PageSize
+    };
+    
+    return ApiResponse<PagedResult<ObservationDto>>.Ok(result);
+}
+
+public async Task<ApiResponse<PagedResult<ObservationDto>>> GetQuestionedObservationsAsync(int farmId, PaginationParams pagination)
+{
+    var observations = await _observationRepository.GetQuestionedObservationsAsync(farmId);
+    
+    var paged = observations
+        .Skip((pagination.Page - 1) * pagination.PageSize)
+        .Take(pagination.PageSize)
+        .ToList();
+    
+    var dtos = _mapper.Map<List<ObservationDto>>(paged);
+    
+    var result = new PagedResult<ObservationDto>
+    {
+        Items = dtos,
+        TotalCount = observations.Count(),
+        Page = pagination.Page,
+        PageSize = pagination.PageSize
+    };
+    
+    return ApiResponse<PagedResult<ObservationDto>>.Ok(result);
+}
+
+
+
+}
+
+
+

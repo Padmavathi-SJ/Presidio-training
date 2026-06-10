@@ -1,4 +1,4 @@
-// AgriculturePlatform.Infrastructure/Specifications/ObservationSpecification.cs
+// Infrastructure/Specifications/ObservationSpecification.cs
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
 using AgriculturePlatform.Domain.Enums;
 
@@ -15,6 +15,7 @@ public class ObservationSpecification : BaseSpecification<Observation>
         bool? pestDetected,
         DateTime? fromDate,
         DateTime? toDate,
+        string? validationStatus,  // NEW
         bool includeDeleted)
     {
         // Base filter - by farm
@@ -67,10 +68,17 @@ public class ObservationSpecification : BaseSpecification<Observation>
             AddCriteria(o => o.ObservationDate <= toDate.Value);
         }
         
+        // NEW: Filter by validation status
+        if (!string.IsNullOrWhiteSpace(validationStatus))
+        {
+            AddCriteria(o => o.ValidationStatus == validationStatus);
+        }
+        
         // Include navigation properties
         AddInclude(o => o.Field);
         AddInclude(o => o.CropCycle);
         AddInclude(o => o.Worker);
         AddInclude(o => o.Farm);
+        AddInclude(o => o.Validator);  // NEW: Include validator
     }
 }

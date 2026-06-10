@@ -68,16 +68,18 @@ public class ObservationRepository : IObservationRepository
         bool? pestDetected,
         DateTime? fromDate,
         DateTime? toDate,
+        string? validationStatus,
         bool includeDeleted,
         PaginationParams paginationParams)
     {
         var specification = new ObservationSpecification(
-            farmId, fieldId, cropCycleId, workerId, cropHealth, pestDetected, fromDate, toDate, includeDeleted);
+            farmId, fieldId, cropCycleId, workerId, cropHealth, pestDetected, fromDate, toDate, validationStatus, includeDeleted);
 
         var query = _context.Observations
             .Include(o => o.Field)
             .Include(o => o.CropCycle)
             .Include(o => o.Worker)
+            .Include(o => o.Validator) 
             .Where(specification.Criteria!);
 
         if (!string.IsNullOrWhiteSpace(paginationParams.SortBy))
@@ -152,9 +154,15 @@ public class ObservationRepository : IObservationRepository
 // AgriculturePlatform.Infrastructure/Repositories/ObservationRepository.cs
 // Update the method to return ObservationStatisticsDto
 
+// AgriculturePlatform.Infrastructure/Repositories/ObservationRepository.cs
+
 public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate)
 {
-    var query = _context.Observations.Where(o => o.FarmId == farmId && !o.IsDeleted);
+    var query = _context.Observations
+        .Include(o => o.Field)
+        .Include(o => o.Worker)
+        .Include(o => o.CropCycle)
+        .Where(o => o.FarmId == farmId && !o.IsDeleted);
 
     if (fromDate.HasValue)
         query = query.Where(o => o.ObservationDate >= fromDate.Value);
@@ -163,23 +171,39 @@ public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int 
 
     var observations = await query.ToListAsync();
 
+    // Standardize pest types - convert to Title Case and group
+    var pestTypeDist = observations
+        .Where(o => o.PestDetected && !string.IsNullOrWhiteSpace(o.PestType))
+        .GroupBy(o => StandardizePestType(o.PestType!))
+        .ToDictionary(g => g.Key, g => g.Count());
+
+    // Standardize crop health values - FIXED to match your enum
+    var cropHealthDist = observations
+        .Where(o => o.CropHealth.HasValue)
+        .GroupBy(o => FormatCropHealth(o.CropHealth!.Value))
+        .ToDictionary(g => g.Key, g => g.Count());
+
+    // Get field names properly
+    var observationsByField = observations
+        .Where(o => o.Field != null)
+        .GroupBy(o => o.Field!.FieldName)
+        .ToDictionary(g => g.Key, g => g.Count());
+
+    // Get worker names properly
+    var observationsByWorker = observations
+        .Where(o => o.Worker != null)
+        .GroupBy(o => o.Worker!.Name)
+        .ToDictionary(g => g.Key, g => g.Count());
+
     return new ObservationStatisticsDto
     {
         TotalObservations = observations.Count,
         ObservationsWithPest = observations.Count(o => o.PestDetected),
         ObservationsWithoutPest = observations.Count(o => !o.PestDetected),
-        PestTypeDistribution = observations.Where(o => !string.IsNullOrWhiteSpace(o.PestType))
-            .GroupBy(o => o.PestType!)
-            .ToDictionary(g => g.Key, g => g.Count()),
-        CropHealthDistribution = observations.Where(o => o.CropHealth.HasValue)
-            .GroupBy(o => o.CropHealth!.Value.ToString())
-            .ToDictionary(g => g.Key, g => g.Count()),
-        ObservationsByField = observations.Where(o => o.Field != null)
-            .GroupBy(o => o.Field!.FieldName)
-            .ToDictionary(g => g.Key, g => g.Count()),
-        ObservationsByWorker = observations.Where(o => o.Worker != null)
-            .GroupBy(o => o.Worker!.Name)
-            .ToDictionary(g => g.Key, g => g.Count()),
+        PestTypeDistribution = pestTypeDist,
+        CropHealthDistribution = cropHealthDist,
+        ObservationsByField = observationsByField,
+        ObservationsByWorker = observationsByWorker,
         RecentTrend = observations
             .GroupBy(o => o.ObservationDate.Date)
             .OrderByDescending(g => g.Key)
@@ -194,9 +218,42 @@ public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int 
             .ToList()
     };
 }
-  
-  
-    public async Task<Dictionary<string, int>> GetPestTypeDistributionAsync(int farmId)
+
+private string StandardizePestType(string pestType)
+{
+    if (string.IsNullOrWhiteSpace(pestType)) return string.Empty;
+    
+    // Convert to Title Case and trim
+    var standardized = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(pestType.ToLower().Trim());
+    
+    // Map common variations
+    return standardized switch
+    {
+        "Aphid" or "Aphids" => "Aphids",
+        "Beetle" or "Beetles" => "Beetles",
+        "Caterpillar" or "Caterpillars" => "Caterpillars",
+        "Mite" or "Mites" => "Mites",
+        "Whitefly" or "Whiteflies" => "Whiteflies",
+        "Thrip" or "Thrips" => "Thrips",
+        _ => standardized
+    };
+}
+
+private string FormatCropHealth(CropHealthEnum health)
+{
+    return health switch
+    {
+        CropHealthEnum.EXCELLENT => "Excellent",
+        CropHealthEnum.GOOD => "Good",
+        CropHealthEnum.AVERAGE => "Average",  // ← Fixed: AVERAGE instead of FAIR
+        CropHealthEnum.POOR => "Poor",
+        CropHealthEnum.CRITICAL => "Critical",
+        _ => health.ToString()
+    };
+} 
+
+
+public async Task<Dictionary<string, int>> GetPestTypeDistributionAsync(int farmId)
     {
         var observations = await _context.Observations
             .Where(o => o.FarmId == farmId && o.PestDetected && !string.IsNullOrWhiteSpace(o.PestType) && !o.IsDeleted)
@@ -212,5 +269,43 @@ public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int 
         return await _context.Observations
             .AnyAsync(o => o.Id == observationId && o.WorkerId == workerId && o.FarmId == farmId && !o.IsDeleted);
     }
+
+public async Task<IEnumerable<Observation>> GetPendingValidationsAsync(int farmId)
+{
+    return await _context.Observations
+        .Include(o => o.Field)
+        .Include(o => o.Worker)
+        .Where(o => o.FarmId == farmId && 
+                    o.ValidationStatus == "pending" && 
+                    !o.IsDeleted)
+        .OrderBy(o => o.ObservationDate)
+        .ToListAsync();
+}
+
+public async Task<IEnumerable<Observation>> GetQuestionedObservationsAsync(int farmId)
+{
+    return await _context.Observations
+        .Include(o => o.Field)
+        .Include(o => o.Worker)
+        .Where(o => o.FarmId == farmId && 
+                    o.ValidationStatus == "questioned" && 
+                    !o.IsDeleted)
+        .OrderBy(o => o.ObservationDate)
+        .ToListAsync();
+}
+
+public async Task<int> CountByValidationStatusAsync(int farmId, string? validationStatus)
+{
+    var query = _context.Observations
+        .Where(o => o.FarmId == farmId && !o.IsDeleted);
+    
+    if (!string.IsNullOrWhiteSpace(validationStatus))
+    {
+        query = query.Where(o => o.ValidationStatus == validationStatus);
+    }
+    
+    return await query.CountAsync();
+}
+
 }
 

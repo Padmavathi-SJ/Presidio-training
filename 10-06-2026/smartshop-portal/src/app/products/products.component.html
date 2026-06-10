@@ -1,0 +1,53 @@
+<div class="products-page">
+
+  <div class="page-header">
+    <h2>All products</h2>
+    <div class="header-actions">
+     
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="state-block">
+    <div class="spinner"></div>
+    <span>Loading products…</span>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="errorMessage" class="state-block state-error">
+    <i class="ti ti-alert-circle"></i>
+    <span>{{ errorMessage }}</span>
+    <button class="btn-primary" (click)="loadProducts()">Retry</button>
+  </div>
+
+  <!-- Grid -->
+  <div class="products-grid" *ngIf="!loading && !errorMessage && products.length > 0">
+    <div
+      *ngFor="let product of products"
+      class="product-card"
+      (click)="viewProductDetails(product.id)"
+    >
+      <div class="product-image">
+        <img [src]="product.thumbnail" [alt]="product.title" />
+      </div>
+      <div class="product-body">
+        <p class="product-brand">{{ product.brand }}</p>
+        <h3 class="product-title">{{ product.title }}</h3>
+        <div class="product-footer">
+          <span class="product-price">${{ product.price }}</span>
+          <span class="rating-badge">
+            <i class="ti ti-star-filled"></i>{{ product.rating }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty -->
+  <div *ngIf="!loading && !errorMessage && products.length === 0" class="state-block">
+    <i class="ti ti-box-off"></i>
+    <span>No products found.</span>
+    <button class="btn-primary" (click)="loadProducts()">Retry</button>
+  </div>
+
+</div>

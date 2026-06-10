@@ -1,0 +1,18 @@
+<app-header></app-header>
+
+<div class="dashboard">
+  <nav class="nav-bar">
+    <div class="nav-inner">
+      <a routerLink="/dashboard/products" routerLinkActive="active" class="nav-link">
+        <i class="ti ti-package"></i> Products
+      </a>
+      <a routerLink="/dashboard/profile" routerLinkActive="active" class="nav-link">
+        <i class="ti ti-user"></i> Profile
+      </a>
+    </div>
+  </nav>
+
+  <div class="page-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>
