@@ -1573,7 +1573,10 @@
         },
         "runtime": {
           "bin/placeholder/AgriculturePlatform.Infrastructure.dll": {}
-        }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       }
     }
   },

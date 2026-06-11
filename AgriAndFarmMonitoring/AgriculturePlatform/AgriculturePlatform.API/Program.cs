@@ -5,16 +5,19 @@ using System.Text;
 using FluentValidation;
 using AutoMapper;
 using AgriculturePlatform.Infrastructure.Context;
+using AgriculturePlatform.Infrastructure.FileStorage;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Application.Services;
 using AgriculturePlatform.Infrastructure.Repositories;
 using AgriculturePlatform.Application.Validators;
 using AgriculturePlatform.Application.Validators.Harvest; 
+using AgriculturePlatform.Application.Validators.QualityCheck;
 using Microsoft.OpenApi.Models;
 using AgriculturePlatform.API.BackgroundServices;
 using AgriculturePlatform.Application.Mappings;
 using AgriculturePlatform.API.Hubs;
 using AgriculturePlatform.API.Services;
+using AgriculturePlatform.API.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +28,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.WriteIndented = true;
     });
+
+builder.Services.Configure<FileStorageSettings>(
+    builder.Configuration.GetSection("FileStorage"));
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -97,6 +103,10 @@ builder.Services.AddSignalR();
 // Background IoT Simulator
 builder.Services.AddHostedService<IoTSimulatorBackgroundService>();
 
+//  background service for scheduled reports
+builder.Services.AddHostedService<ScheduledReportBackgroundService>();
+
+
 // Add AutoMapper - Manual configuration
 var mapperConfig = new MapperConfiguration(cfg =>
 {
@@ -113,6 +123,8 @@ var mapperConfig = new MapperConfiguration(cfg =>
     cfg.AddProfile<AlertMappingProfile>();
     cfg.AddProfile<ObservationMappingProfile>();
     cfg.AddProfile<HarvestMappingProfile>();
+    cfg.AddProfile<QualityCheckMappingProfile>();
+    cfg.AddProfile<YieldReportMappingProfile>();
 
 });
 
@@ -155,6 +167,9 @@ builder.Services.AddScoped<IAlertThresholdRepository, AlertThresholdRepository>(
 builder.Services.AddScoped<IObservationRepository, ObservationRepository>();
 builder.Services.AddScoped<IHarvestRepository, HarvestRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IQualityCheckRepository, QualityCheckRepository>();
+builder.Services.AddScoped<IYieldReportRepository, YieldReportRepository>();
+
 
 // Register Services
 builder.Services.AddScoped<IAdminService, AdminService>();
@@ -177,6 +192,9 @@ builder.Services.AddScoped<IAlertNotificationService, AlertNotificationService>(
 builder.Services.AddScoped<IObservationService, ObservationService>();
 builder.Services.AddScoped<IHarvestService, HarvestService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IQualityCheckService, QualityCheckService>();
+builder.Services.AddScoped<IYieldReportService, YieldReportService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 
 
 builder.Services.AddScoped<ObservationStatisticsFormatter>();

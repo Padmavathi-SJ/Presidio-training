@@ -50,4 +50,13 @@ public class FarmRepository : IFarmRepository
         .Where(f => f.IsActive && !f.IsDeleted)
         .ToListAsync();
 }
+
+// Infrastructure/Repositories/FarmRepository.cs
+public async Task<List<Farm>> GetAllActiveFarmsAsync()
+{
+    return await _context.Farms
+        .Where(f => f.IsActive && !f.IsDeleted)
+        .ToListAsync();
+}
+
 }

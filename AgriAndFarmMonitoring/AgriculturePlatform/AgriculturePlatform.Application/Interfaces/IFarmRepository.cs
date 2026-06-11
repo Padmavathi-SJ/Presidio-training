@@ -11,4 +11,5 @@ public interface IFarmRepository
     Task<Farm> CreateAsync(Farm farm);
     Task<bool> ExistsAsync(int id);
     Task<List<Farm>> GetAllActiveAsync();
+    Task<List<Farm>> GetAllActiveFarmsAsync();
 }

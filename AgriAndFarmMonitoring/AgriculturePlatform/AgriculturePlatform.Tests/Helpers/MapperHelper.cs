@@ -23,7 +23,8 @@ public static class MapperHelper
             cfg.AddProfile<AlertMappingProfile>();
             cfg.AddProfile<ObservationMappingProfile>();
             cfg.AddProfile<HarvestMappingProfile>();
-            
+            cfg.AddProfile<QualityCheckMappingProfile>();
+            cfg.AddProfile<YieldReportMappingProfile>();
 
         });
         

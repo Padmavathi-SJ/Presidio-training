@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AgriculturePlatform.Application\AgriculturePlatform.Application.csproj" />
     <ProjectReference Include="..\AgriculturePlatform.Domain\AgriculturePlatform.Domain.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>

@@ -395,12 +395,6 @@
       "Microsoft.Extensions.Caching.Abstractions/8.0.0": {
         "dependencies": {
           "Microsoft.Extensions.Primitives": "8.0.0"
-        },
-        "runtime": {
-          "lib/net8.0/Microsoft.Extensions.Caching.Abstractions.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
-          }
         }
       },
       "Microsoft.Extensions.Caching.Memory/8.0.1": {
@@ -422,34 +416,16 @@
         "dependencies": {
           "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
           "Microsoft.Extensions.Primitives": "8.0.0"
-        },
-        "runtime": {
-          "lib/net8.0/Microsoft.Extensions.Configuration.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
-          }
         }
       },
       "Microsoft.Extensions.Configuration.Abstractions/8.0.0": {
         "dependencies": {
           "Microsoft.Extensions.Primitives": "8.0.0"
-        },
-        "runtime": {
-          "lib/net8.0/Microsoft.Extensions.Configuration.Abstractions.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
-          }
         }
       },
       "Microsoft.Extensions.Configuration.Binder/8.0.0": {
         "dependencies": {
           "Microsoft.Extensions.Configuration.Abstractions": "8.0.0"
-        },
-        "runtime": {
-          "lib/net8.0/Microsoft.Extensions.Configuration.Binder.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
-          }
         }
       },
       "Microsoft.Extensions.Configuration.FileExtensions/7.0.0": {
@@ -459,12 +435,6 @@
           "Microsoft.Extensions.FileProviders.Abstractions": "7.0.0",
           "Microsoft.Extensions.FileProviders.Physical": "7.0.0",
           "Microsoft.Extensions.Primitives": "8.0.0"
-        },
-        "runtime": {
-          "lib/net7.0/Microsoft.Extensions.Configuration.FileExtensions.dll": {
-            "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
-          }
         }
       },
       "Microsoft.Extensions.Configuration.Json/7.0.0": {
@@ -474,12 +444,6 @@
           "Microsoft.Extensions.Configuration.FileExtensions": "7.0.0",
           "Microsoft.Extensions.FileProviders.Abstractions": "7.0.0",
           "System.Text.Json": "7.0.0"
-        },
-        "runtime": {
-          "lib/net7.0/Microsoft.Extensions.Configuration.Json.dll": {
-            "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
-          }
         }
       },
       "Microsoft.Extensions.DependencyInjection/8.0.1": {
@@ -537,12 +501,6 @@
       "Microsoft.Extensions.FileProviders.Abstractions/7.0.0": {
         "dependencies": {
           "Microsoft.Extensions.Primitives": "8.0.0"
-        },
-        "runtime": {
-          "lib/net7.0/Microsoft.Extensions.FileProviders.Abstractions.dll": {
-            "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
-          }
         }
       },
       "Microsoft.Extensions.FileProviders.Physical/7.0.0": {
@@ -550,22 +508,9 @@
           "Microsoft.Extensions.FileProviders.Abstractions": "7.0.0",
           "Microsoft.Extensions.FileSystemGlobbing": "7.0.0",
           "Microsoft.Extensions.Primitives": "8.0.0"
-        },
-        "runtime": {
-          "lib/net7.0/Microsoft.Extensions.FileProviders.Physical.dll": {
-            "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
-          }
         }
       },
-      "Microsoft.Extensions.FileSystemGlobbing/7.0.0": {
-        "runtime": {
-          "lib/net7.0/Microsoft.Extensions.FileSystemGlobbing.dll": {
-            "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
-          }
-        }
-      },
+      "Microsoft.Extensions.FileSystemGlobbing/7.0.0": {},
       "Microsoft.Extensions.Http/8.0.1": {
         "dependencies": {
           "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
@@ -625,22 +570,9 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.8",
           "Microsoft.Extensions.Options": "8.0.2",
           "Microsoft.Extensions.Primitives": "8.0.0"
-        },
-        "runtime": {
-          "lib/net8.0/Microsoft.Extensions.Options.ConfigurationExtensions.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
-          }
         }
       },
-      "Microsoft.Extensions.Primitives/8.0.0": {
-        "runtime": {
-          "lib/net8.0/Microsoft.Extensions.Primitives.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
-          }
-        }
-      },
+      "Microsoft.Extensions.Primitives/8.0.0": {},
       "Microsoft.IdentityModel.Abstractions/8.0.0": {
         "runtime": {
           "lib/net8.0/Microsoft.IdentityModel.Abstractions.dll": {
@@ -847,14 +779,7 @@
           }
         }
       },
-      "System.IO.Pipelines/6.0.3": {
-        "runtime": {
-          "lib/net6.0/System.IO.Pipelines.dll": {
-            "assemblyVersion": "6.0.0.0",
-            "fileVersion": "6.0.522.21309"
-          }
-        }
-      },
+      "System.IO.Pipelines/6.0.3": {},
       "System.Reflection.Metadata/6.0.1": {
         "dependencies": {
           "System.Collections.Immutable": "6.0.0"
@@ -864,20 +789,6 @@
       "System.Security.Cryptography.Pkcs/7.0.2": {
         "dependencies": {
           "System.Formats.Asn1": "7.0.0"
-        },
-        "runtime": {
-          "lib/net7.0/System.Security.Cryptography.Pkcs.dll": {
-            "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.723.27404"
-          }
-        },
-        "runtimeTargets": {
-          "runtimes/win/lib/net7.0/System.Security.Cryptography.Pkcs.dll": {
-            "rid": "win",
-            "assetType": "runtime",
-            "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.723.27404"
-          }
         }
       },
       "System.Text.Encoding.CodePages/7.0.0": {},

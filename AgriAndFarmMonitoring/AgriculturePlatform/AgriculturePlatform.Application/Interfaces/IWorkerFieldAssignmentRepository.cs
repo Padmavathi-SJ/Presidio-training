@@ -1,6 +1,7 @@
 // AgriculturePlatform.Application/Interfaces/IWorkerFieldAssignmentRepository.cs
 using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Domain.Entities.WorkerManagement;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
 
 namespace AgriculturePlatform.Application.Interfaces;
 
@@ -29,5 +30,6 @@ public interface IWorkerFieldAssignmentRepository
 /// </summary>
 Task<List<WorkerFieldAssignment>> GetWorkerActiveAssignmentsAsync(int workerId, int farmId);
 
+Task<List<Field>> GetFieldsByWorkerAsync(int workerId, int farmId);
 
 }

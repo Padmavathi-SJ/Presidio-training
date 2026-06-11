@@ -584,56 +584,158 @@ modelBuilder.Entity<Harvest>(entity =>
 });
 
 
-        // =============================================
-        // QUALITY CHECK CONFIGURATION
-        // =============================================
-        modelBuilder.Entity<QualityCheck>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.MoisturePct).HasPrecision(5, 2);
-            entity.Property(e => e.DefectPct).HasPrecision(5, 2);
-            entity.Property(e => e.FinalGrade).HasConversion<string>().HasMaxLength(10);
-            entity.Property(e => e.ApprovalStatus).HasMaxLength(20);
-            
-            entity.HasOne(e => e.Farm)
-                  .WithMany(f => f.QualityChecks)
-                  .HasForeignKey(e => e.FarmId)
-                  .OnDelete(DeleteBehavior.Cascade);
-            
-            entity.HasOne(e => e.Checker)
-                  .WithMany(w => w.QualityChecks)
-                  .HasForeignKey(e => e.CheckedBy)
-                  .OnDelete(DeleteBehavior.Restrict);
-                  
-            entity.HasOne(e => e.Approver)
-                  .WithMany()
-                  .HasForeignKey(e => e.ApprovedBy)
-                  .OnDelete(DeleteBehavior.Restrict);
-                  
-            entity.HasIndex(e => e.HarvestId);
-            entity.HasIndex(e => e.ApprovalStatus);
-        });
-        
-        // =============================================
-        // YIELD REPORT CONFIGURATION
-        // =============================================
-        modelBuilder.Entity<YieldReport>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.TotalYieldKg).HasPrecision(12, 2);
-            entity.Property(e => e.YieldPerHectareKg).HasPrecision(10, 2);
-            entity.Property(e => e.ReportType).HasConversion<string>().HasMaxLength(20);
-            entity.Property(e => e.AvgQualityGrade).HasConversion<string>().HasMaxLength(10);
-            
-            entity.HasOne(e => e.Farm)
-                  .WithMany(f => f.YieldReports)
-                  .HasForeignKey(e => e.FarmId)
-                  .OnDelete(DeleteBehavior.Cascade);
-                  
-            entity.HasIndex(e => new { e.FarmId, e.ReportDate });
-            entity.HasIndex(e => e.CropCycleId);
-        });
-        
+// =============================================
+// QUALITY CHECK CONFIGURATION
+// =============================================
+modelBuilder.Entity<QualityCheck>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    entity.Property(e => e.MoisturePct).HasPrecision(5, 2);
+    entity.Property(e => e.DefectPct).HasPrecision(5, 2);
+    entity.Property(e => e.FinalGrade).HasConversion<string>().HasMaxLength(10);
+    entity.Property(e => e.ApprovalStatus).HasMaxLength(20).HasDefaultValue("PENDING");
+    entity.Property(e => e.RejectionReason).HasMaxLength(500);
+    entity.Property(e => e.AdminNotes).HasMaxLength(1000);
+    entity.Property(e => e.WorkerResponse).HasMaxLength(1000);
+    entity.Property(e => e.CheckDate).HasColumnType("timestamp with time zone");
+    entity.Property(e => e.ApprovedAt).HasColumnType("timestamp with time zone");
+    
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.QualityChecks)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Harvest)
+          .WithMany(h => h.QualityChecks)
+          .HasForeignKey(e => e.HarvestId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Checker)
+          .WithMany(w => w.QualityChecks)
+          .HasForeignKey(e => e.CheckedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Approver)
+          .WithMany()
+          .HasForeignKey(e => e.ApprovedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasIndex(e => e.HarvestId);
+    entity.HasIndex(e => e.CheckedBy);
+    entity.HasIndex(e => e.ApprovalStatus);
+    entity.HasIndex(e => e.CheckDate);
+});
+
+
+// =============================================
+// YIELD REPORT CONFIGURATION - CORRECTED
+// =============================================
+modelBuilder.Entity<YieldReport>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    // Basic properties
+    entity.Property(e => e.ReportName)
+          .IsRequired()
+          .HasMaxLength(200);
+    entity.Property(e => e.ReportType)
+          .HasMaxLength(20);
+    entity.Property(e => e.StartDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    entity.Property(e => e.EndDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    
+    // Yield statistics
+    entity.Property(e => e.TotalYieldKg)
+          .HasPrecision(12, 2);
+    entity.Property(e => e.AverageYieldPerHectare)  // ✅ Use correct property name
+          .HasPrecision(10, 2);
+    entity.Property(e => e.TotalHarvests);
+    entity.Property(e => e.AveragePricePerKg)
+          .HasPrecision(10, 2);
+    entity.Property(e => e.TotalValue)
+          .HasPrecision(12, 2);
+    
+    // Quality statistics
+    entity.Property(e => e.AverageQualityGrade)  // ✅ Use correct property name
+          .HasMaxLength(10);
+    entity.Property(e => e.PassRate)
+          .HasPrecision(5, 2);
+    entity.Property(e => e.RejectionRate)
+          .HasPrecision(5, 2);
+    
+    // JSON fields
+    entity.Property(e => e.FieldBreakdownJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.CropTypeBreakdownJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.MonthlyTrendJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.QualityDistributionJson)
+          .HasColumnType("jsonb");
+    
+    // Export tracking
+    entity.Property(e => e.FilePath)
+          .HasMaxLength(500);
+    entity.Property(e => e.FileFormat)
+          .HasMaxLength(20);
+    entity.Property(e => e.ExportedAt)
+          .HasColumnType("timestamp with time zone");
+    
+    // Scheduling
+    entity.Property(e => e.ScheduleCron)
+          .HasMaxLength(100);
+    entity.Property(e => e.LastGeneratedAt)
+          .HasColumnType("timestamp with time zone");
+    entity.Property(e => e.NextScheduledRun)
+          .HasColumnType("timestamp with time zone");
+    
+    // Relationships
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.YieldReports)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.CropCycle)
+          .WithMany(cc => cc.YieldReports)
+          .HasForeignKey(e => e.CropCycleId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Field)
+          .WithMany()
+          .HasForeignKey(e => e.FieldId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Exporter)
+          .WithMany()
+          .HasForeignKey(e => e.ExportedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    // Indexes for performance
+    entity.HasIndex(e => new { e.FarmId, e.StartDate, e.EndDate })
+          .HasDatabaseName("IX_YieldReports_Farm_DateRange");
+    entity.HasIndex(e => e.CropCycleId)
+          .HasDatabaseName("IX_YieldReports_CropCycleId");
+    entity.HasIndex(e => e.FieldId)
+          .HasDatabaseName("IX_YieldReports_FieldId");
+    entity.HasIndex(e => e.ReportType)
+          .HasDatabaseName("IX_YieldReports_ReportType");
+    entity.HasIndex(e => e.IsScheduled)
+          .HasDatabaseName("IX_YieldReports_IsScheduled");
+    entity.HasIndex(e => e.NextScheduledRun)
+          .HasDatabaseName("IX_YieldReports_NextScheduledRun");
+    entity.HasIndex(e => e.CreatedAt)
+          .HasDatabaseName("IX_YieldReports_CreatedAt");
+});
+
         // =============================================
         // AUDIT LOG CONFIGURATION
         // =============================================

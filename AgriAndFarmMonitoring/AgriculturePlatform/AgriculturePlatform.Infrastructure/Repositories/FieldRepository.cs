@@ -234,4 +234,14 @@ public async Task<int> GetFieldsCountByStatusAsync(int farmId, string status, bo
         _context.Fields.UpdateRange(fields);
         return await _context.SaveChangesAsync();
     }
+    
+
+    public async Task<List<Field>> GetByFarmIdAsync(int farmId)
+{
+    return await _context.Fields
+        .Where(f => f.FarmId == farmId && !f.IsDeleted)
+        .ToListAsync();
+}
+
+
 }

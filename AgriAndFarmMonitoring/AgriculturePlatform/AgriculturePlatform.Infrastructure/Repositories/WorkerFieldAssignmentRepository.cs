@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Domain.Entities.WorkerManagement;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
 using AgriculturePlatform.Infrastructure.Context;
 using AgriculturePlatform.Infrastructure.Specifications;
 
@@ -113,7 +114,22 @@ public class WorkerFieldAssignmentRepository : IWorkerFieldAssignmentRepository
             .AnyAsync(a => a.Id == id && a.FarmId == farmId && !a.IsDeleted);
     }
 
-    // AgriculturePlatform.Infrastructure/Repositories/WorkerFieldAssignmentRepository.cs
+
+public async Task<List<Field>> GetFieldsByWorkerAsync(int workerId, int farmId)
+{
+    var assignments = await _context.WorkerFieldAssignments
+        .Include(a => a.Field)
+        .Where(a => a.WorkerId == workerId 
+                    && a.FarmId == farmId 
+                    && a.IsActive == true 
+                    && !a.IsDeleted)
+        .ToListAsync();
+    
+    return assignments
+        .Where(a => a.Field != null && !a.Field.IsDeleted)
+        .Select(a => a.Field!)
+        .ToList();
+}
 
 public async Task<List<WorkerFieldAssignment>> GetWorkerActiveAssignmentsAsync(int workerId, int farmId)
 {
