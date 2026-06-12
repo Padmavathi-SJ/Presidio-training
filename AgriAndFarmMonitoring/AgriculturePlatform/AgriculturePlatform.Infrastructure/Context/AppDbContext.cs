@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     // Admin DbSets
     public DbSet<Farm> Farms { get; set; }
     public DbSet<Admin> Admins { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     
@@ -86,6 +87,31 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.FarmId);
             entity.HasIndex(e => e.IsActive);
         });
+
+ // =============================================
+        // REFRESH TOKEN
+        // =============================================
+       
+
+// Add configuration in OnModelCreating
+modelBuilder.Entity<RefreshToken>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    entity.HasIndex(e => e.Token).IsUnique();
+    entity.Property(e => e.Token).IsRequired().HasMaxLength(500);
+    entity.Property(e => e.JwtId).IsRequired().HasMaxLength(100);
+    entity.Property(e => e.ExpiryDate).HasColumnType("timestamp with time zone");
+    entity.Property(e => e.CreatedByIp).HasMaxLength(45);
+    entity.Property(e => e.RevokedByIp).HasMaxLength(45);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Cascade);
+          
+    entity.HasIndex(e => new { e.AdminId, e.IsRevoked });
+    entity.HasIndex(e => e.ExpiryDate);
+});
         
         // =============================================
         // FIELD CONFIGURATION
@@ -684,7 +710,7 @@ modelBuilder.Entity<YieldReport>(entity =>
           .HasMaxLength(20);
     entity.Property(e => e.ExportedAt)
           .HasColumnType("timestamp with time zone");
-    
+       
     // Scheduling
     entity.Property(e => e.ScheduleCron)
           .HasMaxLength(100);

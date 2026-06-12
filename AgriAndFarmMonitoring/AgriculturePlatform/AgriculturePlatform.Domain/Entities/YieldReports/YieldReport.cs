@@ -40,7 +40,7 @@ public class YieldReport : BaseEntity
     // File storage fields - ADD THESE
     public string? FileName { get; set; }
     public string? FilePath { get; set; }
-    public string? FileFormat { get; set; }      // ✅ This is the property - but DbContext expects 'ExportFormat'
+    public string? FileFormat { get; set; }    
     public long? FileSize { get; set; }
     public DateTime? ExportedAt { get; set; }
     public int? ExportedBy { get; set; }

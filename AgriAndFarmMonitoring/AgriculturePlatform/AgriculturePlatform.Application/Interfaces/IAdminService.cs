@@ -1,4 +1,3 @@
-// AgriculturePlatform.Application/Interfaces/IAdminService.cs
 using AgriculturePlatform.Application.DTOs.Admin;
 
 namespace AgriculturePlatform.Application.Interfaces;
@@ -6,5 +5,8 @@ namespace AgriculturePlatform.Application.Interfaces;
 public interface IAdminService
 {
     Task<AuthResponseDto> RegisterAsync(RegisterDto dto);
-    Task<AuthResponseDto> LoginAsync(LoginDto dto);
+    Task<AuthResponseDto> LoginAsync(LoginDto dto, string ipAddress);
+    Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenDto dto, string ipAddress);
+    Task<bool> RevokeTokenAsync(RevokeTokenDto dto, string ipAddress);
+    Task<bool> RevokeAllUserTokensAsync(int adminId, string ipAddress);
 }

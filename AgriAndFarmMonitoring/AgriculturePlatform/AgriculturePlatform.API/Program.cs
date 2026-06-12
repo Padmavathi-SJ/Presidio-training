@@ -84,15 +84,17 @@ builder.Services.AddCors(options =>
     });
 });
 
-// JWT Configuration
+// JWT Configuration 
 var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "your-super-secret-key-minimum-32-characters-long";
 var jwtIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "AgriculturePlatform";
 var jwtAudience = builder.Configuration["JwtSettings:Audience"] ?? "AgriculturePlatformClients";
-var expiryDays = int.Parse(builder.Configuration["JwtSettings:ExpiryDays"] ?? "7");
+// Changed from ExpiryDays to AccessTokenExpiryMinutes and RefreshTokenExpiryDays
+var accessTokenExpiryMinutes = int.Parse(builder.Configuration["JwtSettings:AccessTokenExpiryMinutes"] ?? "15");
+var refreshTokenExpiryDays = int.Parse(builder.Configuration["JwtSettings:RefreshTokenExpiryDays"] ?? "7");
 
-// Register JWT Service
+// Register JWT Service with new parameters
 builder.Services.AddSingleton<IJwtService>(provider =>
-    new JwtService(jwtSecretKey, jwtIssuer, jwtAudience, expiryDays));
+    new JwtService(jwtSecretKey, jwtIssuer, jwtAudience, accessTokenExpiryMinutes, refreshTokenExpiryDays));
 
 // Add AuditLog Service
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
@@ -133,21 +135,7 @@ builder.Services.AddSingleton<IMapper>(mapper);
 
 builder.Services.AddValidatorsFromAssembly(typeof(CreateFieldValidator).Assembly);
 
-/*
-// Register all validators from assembly
-builder.Services.AddValidatorsFromAssemblyContaining<CreateFieldValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<CreateTaskValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<UpdateWorkerTaskStatusValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<SensorReadingFilterValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<AlertFilterValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<CreateObservationValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<UpdateObservationValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<ObservationFilterValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<CreateHarvestValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<UpdateHarvestValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<HarvestApprovalValidator>();
 
-*/
 // Add Excel service
 builder.Services.AddScoped<IExcelService, ExcelService>();
 
@@ -169,6 +157,7 @@ builder.Services.AddScoped<IHarvestRepository, HarvestRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IQualityCheckRepository, QualityCheckRepository>();
 builder.Services.AddScoped<IYieldReportRepository, YieldReportRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 
 // Register Services

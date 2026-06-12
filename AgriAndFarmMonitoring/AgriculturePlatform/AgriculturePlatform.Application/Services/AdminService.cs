@@ -1,6 +1,3 @@
-// AgriculturePlatform.Application/Services/AdminService.cs
-using System.Security.Cryptography;
-using System.Text;
 using AgriculturePlatform.Application.DTOs.Admin;
 using AgriculturePlatform.Application.Exceptions;
 using AgriculturePlatform.Application.Interfaces;
@@ -12,39 +9,52 @@ public class AdminService : IAdminService
 {
     private readonly IAdminRepository _adminRepository;
     private readonly IFarmRepository _farmRepository;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IJwtService _jwtService;
+    private readonly IAuditLogService _auditLogService;
 
     public AdminService(
-        IAdminRepository adminRepository, 
+        IAdminRepository adminRepository,
         IFarmRepository farmRepository,
-        IJwtService jwtService)
+        IRefreshTokenRepository refreshTokenRepository,
+        IJwtService jwtService,
+        IAuditLogService auditLogService)
     {
         _adminRepository = adminRepository;
         _farmRepository = farmRepository;
+        _refreshTokenRepository = refreshTokenRepository;
         _jwtService = jwtService;
+        _auditLogService = auditLogService;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
     {
-        // 1. Check if farm email already exists
+        // Validate input
+        if (string.IsNullOrWhiteSpace(dto.FarmName))
+            throw new BadRequestException("Farm name is required");
+
+        if (string.IsNullOrWhiteSpace(dto.AdminEmail) || string.IsNullOrWhiteSpace(dto.AdminPassword))
+            throw new BadRequestException("Admin email and password are required");
+
+        // Check if farm email already exists
         if (await _farmRepository.EmailExistsAsync(dto.FarmEmail))
             throw new BadRequestException("Farm email already registered");
 
-        // 2. Check if admin email already exists
+        // Check if admin email already exists
         if (await _adminRepository.EmailExistsAsync(dto.AdminEmail))
             throw new BadRequestException("Admin email already registered");
 
-        // 3. Create Farm FIRST
+        // Create Farm
         var farm = new Farm
         {
-            FarmName = dto.FarmName,
-            Email = dto.FarmEmail,
-            Phone = dto.FarmPhone,
-            Address = dto.FarmAddress,
-            City = dto.FarmCity,
-            State = dto.FarmState,
-            Country = dto.FarmCountry,
-            PostalCode = dto.FarmPostalCode,
+            FarmName = dto.FarmName.Trim(),
+            Email = dto.FarmEmail.Trim().ToLower(),
+            Phone = dto.FarmPhone?.Trim(),
+            Address = dto.FarmAddress?.Trim(),
+            City = dto.FarmCity?.Trim(),
+            State = dto.FarmState?.Trim(),
+            Country = dto.FarmCountry?.Trim(),
+            PostalCode = dto.FarmPostalCode?.Trim(),
             TotalLandHectares = dto.TotalLandHectares,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -52,13 +62,13 @@ public class AdminService : IAdminService
 
         var createdFarm = await _farmRepository.CreateAsync(farm);
 
-        // 4. Create Admin linked to the farm
+        // Create Admin
         var admin = new Admin
         {
-            Name = dto.AdminName,
-            Email = dto.AdminEmail,
-            PasswordHash = HashPassword(dto.AdminPassword),
-            Phone = dto.AdminPhone,
+            Name = dto.AdminName.Trim(),
+            Email = dto.AdminEmail.Trim().ToLower(),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.AdminPassword),
+            Phone = dto.AdminPhone?.Trim(),
             FarmId = createdFarm.Id,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -66,69 +76,220 @@ public class AdminService : IAdminService
 
         var createdAdmin = await _adminRepository.CreateAsync(admin);
 
-        // 5. Generate token
-        var token = _jwtService.GenerateToken(createdAdmin);
+        // Generate tokens
+        var accessToken = _jwtService.GenerateAccessToken(createdAdmin);
+        var refreshTokenValue = _jwtService.GenerateRefreshToken();
+        var jwtId = Guid.NewGuid().ToString();
+
+        // Store refresh token
+        var refreshToken = new RefreshToken
+        {
+            AdminId = createdAdmin.Id,
+            Token = refreshTokenValue,
+            JwtId = jwtId,
+            ExpiryDate = DateTime.UtcNow.AddDays(7),
+            CreatedByIp = "127.0.0.1", // Get from request in controller
+            IsUsed = false,
+            IsRevoked = false
+        };
+
+        await _refreshTokenRepository.CreateAsync(refreshToken);
 
         return new AuthResponseDto
         {
             Id = createdAdmin.Id,
             Name = createdAdmin.Name,
             Email = createdAdmin.Email,
-            Token = token,
+            AccessToken = accessToken,
+            RefreshToken = refreshTokenValue,
             FarmId = createdAdmin.FarmId,
             FarmName = createdFarm.FarmName,
-            ExpiresAt = _jwtService.GetExpiryDate()
+            AccessTokenExpiresAt = _jwtService.GetAccessTokenExpiryDate(),
+            RefreshTokenExpiresAt = refreshToken.ExpiryDate
         };
     }
 
-    public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
+    public async Task<AuthResponseDto> LoginAsync(LoginDto dto, string ipAddress)
     {
+        // Validate input
+        if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
+            throw new BadRequestException("Email and password are required");
+
         // Get admin by email
-        var admin = await _adminRepository.GetByEmailAsync(dto.Email);
+        var admin = await _adminRepository.GetByEmailAsync(dto.Email.Trim().ToLower());
         if (admin == null)
             throw new UnauthorizedException("Invalid email or password");
 
         // Check if active
         if (!admin.IsActive)
-            throw new UnauthorizedException("Account is deactivated");
+            throw new UnauthorizedException("Account is deactivated. Please contact support.");
 
         // Verify password
-        if (!VerifyPassword(dto.Password, admin.PasswordHash))
+        if (!BCrypt.Net.BCrypt.Verify(dto.Password, admin.PasswordHash))
             throw new UnauthorizedException("Invalid email or password");
 
         // Get farm details
         var farm = await _farmRepository.GetByIdAsync(admin.FarmId);
-        var farmName = farm?.FarmName ?? string.Empty;
+        if (farm == null || !farm.IsActive)
+            throw new UnauthorizedException("Farm is not active. Please contact support.");
+
+        // Revoke all existing refresh tokens for this admin
+        await _refreshTokenRepository.RevokeAllUserTokensAsync(admin.Id, ipAddress);
 
         // Update last login
         admin.LastLogin = DateTime.UtcNow;
         await _adminRepository.UpdateAsync(admin);
 
-        // Generate token
-        var token = _jwtService.GenerateToken(admin);
+        // Generate new tokens
+        var accessToken = _jwtService.GenerateAccessToken(admin);
+        var refreshTokenValue = _jwtService.GenerateRefreshToken();
+        var jwtId = Guid.NewGuid().ToString();
+
+        // Store new refresh token
+        var refreshToken = new RefreshToken
+        {
+            AdminId = admin.Id,
+            Token = refreshTokenValue,
+            JwtId = jwtId,
+            ExpiryDate = DateTime.UtcNow.AddDays(7),
+            CreatedByIp = ipAddress,
+            IsUsed = false,
+            IsRevoked = false
+        };
+
+        await _refreshTokenRepository.CreateAsync(refreshToken);
+
+        // Log successful login
+        await _auditLogService.LogCreateAsync(admin.FarmId, admin.Id, "Login", admin.Id, null, ipAddress, null);
 
         return new AuthResponseDto
         {
             Id = admin.Id,
             Name = admin.Name,
             Email = admin.Email,
-            Token = token,
+            AccessToken = accessToken,
+            RefreshToken = refreshTokenValue,
             FarmId = admin.FarmId,
-            FarmName = farmName,
-            ExpiresAt = _jwtService.GetExpiryDate()
+            FarmName = farm.FarmName,
+            AccessTokenExpiresAt = _jwtService.GetAccessTokenExpiryDate(),
+            RefreshTokenExpiresAt = refreshToken.ExpiryDate
         };
     }
 
-    private string HashPassword(string password)
+    public async Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenDto dto, string ipAddress)
     {
-        using var sha256 = SHA256.Create();
-        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(hashedBytes);
+        // Validate input
+        if (string.IsNullOrWhiteSpace(dto.AccessToken) || string.IsNullOrWhiteSpace(dto.RefreshToken))
+            throw new BadRequestException("Access token and refresh token are required");
+
+        // Get principal from expired access token
+        var principal = _jwtService.GetPrincipalFromExpiredToken(dto.AccessToken);
+        if (principal == null)
+            throw new UnauthorizedException("Invalid access token");
+
+        var adminId = int.Parse(principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? "0");
+        var jwtId = principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+
+        if (adminId == 0 || string.IsNullOrEmpty(jwtId))
+            throw new UnauthorizedException("Invalid token claims");
+
+        // Get refresh token from database
+        var refreshToken = await _refreshTokenRepository.GetByTokenAsync(dto.RefreshToken);
+        if (refreshToken == null)
+            throw new UnauthorizedException("Invalid refresh token");
+
+        // Validate refresh token
+        if (refreshToken.IsRevoked)
+            throw new UnauthorizedException("Refresh token has been revoked");
+
+        if (refreshToken.IsUsed)
+            throw new UnauthorizedException("Refresh token has already been used");
+
+        if (refreshToken.ExpiryDate < DateTime.UtcNow)
+            throw new UnauthorizedException("Refresh token has expired");
+
+        if (refreshToken.AdminId != adminId)
+            throw new UnauthorizedException("Token does not match user");
+
+        if (refreshToken.JwtId != jwtId)
+            throw new UnauthorizedException("Token does not match");
+
+        // Mark current refresh token as used
+        refreshToken.IsUsed = true;
+        await _refreshTokenRepository.UpdateAsync(refreshToken);
+
+        // Get admin details
+        var admin = await _adminRepository.GetByIdAsync(adminId);
+        if (admin == null || !admin.IsActive)
+            throw new UnauthorizedException("Admin not found or inactive");
+
+        var farm = await _farmRepository.GetByIdAsync(admin.FarmId);
+        if (farm == null || !farm.IsActive)
+            throw new UnauthorizedException("Farm is not active");
+
+        // Generate new tokens
+        var newAccessToken = _jwtService.GenerateAccessToken(admin);
+        var newRefreshTokenValue = _jwtService.GenerateRefreshToken();
+        var newJwtId = Guid.NewGuid().ToString();
+
+        // Store new refresh token
+        var newRefreshToken = new RefreshToken
+        {
+            AdminId = admin.Id,
+            Token = newRefreshTokenValue,
+            JwtId = newJwtId,
+            ExpiryDate = DateTime.UtcNow.AddDays(7),
+            CreatedByIp = ipAddress,
+            IsUsed = false,
+            IsRevoked = false
+        };
+
+        await _refreshTokenRepository.CreateAsync(newRefreshToken);
+
+        // Log token refresh
+        await _auditLogService.LogCreateAsync(admin.FarmId, admin.Id, "RefreshToken", admin.Id, null, ipAddress, null);
+
+        return new AuthResponseDto
+        {
+            Id = admin.Id,
+            Name = admin.Name,
+            Email = admin.Email,
+            AccessToken = newAccessToken,
+            RefreshToken = newRefreshTokenValue,
+            FarmId = admin.FarmId,
+            FarmName = farm.FarmName,
+            AccessTokenExpiresAt = _jwtService.GetAccessTokenExpiryDate(),
+            RefreshTokenExpiresAt = newRefreshToken.ExpiryDate
+        };
     }
 
-    private bool VerifyPassword(string password, string passwordHash)
+    public async Task<bool> RevokeTokenAsync(RevokeTokenDto dto, string ipAddress)
     {
-        var hashOfInput = HashPassword(password);
-        return hashOfInput == passwordHash;
+        if (string.IsNullOrWhiteSpace(dto.RefreshToken))
+            throw new BadRequestException("Refresh token is required");
+
+        var refreshToken = await _refreshTokenRepository.GetByTokenAsync(dto.RefreshToken);
+        if (refreshToken == null)
+            return false;
+
+        if (refreshToken.IsRevoked)
+            return false;
+
+        refreshToken.IsRevoked = true;
+        refreshToken.RevokedByIp = ipAddress;
+        refreshToken.RevokedAt = DateTime.UtcNow;
+        await _refreshTokenRepository.UpdateAsync(refreshToken);
+
+        return true;
+    }
+
+    public async Task<bool> RevokeAllUserTokensAsync(int adminId, string ipAddress)
+    {
+        var admin = await _adminRepository.GetByIdAsync(adminId);
+        if (admin == null)
+            return false;
+
+        await _refreshTokenRepository.RevokeAllUserTokensAsync(adminId, ipAddress);
+        return true;
     }
 }

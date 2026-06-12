@@ -262,64 +262,63 @@ public class YieldReportService : IYieldReportService
         return ApiResponse<bool>.Ok(true, "Report deleted successfully");
     }
 
-    public async Task<ApiResponse<FileDownloadDto>> ExportReportAsync(int id, string format, int farmId, int adminId)
+public async Task<ApiResponse<FileDownloadDto>> ExportReportAsync(int id, string format, int farmId, int adminId)
+{
+    var report = await _reportRepository.GetByIdAsync(id, farmId);
+    if (report == null)
+        return ApiResponse<FileDownloadDto>.Fail($"Report with ID {id} not found");
+
+    byte[] fileContent;
+    string fileExtension;
+    
+    switch (format.ToUpper())
     {
-        var report = await _reportRepository.GetByIdAsync(id, farmId);
-        if (report == null)
-            return ApiResponse<FileDownloadDto>.Fail($"Report with ID {id} not found");
-
-        // Generate file content
-        byte[] fileContent;
-        string fileExtension;
-        
-        switch (format.ToUpper())
-        {
-            case "CSV":
-                fileContent = await ExportToCsvBytes(report);
-                fileExtension = "csv";
-                break;
-            case "JSON":
-                fileContent = await ExportToJsonBytes(report);
-                fileExtension = "json";
-                break;
-            default:
-                return ApiResponse<FileDownloadDto>.Fail($"Format {format} not supported. Supported formats: CSV, JSON");
-        }
-
-        // Generate unique filename
-        var fileName = $"yield_report_{report.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.{fileExtension}";
-        
-        // Save file using file storage service
-        var relativePath = await _fileStorageService.SaveFileAsync(fileContent, fileName, "");
-
-        // Update report with file information
-        report.FileName = fileName;
-        report.FilePath = relativePath;
-        report.FileFormat = format.ToUpper();
-        report.FileSize = fileContent.Length;
-        report.ExportedAt = DateTime.UtcNow;
-        report.ExportedBy = adminId;
-        await _reportRepository.UpdateAsync(report);
-
-        // Generate download URL
-        var downloadUrl = _fileStorageService.GetDownloadUrl(fileName);
-
-        var result = new FileDownloadDto
-        {
-            ReportId = report.Id,
-            ReportName = report.ReportName,
-            FileName = fileName,
-            DownloadUrl = downloadUrl,
-            FileFormat = format.ToUpper(),
-            FileSize = fileContent.Length,
-            ExportedAt = DateTime.UtcNow
-        };
-
-        await _auditLogService.LogCreateAsync(farmId, adminId, "YieldReportExport", report.Id, 
-            new { FileName = fileName, Format = format }, null, null);
-
-        return ApiResponse<FileDownloadDto>.Ok(result, $"Report exported as {format}");
+        case "CSV":
+            fileContent = await ExportToCsvBytes(report);  // No farmId needed - uses report data
+            fileExtension = "csv";
+            break;
+        case "JSON":
+            fileContent = await ExportToJsonBytes(report);
+            fileExtension = "json";
+            break;
+        default:
+            return ApiResponse<FileDownloadDto>.Fail($"Format {format} not supported. Supported formats: CSV, JSON");
     }
+    
+    // Generate unique filename
+    var fileName = $"yield_report_{report.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.{fileExtension}";
+    
+    // Save file using file storage service
+    var relativePath = await _fileStorageService.SaveFileAsync(fileContent, fileName, "");
+    
+    // Update report with file information
+    report.FileName = fileName;
+    report.FilePath = relativePath;
+    report.FileFormat = format.ToUpper();
+    report.FileSize = fileContent.Length;
+    report.ExportedAt = DateTime.UtcNow;
+    report.ExportedBy = adminId;
+    await _reportRepository.UpdateAsync(report);
+    
+    // Generate download URL
+    var downloadUrl = _fileStorageService.GetDownloadUrl(fileName);
+    
+    var result = new FileDownloadDto
+    {
+        ReportId = report.Id,
+        ReportName = report.ReportName,
+        FileName = fileName,
+        DownloadUrl = downloadUrl,
+        FileFormat = format.ToUpper(),
+        FileSize = fileContent.Length,
+        ExportedAt = DateTime.UtcNow
+    };
+    
+    await _auditLogService.LogCreateAsync(farmId, adminId, "YieldReportExport", report.Id, 
+        new { FileName = fileName, Format = format }, null, null);
+    
+    return ApiResponse<FileDownloadDto>.Ok(result, $"Report exported as {format}");
+}
 
     // =============================================
     // STATISTICS & ANALYTICS
@@ -595,61 +594,129 @@ public class YieldReportService : IYieldReportService
         return "Yield trends are mixed. Analyze best and worst performing fields to identify improvement opportunities.";
     }
 
-    private async Task<byte[]> ExportToCsvBytes(YieldReport report)
+// Application/Services/YieldReportService.cs - Replace ExportToCsvBytes method
+
+private async Task<byte[]> ExportToCsvBytes(YieldReport report)
+{
+    var csv = new System.Text.StringBuilder();
+    
+    // =============================================
+    // SECTION 1: REPORT HEADER
+    // =============================================
+    csv.AppendLine("\"Report Name\",\"Value\"");
+    csv.AppendLine($"\"Report Name\",\"{EscapeCsvValue(report.ReportName)}\"");
+    csv.AppendLine($"\"Generated On\",\"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\"");
+    csv.AppendLine($"\"Date Range Start\",\"{report.StartDate:yyyy-MM-dd}\"");
+    csv.AppendLine($"\"Date Range End\",\"{report.EndDate:yyyy-MM-dd}\"");
+    csv.AppendLine();
+    
+    // =============================================
+    // SECTION 2: SUMMARY STATISTICS
+    // =============================================
+    csv.AppendLine("\"Metric\",\"Value\"");
+    csv.AppendLine($"\"Total Yield (kg)\",\"{report.TotalYieldKg:N0}\"");
+    csv.AppendLine($"\"Total Harvests\",\"{report.TotalHarvests}\"");
+    csv.AppendLine($"\"Average Price per kg\",\"{report.AveragePricePerKg:F2}\"");
+    csv.AppendLine($"\"Total Value\",\"{report.TotalValue:C}\"");
+    csv.AppendLine($"\"Yield per Hectare (kg/ha)\",\"{report.AverageYieldPerHectare:N0}\"");
+    csv.AppendLine($"\"Pass Rate (%)\",\"{report.PassRate:F1}\"");
+    csv.AppendLine($"\"Rejection Rate (%)\",\"{report.RejectionRate:F1}\"");
+    csv.AppendLine($"\"Average Quality Grade\",\"{report.AverageQualityGrade}\"");
+    csv.AppendLine();
+    
+    // =============================================
+    // SECTION 3: FIELD BREAKDOWN
+    // =============================================
+    if (!string.IsNullOrEmpty(report.FieldBreakdownJson))
     {
-        var csv = new System.Text.StringBuilder();
-        
-        csv.AppendLine("=== YIELD REPORT ===");
-        csv.AppendLine($"Report Name,{report.ReportName}");
-        csv.AppendLine($"Date Range,{report.StartDate:yyyy-MM-dd} to {report.EndDate:yyyy-MM-dd}");
-        csv.AppendLine($"Generated On,{DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        csv.AppendLine();
-        
-        csv.AppendLine("=== SUMMARY ===");
-        csv.AppendLine($"Total Yield (kg),{report.TotalYieldKg:N0}");
-        csv.AppendLine($"Total Harvests,{report.TotalHarvests}");
-        csv.AppendLine($"Average Price/kg,{report.AveragePricePerKg:C}");
-        csv.AppendLine($"Total Value,{report.TotalValue:C}");
-        csv.AppendLine($"Yield per Hectare (kg/ha),{report.AverageYieldPerHectare:N0}");
-        csv.AppendLine();
-        
-        csv.AppendLine("=== QUALITY STATISTICS ===");
-        csv.AppendLine($"Average Quality Grade,{report.AverageQualityGrade}");
-        csv.AppendLine($"Pass Rate (%),{report.PassRate:F1}");
-        csv.AppendLine($"Rejection Rate (%),{report.RejectionRate:F1}");
-        csv.AppendLine();
-        
-        if (!string.IsNullOrEmpty(report.FieldBreakdownJson))
+        var fieldBreakdown = JsonSerializer.Deserialize<List<FieldYieldBreakdownDto>>(report.FieldBreakdownJson);
+        if (fieldBreakdown != null && fieldBreakdown.Any())
         {
-            var fieldBreakdown = JsonSerializer.Deserialize<List<FieldYieldBreakdownDto>>(report.FieldBreakdownJson);
-            if (fieldBreakdown != null && fieldBreakdown.Any())
+            csv.AppendLine("\"=== FIELD BREAKDOWN ===\"");
+            csv.AppendLine("\"Field Name\",\"Total Yield (kg)\",\"Harvest Count\",\"Yield per Hectare (kg/ha)\",\"Percentage of Total\"");
+            foreach (var field in fieldBreakdown)
             {
-                csv.AppendLine("=== FIELD BREAKDOWN ===");
-                csv.AppendLine("Field Name,Total Yield (kg),Harvest Count,Yield per Hectare,% of Total");
-                foreach (var field in fieldBreakdown)
-                {
-                    csv.AppendLine($"{field.FieldName},{field.TotalYieldKg:N0},{field.HarvestCount},{field.YieldPerHectare:N0},{field.PercentageOfTotal:F1}%");
-                }
-                csv.AppendLine();
+                csv.AppendLine($"\"{EscapeCsvValue(field.FieldName)}\",\"{field.TotalYieldKg:N0}\",\"{field.HarvestCount}\",\"{field.YieldPerHectare:N0}\",\"{field.PercentageOfTotal:F1}%\"");
             }
+            csv.AppendLine();
         }
-        
-        if (!string.IsNullOrEmpty(report.MonthlyTrendJson))
-        {
-            var monthlyTrend = JsonSerializer.Deserialize<List<MonthlyYieldTrendDto>>(report.MonthlyTrendJson);
-            if (monthlyTrend != null && monthlyTrend.Any())
-            {
-                csv.AppendLine("=== MONTHLY TREND ===");
-                csv.AppendLine("Month,Year,Yield (kg),Harvest Count,Average Price,Total Value");
-                foreach (var trend in monthlyTrend)
-                {
-                    csv.AppendLine($"{trend.Month},{trend.Year},{trend.YieldKg:N0},{trend.HarvestCount},{trend.AveragePrice:C},{trend.TotalValue:C}");
-                }
-            }
-        }
-        
-        return System.Text.Encoding.UTF8.GetBytes(csv.ToString());
     }
+    
+    // =============================================
+    // SECTION 4: CROP TYPE BREAKDOWN
+    // =============================================
+    if (!string.IsNullOrEmpty(report.CropTypeBreakdownJson))
+    {
+        var cropBreakdown = JsonSerializer.Deserialize<List<CropTypeYieldBreakdownDto>>(report.CropTypeBreakdownJson);
+        if (cropBreakdown != null && cropBreakdown.Any())
+        {
+            csv.AppendLine("\"=== CROP TYPE BREAKDOWN ===\"");
+            csv.AppendLine("\"Crop Type\",\"Total Yield (kg)\",\"Harvest Count\",\"Average Price\",\"Total Value\",\"Percentage of Total\"");
+            foreach (var crop in cropBreakdown)
+            {
+                csv.AppendLine($"\"{EscapeCsvValue(crop.CropType)}\",\"{crop.TotalYieldKg:N0}\",\"{crop.HarvestCount}\",\"{crop.AveragePricePerKg:C}\",\"{crop.TotalValue:C}\",\"{crop.PercentageOfTotal:F1}%\"");
+            }
+            csv.AppendLine();
+        }
+    }
+    
+    // =============================================
+    // SECTION 5: MONTHLY TREND
+    // =============================================
+    if (!string.IsNullOrEmpty(report.MonthlyTrendJson))
+    {
+        var monthlyTrend = JsonSerializer.Deserialize<List<MonthlyYieldTrendDto>>(report.MonthlyTrendJson);
+        if (monthlyTrend != null && monthlyTrend.Any())
+        {
+            csv.AppendLine("\"=== MONTHLY TREND ===\"");
+            csv.AppendLine("\"Month\",\"Year\",\"Yield (kg)\",\"Harvest Count\",\"Average Price\",\"Total Value\"");
+            foreach (var trend in monthlyTrend)
+            {
+                csv.AppendLine($"\"{EscapeCsvValue(trend.Month)}\",\"{trend.Year}\",\"{trend.YieldKg:N0}\",\"{trend.HarvestCount}\",\"{trend.AveragePrice:C}\",\"{trend.TotalValue:C}\"");
+            }
+            csv.AppendLine();
+        }
+    }
+    
+    // =============================================
+    // SECTION 6: QUALITY DISTRIBUTION
+    // =============================================
+    if (!string.IsNullOrEmpty(report.QualityDistributionJson))
+    {
+        var qualityDist = JsonSerializer.Deserialize<List<QualityDistributionDto>>(report.QualityDistributionJson);
+        if (qualityDist != null && qualityDist.Any())
+        {
+            csv.AppendLine("\"=== QUALITY DISTRIBUTION ===\"");
+            csv.AppendLine("\"Grade\",\"Count\",\"Percentage\"");
+            foreach (var q in qualityDist)
+            {
+                csv.AppendLine($"\"{EscapeCsvValue(q.Grade)}\",\"{q.Count}\",\"{q.Percentage:F1}%\"");
+            }
+            csv.AppendLine();
+        }
+    }
+    
+    return System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+}
+
+private string EscapeCsvValue(string value)
+{
+    if (string.IsNullOrEmpty(value))
+        return "";
+    
+    // If value contains comma, quote, or newline, wrap in quotes and escape inner quotes
+    if (value.Contains(",") || value.Contains("\"") || value.Contains("\n") || value.Contains("\r"))
+    {
+        value = value.Replace("\"", "\"\"");
+        return $"\"{value}\"";
+    }
+    
+    // If value has spaces but no special characters, still quote for consistency
+    if (value.Contains(" "))
+        return $"\"{value}\"";
+    
+    return value;
+}
 
     private async Task<byte[]> ExportToJsonBytes(YieldReport report)
     {

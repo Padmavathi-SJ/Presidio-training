@@ -79,3 +79,319 @@ Caching (optional)
 Unit of Work pattern
 Specification pattern
 Result pattern for API responses
+
+
+# Your Farm Management Platform - Complete Workflow Explanation
+
+## System Overview
+
+Your platform manages **crop farming operations** with two main user roles: **Admin** (Farm Manager) and **Worker** (Field Staff). All data is multi-tenant by `FarmId`.
+
+---
+
+## 1. Admin Workflow (Farm Manager)
+
+### 1.1 Farm & Field Setup
+```
+Admin Login → Create Farm → Add Fields → Configure Field Details
+                                    ↓
+                            - Field Name, Location
+                            - Area (Hectares)
+                            - Soil Type, GPS Coordinates
+                            - Field Status (ACTIVE/FALLOW/PREPARING)
+```
+
+### 1.2 Crop Cycle Management
+```
+For each Field → Create Crop Cycle → Define:
+                                      ↓
+                            - Crop Type (WHEAT/MAIZE/RICE)
+                            - Planting Date
+                            - Expected Harvest Date
+                            - Growth Stage Tracking
+```
+
+### 1.3 Worker Management
+```
+Admin → Create Worker Accounts → Assign to Fields → Assign Tasks
+                                    ↓                 ↓
+                            - Name, Email, Role   - IRRIGATION
+                            - Contact Info        - FERTILIZING
+                            - Department          - HARVESTING
+                                                  - MONITORING
+```
+
+### 1.4 Monitoring (Admin View)
+```
+Dashboard → View:
+            ↓
+    ├── Sensor Readings (Real-time soil moisture, temp, humidity)
+    ├── Weather Data (External API integration)
+    ├── Alerts (DROUGHT_STRESS, PEST_INFESTATION, etc.)
+    ├── Observations (Worker-submitted field reports)
+    └── Quality Checks (Harvest quality validation)
+```
+
+### 1.5 Harvest & Quality Approval Workflow
+```
+Worker submits Harvest → Admin Review → Decision:
+                        ↓
+                ┌───────┼───────┬─────────────┐
+                ↓       ↓       ↓             ↓
+            APPROVED  REJECTED  REQUEST_    (Update Harvest
+                                CHANGES       Record)
+                
+Quality Check → Same approval workflow
+```
+
+### 1.6 Yield Reporting
+```
+Admin → Generate Reports → Options:
+                          ↓
+                ├── By Date Range
+                ├── By Field
+                ├── By Crop Cycle
+                ├── By Season
+                └── Scheduled Reports (Daily/Weekly/Monthly)
+
+        ↓
+    Export → JSON (Dashboard) OR CSV (Analysis)
+```
+
+---
+
+## 2. Worker Workflow (Field Staff)
+
+### 2.1 Worker Login & Dashboard
+```
+Worker Login → View Assigned Fields Only
+              ↓
+        ┌─────┴─────┐
+        ↓           ↓
+    My Tasks    Today's Schedule
+```
+
+### 2.2 Field Monitoring (Worker)
+```
+Navigate to Assigned Field → View:
+                            ↓
+                ├── Crop Cycle Status
+                ├── Recent Sensor Readings
+                ├── Weather Forecast
+                └── Active Alerts
+```
+
+### 2.3 Submit Observations
+```
+Worker at Field → Record Observation → Submit:
+                                      ↓
+                            - Crop Health (EXCELLENT/GOOD/POOR)
+                            - Pest Detection (Yes/No + Type)
+                            - Notes & Photos
+                            - Date & Time
+        ↓
+    Status: PENDING (Admin reviews later)
+```
+
+### 2.4 Task Management
+```
+Worker → View Assigned Tasks → Update Status:
+                              ↓
+                    PENDING → IN_PROGRESS → COMPLETED
+                              ↓
+                        Add Completion Notes
+```
+
+### 2.5 Submit Harvest Data (Requires Admin Approval)
+```
+Worker Completes Harvest → Submit Harvest Record:
+                          ↓
+                - Field & Crop Cycle
+                - Quantity (kg)
+                - Quality Grade (A/B/C)
+                - Harvest Method
+                - Batch Number
+        ↓
+    Status: PENDING (Admin must approve)
+    Worker cannot approve own harvests
+```
+
+### 2.6 Submit Quality Check (Requires Admin Approval)
+```
+Worker → Quality Check → Submit:
+                        ↓
+            - Moisture %
+            - Defect %
+            - Final Grade
+            - Notes
+        ↓
+    Status: PENDING (Admin approval required)
+```
+
+### 2.7 View Reports (Read-only)
+```
+Worker → Yield Reports → View reports for assigned fields only
+                       ↓
+            - Filter by date range
+            - Cannot generate or modify reports
+```
+
+---
+
+## 3. Complete End-to-End Workflow Example
+
+### Wheat Harvest Season Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 1: PREPARATION (Admin)                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Admin creates:                                                               │
+│   • Farm: "Green Acres"                                                      │
+│   • Field: "North Field" (50 hectares, LOAMY soil)                          │
+│   • Crop Cycle: WHEAT, Planted: March 1, Expected Harvest: August 15        │
+│   • Workers: John (Harvester), Jane (Quality Inspector)                     │
+│   • Assign tasks: Irrigation schedule, Fertilizer application               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 2: GROWTH MONITORING (Worker + Admin)                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Worker John:                                                                 │
+│   • Weekly Observations: "Crop health GOOD, no pests detected"              │
+│   • Takes photos of crop growth                                             │
+│                                                                              │
+│ Admin monitors:                                                              │
+│   • Sensor readings: Soil moisture 35% → triggers IRRIGATION_NEEDED alert   │
+│   • Weather forecast: Heat wave warning                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 3: HARVEST (Worker submits, Admin approves)                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Worker submits harvest:                                                      │
+│   • Quantity: 25,000 kg                                                      │
+│   • Quality Grade: A                                                         │
+│   • Batch Number: WHEAT-2024-001                                            │
+│   • Status: PENDING                                                          │
+│                                                                              │
+│ Admin reviews → APPROVES (with note: "Good quality harvest")                │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 4: QUALITY CHECK (Worker submits, Admin approves)                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Worker Jane submits quality check:                                          │
+│   • Moisture: 14.2%                                                          │
+│   • Defects: 2.5%                                                            │
+│   • Final Grade: A                                                           │
+│   • Status: PENDING                                                          │
+│                                                                              │
+│ Admin reviews → APPROVES ("Quality meets standards")                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 5: REPORTING & ANALYTICS (Admin)                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Admin generates Yield Report for Spring 2024:                               │
+│   • Total Yield: 25,000 kg                                                   │
+│   • Average Price: $2.45/kg                                                  │
+│   • Total Value: $61,250                                                     │
+│   • Pass Rate: 100%                                                          │
+│                                                                              │
+│ Export as:                                                                   │
+│   • JSON → Dashboard charts                                                  │
+│   • CSV → Excel analysis for next season planning                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. Data Flow Diagram
+
+```
+                                    ┌─────────────────┐
+                                    │   Admin Panel   │
+                                    └────────┬────────┘
+                                             │
+                    ┌────────────────────────┼────────────────────────┐
+                    ↓                        ↓                        ↓
+            ┌───────────────┐        ┌───────────────┐        ┌───────────────┐
+            │  Fields &     │        │  Workers &    │        │  Reports &    │
+            │  Crop Cycles  │        │  Tasks        │        │  Analytics    │
+            └───────┬───────┘        └───────┬───────┘        └───────┬───────┘
+                    │                        │                        │
+                    ↓                        ↓                        ↓
+            ┌───────────────────────────────────────────────────────────────┐
+            │                         Database                              │
+            │  Farms | Fields | CropCycles | Workers | Tasks | Harvests     │
+            │  Observations | QualityChecks | YieldReports | Alerts         │
+            └───────────────────────────────────────────────────────────────┘
+                    ↑                        ↑                        ↑
+                    │                        │                        │
+            ┌───────┴───────┐        ┌───────┴───────┐        ┌───────┴───────┐
+            │  Submit       │        │  Update       │        │  View         │
+            │  Observations │        │  Tasks        │        │  Reports      │
+            │  Harvests     │        │  Status       │        │  (Read-only)  │
+            │  Quality      │        │               │        │               │
+            └───────────────┘        └───────────────┘        └───────────────┘
+                                    │
+                                    ↓
+                            ┌───────────────┐
+                            │  Worker Panel │
+                            └───────────────┘
+```
+
+---
+
+## 5. Approval Status Flow
+
+```
+Worker Action                    Admin Action                 Final State
+─────────────────────────────────────────────────────────────────────────────
+Submit Harvest      ──────→     Review & Approve    ──────→  APPROVED
+                                 Review & Reject     ──────→  REJECTED
+                                 Request Changes     ──────→  REQUEST_CHANGES
+                                                              ↓
+                                                    Worker Responds
+                                                              ↓
+                                                    Admin Re-review
+                                                              ↓
+                                                    APPROVED/REJECTED
+
+Same flow for: Quality Checks, Observations (validation only, not approval)
+```
+
+---
+
+## 6. Key Business Rules
+
+| Action | Admin | Worker |
+|--------|-------|--------|
+| Create/Edit/Delete Fields | ✅ | ❌ |
+| Create/Edit/Delete Crop Cycles | ✅ | ❌ |
+| Assign Workers to Fields | ✅ | ❌ |
+| Create/Edit/Delete Tasks | ✅ | Update Status Only |
+| Submit Observations | ❌ | ✅ (with validation) |
+| Submit Harvests | ❌ | ✅ (needs approval) |
+| Submit Quality Checks | ❌ | ✅ (needs approval) |
+| Approve Harvests/Quality | ✅ | ❌ |
+| Generate Reports | ✅ | View Only (assigned fields) |
+| Export Reports (CSV/JSON) | ✅ | ❌ |
+
+---
+
+## 7. What Makes This Industry Standard
+
+1. **Multi-tenancy** - All data isolated by FarmId
+2. **Role-based access** - Admin vs Worker permissions
+3. **Approval workflow** - Critical data requires admin approval
+4. **Audit logging** - All actions tracked
+5. **Soft delete** - Data recovery possible
+6. **Notification system** - Real-time alerts
+7. **Scheduled reports** - Automated reporting
+8. **Dual export formats** - JSON (programmatic) + CSV (analysis)
+9. **Quality tracking** - Pass rates, rejection rates
+10. **Sensor integration** - IoT data simulation
+
+This is a **complete, production-ready Farm Management System** that follows agricultural industry standards!
