@@ -4,7 +4,6 @@ using AgriculturePlatform.Domain.Entities.AdminEntities;
 using AgriculturePlatform.Domain.Entities.WorkerManagement;
 using AgriculturePlatform.Domain.Entities.YieldReports;
 
-
 namespace AgriculturePlatform.Domain.Entities.CropMonitoring;
 
 public class Field : BaseEntity

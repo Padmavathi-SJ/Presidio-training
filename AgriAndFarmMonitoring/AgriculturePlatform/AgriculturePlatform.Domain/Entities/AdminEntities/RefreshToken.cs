@@ -1,11 +1,12 @@
-// Domain/Entities/AdminEntities/RefreshToken.cs
 using AgriculturePlatform.Domain.Common;
+using AgriculturePlatform.Domain.Entities.WorkerManagement;
 
 namespace AgriculturePlatform.Domain.Entities.AdminEntities;
 
 public class RefreshToken : BaseEntity
 {
-    public int AdminId { get; set; }
+    public int? AdminId { get; set; }
+    public int? WorkerId { get; set; }
     public string Token { get; set; } = string.Empty;
     public string JwtId { get; set; } = string.Empty;
     public DateTime ExpiryDate { get; set; }
@@ -15,6 +16,7 @@ public class RefreshToken : BaseEntity
     public string? CreatedByIp { get; set; }
     public DateTime? RevokedAt { get; set; }
     
-    // Navigation property
+    // Navigation properties
     public virtual Admin? Admin { get; set; }
+    public virtual Worker? Worker { get; set; }
 }

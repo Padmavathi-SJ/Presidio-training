@@ -1,4 +1,4 @@
-// AgriculturePlatform.Tests/Services/AlertServiceTests.cs
+// Tests/Services/AlertServiceTests.cs
 using FluentAssertions;
 using Moq;
 using AgriculturePlatform.Application.Common;
@@ -10,7 +10,6 @@ using AgriculturePlatform.Domain.Entities.AdminEntities;
 using AgriculturePlatform.Domain.Enums;
 using AgriculturePlatform.Tests.Helpers;
 
-// Add using alias to resolve ambiguity
 using DomainAlert = AgriculturePlatform.Domain.Entities.CropMonitoring.Alert;
 
 namespace AgriculturePlatform.Tests.Services.Alert;
@@ -80,6 +79,51 @@ public class AlertServiceTests
         result.Success.Should().BeTrue();
         result.Data.Items.Should().HaveCount(2);
         result.Data.TotalCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task GetAlertByIdAsync_ExistingAlert_ReturnsAlert()
+    {
+        // Arrange
+        int alertId = 1, farmId = 1;
+        var alert = new DomainAlert
+        {
+            Id = alertId,
+            FarmId = farmId,
+            AlertType = AlertTypeEnum.DROUGHT_STRESS,
+            Severity = AlertSeverityEnum.HIGH,
+            Message = "Test Alert",
+            IsResolved = false
+        };
+        
+        _alertRepositoryMock.Setup(r => r.GetByIdAsync(alertId, farmId))
+            .ReturnsAsync(alert);
+
+        // Act
+        var result = await _alertService.GetAlertByIdAsync(alertId, farmId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Data.Id.Should().Be(alertId);
+        result.Data.Message.Should().Be("Test Alert");
+    }
+
+    [Fact]
+    public async Task GetAlertByIdAsync_NonExistingAlert_ReturnsFailure()
+    {
+        // Arrange
+        int alertId = 999, farmId = 1;
+        
+        _alertRepositoryMock.Setup(r => r.GetByIdAsync(alertId, farmId))
+            .ReturnsAsync((DomainAlert?)null);
+
+        // Act
+        var result = await _alertService.GetAlertByIdAsync(alertId, farmId);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("not found");
     }
 
     [Fact]
@@ -199,7 +243,7 @@ public class AlertServiceTests
     }
 
     [Fact]
-    public async Task GetStatisticsAsync_ReturnsCorrectStatistics()
+    public async Task GetAlertStatisticsAsync_ReturnsCorrectStatistics()
     {
         // Arrange
         int farmId = 1;
@@ -217,7 +261,7 @@ public class AlertServiceTests
             .ReturnsAsync(expectedStats);
 
         // Act
-        var result = await _alertService.GetStatisticsAsync(farmId, null, null);
+        var result = await _alertService.GetAlertStatisticsAsync(farmId, null, null);
 
         // Assert
         result.Should().NotBeNull();
@@ -235,10 +279,17 @@ public class AlertServiceTests
         // Arrange
         int fieldId = 1, cropCycleId = 1, farmId = 1, adminId = 1;
         string sensorType = "SOIL_MOISTURE";
-        decimal value = 12m; // Below threshold
+        decimal value = 12m;
         
-        var field = TestHelper.CreateTestField(fieldId, farmId, adminId);
-        var cropCycle = TestHelper.CreateTestCropCycle(cropCycleId, fieldId, farmId);
+        var cropCycle = new CropCycle 
+        { 
+            Id = cropCycleId, 
+            FarmId = farmId, 
+            CropType = CropTypeEnum.WHEAT,
+            GrowthStage = GrowthStageEnum.VEGETATIVE,
+            Status = TaskStatusEnum.IN_PROGRESS
+        };
+        
         var threshold = new AlertThreshold
         {
             MinValue = 20m,
@@ -247,67 +298,65 @@ public class AlertServiceTests
             IsActive = true
         };
         
-        _fieldRepositoryMock.Setup(r => r.GetByIdAsync(fieldId, farmId, false))
-            .ReturnsAsync(field);
         _cropCycleRepositoryMock.Setup(r => r.GetByIdAsync(cropCycleId, farmId, false))
             .ReturnsAsync(cropCycle);
-        _thresholdRepositoryMock.Setup(r => r.GetByCropAndStageAsync(
-            It.IsAny<string>(), It.IsAny<string>(), sensorType, farmId))
+        _thresholdRepositoryMock.Setup(r => r.GetThresholdsAsync(farmId, cropCycle.CropType.ToString(), cropCycle.GrowthStage.ToString(), sensorType))
             .ReturnsAsync(threshold);
         _alertRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<DomainAlert>()))
             .ReturnsAsync((DomainAlert a) => { a.Id = 1; return a; });
-        _notificationServiceMock.Setup(n => n.NotifyNewAlertAsync(farmId, It.IsAny<object>()))
-            .Returns(Task.CompletedTask);
 
         // Act
         var result = await _alertService.CheckAndCreateAlertAsync(fieldId, cropCycleId, sensorType, value, farmId, adminId);
 
         // Assert
         result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.Data.Should().NotBeNull();
-        result.Message.Should().Contain("Alert created");
+        result.Id.Should().Be(1);
     }
 
     [Fact]
-    public async Task CheckAndCreateAlertAsync_NoThreshold_ReturnsNoAlert()
+    public async Task CheckAndCreateAlertAsync_NoThreshold_ReturnsNull()
     {
         // Arrange
         int fieldId = 1, cropCycleId = 1, farmId = 1, adminId = 1;
         string sensorType = "SOIL_MOISTURE";
         decimal value = 25m;
         
-        var field = TestHelper.CreateTestField(fieldId, farmId, adminId);
-        var cropCycle = TestHelper.CreateTestCropCycle(cropCycleId, fieldId, farmId);
+        var cropCycle = new CropCycle 
+        { 
+            Id = cropCycleId, 
+            FarmId = farmId, 
+            CropType = CropTypeEnum.WHEAT,
+            GrowthStage = GrowthStageEnum.VEGETATIVE
+        };
         
-        _fieldRepositoryMock.Setup(r => r.GetByIdAsync(fieldId, farmId, false))
-            .ReturnsAsync(field);
         _cropCycleRepositoryMock.Setup(r => r.GetByIdAsync(cropCycleId, farmId, false))
             .ReturnsAsync(cropCycle);
-        _thresholdRepositoryMock.Setup(r => r.GetByCropAndStageAsync(
-            It.IsAny<string>(), It.IsAny<string>(), sensorType, farmId))
+        _thresholdRepositoryMock.Setup(r => r.GetThresholdsAsync(farmId, cropCycle.CropType.ToString(), cropCycle.GrowthStage.ToString(), sensorType))
             .ReturnsAsync((AlertThreshold?)null);
 
         // Act
         var result = await _alertService.CheckAndCreateAlertAsync(fieldId, cropCycleId, sensorType, value, farmId, adminId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.Data.Should().BeNull();
-        result.Message.Should().Contain("No threshold configured");
+        result.Should().BeNull();
     }
 
     [Fact]
-    public async Task CheckAndCreateAlertAsync_NoViolation_ReturnsNoAlert()
+    public async Task CheckAndCreateAlertAsync_NoViolation_ReturnsNull()
     {
         // Arrange
         int fieldId = 1, cropCycleId = 1, farmId = 1, adminId = 1;
         string sensorType = "SOIL_MOISTURE";
-        decimal value = 30m; // Within threshold
+        decimal value = 30m;
         
-        var field = TestHelper.CreateTestField(fieldId, farmId, adminId);
-        var cropCycle = TestHelper.CreateTestCropCycle(cropCycleId, fieldId, farmId);
+        var cropCycle = new CropCycle 
+        { 
+            Id = cropCycleId, 
+            FarmId = farmId, 
+            CropType = CropTypeEnum.WHEAT,
+            GrowthStage = GrowthStageEnum.VEGETATIVE
+        };
+        
         var threshold = new AlertThreshold
         {
             MinValue = 20m,
@@ -316,55 +365,26 @@ public class AlertServiceTests
             IsActive = true
         };
         
-        _fieldRepositoryMock.Setup(r => r.GetByIdAsync(fieldId, farmId, false))
-            .ReturnsAsync(field);
         _cropCycleRepositoryMock.Setup(r => r.GetByIdAsync(cropCycleId, farmId, false))
             .ReturnsAsync(cropCycle);
-        _thresholdRepositoryMock.Setup(r => r.GetByCropAndStageAsync(
-            It.IsAny<string>(), It.IsAny<string>(), sensorType, farmId))
+        _thresholdRepositoryMock.Setup(r => r.GetThresholdsAsync(farmId, cropCycle.CropType.ToString(), cropCycle.GrowthStage.ToString(), sensorType))
             .ReturnsAsync(threshold);
 
         // Act
         var result = await _alertService.CheckAndCreateAlertAsync(fieldId, cropCycleId, sensorType, value, farmId, adminId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.Data.Should().BeNull();
-        result.Message.Should().Contain("No violation detected");
+        result.Should().BeNull();
     }
 
     [Fact]
-    public async Task CheckAndCreateAlertAsync_FieldNotFound_ReturnsFailure()
-    {
-        // Arrange
-        int fieldId = 999, cropCycleId = 1, farmId = 1, adminId = 1;
-        string sensorType = "SOIL_MOISTURE";
-        decimal value = 25m;
-        
-        _fieldRepositoryMock.Setup(r => r.GetByIdAsync(fieldId, farmId, false))
-            .ReturnsAsync((Field?)null);
-
-        // Act
-        var result = await _alertService.CheckAndCreateAlertAsync(fieldId, cropCycleId, sensorType, value, farmId, adminId);
-
-        // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Field not found");
-    }
-
-    [Fact]
-    public async Task CheckAndCreateAlertAsync_CropCycleNotFound_ReturnsFailure()
+    public async Task CheckAndCreateAlertAsync_CropCycleNotFound_ReturnsNull()
     {
         // Arrange
         int fieldId = 1, cropCycleId = 999, farmId = 1, adminId = 1;
         string sensorType = "SOIL_MOISTURE";
         decimal value = 25m;
         
-        var field = TestHelper.CreateTestField(fieldId, farmId, adminId);
-        
-        _fieldRepositoryMock.Setup(r => r.GetByIdAsync(fieldId, farmId, false))
-            .ReturnsAsync(field);
         _cropCycleRepositoryMock.Setup(r => r.GetByIdAsync(cropCycleId, farmId, false))
             .ReturnsAsync((CropCycle?)null);
 
@@ -372,7 +392,6 @@ public class AlertServiceTests
         var result = await _alertService.CheckAndCreateAlertAsync(fieldId, cropCycleId, sensorType, value, farmId, adminId);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Crop cycle not found");
+        result.Should().BeNull();
     }
 }

@@ -32,4 +32,6 @@ Task<List<WorkerFieldAssignment>> GetWorkerActiveAssignmentsAsync(int workerId, 
 
 Task<List<Field>> GetFieldsByWorkerAsync(int workerId, int farmId);
 
+Task<List<WorkerFieldAssignment>> GetWorkerFieldAssignmentsByFieldAsync(int fieldId, int farmId);
+
 }

@@ -1,4 +1,4 @@
-// AgriculturePlatform.Application/Services/AlertService.cs
+// Application/Services/AlertService.cs
 using AutoMapper;
 using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Application.DTOs.Alert;
@@ -11,24 +11,24 @@ namespace AgriculturePlatform.Application.Services;
 public class AlertService : IAlertService
 {
     private readonly IAlertRepository _alertRepository;
-    private readonly IAlertThresholdRepository _thresholdRepository;
+    private readonly IAlertThresholdRepository _alertThresholdRepository;
     private readonly IFieldRepository _fieldRepository;
     private readonly ICropCycleRepository _cropCycleRepository;
     private readonly IAuditLogService _auditLogService;
     private readonly IMapper _mapper;
-    private readonly IAlertNotificationService _notificationService;  // ✅ Only this
+    private readonly IAlertNotificationService _notificationService;
 
     public AlertService(
         IAlertRepository alertRepository,
-        IAlertThresholdRepository thresholdRepository,
+        IAlertThresholdRepository alertThresholdRepository,
         IFieldRepository fieldRepository,
         ICropCycleRepository cropCycleRepository,
         IAuditLogService auditLogService,
         IMapper mapper,
-        IAlertNotificationService notificationService)  // ✅ Remove hubContext
+        IAlertNotificationService notificationService)
     {
         _alertRepository = alertRepository;
-        _thresholdRepository = thresholdRepository;
+        _alertThresholdRepository = alertThresholdRepository;
         _fieldRepository = fieldRepository;
         _cropCycleRepository = cropCycleRepository;
         _auditLogService = auditLogService;
@@ -63,6 +63,37 @@ public class AlertService : IAlertService
         return ApiResponse<PagedResult<AlertDto>>.Ok(result);
     }
 
+    public async Task<ApiResponse<AlertDto>> GetAlertByIdAsync(int id, int farmId)
+    {
+        var alert = await _alertRepository.GetByIdAsync(id, farmId);
+        if (alert == null)
+        {
+            return ApiResponse<AlertDto>.Fail($"Alert with ID {id} not found");
+        }
+
+        var result = _mapper.Map<AlertDto>(alert);
+        return ApiResponse<AlertDto>.Ok(result);
+    }
+
+    public async Task<ApiResponse<AlertStatisticsDto>> GetAlertStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate)
+    {
+        var stats = await _alertRepository.GetStatisticsAsync(farmId, fromDate, toDate);
+        return ApiResponse<AlertStatisticsDto>.Ok(stats);
+    }
+
+    public async Task<ApiResponse<int>> GetUnresolvedCountAsync(int farmId)
+    {
+        var count = await _alertRepository.GetUnresolvedCountAsync(farmId);
+        return ApiResponse<int>.Ok(count);
+    }
+
+    public async Task<ApiResponse<IEnumerable<AlertDto>>> GetCriticalAlertsAsync(int farmId)
+    {
+        var alerts = await _alertRepository.GetCriticalAlertsAsync(farmId);
+        var dtos = _mapper.Map<IEnumerable<AlertDto>>(alerts);
+        return ApiResponse<IEnumerable<AlertDto>>.Ok(dtos);
+    }
+
     public async Task<ApiResponse<AlertDto>> ResolveAlertAsync(int id, ResolveAlertDto dto, int farmId, int adminId)
     {
         var alert = await _alertRepository.GetByIdAsync(id, farmId);
@@ -86,95 +117,81 @@ public class AlertService : IAlertService
         await _auditLogService.LogUpdateAsync(farmId, adminId, "Alert", alert.Id, null, 
             new { IsResolved = true, ResolutionNotes = dto.ResolutionNotes }, null, null);
 
-        // ✅ Use notification service instead of direct hub
         await _notificationService.NotifyAlertResolvedAsync(farmId, new { AlertId = id, ResolvedAt = DateTime.UtcNow });
 
         var result = _mapper.Map<AlertDto>(alert);
         return ApiResponse<AlertDto>.Ok(result, "Alert resolved successfully");
     }
 
-    public async Task<ApiResponse<AlertStatisticsDto>> GetStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate)
+    public async Task<Alert?> CheckAndCreateAlertAsync(int fieldId, int cropCycleId, string sensorType, decimal value, int farmId, int adminId)
     {
-        var stats = await _alertRepository.GetStatisticsAsync(farmId, fromDate, toDate);
-        return ApiResponse<AlertStatisticsDto>.Ok(stats);
-    }
-
-    public async Task<ApiResponse<AlertDto>> CheckAndCreateAlertAsync(
-        int fieldId, int cropCycleId, string sensorType, decimal value, int farmId, int adminId)
-    {
-        var field = await _fieldRepository.GetByIdAsync(fieldId, farmId);
-        if (field == null) return ApiResponse<AlertDto>.Fail("Field not found");
-
+        // Get thresholds for this sensor type, crop type, and growth stage
         var cropCycle = await _cropCycleRepository.GetByIdAsync(cropCycleId, farmId);
-        if (cropCycle == null) return ApiResponse<AlertDto>.Fail("Crop cycle not found");
-
-        // Get threshold for this crop type and growth stage
-        var threshold = await _thresholdRepository.GetByCropAndStageAsync(
-            cropCycle.CropType?.ToString() ?? "", 
-            cropCycle.GrowthStage?.ToString() ?? "", 
-            sensorType, farmId);
-
-        if (threshold == null || !threshold.IsActive) 
-            return ApiResponse<AlertDto>.Ok(null, "No threshold configured");
-
-        // Check if value violates threshold
-        bool isViolation = value < threshold.MinValue || value > threshold.MaxValue;
+        if (cropCycle == null) return null;
         
-        if (!isViolation) return ApiResponse<AlertDto>.Ok(null, "No violation detected");
-
-        // Determine alert type based on sensor
-        var alertType = GetAlertType(sensorType, value, threshold);
-        var severity = threshold.Severity;
-
-        var alert = new Alert
+        var threshold = await _alertThresholdRepository.GetThresholdsAsync(
+            farmId, cropCycle.CropType?.ToString(), cropCycle.GrowthStage?.ToString(), sensorType);
+        
+        if (threshold == null) return null;
+        
+        AlertSeverityEnum? severity = null;
+        string message = null;
+        
+        // Check if value exceeds threshold
+        if (value < threshold.MinValue)
         {
-            FarmId = farmId,
-            AdminId = adminId,
-            FieldId = fieldId,
-            CropCycleId = cropCycleId,
-            AlertType = alertType,
-            Severity = Enum.Parse<AlertSeverityEnum>(severity),
-            Message = GenerateAlertMessage(alertType, sensorType, value, threshold),
-            SensorValue = value,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = adminId
-        };
-
-        var created = await _alertRepository.CreateAsync(alert);
-
-        // ✅ Use notification service instead of direct hub
-        await _notificationService.NotifyNewAlertAsync(farmId, new
-        {
-            Id = created.Id,
-            FieldId = fieldId,
-            FieldName = field.FieldName,
-            AlertType = alertType.ToString(),
-            Severity = severity,
-            Message = alert.Message,
-            CreatedAt = created.CreatedAt
-        });
-
-        // Send email notification for critical alerts
-        if (severity == "CRITICAL" && !string.IsNullOrEmpty(threshold.NotificationEmails))
-        {
-            await SendEmailNotificationAsync(threshold.NotificationEmails, alert, field);
+            severity = GetSeverityForDeviation(threshold.MinValue - value, threshold.MinValue);
+            message = $"{sensorType} is too LOW: {value} (Min: {threshold.MinValue})";
         }
-
-        var result = _mapper.Map<AlertDto>(created);
-        return ApiResponse<AlertDto>.Ok(result, "Alert created");
+        else if (value > threshold.MaxValue)
+        {
+            severity = GetSeverityForDeviation(value - threshold.MaxValue, threshold.MaxValue);
+            message = $"{sensorType} is too HIGH: {value} (Max: {threshold.MaxValue})";
+        }
+        
+        if (severity != null)
+        {
+            var alert = new Alert
+            {
+                FarmId = farmId,
+                AdminId = adminId,
+                FieldId = fieldId,
+                CropCycleId = cropCycleId,
+                AlertType = GetAlertType(sensorType, value, threshold),  // ✅ Pass parameters
+                Severity = severity,
+                Message = message,
+                SensorValue = value,
+                ThresholdValue = severity == AlertSeverityEnum.CRITICAL ? threshold.MaxValue : threshold.MinValue,
+                IsResolved = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            var createdAlert = await _alertRepository.CreateAsync(alert);
+            
+            // Send email notifications for HIGH and CRITICAL alerts
+            if (severity == AlertSeverityEnum.HIGH || severity == AlertSeverityEnum.CRITICAL)
+            {
+                await _notificationService.SendAlertNotificationsAsync(createdAlert, farmId);
+            }
+            
+            return createdAlert;
+        }
+        
+        return null;
     }
 
-    public async Task<ApiResponse<int>> GetUnresolvedCountAsync(int farmId)
+    private AlertSeverityEnum GetSeverityForDeviation(decimal deviation, decimal threshold)
     {
-        var count = await _alertRepository.GetUnresolvedCountAsync(farmId);
-        return ApiResponse<int>.Ok(count);
-    }
-
-    public async Task<ApiResponse<IEnumerable<AlertDto>>> GetCriticalAlertsAsync(int farmId)
-    {
-        var alerts = await _alertRepository.GetCriticalAlertsAsync(farmId);
-        var dtos = _mapper.Map<IEnumerable<AlertDto>>(alerts);
-        return ApiResponse<IEnumerable<AlertDto>>.Ok(dtos);
+        var deviationPercentage = (deviation / threshold) * 100;
+        
+        if (deviationPercentage >= 30)
+            return AlertSeverityEnum.CRITICAL;
+        else if (deviationPercentage >= 15)
+            return AlertSeverityEnum.HIGH;
+        else if (deviationPercentage >= 5)
+            return AlertSeverityEnum.MEDIUM;
+        else
+            return AlertSeverityEnum.LOW;
     }
 
     private AlertTypeEnum GetAlertType(string sensorType, decimal value, AlertThreshold threshold)
@@ -206,7 +223,6 @@ public class AlertService : IAlertService
     private async Task SendEmailNotificationAsync(string emails, Alert alert, Field field)
     {
         // TODO: Implement email sending logic here
-        // This could use SendGrid, SMTP, or other email services
         await Task.CompletedTask;
     }
 }

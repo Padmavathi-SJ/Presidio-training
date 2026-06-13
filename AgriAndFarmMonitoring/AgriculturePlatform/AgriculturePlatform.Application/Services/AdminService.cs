@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using AgriculturePlatform.Application.DTOs.Admin;
 using AgriculturePlatform.Application.Exceptions;
 using AgriculturePlatform.Application.Interfaces;
@@ -11,20 +12,19 @@ public class AdminService : IAdminService
     private readonly IFarmRepository _farmRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IJwtService _jwtService;
-    private readonly IAuditLogService _auditLogService;
 
     public AdminService(
         IAdminRepository adminRepository,
         IFarmRepository farmRepository,
         IRefreshTokenRepository refreshTokenRepository,
-        IJwtService jwtService,
-        IAuditLogService auditLogService)
+        IJwtService jwtService
+        )
     {
         _adminRepository = adminRepository;
         _farmRepository = farmRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _jwtService = jwtService;
-        _auditLogService = auditLogService;
+       
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -88,7 +88,7 @@ public class AdminService : IAdminService
             Token = refreshTokenValue,
             JwtId = jwtId,
             ExpiryDate = DateTime.UtcNow.AddDays(7),
-            CreatedByIp = "127.0.0.1", // Get from request in controller
+            CreatedByIp = "127.0.0.1",
             IsUsed = false,
             IsRevoked = false
         };
@@ -159,8 +159,7 @@ public class AdminService : IAdminService
 
         await _refreshTokenRepository.CreateAsync(refreshToken);
 
-        // Log successful login
-        await _auditLogService.LogCreateAsync(admin.FarmId, admin.Id, "Login", admin.Id, null, ipAddress, null);
+
 
         return new AuthResponseDto
         {
@@ -187,6 +186,7 @@ public class AdminService : IAdminService
         if (principal == null)
             throw new UnauthorizedException("Invalid access token");
 
+        // FIXED: Add using System.IdentityModel.Tokens.Jwt at the top
         var adminId = int.Parse(principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? "0");
         var jwtId = principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
 
@@ -246,9 +246,7 @@ public class AdminService : IAdminService
 
         await _refreshTokenRepository.CreateAsync(newRefreshToken);
 
-        // Log token refresh
-        await _auditLogService.LogCreateAsync(admin.FarmId, admin.Id, "RefreshToken", admin.Id, null, ipAddress, null);
-
+       
         return new AuthResponseDto
         {
             Id = admin.Id,

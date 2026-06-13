@@ -10,4 +10,5 @@ public interface IRefreshTokenRepository
     Task UpdateAsync(RefreshToken refreshToken);
     Task RevokeAllUserTokensAsync(int adminId, string revokedByIp);
     Task CleanExpiredTokensAsync();
+    Task RevokeAllWorkerTokensAsync(int workerId, string revokedByIp);
 }

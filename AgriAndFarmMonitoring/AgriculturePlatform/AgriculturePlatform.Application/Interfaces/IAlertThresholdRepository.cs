@@ -12,4 +12,5 @@ public interface IAlertThresholdRepository
     Task UpdateAsync(AlertThreshold threshold);
     Task DeleteAsync(AlertThreshold threshold);
     Task<bool> ExistsAsync(int id, int farmId);
+     Task<AlertThreshold?> GetThresholdsAsync(int farmId, string cropType, string growthStage, string sensorType);
 }

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Entities.AdminEntities;
 using AgriculturePlatform.Domain.Enums;
 
 namespace AgriculturePlatform.Application.Services;
@@ -13,6 +14,8 @@ public class IoTSimulatorService : IIoTSimulatorService
     private readonly ICropCycleRepository _cropCycleRepository;
     private readonly IFarmRepository _farmRepository;
     private readonly IAlertService _alertService;
+    private readonly IAlertRepository _alertRepository;
+     private readonly IAlertNotificationService _alertNotificationService;
     private readonly ILogger<IoTSimulatorService> _logger;
     private readonly Random _random = new();
 
@@ -44,6 +47,8 @@ public class IoTSimulatorService : IIoTSimulatorService
         ICropCycleRepository cropCycleRepository,
         IFarmRepository farmRepository,
         IAlertService alertService,
+        IAlertRepository alertRepository, 
+        IAlertNotificationService alertNotificationService,
         ILogger<IoTSimulatorService> logger)
     {
         _sensorRepository = sensorRepository;
@@ -51,6 +56,8 @@ public class IoTSimulatorService : IIoTSimulatorService
         _cropCycleRepository = cropCycleRepository;
         _farmRepository = farmRepository;
         _alertService = alertService;
+        _alertRepository = alertRepository;
+        _alertNotificationService = alertNotificationService;
         _logger = logger;
     }
 
@@ -292,4 +299,166 @@ public class IoTSimulatorService : IIoTSimulatorService
         return allCycles.Where(c => c.FieldId == fieldId && 
                                      c.Status == TaskStatusEnum.IN_PROGRESS);
     }
+// Application/Services/IoTSimulatorService.cs (Add test alert generation)
+
+public async Task GenerateTestCriticalAlertsAsync(int farmId, int adminId)
+{
+    _logger.LogInformation($"Generating test critical alerts for farm {farmId}");
+    
+    var fields = await _fieldRepository.GetAllAsync(farmId);
+    var alertTypes = new[] { "DROUGHT_STRESS", "HEAT_STRESS", "PEST_INFESTATION", "SOIL_PH_ALERT" };
+    
+    foreach (var field in fields)
+    {
+        var activeCropCycles = await GetActiveCropCyclesForFieldAsync(field.Id, farmId);
+        
+        foreach (var cropCycle in activeCropCycles)
+        {
+            // Generate a critical alert for each crop cycle
+            var randomAlertType = alertTypes[_random.Next(alertTypes.Length)];
+            var criticalValue = randomAlertType switch
+            {
+                "DROUGHT_STRESS" => 10m, // Very low moisture
+                "HEAT_STRESS" => 42m,     // Very high temperature
+                "PEST_INFESTATION" => 100m, // Severe infestation
+                "SOIL_PH_ALERT" => 8.5m,    // High pH
+                _ => 0
+            };
+            
+            var alert = new Alert
+            {
+                FarmId = farmId,
+                AdminId = adminId,
+                FieldId = field.Id,
+                CropCycleId = cropCycle.Id,
+                AlertType = Enum.Parse<AlertTypeEnum>(randomAlertType),
+                Severity = AlertSeverityEnum.CRITICAL,
+                Message = $"TEST ALERT: {randomAlertType} - CRITICAL level detected! Immediate action required!",
+                SensorValue = criticalValue,
+                ThresholdValue = randomAlertType == "DROUGHT_STRESS" ? 25m : 
+                                randomAlertType == "HEAT_STRESS" ? 35m :
+                                randomAlertType == "SOIL_PH_ALERT" ? 7.0m : 0,
+                IsResolved = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            await _alertRepository.CreateAsync(alert);
+            
+            // Send email notifications for test critical alerts
+            await _alertNotificationService.SendAlertNotificationsAsync(alert, farmId);
+            
+            _logger.LogWarning($"Generated CRITICAL test alert for field {field.FieldName}: {randomAlertType}");
+        }
+    }
+    
+    _logger.LogInformation($"Test critical alerts generation completed for farm {farmId}");
+}
+
+public async Task GenerateRandomSeverityReadingsAsync(int farmId, int adminId)
+{
+    _logger.LogInformation($"Generating random severity readings for farm {farmId}");
+    
+    var fields = await _fieldRepository.GetAllAsync(farmId);
+    var severities = new[] { "LOW", "MEDIUM", "HIGH", "CRITICAL" };
+    
+    foreach (var field in fields)
+    {
+        var activeCropCycles = await GetActiveCropCyclesForFieldAsync(field.Id, farmId);
+        
+        foreach (var cropCycle in activeCropCycles)
+        {
+            // Generate readings with different severity levels
+            foreach (var sensorType in _sensorTypes)
+            {
+                var severity = severities[_random.Next(severities.Length)];
+                var reading = GenerateReadingWithSeverity(sensorType, severity);
+                
+                var sensorReading = new SensorReading
+                {
+                    FarmId = farmId,
+                    AdminId = adminId,
+                    FieldId = field.Id,
+                    CropCycleId = cropCycle.Id,
+                    SensorType = Enum.Parse<SensorTypeEnum>(sensorType),
+                    Value = reading.Value,
+                    Unit = reading.Unit,
+                    RecordedAt = DateTime.UtcNow
+                };
+                
+                await _sensorRepository.CreateAsync(sensorReading);
+                
+                // Create alert for high/medium severity
+                if (severity == "HIGH" || severity == "CRITICAL")
+                {
+                    var alert = new Alert
+                    {
+                        FarmId = farmId,
+                        AdminId = adminId,
+                        FieldId = field.Id,
+                        CropCycleId = cropCycle.Id,
+                        AlertType = GetAlertTypeForSensor(sensorType),
+                        Severity = Enum.Parse<AlertSeverityEnum>(severity),
+                        Message = $"{severity} severity alert: {sensorType} reading is {reading.Value} {reading.Unit}",
+                        SensorValue = reading.Value,
+                        ThresholdValue = GetThresholdForSeverity(sensorType, severity),
+                        IsResolved = false,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    
+                    await _alertRepository.CreateAsync(alert);
+                    await _alertNotificationService.SendAlertNotificationsAsync(alert, farmId);
+                }
+                
+                _logger.LogInformation($"Generated {severity} reading for {field.FieldName} - {sensorType}: {reading.Value} {reading.Unit}");
+            }
+        }
+    }
+}
+
+private (decimal Value, string Unit) GenerateReadingWithSeverity(string sensorType, string severity)
+{
+    var range = _sensorRanges[sensorType];
+    decimal value;
+    
+    switch (severity)
+    {
+        case "CRITICAL":
+            value = range.Min + (range.Max - range.Min) * 0.9m; // Near max
+            break;
+        case "HIGH":
+            value = range.Min + (range.Max - range.Min) * 0.8m;
+            break;
+        case "MEDIUM":
+            value = range.Min + (range.Max - range.Min) * 0.6m;
+            break;
+        default:
+            value = range.Min + (range.Max - range.Min) * 0.3m;
+            break;
+    }
+    
+    return (Math.Round(value, 2), range.Unit);
+}
+
+private decimal GetThresholdForSeverity(string sensorType, string severity)
+{
+    var range = _sensorRanges[sensorType];
+    return severity == "CRITICAL" ? range.Max - 5 : range.Max - 10;
+}
+
+private AlertTypeEnum GetAlertTypeForSensor(string sensorType)
+{
+    return sensorType switch
+    {
+        "SOIL_MOISTURE" => AlertTypeEnum.DROUGHT_STRESS,
+        "SOIL_TEMP" => AlertTypeEnum.HEAT_STRESS,
+        "AIR_TEMP" => AlertTypeEnum.HEAT_STRESS,
+        "AIR_HUMIDITY" => AlertTypeEnum.DROUGHT_STRESS,
+        "SOIL_PH" => AlertTypeEnum.SOIL_PH_ALERT,
+        "NPK_NITROGEN" => AlertTypeEnum.NUTRIENT_DEFICIENCY,
+        "NPK_PHOSPHORUS" => AlertTypeEnum.NUTRIENT_DEFICIENCY,
+        "NPK_POTASSIUM" => AlertTypeEnum.NUTRIENT_DEFICIENCY,
+        _ => AlertTypeEnum.DROUGHT_STRESS
+    };
+}
+
 }

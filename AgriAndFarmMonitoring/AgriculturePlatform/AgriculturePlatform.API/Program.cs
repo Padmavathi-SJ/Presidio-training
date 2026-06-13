@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -18,6 +18,7 @@ using AgriculturePlatform.Application.Mappings;
 using AgriculturePlatform.API.Hubs;
 using AgriculturePlatform.API.Services;
 using AgriculturePlatform.API.Configuration;
+using AgriculturePlatform.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,7 +33,10 @@ builder.Services.AddControllers()
 builder.Services.Configure<FileStorageSettings>(
     builder.Configuration.GetSection("FileStorage"));
 
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
 
 // Add Swagger
 builder.Services.AddSwaggerGen(c =>
@@ -70,8 +74,10 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Add DbContext
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -177,13 +183,15 @@ builder.Services.AddScoped<IWorkerTaskService, WorkerTaskService>();
 builder.Services.AddScoped<ISensorReadingService, SensorReadingService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<IIoTSimulatorService, IoTSimulatorService>();
-builder.Services.AddScoped<IAlertNotificationService, AlertNotificationService>();
+builder.Services.AddScoped<AgriculturePlatform.Application.Services.AlertNotificationService>();
+builder.Services.AddScoped<IAlertNotificationService, AgriculturePlatform.API.Services.AlertNotificationService>();
 builder.Services.AddScoped<IObservationService, ObservationService>();
 builder.Services.AddScoped<IHarvestService, HarvestService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IQualityCheckService, QualityCheckService>();
 builder.Services.AddScoped<IYieldReportService, YieldReportService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 
 builder.Services.AddScoped<ObservationStatisticsFormatter>();

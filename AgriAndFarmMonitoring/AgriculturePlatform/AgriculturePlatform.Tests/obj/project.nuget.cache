@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "5tbRa7TuHX8=",
+  "dgSpecHash": "SgCcJjlLwhQ=",
   "success": true,
   "projectFilePath": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/AgriculturePlatform.Tests.csproj",
   "expectedPackageFiles": [
@@ -8,6 +8,7 @@
     "/Users/padmavathisj/.nuget/packages/autofixture.automoq/4.18.1/autofixture.automoq.4.18.1.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/automapper/13.0.1/automapper.13.0.1.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/automapper.extensions.microsoft.dependencyinjection/12.0.1/automapper.extensions.microsoft.dependencyinjection.12.0.1.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/bcrypt.net-next/4.2.0/bcrypt.net-next.4.2.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/castle.core/5.1.1/castle.core.5.1.1.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/coverlet.collector/6.0.2/coverlet.collector.6.0.2.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/epplus/6.2.10/epplus.6.2.10.nupkg.sha512",

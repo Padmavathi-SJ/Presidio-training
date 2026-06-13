@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using AgriculturePlatform.Application.DTOs.Admin;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Application.Exceptions;
@@ -122,7 +123,9 @@ public class AuthController : ControllerBase
             // If no token provided, revoke current user's all tokens
             if (string.IsNullOrWhiteSpace(dto?.RefreshToken))
             {
-                var adminId = int.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? "0");
+                var adminIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? 
+                                   User.FindFirst("sub")?.Value ?? "0";
+                var adminId = int.Parse(adminIdClaim);
                 var result = await _adminService.RevokeAllUserTokensAsync(adminId, ipAddress);
                 if (result)
                 {
@@ -163,7 +166,9 @@ public class AuthController : ControllerBase
             }
             else
             {
-                var adminId = int.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? "0");
+                var adminIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? 
+                                   User.FindFirst("sub")?.Value ?? "0";
+                var adminId = int.Parse(adminIdClaim);
                 await _adminService.RevokeAllUserTokensAsync(adminId, ipAddress);
             }
             

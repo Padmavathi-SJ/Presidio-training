@@ -1,17 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Text.Json;
+using System.Security.Claims; 
+using Microsoft.AspNetCore.Http;
 using AgriculturePlatform.Domain.Entities.AdminEntities;
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
 using AgriculturePlatform.Domain.Entities.WorkerManagement;
 using AgriculturePlatform.Domain.Entities.YieldReports;
+using AgriculturePlatform.Domain.Common;
+
 
 namespace AgriculturePlatform.Infrastructure.Context;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+      private readonly IHttpContextAccessor? _httpContextAccessor;
+          public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
+    }
+
+     public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor) 
+        : base(options)
+    {
+        _httpContextAccessor = httpContextAccessor;
     }
     
     // Admin DbSets
@@ -91,9 +102,7 @@ public class AppDbContext : DbContext
  // =============================================
         // REFRESH TOKEN
         // =============================================
-       
-
-// Add configuration in OnModelCreating
+      
 modelBuilder.Entity<RefreshToken>(entity =>
 {
     entity.HasKey(e => e.Id);
@@ -109,10 +118,17 @@ modelBuilder.Entity<RefreshToken>(entity =>
           .HasForeignKey(e => e.AdminId)
           .OnDelete(DeleteBehavior.Cascade);
           
+    entity.HasOne(e => e.Worker)
+          .WithMany()
+          .HasForeignKey(e => e.WorkerId)
+          .OnDelete(DeleteBehavior.Cascade);
+          
     entity.HasIndex(e => new { e.AdminId, e.IsRevoked });
+    entity.HasIndex(e => new { e.WorkerId, e.IsRevoked });
     entity.HasIndex(e => e.ExpiryDate);
-});
-        
+});    
+
+
         // =============================================
         // FIELD CONFIGURATION
         // =============================================
@@ -805,15 +821,222 @@ modelBuilder.Entity<YieldReport>(entity =>
         });
     }
     
-    // Auto-update timestamps and convert DateTimes to UTC
+    
+    
+    // =============================================
+    // GLOBAL AUDIT LOGGING - UPDATED SaveChangesAsync
+    // =============================================
+
+
 public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
 {
     var entries = ChangeTracker.Entries()
-        .Where(e => e.State == EntityState.Modified || e.State == EntityState.Added);
+        .Where(e => e.State == EntityState.Modified || e.State == EntityState.Added || e.State == EntityState.Deleted);
+    
+    var auditLogs = new List<AuditLog>();
+    var now = DateTime.UtcNow;
+    
+    // Get current user info from HttpContext
+    var (adminId, workerId, farmId, ipAddress, userAgent) = GetCurrentUserInfo();
     
     foreach (var entityEntry in entries)
     {
-        // Convert all DateTime properties to UTC
+        // Skip AuditLog entity itself to avoid infinite loop
+        if (entityEntry.Entity is AuditLog)
+            continue;
+        
+        var entityType = entityEntry.Entity.GetType().Name;
+        var entityId = GetEntityId(entityEntry.Entity);
+        var entityFarmId = farmId ?? GetFarmIdFromEntity(entityEntry.Entity);
+        
+        // Handle DateTime conversions to UTC
+        ConvertDateTimesToUtc(entityEntry);
+        
+        switch (entityEntry.State)
+        {
+            case EntityState.Added:
+                // Set audit fields
+                HandleAuditFields(entityEntry, adminId, workerId, now);
+                
+                // Get full entity state
+                var addedEntityState = GetEntityState(entityEntry.Entity);
+                
+                auditLogs.Add(new AuditLog
+                {
+                    FarmId = entityFarmId,
+                    AdminId = adminId,
+                    WorkerId = workerId,
+                    Action = "CREATE",
+                    EntityType = entityType,
+                    EntityId = entityId,
+                    OldValue = null,
+                    NewValue = SerializeToJsonDocument(addedEntityState),
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent,
+                    CreatedAt = now
+                });
+                break;
+                
+            case EntityState.Modified:
+                // Get changed properties
+                var changedProperties = entityEntry.Properties
+                    .Where(p => p.IsModified && !AreValuesEqual(p.OriginalValue, p.CurrentValue))
+                    .ToList();
+                
+                if (changedProperties.Any())
+                {
+                    // Set audit fields
+                    HandleAuditFields(entityEntry, adminId, workerId, now);
+                    
+                    // Get OLD state (before changes)
+                    var oldEntityState = GetEntityState(entityEntry.Entity, useOriginalValues: true);
+                    
+                    // Get NEW state (after changes) -  Renamed to newEntityStateValue
+                    var newEntityStateValue = GetEntityState(entityEntry.Entity, useOriginalValues: false);
+                    
+                    auditLogs.Add(new AuditLog
+                    {
+                        FarmId = entityFarmId,
+                        AdminId = adminId,
+                        WorkerId = workerId,
+                        Action = "UPDATE",
+                        EntityType = entityType,
+                        EntityId = entityId,
+                        OldValue = SerializeToJsonDocument(oldEntityState),
+                        NewValue = SerializeToJsonDocument(newEntityStateValue),
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        CreatedAt = now
+                    });
+                }
+                break;
+                
+            case EntityState.Deleted:
+                // For soft delete, we handle it in repository, but if hard delete occurs
+                var deletedEntityState = GetEntityState(entityEntry.Entity, useOriginalValues: true);
+                
+                auditLogs.Add(new AuditLog
+                {
+                    FarmId = entityFarmId,
+                    AdminId = adminId,
+                    WorkerId = workerId,
+                    Action = "DELETE",
+                    EntityType = entityType,
+                    EntityId = entityId,
+                    OldValue = SerializeToJsonDocument(deletedEntityState),
+                    NewValue = null,
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent,
+                    CreatedAt = now
+                });
+                break;
+        }
+    }
+    
+    // Add all audit logs
+    if (auditLogs.Any())
+    {
+        await AuditLogs.AddRangeAsync(auditLogs, cancellationToken);
+    }
+    
+    return await base.SaveChangesAsync(cancellationToken);
+}
+// Helper method to get full entity state
+private Dictionary<string, object?> GetEntityState(object entity, bool useOriginalValues = false)
+{
+    var state = new Dictionary<string, object?>();
+    var properties = entity.GetType().GetProperties();
+    
+    foreach (var property in properties)
+    {
+        // Skip navigation properties to avoid circular references
+        if (property.PropertyType.IsClass && property.PropertyType != typeof(string) && 
+            property.PropertyType.Namespace?.StartsWith("AgriculturePlatform.Domain.Entities") == true)
+        {
+            continue;
+        }
+        
+        try
+        {
+            object? value;
+            if (useOriginalValues)
+            {
+                // For original values, we need to get from ChangeTracker
+                var entry = Entry(entity);
+                var propertyEntry = entry.Property(property.Name);
+                value = propertyEntry.OriginalValue;
+            }
+            else
+            {
+                value = property.GetValue(entity);
+            }
+            
+            // Format DateTime for better readability
+            if (value is DateTime dt)
+            {
+                value = dt.ToString("yyyy-MM-dd HH:mm:ss.fffZ");
+            }
+            
+            state[property.Name] = value;
+        }
+        catch
+        {
+            // Skip properties that can't be accessed
+        }
+    }
+    
+    return state;
+}
+
+// Updated GetCurrentUserInfo to include UserAgent
+private (int? adminId, int? workerId, int? farmId, string ipAddress, string? userAgent) GetCurrentUserInfo()
+{
+    var httpContext = _httpContextAccessor?.HttpContext;
+    if (httpContext == null)
+        return (null, null, null, "127.0.0.1", null);
+    
+    // Get Admin ID (from token)
+    var adminIdClaim = httpContext.User.FindFirst("adminId")?.Value ?? 
+                      httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    int? adminId = null;
+    if (!string.IsNullOrEmpty(adminIdClaim) && int.TryParse(adminIdClaim, out var aId))
+    {
+        var userType = httpContext.User.FindFirst("userType")?.Value;
+        if (userType == "Admin")
+            adminId = aId;
+    }
+    
+    // Get Worker ID (from token)
+    var workerIdClaim = httpContext.User.FindFirst("workerId")?.Value;
+    int? workerId = null;
+    if (!string.IsNullOrEmpty(workerIdClaim) && int.TryParse(workerIdClaim, out var wId))
+    {
+        var userType = httpContext.User.FindFirst("userType")?.Value;
+        if (userType == "Worker")
+            workerId = wId;
+    }
+    
+    // Get Farm ID (from token)
+    var farmIdClaim = httpContext.User.FindFirst("farmId")?.Value;
+    int? farmId = null;
+    if (!string.IsNullOrEmpty(farmIdClaim) && int.TryParse(farmIdClaim, out var fId))
+        farmId = fId;
+    
+    // Get IP Address
+    var ip = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+    if (string.IsNullOrEmpty(ip))
+        ip = httpContext.Connection.RemoteIpAddress?.ToString();
+    var ipAddress = ip ?? "127.0.0.1";
+    
+    // Get User Agent
+    var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
+    if (string.IsNullOrEmpty(userAgent))
+        userAgent = null;
+    
+    return (adminId, workerId, farmId, ipAddress, userAgent);
+}   
+    private void ConvertDateTimesToUtc(EntityEntry entityEntry)
+    {
         var properties = entityEntry.Entity.GetType().GetProperties()
             .Where(p => p.PropertyType == typeof(DateTime) || p.PropertyType == typeof(DateTime?));
         
@@ -830,34 +1053,68 @@ public override async Task<int> SaveChangesAsync(CancellationToken cancellationT
                 }
             }
         }
-        
-        // Handle UpdatedAt
-        if (entityEntry.State == EntityState.Modified)
+    }
+    
+    private void HandleAuditFields(EntityEntry entityEntry, int? adminId, int? workerId, DateTime now)
+    {
+        if (entityEntry.Entity is BaseEntity baseEntity)
         {
-            var updatedAtProperty = entityEntry.Entity.GetType().GetProperty("UpdatedAt");
-            if (updatedAtProperty != null && updatedAtProperty.CanWrite)
+            if (entityEntry.State == EntityState.Added)
             {
-                updatedAtProperty.SetValue(entityEntry.Entity, DateTime.UtcNow);
+                baseEntity.CreatedAt = now;
+                baseEntity.CreatedBy = adminId ?? workerId;
             }
-        }
-        
-        // Handle CreatedAt
-        if (entityEntry.State == EntityState.Added)
-        {
-            var createdAtProperty = entityEntry.Entity.GetType().GetProperty("CreatedAt");
-            if (createdAtProperty != null && createdAtProperty.CanWrite)
+            else if (entityEntry.State == EntityState.Modified)
             {
-                var currentValue = createdAtProperty.GetValue(entityEntry.Entity);
-                if (currentValue == null || (DateTime)currentValue == default)
-                {
-                    createdAtProperty.SetValue(entityEntry.Entity, DateTime.UtcNow);
-                }
+                baseEntity.UpdatedAt = now;
+                baseEntity.UpdatedBy = adminId ?? workerId;
             }
         }
     }
     
-    return await base.SaveChangesAsync(cancellationToken);
-}
+    private int? GetEntityId(object entity)
+    {
+        var idProp = entity.GetType().GetProperty("Id");
+        if (idProp != null)
+        {
+            var value = idProp.GetValue(entity);
+            return value as int?;
+        }
+        return null;
+    }
+    
+    private int? GetFarmIdFromEntity(object entity)
+    {
+        var farmIdProp = entity.GetType().GetProperty("FarmId");
+        if (farmIdProp != null)
+        {
+            var value = farmIdProp.GetValue(entity);
+            return value as int?;
+        }
+        return null;
+    }
+    
+    private bool AreValuesEqual(object? original, object? current)
+    {
+        if (original == null && current == null) return true;
+        if (original == null || current == null) return false;
+        return original.Equals(current);
+    }
+    
+    private JsonDocument? SerializeToJsonDocument(object? obj)
+    {
+        if (obj == null) return null;
+        
+        var options = new JsonSerializerOptions
+        {
+            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+            WriteIndented = false
+        };
+        
+        var json = JsonSerializer.Serialize(obj, options);
+        return JsonDocument.Parse(json);
+    }
 
 
 }
+

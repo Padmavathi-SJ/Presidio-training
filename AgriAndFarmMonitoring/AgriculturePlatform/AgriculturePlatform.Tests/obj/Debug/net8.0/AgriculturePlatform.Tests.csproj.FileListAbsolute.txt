@@ -1,4 +1,10 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/CoverletSourceRootsMapping_AgriculturePlatform.Tests
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.csproj.AssemblyReference.cache
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.GeneratedMSBuildEditorConfig.editorconfig
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.AssemblyInfoInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.AssemblyInfo.cs
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.csproj.CoreCompileInputs.cache
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.sourcelink.json
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/xunit.runner.visualstudio.dotnetcore.testadapter.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/xunit.runner.reporters.netcoreapp10.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/xunit.runner.utility.netcoreapp10.dll
@@ -10,6 +16,7 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/AutoFixture.AutoMoq.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/AutoMapper.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/AutoMapper.Extensions.Microsoft.DependencyInjection.dll
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/BCrypt-Net-Next.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/Castle.Core.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/EPPlus.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/EPPlus.Interfaces.dll
@@ -133,12 +140,6 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/AgriculturePlatform.Application.pdb
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/AgriculturePlatform.Domain.pdb
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/AgriculturePlatform.Infrastructure.pdb
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.csproj.AssemblyReference.cache
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.GeneratedMSBuildEditorConfig.editorconfig
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.AssemblyInfoInputs.cache
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.AssemblyInfo.cs
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.csproj.CoreCompileInputs.cache
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.sourcelink.json
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/Agricult.52356541.Up2Date
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/refint/AgriculturePlatform.Tests.dll

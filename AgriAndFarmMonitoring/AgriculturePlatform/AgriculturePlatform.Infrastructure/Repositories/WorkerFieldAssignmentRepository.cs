@@ -153,4 +153,16 @@ public async Task<bool> HasWorkerAccessToFieldAsync(int workerId, int fieldId, i
                        && !a.IsDeleted);
 }
 
+// Infrastructure/Repositories/WorkerFieldAssignmentRepository.cs
+// Add this method:
+
+public async Task<List<WorkerFieldAssignment>> GetWorkerFieldAssignmentsByFieldAsync(int fieldId, int farmId)
+{
+    return await _context.WorkerFieldAssignments
+        .Include(a => a.Worker)
+        .Where(a => a.FieldId == fieldId && a.FarmId == farmId && a.IsActive && !a.IsDeleted)
+        .ToListAsync();
+}
+
+
 }

@@ -48,7 +48,7 @@ public class AdminAlertController : ControllerBase
     public async Task<IActionResult> GetStatistics([FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
     {
         var farmId = GetCurrentFarmId();
-        var result = await _alertService.GetStatisticsAsync(farmId, fromDate, toDate);
+        var result = await _alertService.GetAlertStatisticsAsync(farmId, fromDate, toDate);
         return Ok(result);
     }
 

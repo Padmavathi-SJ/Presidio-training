@@ -8,4 +8,6 @@ public interface IIoTSimulatorService
     Task CheckThresholdsAndCreateAlertsAsync(int farmId, decimal value, string sensorType, int fieldId, int cropCycleId);
     Task RunSimulationCycleAsync(int farmId, int adminId);
     Task<IEnumerable<object>> GetSimulationStatusAsync(int farmId);
+    Task GenerateTestCriticalAlertsAsync(int farmId, int adminId);
+    Task GenerateRandomSeverityReadingsAsync(int farmId, int adminId);
 }

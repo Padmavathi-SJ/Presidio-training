@@ -330,6 +330,85 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AdminId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CreatedByIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("JwtId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("WorkerId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiryDate");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("AdminId", "IsRevoked");
+
+                    b.HasIndex("WorkerId", "IsRevoked");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.Alert", b =>
                 {
                     b.Property<int>("Id")
@@ -1747,6 +1826,23 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Navigation("Admin");
 
                     b.Navigation("Farm");
+
+                    b.Navigation("Worker");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.RefreshToken", b =>
+                {
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", "Admin")
+                        .WithMany()
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.WorkerManagement.Worker", "Worker")
+                        .WithMany()
+                        .HasForeignKey("WorkerId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Admin");
 
                     b.Navigation("Worker");
                 });

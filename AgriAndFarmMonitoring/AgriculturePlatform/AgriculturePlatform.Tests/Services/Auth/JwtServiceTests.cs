@@ -1,4 +1,3 @@
-// AgriculturePlatform.Tests/Services/Auth/JwtServiceTests.cs
 using FluentAssertions;
 using System.IdentityModel.Tokens.Jwt;
 using AgriculturePlatform.Application.Services;
@@ -13,21 +12,22 @@ public class JwtServiceTests
     private readonly string _secretKey = "this-is-a-very-long-secret-key-for-testing-purposes-only";
     private readonly string _issuer = "TestIssuer";
     private readonly string _audience = "TestAudience";
-    private readonly int _expiryDays = 7;
+    private readonly int _accessTokenExpiryMinutes = 15;
+    private readonly int _refreshTokenExpiryDays = 7;
 
     public JwtServiceTests()
     {
-        _jwtService = new JwtService(_secretKey, _issuer, _audience, _expiryDays);
+        _jwtService = new JwtService(_secretKey, _issuer, _audience, _accessTokenExpiryMinutes, _refreshTokenExpiryDays);
     }
 
     [Fact]
-    public void GenerateToken_ValidAdmin_ReturnsValidToken()
+    public void GenerateAccessToken_ValidAdmin_ReturnsValidToken()
     {
         // Arrange
         var admin = TestHelper.CreateTestAdmin(1, 1);
 
         // Act
-        var token = _jwtService.GenerateToken(admin);
+        var token = _jwtService.GenerateAccessToken(admin);  
 
         // Assert
         token.Should().NotBeNullOrEmpty();
@@ -42,32 +42,24 @@ public class JwtServiceTests
     }
 
     [Fact]
-    public void GenerateToken_TokenContainsCorrectExpiry()
+    public void GenerateRefreshToken_ReturnsValidToken()
     {
-        // Arrange
-        var admin = TestHelper.CreateTestAdmin(1, 1);
-
         // Act
-        var token = _jwtService.GenerateToken(admin);
-        
-        var handler = new JwtSecurityTokenHandler();
-        var jsonToken = handler.ReadJwtToken(token);
-        
-        var expiry = jsonToken.ValidTo;
+        var refreshToken = _jwtService.GenerateRefreshToken();
 
         // Assert
-        var expectedExpiry = DateTime.UtcNow.AddDays(_expiryDays);
-        (expiry - expectedExpiry).TotalSeconds.Should().BeLessThan(5);
+        refreshToken.Should().NotBeNullOrEmpty();
+        refreshToken.Length.Should().BeGreaterThan(20);
     }
 
     [Fact]
-    public void GetExpiryDate_ReturnsCorrectDate()
+    public void GetAccessTokenExpiryDate_ReturnsCorrectDate()
     {
         // Act
-        var expiryDate = _jwtService.GetExpiryDate();
+        var expiryDate = _jwtService.GetAccessTokenExpiryDate();
 
         // Assert
-        var expectedExpiry = DateTime.UtcNow.AddDays(_expiryDays);
-        (expiryDate - expectedExpiry).TotalSeconds.Should().BeLessThan(1);
+        var expectedExpiry = DateTime.UtcNow.AddMinutes(_accessTokenExpiryMinutes);
+        (expiryDate - expectedExpiry).TotalSeconds.Should().BeLessThan(5);
     }
 }

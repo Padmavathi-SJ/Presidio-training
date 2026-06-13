@@ -62,4 +62,23 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         _context.RefreshTokens.RemoveRange(expiredTokens);
         await _context.SaveChangesAsync();
     }
+
+public async Task RevokeAllWorkerTokensAsync(int workerId, string revokedByIp)
+{
+    var tokens = await _context.RefreshTokens
+        .Where(rt => rt.WorkerId == workerId && !rt.IsRevoked)
+        .ToListAsync();
+
+    foreach (var token in tokens)
+    {
+        token.IsRevoked = true;
+        token.RevokedByIp = revokedByIp;
+        token.RevokedAt = DateTime.UtcNow;
+    }
+
+    await _context.SaveChangesAsync();
+}
+
+
+
 }

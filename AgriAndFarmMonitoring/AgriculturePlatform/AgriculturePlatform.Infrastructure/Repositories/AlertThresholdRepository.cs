@@ -62,6 +62,17 @@ public class AlertThresholdRepository : IAlertThresholdRepository
         await _context.SaveChangesAsync();
     }
 
+    // Infrastructure/Repositories/AlertThresholdRepository.cs
+public async Task<AlertThreshold?> GetThresholdsAsync(int farmId, string cropType, string growthStage, string sensorType)
+{
+    return await _context.AlertThresholds
+        .FirstOrDefaultAsync(t => t.FarmId == farmId && 
+                                   t.CropType == cropType && 
+                                   t.GrowthStage == growthStage && 
+                                   t.SensorType == sensorType &&
+                                   t.IsActive);
+}
+
     public async Task<bool> ExistsAsync(int id, int farmId)
     {
         return await _context.Set<AlertThreshold>()
