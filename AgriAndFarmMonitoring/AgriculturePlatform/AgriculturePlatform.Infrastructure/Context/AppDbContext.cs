@@ -1072,17 +1072,24 @@ private (int? adminId, int? workerId, int? farmId, string ipAddress, string? use
         }
     }
     
-    private int? GetEntityId(object entity)
-    {
-        var idProp = entity.GetType().GetProperty("Id");
-        if (idProp != null)
-        {
-            var value = idProp.GetValue(entity);
-            return value as int?;
-        }
-        return null;
-    }
+private int? GetEntityId(object entity)
+{
+    // Use reflection to find Id property
+    var idProperty = entity.GetType().GetProperty("Id");
+    if (idProperty == null) return null;
     
+    var value = idProperty.GetValue(entity);
+    if (value == null) return null;
+    
+    // Handle different numeric types
+    return value switch
+    {
+        int intValue => intValue,
+        long longValue => (int)longValue,
+        short shortValue => (int)shortValue,
+        _ => null
+    };
+}   
     private int? GetFarmIdFromEntity(object entity)
     {
         var farmIdProp = entity.GetType().GetProperty("FarmId");

@@ -1,4 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Text;    
+using System.Security.Cryptography;
 using AgriculturePlatform.Application.DTOs.Admin;
 using AgriculturePlatform.Application.Exceptions;
 using AgriculturePlatform.Application.Interfaces;
@@ -290,4 +292,74 @@ public class AdminService : IAdminService
         await _refreshTokenRepository.RevokeAllUserTokensAsync(adminId, ipAddress);
         return true;
     }
+
+
+    public async Task<bool> ChangePasswordAsync(int adminId, ChangePasswordDto dto, string ipAddress)
+    {
+        // Validate input
+        if (string.IsNullOrWhiteSpace(dto.CurrentPassword))
+            throw new BadRequestException("Current password is required");
+        
+        if (string.IsNullOrWhiteSpace(dto.NewPassword))
+            throw new BadRequestException("New password is required");
+        
+        if (dto.NewPassword != dto.ConfirmNewPassword)
+            throw new BadRequestException("New password and confirmation do not match");
+        
+        // Get admin by ID
+        var admin = await _adminRepository.GetByIdAsync(adminId);
+        if (admin == null)
+            throw new NotFoundException("Admin not found");
+        
+        // Verify current password
+        if (!VerifyPassword(dto.CurrentPassword, admin.PasswordHash))
+            throw new UnauthorizedException("Current password is incorrect");
+        
+        // Hash new password with BCrypt
+        admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        admin.UpdatedAt = DateTime.UtcNow;
+        admin.UpdatedBy = adminId;
+        
+        await _adminRepository.UpdateAsync(admin);
+        
+        // Revoke all refresh tokens for security (force re-login)
+        await _refreshTokenRepository.RevokeAllUserTokensAsync(adminId, ipAddress);
+        
+      
+        
+        return true;
+    }
+
+
+    private bool VerifyPassword(string password, string? passwordHash)
+    {
+        if (string.IsNullOrEmpty(passwordHash)) return false;
+        
+        // Check if it's a BCrypt hash (starts with $2a$, $2b$, or $2y$)
+        if (passwordHash.StartsWith("$2"))
+        {
+            try
+            {
+                return BCrypt.Net.BCrypt.Verify(password, passwordHash);
+            }
+            catch (BCrypt.Net.SaltParseException)
+            {
+                // If BCrypt fails, try SHA256 as fallback
+                return VerifySha256Password(password, passwordHash);
+            }
+        }
+        
+        // Try SHA256
+        return VerifySha256Password(password, passwordHash);
+    }
+
+    private bool VerifySha256Password(string password, string passwordHash)
+    {
+        using var sha256 = SHA256.Create();
+        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+        var hashOfInput = Convert.ToBase64String(hashedBytes);
+        return hashOfInput == passwordHash;
+    }
+
+
 }

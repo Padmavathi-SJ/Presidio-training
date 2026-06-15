@@ -65,7 +65,7 @@ public class HarvestServiceTests
         
         var field = TestHelper.CreateTestField(1, farmId, adminId);
         
-        // ✅ FIXED: Create crop cycle manually instead of using TestHelper
+        //  Create crop cycle manually instead of using TestHelper
         var cropCycle = new CropCycle 
         { 
             Id = 1, 

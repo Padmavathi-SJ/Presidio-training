@@ -22,12 +22,3 @@ public class DailyForecastDto
     public string? Alert { get; set; }
 }
 
-public class CurrentWeatherDto
-{
-    public double Temperature { get; set; }   // Changed from decimal
-    public double Humidity { get; set; }      // Changed from decimal
-    public double WindSpeed { get; set; }     // Changed from decimal
-    public string Condition { get; set; } = string.Empty;
-    public double? RainfallMm { get; set; }   // Changed from decimal
-    public DateTime ObservedAt { get; set; }
-}

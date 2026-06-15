@@ -9,4 +9,5 @@ public interface IAdminService
     Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenDto dto, string ipAddress);
     Task<bool> RevokeTokenAsync(RevokeTokenDto dto, string ipAddress);
     Task<bool> RevokeAllUserTokensAsync(int adminId, string ipAddress);
+    Task<bool> ChangePasswordAsync(int adminId, ChangePasswordDto dto, string ipAddress);
 }

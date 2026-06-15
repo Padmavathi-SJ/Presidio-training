@@ -1,4 +1,3 @@
-// AgriculturePlatform.Application/Services/WeatherService.cs
 using AutoMapper;
 using Microsoft.Extensions.Logging; 
 using AgriculturePlatform.Application.Common;
@@ -13,6 +12,7 @@ public class WeatherService : IWeatherService
 {
     private readonly IWeatherRepository _weatherRepository;
     private readonly IFieldRepository _fieldRepository;
+    private readonly IAdminRepository _adminRepository;  
     private readonly IWeatherApiService _weatherApiService;
     private readonly IAuditLogService _auditLogService;
     private readonly IMapper _mapper;
@@ -21,6 +21,7 @@ public class WeatherService : IWeatherService
     public WeatherService(
         IWeatherRepository weatherRepository,
         IFieldRepository fieldRepository,
+        IAdminRepository adminRepository, 
         IWeatherApiService weatherApiService,
         IAuditLogService auditLogService,
         IMapper mapper,
@@ -28,71 +29,77 @@ public class WeatherService : IWeatherService
     {
         _weatherRepository = weatherRepository;
         _fieldRepository = fieldRepository;
+        _adminRepository = adminRepository;  
         _weatherApiService = weatherApiService;
         _auditLogService = auditLogService;
         _mapper = mapper;
         _logger = logger;
     }
 
-    // =============================================
-    // READ OPERATIONS (Both Admin & Worker)
-    // =============================================
-// AgriculturePlatform.Application/Services/WeatherService.cs
-// Ensure the method signature matches exactly
-
-// AgriculturePlatform.Application/Services/WeatherService.cs
-
-public async Task<ApiResponse<WeatherDataDto>> GetCurrentWeatherAsync(int fieldId, int farmId, int? adminId = null)
-{
-    var field = await _fieldRepository.GetByIdAsync(fieldId, farmId);
-    if (field == null)
+    public async Task<ApiResponse<WeatherDataDto>> GetCurrentWeatherAsync(int fieldId, int farmId, int? adminId = null)
     {
-        return ApiResponse<WeatherDataDto>.Fail($"Field with ID {fieldId} not found");
-    }
-
-    var weather = await _weatherRepository.GetLatestByFieldAsync(fieldId, farmId);
-    
-    if (weather == null)
-    {
-        // Try to fetch from API
-        if (field.Latitude.HasValue && field.Longitude.HasValue)
+        var field = await _fieldRepository.GetByIdAsync(fieldId, farmId);
+        if (field == null)
         {
-            try
+            return ApiResponse<WeatherDataDto>.Fail($"Field with ID {fieldId} not found");
+        }
+
+        var weather = await _weatherRepository.GetLatestByFieldAsync(fieldId, farmId);
+        
+        if (weather == null)
+        {
+            if (field.Latitude.HasValue && field.Longitude.HasValue)
             {
-                var apiWeather = await _weatherApiService.GetCurrentWeatherAsync(field.Latitude.Value, field.Longitude.Value);
-                var newWeather = new WeatherData
+                try
                 {
-                    FarmId = farmId,
-                    AdminId = adminId ?? 0,  // Use 0 for system/worker if no adminId
-                    FieldId = fieldId,
-                    Temperature = apiWeather.Temperature,
-                    Humidity = apiWeather.Humidity,
-                    WindSpeed = apiWeather.WindSpeed,
-                    Condition = Enum.Parse<WeatherConditionEnum>(apiWeather.Condition),
-                    RecordedAt = DateTime.UtcNow,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = adminId ?? 0
-                };
-                weather = await _weatherRepository.CreateAsync(newWeather);
-                _logger.LogInformation($"Created new weather record for field {fieldId} with temp {apiWeather.Temperature}°C");
+                    var apiWeather = await _weatherApiService.GetCurrentWeatherAsync(field.Latitude.Value, field.Longitude.Value);
+                    
+                    WeatherConditionEnum? condition = null;
+                    if (!string.IsNullOrWhiteSpace(apiWeather.Condition))
+                    {
+                        try
+                        {
+                            condition = Enum.Parse<WeatherConditionEnum>(apiWeather.Condition, true);
+                        }
+                        catch (ArgumentException)
+                        {
+                            _logger.LogWarning($"Unknown weather condition: {apiWeather.Condition}");
+                        }
+                    }
+                    
+                    var newWeather = new WeatherData
+                    {
+                        FarmId = farmId,
+                        AdminId = adminId ?? 0,
+                        FieldId = fieldId,
+                        Temperature = apiWeather.Temperature,
+                        Humidity = apiWeather.Humidity,
+                        WindSpeed = apiWeather.WindSpeed,
+                        Condition = condition,
+                        RecordedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = adminId ?? 0
+                    };
+                    weather = await _weatherRepository.CreateAsync(newWeather);
+                    _logger.LogInformation($"Created new weather record for field {fieldId}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Failed to fetch weather for field {fieldId}");
+                    return ApiResponse<WeatherDataDto>.Fail($"Weather data not available: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, $"Failed to fetch weather for field {fieldId}");
-                return ApiResponse<WeatherDataDto>.Fail($"Weather data not available: {ex.Message}");
+                return ApiResponse<WeatherDataDto>.Fail("Field location not set. Please add latitude/longitude.");
             }
         }
-        else
-        {
-            return ApiResponse<WeatherDataDto>.Fail("Field location not set. Please add latitude/longitude.");
-        }
+        
+        var result = _mapper.Map<WeatherDataDto>(weather);
+        result.FieldName = field.FieldName;
+        
+        return ApiResponse<WeatherDataDto>.Ok(result);
     }
-
-    var result = _mapper.Map<WeatherDataDto>(weather);
-    result.FieldName = field.FieldName;
-    
-    return ApiResponse<WeatherDataDto>.Ok(result);
-}  
 
     public async Task<ApiResponse<WeatherForecastDto>> GetForecastAsync(int fieldId, int farmId)
     {
@@ -166,10 +173,6 @@ public async Task<ApiResponse<WeatherDataDto>> GetCurrentWeatherAsync(int fieldI
         return ApiResponse<List<WeatherAlertDto>>.Ok(allAlerts);
     }
 
-    // =============================================
-    // ADMIN ONLY OPERATIONS
-    // =============================================
-
     public async Task<ApiResponse<WeatherDataDto>> AddManualWeatherEntryAsync(ManualWeatherEntryDto dto, int farmId, int adminId)
     {
         var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
@@ -215,12 +218,17 @@ public async Task<ApiResponse<WeatherDataDto>> GetCurrentWeatherAsync(int fieldI
 
         var oldWeather = _mapper.Map<WeatherData>(weather);
 
-        weather.Temperature = dto.Temperature ?? weather.Temperature;
-        weather.Humidity = dto.Humidity ?? weather.Humidity;
-        weather.RainfallMm = dto.RainfallMm ?? weather.RainfallMm;
-        weather.WindSpeed = dto.WindSpeed ?? weather.WindSpeed;
+        if (dto.Temperature.HasValue)
+            weather.Temperature = dto.Temperature;
+        if (dto.Humidity.HasValue)
+            weather.Humidity = dto.Humidity;
+        if (dto.RainfallMm.HasValue)
+            weather.RainfallMm = dto.RainfallMm;
+        if (dto.WindSpeed.HasValue)
+            weather.WindSpeed = dto.WindSpeed;
         if (!string.IsNullOrWhiteSpace(dto.Condition))
             weather.Condition = Enum.Parse<WeatherConditionEnum>(dto.Condition, true);
+        
         weather.UpdatedAt = DateTime.UtcNow;
         weather.UpdatedBy = adminId;
 
@@ -246,79 +254,98 @@ public async Task<ApiResponse<WeatherDataDto>> GetCurrentWeatherAsync(int fieldI
         return ApiResponse<bool>.Ok(true, "Weather data deleted successfully");
     }
 
-// In WeatherService.cs, update RefreshWeatherDataAsync to handle null values
-
-public async Task<ApiResponse<bool>> RefreshWeatherDataAsync(int fieldId, int farmId, int adminId)
-{
-    var field = await _fieldRepository.GetByIdAsync(fieldId, farmId);
-    if (field == null)
+    public async Task<ApiResponse<bool>> RefreshWeatherDataAsync(int fieldId, int farmId, int adminId)
     {
-        return ApiResponse<bool>.Fail($"Field with ID {fieldId} not found");
-    }
-
-    if (!field.Latitude.HasValue || !field.Longitude.HasValue)
-    {
-        return ApiResponse<bool>.Fail("Field location not set");
-    }
-
-    try
-    {
-        var apiWeather = await _weatherApiService.GetCurrentWeatherAsync(field.Latitude.Value, field.Longitude.Value);
-        
-        // Check if we got valid data
-        if (apiWeather.Temperature == 0 && apiWeather.Humidity == 0 && apiWeather.WindSpeed == 0)
+        try
         {
-            return ApiResponse<bool>.Fail("Received invalid weather data from API");
+            var field = await _fieldRepository.GetByIdAsync(fieldId, farmId);
+            if (field == null || !field.Latitude.HasValue || !field.Longitude.HasValue)
+            {
+                return ApiResponse<bool>.Fail($"Field {fieldId} has no coordinates");
+            }
+
+            var admin = await _adminRepository.GetByIdAsync(adminId);
+            if (admin == null)
+            {
+                var admins = await _adminRepository.GetByFarmIdAsync(farmId);
+                admin = admins.FirstOrDefault(a => a.IsActive);
+                if (admin == null)
+                {
+                    return ApiResponse<bool>.Fail($"No active admin found for farm {farmId}");
+                }
+                adminId = admin.Id;
+            }
+
+            var weatherData = await _weatherApiService.GetCurrentWeatherAsync(field.Latitude.Value, field.Longitude.Value);
+            
+            WeatherConditionEnum? condition = null;
+            if (!string.IsNullOrWhiteSpace(weatherData.Condition))
+            {
+                try
+                {
+                    condition = Enum.Parse<WeatherConditionEnum>(weatherData.Condition, true);
+                }
+                catch (ArgumentException)
+                {
+                    _logger.LogWarning($"Unknown weather condition: {weatherData.Condition}");
+                }
+            }
+            
+            var weatherRecord = new WeatherData
+            {
+                FarmId = farmId,
+                AdminId = adminId,
+                FieldId = fieldId,
+                Temperature = weatherData.Temperature,
+                Humidity = weatherData.Humidity,
+                RainfallMm = weatherData.RainfallMm,
+                WindSpeed = weatherData.WindSpeed,
+                Condition = condition,
+                RecordedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = adminId
+            };
+            
+            await _weatherRepository.CreateAsync(weatherRecord);
+            await CheckAndCreateWeatherAlertsAsync(weatherRecord, farmId, adminId);
+            
+            _logger.LogInformation($"Weather data refreshed for field {fieldId}");
+            return ApiResponse<bool>.Ok(true, "Weather data refreshed successfully");
         }
-        
-        var weather = new WeatherData
+        catch (Exception ex)
         {
-            FarmId = farmId,
-            AdminId = adminId,
-            FieldId = fieldId,
-            Temperature = apiWeather.Temperature,
-            Humidity = apiWeather.Humidity,
-            WindSpeed = apiWeather.WindSpeed,
-            Condition = Enum.Parse<WeatherConditionEnum>(apiWeather.Condition),
-            RecordedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = adminId
-        };
-
-        await _weatherRepository.CreateAsync(weather);
-        
-        _logger.LogInformation($"Weather data saved for field {fieldId}: Temp={apiWeather.Temperature}°C, Humidity={apiWeather.Humidity}%");
-        
-        return ApiResponse<bool>.Ok(true, "Weather data refreshed successfully");
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, $"Failed to refresh weather for field {fieldId}");
-        return ApiResponse<bool>.Fail($"Failed to refresh: {ex.Message}");
-    }
-}
-
-public async Task<ApiResponse<bool>> RefreshAllFieldsWeatherAsync(int farmId, int adminId)
-{
-    var fields = await _fieldRepository.GetAllAsync(farmId);
-    var successCount = 0;
-
-    foreach (var field in fields)
-    {
-        if (field.Latitude.HasValue && field.Longitude.HasValue)
-        {
-            // FIX: Pass adminId to RefreshWeatherDataAsync
-            var result = await RefreshWeatherDataAsync(field.Id, farmId, adminId);
-            if (result.Success) successCount++;
+            _logger.LogError(ex, $"Failed to refresh weather for field {fieldId}");
+            return ApiResponse<bool>.Fail($"Failed to refresh weather: {ex.Message}");
         }
     }
 
-    return ApiResponse<bool>.Ok(true, $"Refreshed weather for {successCount} of {fields.Count()} fields");
-}
+    public async Task<ApiResponse<bool>> RefreshAllFieldsWeatherAsync(int farmId, int adminId)
+    {
+        try
+        {
+            var fields = await _fieldRepository.GetAllAsync(farmId);
+            var successCount = 0;
+
+            foreach (var field in fields)
+            {
+                if (field.Latitude.HasValue && field.Longitude.HasValue)
+                {
+                    var result = await RefreshWeatherDataAsync(field.Id, farmId, adminId);
+                    if (result.Success) successCount++;
+                }
+            }
+
+            return ApiResponse<bool>.Ok(true, $"Refreshed weather for {successCount} of {fields.Count()} fields");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to refresh all fields weather for farm {farmId}");
+            return ApiResponse<bool>.Fail($"Failed to refresh weather: {ex.Message}");
+        }
+    }
+
     public async Task<ApiResponse<WeatherApiSettingsDto>> GetApiSettingsAsync(int farmId)
     {
-        // Return settings from configuration (or stored in database)
-        // For now, return default
         var settings = new WeatherApiSettingsDto
         {
             ApiProvider = "OpenWeatherMap",
@@ -331,9 +358,60 @@ public async Task<ApiResponse<bool>> RefreshAllFieldsWeatherAsync(int farmId, in
 
     public async Task<ApiResponse<bool>> UpdateApiSettingsAsync(WeatherApiSettingsDto dto, int farmId)
     {
-        // Save settings (you can store in a Settings table or appsettings)
-        // For now, just return success
         await Task.CompletedTask;
         return ApiResponse<bool>.Ok(true, "Settings updated successfully");
+    }
+
+    private async Task CheckAndCreateWeatherAlertsAsync(WeatherData weather, int farmId, int adminId)
+    {
+        var alerts = new List<WeatherAlert>();
+        
+        if (weather.Temperature > 35)
+        {
+            alerts.Add(new WeatherAlert
+            {
+                FarmId = farmId,
+                AdminId = adminId,
+                FieldId = weather.FieldId,
+                AlertType = WeatherAlertTypeEnum.HEAT_WAVE,
+                Severity = WeatherAlertSeverityEnum.WARNING,
+                Title = "High Temperature Alert",
+                Message = $"Temperature reached {weather.Temperature}°C which exceeds safe threshold of 35°C",
+                Temperature = weather.Temperature,
+                AlertTime = DateTime.UtcNow
+            });
+        }
+        
+        if (weather.RainfallMm > 50)
+        {
+            alerts.Add(new WeatherAlert
+            {
+                FarmId = farmId,
+                AdminId = adminId,
+                FieldId = weather.FieldId,
+                AlertType = WeatherAlertTypeEnum.HEAVY_RAIN,
+                Severity = WeatherAlertSeverityEnum.WARNING,
+                Title = "Heavy Rainfall Alert",
+                Message = $"Rainfall of {weather.RainfallMm}mm detected",
+                RainfallMm = weather.RainfallMm,
+                AlertTime = DateTime.UtcNow
+            });
+        }
+        
+        if (weather.WindSpeed > 15)
+        {
+            alerts.Add(new WeatherAlert
+            {
+                FarmId = farmId,
+                AdminId = adminId,
+                FieldId = weather.FieldId,
+                AlertType = WeatherAlertTypeEnum.HIGH_WIND,
+                Severity = WeatherAlertSeverityEnum.ADVISORY,
+                Title = "High Wind Alert",
+                Message = $"Wind speed reached {weather.WindSpeed} m/s",
+                WindSpeed = weather.WindSpeed,
+                AlertTime = DateTime.UtcNow
+            });
+        }
     }
 }

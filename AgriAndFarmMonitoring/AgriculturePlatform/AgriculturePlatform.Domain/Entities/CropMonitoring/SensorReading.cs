@@ -7,7 +7,7 @@ namespace AgriculturePlatform.Domain.Entities.CropMonitoring;
 
 public class SensorReading : BaseEntity  
 {
-    public long Id { get; set; }  
+   
     public int FarmId { get; set; }
     public int AdminId { get; set; }
     public int FieldId { get; set; }

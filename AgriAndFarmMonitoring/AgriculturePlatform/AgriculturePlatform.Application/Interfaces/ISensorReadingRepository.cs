@@ -7,7 +7,7 @@ namespace AgriculturePlatform.Application.Interfaces;
 
 public interface ISensorReadingRepository
 {
-    Task<SensorReading?> GetByIdAsync(long id, int farmId);
+    Task<SensorReading?> GetByIdAsync(int id, int farmId);
     Task<SensorReading> CreateAsync(SensorReading reading);
     Task<PagedResult<SensorReading>> GetPagedAsync(
         int farmId, int? fieldId, int? cropCycleId, string? sensorType,

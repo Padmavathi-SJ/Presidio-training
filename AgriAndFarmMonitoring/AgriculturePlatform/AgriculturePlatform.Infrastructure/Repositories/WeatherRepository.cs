@@ -85,13 +85,21 @@ public class WeatherRepository : IWeatherRepository
             .FirstOrDefaultAsync(w => w.Id == id && w.FarmId == farmId);
     }
 
-    public async Task<WeatherData> CreateAsync(WeatherData weatherData)
+
+
+public async Task<WeatherData> CreateAsync(WeatherData weatherData)
+{
+    //  Ensure AdminId is set (should not be null or 0)
+    if (weatherData.AdminId == 0)
     {
-        weatherData.CreatedAt = DateTime.UtcNow;
-        await _context.WeatherData.AddAsync(weatherData);
-        await _context.SaveChangesAsync();
-        return weatherData;
+        throw new InvalidOperationException("AdminId is required for creating weather data");
     }
+    
+    weatherData.RecordedAt = DateTime.UtcNow;
+    await _context.WeatherData.AddAsync(weatherData);
+    await _context.SaveChangesAsync();
+    return weatherData;
+}
 
     public async Task UpdateAsync(WeatherData weatherData)
     {

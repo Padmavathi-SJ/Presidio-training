@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using AgriculturePlatform.Application.DTOs.Admin;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Application.Exceptions;
@@ -188,4 +189,60 @@ public class AuthController : ControllerBase
     {
         return Ok(new { success = true, message = "Token is valid" });
     }
+
+
+
+[HttpPost("change-password")]
+[Authorize]
+public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+{
+    try
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+        
+        var adminId = GetCurrentAdminId();
+        var ipAddress = GetIpAddress();
+        
+        var result = await _adminService.ChangePasswordAsync(adminId, dto, ipAddress);
+        
+        if (result)
+        {
+            _logger.LogInformation("Password changed successfully for admin {AdminId} from IP {Ip}", adminId, ipAddress);
+            return Ok(new { success = true, message = "Password changed successfully. Please login again with your new password." });
+        }
+        
+        return BadRequest(new { success = false, message = "Failed to change password" });
+    }
+    catch (UnauthorizedException ex)
+    {
+        _logger.LogWarning("Password change failed: {Message}", ex.Message);
+        return Unauthorized(new { success = false, message = ex.Message });
+    }
+    catch (BadRequestException ex)
+    {
+        _logger.LogWarning("Password change validation failed: {Message}", ex.Message);
+        return BadRequest(new { success = false, message = ex.Message });
+    }
+    catch (NotFoundException ex)
+    {
+        _logger.LogWarning("Admin not found: {Message}", ex.Message);
+        return NotFound(new { success = false, message = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Unexpected error during password change");
+        return StatusCode(500, new { success = false, message = "An error occurred while changing password" });
+    }
+}
+
+private int GetCurrentAdminId()
+{
+    var adminIdClaim = User.FindFirst("adminId")?.Value ?? 
+                       User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+                       User.FindFirst("sub")?.Value;
+    
+    return int.TryParse(adminIdClaim, out var adminId) ? adminId : 0;
+}
+
 }

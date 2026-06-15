@@ -17,6 +17,7 @@ public class WeatherServiceTests
 {
     private readonly Mock<IWeatherRepository> _weatherRepositoryMock;
     private readonly Mock<IFieldRepository> _fieldRepositoryMock;
+    private readonly Mock<IAdminRepository> _adminRepositoryMock;
     private readonly Mock<IWeatherApiService> _weatherApiServiceMock;
     private readonly Mock<IAuditLogService> _auditLogServiceMock;
     private readonly Mock<ILogger<WeatherService>> _loggerMock;
@@ -27,6 +28,7 @@ public class WeatherServiceTests
     {
         _weatherRepositoryMock = new Mock<IWeatherRepository>();
         _fieldRepositoryMock = new Mock<IFieldRepository>();
+         _adminRepositoryMock = new Mock<IAdminRepository>(); 
         _weatherApiServiceMock = new Mock<IWeatherApiService>();
         _auditLogServiceMock = new Mock<IAuditLogService>();
         _loggerMock = new Mock<ILogger<WeatherService>>();
@@ -36,6 +38,7 @@ public class WeatherServiceTests
         _weatherService = new WeatherService(
             _weatherRepositoryMock.Object,
             _fieldRepositoryMock.Object,
+            _adminRepositoryMock.Object,
             _weatherApiServiceMock.Object,
             _auditLogServiceMock.Object,
             _mapper,

@@ -129,17 +129,19 @@ public class WorkerRepository : IWorkerRepository
 
         var query = _context.Workers.Where(specification.Criteria!);
 
-        // Apply sorting
-        if (!string.IsNullOrWhiteSpace(paginationParams.SortBy))
+        // Apply sorting — use a whitelist to avoid EF.Property translation failures
+        // caused by case mismatches or invalid property names.
+        query = paginationParams.SortBy?.ToLowerInvariant() switch
         {
-            query = paginationParams.IsDescending
-                ? query.OrderByDescending(w => EF.Property<object>(w, paginationParams.SortBy))
-                : query.OrderBy(w => EF.Property<object>(w, paginationParams.SortBy));
-        }
-        else
-        {
-            query = query.OrderByDescending(w => w.CreatedAt);
-        }
+            "name"        => paginationParams.IsDescending ? query.OrderByDescending(w => w.Name)        : query.OrderBy(w => w.Name),
+            "email"       => paginationParams.IsDescending ? query.OrderByDescending(w => w.Email)       : query.OrderBy(w => w.Email),
+            "role"        => paginationParams.IsDescending ? query.OrderByDescending(w => w.Role)        : query.OrderBy(w => w.Role),
+            "isactive"    => paginationParams.IsDescending ? query.OrderByDescending(w => w.IsActive)    : query.OrderBy(w => w.IsActive),
+            "hiredate"    => paginationParams.IsDescending ? query.OrderByDescending(w => w.HireDate)    : query.OrderBy(w => w.HireDate),
+            "lastloginat" => paginationParams.IsDescending ? query.OrderByDescending(w => w.LastLoginAt) : query.OrderBy(w => w.LastLoginAt),
+            "updatedat"   => paginationParams.IsDescending ? query.OrderByDescending(w => w.UpdatedAt)   : query.OrderBy(w => w.UpdatedAt),
+            _             => query.OrderByDescending(w => w.CreatedAt)   // "createdat" and any unknown value
+        };
 
         var totalCount = await query.CountAsync();
 

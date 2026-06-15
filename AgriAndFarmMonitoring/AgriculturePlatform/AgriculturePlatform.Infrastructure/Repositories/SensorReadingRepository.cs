@@ -22,7 +22,7 @@ public class SensorReadingRepository : ISensorReadingRepository
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
     }
 
-    public async Task<SensorReading?> GetByIdAsync(long id, int farmId)
+    public async Task<SensorReading?> GetByIdAsync(int id, int farmId)
     {
         return await _context.SensorReadings
             .Include(s => s.Field)

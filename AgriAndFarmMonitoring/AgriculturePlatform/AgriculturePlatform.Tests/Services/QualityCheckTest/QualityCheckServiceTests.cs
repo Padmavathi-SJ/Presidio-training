@@ -678,7 +678,7 @@ public class QualityCheckServiceTests
     {
         // Arrange
         int farmId = 1;
-        // ✅ FIXED: Don't set PassRate and RejectionRate - they are computed
+        //  Don't set PassRate and RejectionRate - they are computed
         var stats = new QualityStatisticsDto
         {
             TotalChecks = 50,
@@ -729,7 +729,7 @@ public class QualityCheckServiceTests
         var fromDate = new DateTime(2024, 1, 1);
         var toDate = new DateTime(2024, 12, 31);
         
-        // ✅ FIXED: Don't set PassRate - it will be computed
+        //  Don't set PassRate - it will be computed
         var stats = new QualityStatisticsDto
         {
             TotalChecks = 30,
@@ -761,7 +761,7 @@ public class QualityCheckServiceTests
     {
         // Arrange
         int farmId = 1;
-        // ✅ FIXED: Don't set PassRate and RejectionRate - they will be 0
+        //  Don't set PassRate and RejectionRate - they will be 0
         var stats = new QualityStatisticsDto
         {
             TotalChecks = 0,
