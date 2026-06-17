@@ -40,7 +40,6 @@ public class IoTSimulatorBackgroundService : BackgroundService
         _logger = logger;
     }
     
-// In IoTSimulatorBackgroundService.cs - ExecuteAsync method
 
 protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 {
@@ -62,7 +61,7 @@ protected override async Task ExecuteAsync(CancellationToken stoppingToken)
             
             foreach (var farm in farms)
             {
-                // ✅ Use GetByFarmIdAsync instead of GetAllAsync
+                //  Use GetByFarmIdAsync instead of GetAllAsync
                 var admins = await adminRepository.GetByFarmIdAsync(farm.Id);
                 var adminId = admins.FirstOrDefault()?.Id ?? 1;
                 
@@ -137,8 +136,8 @@ private SensorReading GenerateSensorReading(int fieldId, int cropCycleId, string
     
     return new SensorReading
     {
-        FarmId = farmId,           // ✅ ADD THIS
-        AdminId = adminId,         // ✅ ADD THIS
+        FarmId = farmId,           
+        AdminId = adminId,         
         FieldId = fieldId,
         CropCycleId = cropCycleId,
         SensorType = Enum.Parse<SensorTypeEnum>(sensorType),

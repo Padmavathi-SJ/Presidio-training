@@ -80,12 +80,20 @@ public class EmailService : IEmailService
             _ => "#17a2b8"
         };
         
-        var severityIcon = alert.Severity.ToLower() switch
+        var severityLabel = alert.Severity.ToUpper() switch
         {
-            "critical" => "🔴",
-            "high" => "🟠",
-            "medium" => "🟡",
-            _ => "🔵"
+            "CRITICAL" => "⚠ CRITICAL",
+            "HIGH" => "⚠ HIGH",
+            "MEDIUM" => "⚠ MEDIUM",
+            _ => "ℹ INFO"
+        };
+        
+        var severityText = alert.Severity.ToUpper() switch
+        {
+            "CRITICAL" => "CRITICAL ALERT - Immediate Action Required",
+            "HIGH" => "HIGH ALERT - Action Required Soon",
+            "MEDIUM" => "MEDIUM ALERT - Monitor Closely",
+            _ => "INFORMATIONAL - No Immediate Action Required"
         };
         
         var emailBody = $@"
@@ -98,33 +106,40 @@ public class EmailService : IEmailService
         .header {{ background: linear-gradient(135deg, #2d6a4f, #1b4332); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
         .content {{ background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px; }}
         .alert-card {{ border-left: 4px solid {severityColor}; background: white; padding: 15px; margin: 15px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
-        .severity-badge {{ display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; background: {severityColor}; color: white; }}
+        .severity-badge {{ display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; background: {severityColor}; color: white; letter-spacing: 0.5px; }}
         .value {{ font-size: 24px; font-weight: bold; color: {severityColor}; }}
         .metric {{ margin: 10px 0; }}
         .footer {{ text-align: center; padding: 20px; font-size: 12px; color: #666; }}
-        .button {{ display: inline-block; padding: 10px 20px; background: #2d6a4f; color: white; text-decoration: none; border-radius: 5px; }}
+        .button {{ display: inline-block; padding: 12px 25px; background: #2d6a4f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }}
+        .alert-title {{ font-size: 18px; font-weight: bold; margin-bottom: 10px; }}
+        .divider {{ border-top: 1px solid #e9ecef; margin: 15px 0; }}
     </style>
 </head>
 <body>
     <div class='container'>
         <div class='header'>
-            <h2>{severityIcon} {alert.Severity} Sensor Alert</h2>
-            <p>{alert.FarmName} - {alert.FieldName}</p>
+            <h2>[ALERT] {severityLabel}</h2>
+            <p style='font-size: 14px; opacity: 0.9;'>{alert.FarmName} - {alert.FieldName}</p>
         </div>
         <div class='content'>
             <div class='alert-card'>
-                <h3>⚠️ {alert.Message}</h3>
-                <div class='metric'><strong>Sensor:</strong> {FormatSensorType(alert.SensorType)}</div>
-                <div class='metric'><strong>Current Value:</strong> <span class='value'>{alert.CurrentValue}</span> {GetUnit(alert.SensorType)}</div>
-                <div class='metric'><strong>Threshold:</strong> {alert.ThresholdValue} {GetUnit(alert.SensorType)}</div>
-                <div class='metric'><strong>Crop:</strong> {alert.CropType}</div>
-                <div class='metric'><strong>Time:</strong> {alert.AlertTime:yyyy-MM-dd HH:mm:ss}</div>
-                <div class='metric'><strong>Severity:</strong> <span class='severity-badge'>{alert.Severity}</span></div>
+                <div class='alert-title' style='color: {severityColor};'>⚠ {severityText}</div>
+                <div class='divider'></div>
+                <p style='font-size: 16px;'><strong>Message:</strong> {alert.Message}</p>
+                
+                <div class='divider'></div>
+                
+                <div class='metric'><strong>Sensor Type:</strong> {FormatSensorType(alert.SensorType)}</div>
+                <div class='metric'><strong>Current Reading:</strong> <span class='value'>{alert.CurrentValue}</span> {GetUnit(alert.SensorType)}</div>
+                <div class='metric'><strong>Threshold Value:</strong> {alert.ThresholdValue} {GetUnit(alert.SensorType)}</div>
+                <div class='metric'><strong>Crop Type:</strong> {alert.CropType}</div>
+                <div class='metric'><strong>Alert Time:</strong> {alert.AlertTime:yyyy-MM-dd HH:mm:ss} UTC</div>
+                <div class='metric'><strong>Severity Level:</strong> <span class='severity-badge'>{alert.Severity}</span></div>
             </div>
             
             <div style='margin: 20px 0; padding: 15px; background: #e9ecef; border-radius: 8px;'>
-                <h3>📋 Recommended Action</h3>
-                <p>{alert.RecommendedAction}</p>
+                <h3 style='margin-top: 0;'>Recommended Action</h3>
+                <p style='margin-bottom: 0;'>{alert.RecommendedAction}</p>
             </div>
             
             <div style='text-align: center; margin-top: 20px;'>
@@ -133,7 +148,7 @@ public class EmailService : IEmailService
         </div>
         <div class='footer'>
             <p>This is an automated alert from your Farm Management System.</p>
-            <p>Please take appropriate action.</p>
+            <p style='font-weight: bold; color: #dc3545;'>Please take appropriate action immediately.</p>
         </div>
     </div>
 </body>
@@ -143,7 +158,7 @@ public class EmailService : IEmailService
         {
             To = recipientEmail,
             ToName = recipientName,
-            Subject = $"{severityIcon} {alert.Severity} Alert: {FormatSensorType(alert.SensorType)} - {alert.FieldName}",
+            Subject = $"[{alert.Severity}] {FormatSensorType(alert.SensorType)} Alert - {alert.FieldName}",
             Body = emailBody,
             IsHtml = true
         });
@@ -174,6 +189,8 @@ public class EmailService : IEmailService
             "NPK_POTASSIUM" => "Potassium Level",
             "WIND_SPEED" => "Wind Speed",
             "RAINFALL" => "Rainfall",
+            "LIGHT_INTENSITY" => "Light Intensity",
+            "LEAF_WETNESS" => "Leaf Wetness",
             _ => sensorType
         };
     }
@@ -192,6 +209,8 @@ public class EmailService : IEmailService
             "NPK_POTASSIUM" => "ppm",
             "WIND_SPEED" => "m/s",
             "RAINFALL" => "mm",
+            "LIGHT_INTENSITY" => "lux",
+            "LEAF_WETNESS" => "%",
             _ => ""
         };
     }
