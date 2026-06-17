@@ -1,6 +1,0 @@
-@Presidio_Training_HostAddress = http://localhost:5236
-
-GET {{Presidio_Training_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
