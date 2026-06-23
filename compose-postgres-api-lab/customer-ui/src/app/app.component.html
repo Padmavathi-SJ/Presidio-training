@@ -1,0 +1,47 @@
+<div style="padding: 20px; font-family: Arial, sans-serif;">
+  <h1>Customer Management</h1>
+  
+  <div style="margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+    <h3>Add New Customer</h3>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <input 
+        [(ngModel)]="newCustomer.name" 
+        placeholder="Name" 
+        style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; min-width: 150px;">
+      <input 
+        [(ngModel)]="newCustomer.email" 
+        placeholder="Email" 
+        style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; min-width: 150px;">
+      <button 
+        (click)="createCustomer()" 
+        style="padding: 8px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Add Customer
+      </button>
+    </div>
+  </div>
+
+  <div>
+    <h3>Customer List</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #007bff; color: white;">
+          <th style="padding: 10px; text-align: left;">ID</th>
+          <th style="padding: 10px; text-align: left;">Name</th>
+          <th style="padding: 10px; text-align: left;">Email</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let customer of customers" style="border-bottom: 1px solid #ddd;">
+          <td style="padding: 10px;">{{ customer.id }}</td>
+          <td style="padding: 10px;">{{ customer.name }}</td>
+          <td style="padding: 10px;">{{ customer.email }}</td>
+        </tr>
+        <tr *ngIf="customers.length === 0">
+          <td colspan="3" style="padding: 20px; text-align: center; color: #666;">
+            No customers found. Add your first customer!
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
