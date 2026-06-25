@@ -29,88 +29,92 @@ public class AdminService : IAdminService
        
     }
 
-    public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
+// Application/Services/AdminService.cs
+// Update the RegisterAsync method
+
+public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
+{
+    // Validate input
+    if (string.IsNullOrWhiteSpace(dto.FarmName))
+        throw new BadRequestException("Farm name is required");
+
+    if (string.IsNullOrWhiteSpace(dto.AdminEmail) || string.IsNullOrWhiteSpace(dto.AdminPassword))
+        throw new BadRequestException("Admin email and password are required");
+
+    // Check if farm email already exists
+    if (await _farmRepository.EmailExistsAsync(dto.FarmEmail))
+        throw new BadRequestException("Farm email already registered");
+
+    // Check if admin email already exists
+    if (await _adminRepository.EmailExistsAsync(dto.AdminEmail))
+        throw new BadRequestException("Admin email already registered");
+
+    // Create Farm
+    var farm = new Farm
     {
-        // Validate input
-        if (string.IsNullOrWhiteSpace(dto.FarmName))
-            throw new BadRequestException("Farm name is required");
+        FarmName = dto.FarmName.Trim(),
+        Email = dto.FarmEmail.Trim().ToLower(),
+        Phone = dto.FarmPhone?.Trim(),
+        Address = dto.FarmAddress?.Trim(),
+        City = dto.FarmCity?.Trim(),
+        State = dto.FarmState?.Trim(),
+        Country = dto.FarmCountry?.Trim(),
+        PostalCode = dto.FarmPostalCode?.Trim(),
+        TotalLandHectares = dto.TotalLandHectares,
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow
+    };
 
-        if (string.IsNullOrWhiteSpace(dto.AdminEmail) || string.IsNullOrWhiteSpace(dto.AdminPassword))
-            throw new BadRequestException("Admin email and password are required");
+    var createdFarm = await _farmRepository.CreateAsync(farm);
 
-        // Check if farm email already exists
-        if (await _farmRepository.EmailExistsAsync(dto.FarmEmail))
-            throw new BadRequestException("Farm email already registered");
+    // Create Admin - ✅ Set Role = "Admin"
+    var admin = new Admin
+    {
+        Name = dto.AdminName.Trim(),
+        Email = dto.AdminEmail.Trim().ToLower(),
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.AdminPassword),
+        Phone = dto.AdminPhone?.Trim(),
+        FarmId = createdFarm.Id,
+        Role = "Admin",  // ✅ Set role explicitly
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow
+    };
 
-        // Check if admin email already exists
-        if (await _adminRepository.EmailExistsAsync(dto.AdminEmail))
-            throw new BadRequestException("Admin email already registered");
+    var createdAdmin = await _adminRepository.CreateAsync(admin);
 
-        // Create Farm
-        var farm = new Farm
-        {
-            FarmName = dto.FarmName.Trim(),
-            Email = dto.FarmEmail.Trim().ToLower(),
-            Phone = dto.FarmPhone?.Trim(),
-            Address = dto.FarmAddress?.Trim(),
-            City = dto.FarmCity?.Trim(),
-            State = dto.FarmState?.Trim(),
-            Country = dto.FarmCountry?.Trim(),
-            PostalCode = dto.FarmPostalCode?.Trim(),
-            TotalLandHectares = dto.TotalLandHectares,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        };
+    // Generate tokens
+    var accessToken = _jwtService.GenerateAccessToken(createdAdmin);
+    var refreshTokenValue = _jwtService.GenerateRefreshToken();
+    var jwtId = Guid.NewGuid().ToString();
 
-        var createdFarm = await _farmRepository.CreateAsync(farm);
+    // Store refresh token
+    var refreshToken = new RefreshToken
+    {
+        AdminId = createdAdmin.Id,
+        Token = refreshTokenValue,
+        JwtId = jwtId,
+        ExpiryDate = DateTime.UtcNow.AddDays(7),
+        CreatedByIp = "127.0.0.1",
+        IsUsed = false,
+        IsRevoked = false
+    };
 
-        // Create Admin
-        var admin = new Admin
-        {
-            Name = dto.AdminName.Trim(),
-            Email = dto.AdminEmail.Trim().ToLower(),
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.AdminPassword),
-            Phone = dto.AdminPhone?.Trim(),
-            FarmId = createdFarm.Id,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        };
+    await _refreshTokenRepository.CreateAsync(refreshToken);
 
-        var createdAdmin = await _adminRepository.CreateAsync(admin);
-
-        // Generate tokens
-        var accessToken = _jwtService.GenerateAccessToken(createdAdmin);
-        var refreshTokenValue = _jwtService.GenerateRefreshToken();
-        var jwtId = Guid.NewGuid().ToString();
-
-        // Store refresh token
-        var refreshToken = new RefreshToken
-        {
-            AdminId = createdAdmin.Id,
-            Token = refreshTokenValue,
-            JwtId = jwtId,
-            ExpiryDate = DateTime.UtcNow.AddDays(7),
-            CreatedByIp = "127.0.0.1",
-            IsUsed = false,
-            IsRevoked = false
-        };
-
-        await _refreshTokenRepository.CreateAsync(refreshToken);
-
-        return new AuthResponseDto
-        {
-            Id = createdAdmin.Id,
-            Name = createdAdmin.Name,
-            Email = createdAdmin.Email,
-            AccessToken = accessToken,
-            RefreshToken = refreshTokenValue,
-            FarmId = createdAdmin.FarmId,
-            FarmName = createdFarm.FarmName,
-            AccessTokenExpiresAt = _jwtService.GetAccessTokenExpiryDate(),
-            RefreshTokenExpiresAt = refreshToken.ExpiryDate
-        };
-    }
-
+    return new AuthResponseDto
+    {
+        Id = createdAdmin.Id,
+        Name = createdAdmin.Name,
+        Email = createdAdmin.Email,
+        AccessToken = accessToken,
+        RefreshToken = refreshTokenValue,
+        FarmId = createdAdmin.FarmId,
+        FarmName = createdFarm.FarmName,
+        Role = createdAdmin.Role ?? "Admin",
+        AccessTokenExpiresAt = _jwtService.GetAccessTokenExpiryDate(),
+        RefreshTokenExpiresAt = refreshToken.ExpiryDate
+    };
+}
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto, string ipAddress)
     {
         // Validate input
@@ -172,6 +176,7 @@ public class AdminService : IAdminService
             RefreshToken = refreshTokenValue,
             FarmId = admin.FarmId,
             FarmName = farm.FarmName,
+            Role = admin.Role ?? "Admin", 
             AccessTokenExpiresAt = _jwtService.GetAccessTokenExpiryDate(),
             RefreshTokenExpiresAt = refreshToken.ExpiryDate
         };
@@ -258,6 +263,7 @@ public class AdminService : IAdminService
             RefreshToken = newRefreshTokenValue,
             FarmId = admin.FarmId,
             FarmName = farm.FarmName,
+            Role = admin.Role ?? "Admin", 
             AccessTokenExpiresAt = _jwtService.GetAccessTokenExpiryDate(),
             RefreshTokenExpiresAt = newRefreshToken.ExpiryDate
         };

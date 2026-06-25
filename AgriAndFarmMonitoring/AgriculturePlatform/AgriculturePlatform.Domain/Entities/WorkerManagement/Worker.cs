@@ -13,7 +13,7 @@ public class Worker : BaseEntity
     public string Email { get; set; } = string.Empty;
     public string? PasswordHash { get; set; }
     public string? Phone { get; set; }
-    public string? Role { get; set; }  // MANAGER, SUPERVISOR, OPERATOR, LABOR
+     public string Role { get; set; } = "Worker";
     public DateTime HireDate { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;
     public DateTime? LastLoginAt { get; set; }

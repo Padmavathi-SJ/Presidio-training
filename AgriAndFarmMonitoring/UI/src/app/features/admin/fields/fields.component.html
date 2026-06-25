@@ -1,0 +1,437 @@
+<!-- src/app/features/admin/fields/fields.component.html -->
+<div class="min-h-screen bg-gradient-to-br from-amber-50/50 via-white to-green-50/30">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+    <!-- Page Header with Farm Theme -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-800 via-primary-700 to-primary-600 p-6 sm:p-8 mb-6 shadow-xl">
+      <!-- Decorative Elements -->
+      <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -translate-y-12 translate-x-12"></div>
+      <div class="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl translate-y-8 -translate-x-8"></div>
+      
+      <div class="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="flex items-center gap-4">
+          <div class="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+            <mat-icon class="text-3xl text-white">agriculture</mat-icon>
+          </div>
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Fields</h1>
+            <p class="text-green-100/80 text-sm mt-1 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-300 inline-block"></span>
+              Manage your farm fields and their details
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+          <button 
+            mat-raised-button 
+            class="!bg-white/10 !text-white hover:!bg-white/20 backdrop-blur-sm text-sm font-medium border border-white/20"
+            (click)="downloadTemplate()"
+            [disabled]="isLoading()"
+          >
+            <mat-icon class="!text-white text-sm">file_download</mat-icon>
+            Template
+          </button>
+          
+          <button 
+            mat-raised-button 
+            class="!bg-white/10 !text-white hover:!bg-white/20 backdrop-blur-sm text-sm font-medium border border-white/20"
+            (click)="fileInput.click()"
+            [disabled]="isLoading() || isImporting()"
+          >
+            @if (isImporting()) {
+              <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+              Importing...
+            } @else {
+              <ng-container>
+                <mat-icon class="!text-white text-sm">upload_file</mat-icon>
+                Import
+              </ng-container>
+            }
+          </button>
+          <input 
+            #fileInput
+            type="file" 
+            accept=".xlsx,.xls" 
+            class="hidden" 
+            (change)="onFileSelected($event)"
+          />
+          
+          <button 
+            mat-raised-button 
+            class="!bg-white/10 !text-white hover:!bg-white/20 backdrop-blur-sm text-sm font-medium border border-white/20"
+            (click)="exportFields()"
+            [disabled]="isLoading()"
+          >
+            <mat-icon class="!text-white text-sm">download</mat-icon>
+            Export
+          </button>
+          
+          <button 
+            mat-raised-button 
+            class="!bg-white !text-primary-700 hover:!bg-green-50 text-sm font-medium shadow-lg"
+            (click)="openCreateDialog()"
+            [disabled]="isLoading()"
+          >
+            <mat-icon class="!text-primary-700 text-sm">add</mat-icon>
+            Add Field
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics Cards - Professional Design -->
+    @if (statistics()) {
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6">
+        <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 border-l-4 border-primary-500 hover:border-primary-600 hover:-translate-y-0.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Fields</p>
+              <p class="text-2xl font-bold text-gray-800 mt-1">{{ statistics().totalFields }}</p>
+            </div>
+            <div class="p-2 bg-primary-50 rounded-lg group-hover:bg-primary-100 transition-colors">
+              <mat-icon class="text-primary-600 text-xl">grass</mat-icon>
+            </div>
+          </div>
+        </div>
+        <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 border-l-4 border-green-500 hover:border-green-600 hover:-translate-y-0.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Active</p>
+              <p class="text-2xl font-bold text-green-600 mt-1">{{ statistics().activeFields }}</p>
+            </div>
+            <div class="p-2 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
+              <mat-icon class="text-green-600 text-xl">check_circle</mat-icon>
+            </div>
+          </div>
+        </div>
+        <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 border-l-4 border-yellow-500 hover:border-yellow-600 hover:-translate-y-0.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Fallow</p>
+              <p class="text-2xl font-bold text-yellow-600 mt-1">{{ statistics().fallowFields }}</p>
+            </div>
+            <div class="p-2 bg-yellow-50 rounded-lg group-hover:bg-yellow-100 transition-colors">
+              <mat-icon class="text-yellow-600 text-xl">pause_circle</mat-icon>
+            </div>
+          </div>
+        </div>
+        <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 border-l-4 border-blue-500 hover:border-blue-600 hover:-translate-y-0.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Preparing</p>
+              <p class="text-2xl font-bold text-blue-600 mt-1">{{ statistics().preparingFields }}</p>
+            </div>
+            <div class="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+              <mat-icon class="text-blue-600 text-xl">construction</mat-icon>
+            </div>
+          </div>
+        </div>
+        <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 border-l-4 border-orange-500 hover:border-orange-600 hover:-translate-y-0.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Maintenance</p>
+              <p class="text-2xl font-bold text-orange-600 mt-1">{{ statistics().maintenanceFields }}</p>
+            </div>
+            <div class="p-2 bg-orange-50 rounded-lg group-hover:bg-orange-100 transition-colors">
+              <mat-icon class="text-orange-600 text-xl">settings</mat-icon>
+            </div>
+          </div>
+        </div>
+        <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 border-l-4 border-gray-500 hover:border-gray-600 hover:-translate-y-0.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Area</p>
+              <p class="text-2xl font-bold text-gray-800 mt-1">{{ statistics().totalAreaHectares }} ha</p>
+            </div>
+            <div class="p-2 bg-gray-50 rounded-lg group-hover:bg-gray-100 transition-colors">
+              <mat-icon class="text-gray-600 text-xl">straighten</mat-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Filter Bar - Elegant Design -->
+    <mat-card class="mb-6 p-4 sm:p-6 shadow-sm border border-gray-100 rounded-xl">
+      <form [formGroup]="filterForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600">Search Field</mat-label>
+            <input matInput formControlName="fieldName" placeholder="Search by name...">
+            <mat-icon matSuffix class="text-gray-400">search</mat-icon>
+          </mat-form-field>
+        </div>
+        
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600">Location</mat-label>
+            <input matInput formControlName="location" placeholder="Filter by location...">
+          </mat-form-field>
+        </div>
+        
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600">Soil Type</mat-label>
+            <mat-select formControlName="soilType">
+              <mat-option value="">All</mat-option>
+              @for (option of soilTypeOptions; track option.value) {
+                <mat-option [value]="option.value">{{ option.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600">Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">All</mat-option>
+              @for (option of statusOptions; track option.value) {
+                <mat-option [value]="option.value">{{ option.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button 
+            mat-raised-button 
+            (click)="resetFilters()" 
+            matTooltip="Reset Filters"
+            class="!bg-gray-100 !text-gray-700 hover:!bg-gray-200 text-sm font-medium w-full"
+          >
+            <mat-icon class="text-gray-500 text-sm">refresh</mat-icon>
+            Reset
+          </button>
+        </div>
+      </form>
+    </mat-card>
+
+    <!-- Bulk Actions -->
+    @if (selectedFields().length > 0) {
+      <div class="bg-primary-50 rounded-xl p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-primary-100">
+        <span class="text-sm text-gray-700 font-medium">
+          <span class="bg-primary-600 text-white px-2 py-0.5 rounded-full text-xs mr-2">{{ selectedFields().length }}</span>
+          field(s) selected
+        </span>
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+          <button 
+            mat-stroked-button 
+            color="warn"
+            (click)="bulkDelete()"
+            [disabled]="isLoading()"
+            class="text-sm"
+          >
+            <mat-icon>delete</mat-icon>
+            Delete Selected
+          </button>
+          <button 
+            mat-button 
+            (click)="selectedFields.set([])"
+            [disabled]="isLoading()"
+            class="text-sm text-gray-500"
+          >
+            Clear Selection
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Table - Professional Design -->
+    <mat-card class="shadow-sm border border-gray-100 rounded-xl overflow-hidden">
+      <div class="relative overflow-x-auto">
+        @if (isLoading()) {
+          <div class="flex justify-center items-center py-20">
+            <mat-spinner diameter="40"></mat-spinner>
+          </div>
+        } @else {
+          <table mat-table [dataSource]="fields()" matSort (matSortChange)="onSortChange($event)" class="w-full">
+            <!-- Select Column -->
+            <ng-container matColumnDef="select">
+              <th mat-header-cell *matHeaderCellDef class="w-10">
+                <mat-checkbox 
+                  [checked]="selectedFields().length === fields().length && fields().length > 0"
+                  [indeterminate]="selectedFields().length > 0 && selectedFields().length !== fields().length"
+                  (change)="toggleAllSelection()"
+                ></mat-checkbox>
+              </th>
+              <td mat-cell *matCellDef="let field">
+                <mat-checkbox 
+                  [checked]="isSelected(field.id)"
+                  (change)="toggleSelection(field.id)"
+                ></mat-checkbox>
+              </td>
+            </ng-container>
+
+            <!-- Field Name -->
+            <ng-container matColumnDef="fieldName">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700">Field Name</th>
+              <td mat-cell *matCellDef="let field" class="font-medium text-gray-800">
+                <div class="flex items-center gap-2">
+                  <span>{{ field.fieldName }}</span>
+                  @if (field.isDeleted) {
+                    <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Deleted</span>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Location -->
+            <ng-container matColumnDef="location">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700">Location</th>
+              <td mat-cell *matCellDef="let field" class="text-gray-600">{{ field.location || '-' }}</td>
+            </ng-container>
+
+            <!-- Area -->
+            <ng-container matColumnDef="areaHectares">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-right font-semibold text-gray-700">Area (ha)</th>
+              <td mat-cell *matCellDef="let field" class="text-right font-medium">
+                {{ field.areaHectares ? (field.areaHectares | number:'1.1-2') : '-' }}
+              </td>
+            </ng-container>
+
+            <!-- Soil Type -->
+            <ng-container matColumnDef="soilType">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700">Soil Type</th>
+              <td mat-cell *matCellDef="let field">
+                @if (field.soilType) {
+                  <span class="text-xs px-2 py-1 rounded-full {{ getSoilTypeColor(field.soilType) }}">
+                    {{ getSoilTypeLabel(field.soilType) }}
+                  </span>
+                } @else {
+                  <span class="text-gray-400">-</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Status -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700">Status</th>
+              <td mat-cell *matCellDef="let field">
+                @if (field.status) {
+                  <span class="text-xs px-2 py-1 rounded-full {{ getStatusColor(field.status) }}">
+                    {{ getStatusLabel(field.status) }}
+                  </span>
+                } @else {
+                  <span class="text-gray-400">-</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Active Crops -->
+            <ng-container matColumnDef="activeCropCount">
+              <th mat-header-cell *matHeaderCellDef class="text-center font-semibold text-gray-700">Active Crops</th>
+              <td mat-cell *matCellDef="let field" class="text-center">
+                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-sm font-medium">
+                  {{ field.activeCropCount || 0 }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Created At -->
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700">Created</th>
+              <td mat-cell *matCellDef="let field" class="text-gray-500 text-sm">{{ formatDate(field.createdAt) }}</td>
+            </ng-container>
+
+            <!-- Actions -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="text-right font-semibold text-gray-700">Actions</th>
+              <td mat-cell *matCellDef="let field" class="text-right whitespace-nowrap">
+                <button 
+                  mat-icon-button 
+                  matTooltip="Crop Cycles"
+                  (click)="openCropCycles(field)"
+                  class="!text-green-600 hover:!bg-green-50"
+                  [disabled]="isLoading()"
+                >
+                  <mat-icon>grass</mat-icon>
+                </button>
+                <button 
+                  mat-icon-button 
+                  matTooltip="Location"
+                  (click)="openLocationDialog(field)"
+                  class="!text-primary-600 hover:!bg-primary-50"
+                  [disabled]="isLoading()"
+                >
+                  <mat-icon>location_on</mat-icon>
+                </button>
+                <button 
+                  mat-icon-button 
+                  matTooltip="Edit"
+                  (click)="openEditDialog(field)"
+                  class="!text-blue-600 hover:!bg-blue-50"
+                  [disabled]="isLoading()"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                @if (!field.isDeleted) {
+                  <button 
+                    mat-icon-button 
+                    matTooltip="Delete"
+                    (click)="deleteField(field)"
+                    class="!text-red-600 hover:!bg-red-50"
+                    [disabled]="isLoading()"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-gray-50 transition-colors"></tr>
+          </table>
+
+          <!-- Empty State -->
+          @if (fields().length === 0) {
+            <div class="text-center py-16">
+              <div class="w-24 h-24 mx-auto bg-primary-50 rounded-full flex items-center justify-center mb-4">
+                <mat-icon class="text-5xl text-primary-300">agriculture</mat-icon>
+              </div>
+              <p class="text-gray-500 text-lg font-medium">No fields found</p>
+              <p class="text-gray-400 text-sm mt-1">Click "Add Field" to create your first field</p>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Paginator -->
+      <mat-paginator 
+        [length]="totalCount()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="[5, 10, 25, 50, 100]"
+        (page)="onPageChange($event)"
+        showFirstLastButtons
+        class="border-t border-gray-200"
+      ></mat-paginator>
+    </mat-card>
+
+    <!-- Crop Cycles Section -->
+    @if (selectedField()) {
+      <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 animate-fadeIn">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-primary-50 rounded-lg">
+              <mat-icon class="text-primary-600">grass</mat-icon>
+            </div>
+            <h2 class="text-xl font-semibold text-gray-800">
+              Crop Cycles for <span class="text-primary-700">{{ selectedField()?.fieldName }}</span>
+            </h2>
+          </div>
+          <button 
+            mat-icon-button 
+            (click)="closeCropCycles()"
+            matTooltip="Close"
+            class="!text-gray-400 hover:!text-gray-600"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <app-crop-cycles 
+          [fieldId]="selectedField()?.id || 0"
+          [fieldName]="selectedField()?.fieldName || ''"
+        ></app-crop-cycles>
+      </div>
+    }
+  </div>
+</div>

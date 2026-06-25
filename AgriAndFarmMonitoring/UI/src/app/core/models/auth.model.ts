@@ -13,6 +13,8 @@ export interface AuthResponse {
     refreshToken: string;
     farmId: number;
     farmName: string;
+    role: string;  
+    userType?: string; 
     accessTokenExpiresAt: string;
     refreshTokenExpiresAt: string;
   };

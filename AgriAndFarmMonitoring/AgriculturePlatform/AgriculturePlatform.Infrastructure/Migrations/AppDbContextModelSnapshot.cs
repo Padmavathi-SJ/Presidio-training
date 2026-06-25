@@ -81,6 +81,10 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1176,6 +1180,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Role")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 

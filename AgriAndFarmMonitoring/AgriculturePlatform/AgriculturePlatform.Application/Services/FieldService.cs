@@ -196,6 +196,7 @@ public async Task<ApiResponse<FieldDto>> UpdateAsync(int id, UpdateFieldDto dto,
         var pagedResult = await _fieldRepository.GetPagedAsync(
             farmId,
             filter.FieldName,
+             filter.Location, 
             filter.SoilType,
             filter.Status,
             filter.IncludeDeleted ?? false,

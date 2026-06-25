@@ -1,0 +1,131 @@
+<!-- src/app/features/admin/field-form/field-form.component.html -->
+<div class="p-6">
+  <h2 class="text-xl font-bold text-gray-800 mb-4">
+    {{ mode === 'create' ? 'Add New Field' : 'Edit Field' }}
+  </h2>
+
+  <form [formGroup]="fieldForm" (ngSubmit)="onSubmit()">
+    <div class="space-y-4">
+      <!-- Field Name -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Field Name *</mat-label>
+        <input matInput formControlName="fieldName" placeholder="Enter field name">
+        @if (hasError('fieldName', 'required')) {
+          <mat-error>Field name is required</mat-error>
+        }
+        @if (hasError('fieldName', 'pattern')) {
+          <mat-error>Only letters, numbers, spaces, hyphens and underscores allowed</mat-error>
+        }
+        @if (hasError('fieldName', 'maxlength')) {
+          <mat-error>Field name must not exceed 100 characters</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Location -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Location</mat-label>
+        <input matInput formControlName="location" placeholder="Enter location">
+        @if (hasError('location', 'maxlength')) {
+          <mat-error>Location must not exceed 200 characters</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Area -->
+        <mat-form-field appearance="outline">
+          <mat-label>Area (Hectares)</mat-label>
+          <input matInput type="number" formControlName="areaHectares" placeholder="0.00" step="0.01">
+          <span matSuffix>ha</span>
+          @if (hasError('areaHectares', 'min')) {
+            <mat-error>Area must be greater than 0</mat-error>
+          }
+          @if (hasError('areaHectares', 'max')) {
+            <mat-error>Area cannot exceed 10,000 hectares</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Soil Type -->
+        <mat-form-field appearance="outline">
+          <mat-label>Soil Type</mat-label>
+          <mat-select formControlName="soilType">
+            <mat-option value="">None</mat-option>
+            @for (option of soilTypeOptions; track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Status -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          <mat-option value="">None</mat-option>
+          @for (option of statusOptions; track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Coordinates -->
+      <mat-divider class="my-2"></mat-divider>
+      <p class="text-sm font-medium text-gray-700 mb-2">Location Coordinates (Optional)</p>
+      <p class="text-xs text-gray-500 mb-4">Both latitude and longitude must be provided together</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <mat-form-field appearance="outline">
+          <mat-label>Latitude</mat-label>
+          <input matInput type="number" formControlName="latitude" placeholder="-90 to 90" step="0.000001">
+          <span matSuffix>°</span>
+          @if (hasError('latitude', 'min')) {
+            <mat-error>Latitude must be between -90 and 90</mat-error>
+          }
+          @if (hasError('latitude', 'max')) {
+            <mat-error>Latitude must be between -90 and 90</mat-error>
+          }
+          @if (fieldForm.get('latitude')?.errors?.['coordinateMismatch']) {
+            <mat-error>Both coordinates must be provided</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Longitude</mat-label>
+          <input matInput type="number" formControlName="longitude" placeholder="-180 to 180" step="0.000001">
+          <span matSuffix>°</span>
+          @if (hasError('longitude', 'min')) {
+            <mat-error>Longitude must be between -180 and 180</mat-error>
+          }
+          @if (hasError('longitude', 'max')) {
+            <mat-error>Longitude must be between -180 and 180</mat-error>
+          }
+          @if (fieldForm.get('longitude')?.errors?.['coordinateMismatch']) {
+            <mat-error>Both coordinates must be provided</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
+      <button mat-button type="button" (click)="onCancel()" [disabled]="isLoading">
+        Cancel
+      </button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        [disabled]="fieldForm.invalid || isLoading"
+        class="!bg-primary-600"
+      >
+        @if (isLoading) {
+          <span class="flex items-center">
+            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            Saving...
+          </span>
+        } @else {
+          <span>{{ mode === 'create' ? 'Create' : 'Update' }}</span>
+        }
+      </button>
+    </div>
+  </form>
+</div>

@@ -14,9 +14,23 @@ public abstract class BaseSpecification<T>
     public int Skip { get; private set; }
     public bool IsPagingEnabled { get; private set; }
 
+    // ✅ FIX: Combine criteria instead of replacing
     protected void AddCriteria(Expression<Func<T, bool>> criteria)
     {
-        Criteria = criteria;
+        if (Criteria == null)
+        {
+            Criteria = criteria;
+        }
+        else
+        {
+            // Combine with AND
+            var parameter = Expression.Parameter(typeof(T));
+            var left = new ReplaceParameterVisitor(Criteria.Parameters[0], parameter).Visit(Criteria.Body);
+            var right = new ReplaceParameterVisitor(criteria.Parameters[0], parameter).Visit(criteria.Body);
+            var combined = Expression.AndAlso(left!, right!);
+            var lambda = Expression.Lambda<Func<T, bool>>(combined, parameter);
+            Criteria = lambda;
+        }
     }
 
     protected void AddInclude(Expression<Func<T, object>> includeExpression)
@@ -44,5 +58,23 @@ public abstract class BaseSpecification<T>
     protected void ApplyOrderByDescending(Expression<Func<T, object>> orderByDescendingExpression)
     {
         OrderByDescending = orderByDescendingExpression;
+    }
+
+    // ✅ Helper class to replace parameter in expression
+    private class ReplaceParameterVisitor : ExpressionVisitor
+    {
+        private readonly ParameterExpression _oldParameter;
+        private readonly ParameterExpression _newParameter;
+
+        public ReplaceParameterVisitor(ParameterExpression oldParameter, ParameterExpression newParameter)
+        {
+            _oldParameter = oldParameter;
+            _newParameter = newParameter;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return node == _oldParameter ? _newParameter : base.VisitParameter(node);
+        }
     }
 }

@@ -1,3 +1,4 @@
+// src/app/core/guards/admin.guard.ts
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -10,10 +11,22 @@ export const AdminGuard: CanActivateFn = () => {
   return authService.currentUser$.pipe(
     take(1),
     map(user => {
-      if (user && user.role === 'Admin') {
+      // ✅ Check both role and userType
+      const userRole = user?.role || user?.userType;
+      const isAdmin = userRole === 'Admin' || userRole === 'admin';
+      
+      if (user && authService.isLoggedIn() && isAdmin) {
         return true;
       }
-      router.navigate(['/unauthorized']);
+      
+      // ✅ If logged in but not admin, redirect to unauthorized
+      if (user && authService.isLoggedIn()) {
+        router.navigate(['/unauthorized']);
+        return false;
+      }
+      
+      // ✅ If not logged in, redirect to login
+      router.navigate(['/auth/login']);
       return false;
     })
   );

@@ -1,3 +1,4 @@
+// Domain/Entities/AdminEntities/Admin.cs
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
 using AgriculturePlatform.Domain.Entities.WorkerManagement;
 using AgriculturePlatform.Domain.Entities.YieldReports;
@@ -12,6 +13,7 @@ public class Admin : BaseEntity
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public string? Phone { get; set; }
+    public string Role { get; set; } = "Admin";  // ✅ ADD THIS - Default is "Admin"
     public bool IsActive { get; set; } = true;
     public DateTime? LastLogin { get; set; }
     public string? PasswordResetToken { get; set; }

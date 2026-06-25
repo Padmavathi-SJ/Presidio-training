@@ -1,3 +1,4 @@
+// src/app/core/guards/worker.guard.ts (NEW - Create this)
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -10,10 +11,22 @@ export const WorkerGuard: CanActivateFn = () => {
   return authService.currentUser$.pipe(
     take(1),
     map(user => {
-      if (user && user.role === 'Worker') {
+      // ✅ Check both role and userType
+      const userRole = user?.role || user?.userType;
+      const isWorker = userRole === 'Worker' || userRole === 'worker';
+      
+      if (user && authService.isLoggedIn() && isWorker) {
         return true;
       }
-      router.navigate(['/unauthorized']);
+      
+      // ✅ If logged in but not worker, redirect to unauthorized
+      if (user && authService.isLoggedIn()) {
+        router.navigate(['/unauthorized']);
+        return false;
+      }
+      
+      // ✅ If not logged in, redirect to login
+      router.navigate(['/auth/login']);
       return false;
     })
   );

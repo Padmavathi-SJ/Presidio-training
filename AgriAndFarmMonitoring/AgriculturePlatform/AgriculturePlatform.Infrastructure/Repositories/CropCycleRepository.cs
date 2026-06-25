@@ -121,13 +121,26 @@ public class CropCycleRepository : ICropCycleRepository
 
         var query = _context.CropCycles.Where(specification.Criteria!);
 
-        // Apply sorting
-        if (!string.IsNullOrWhiteSpace(paginationParams.SortBy))
+      // ✅ FIX: Map sort column to proper property names
+    if (!string.IsNullOrWhiteSpace(paginationParams.SortBy))
+    {
+        var sortColumn = paginationParams.SortBy switch
         {
-            query = paginationParams.IsDescending
-                ? query.OrderByDescending(c => EF.Property<object>(c, paginationParams.SortBy))
-                : query.OrderBy(c => EF.Property<object>(c, paginationParams.SortBy));
-        }
+            "id" => "Id",
+            "fieldId" => "FieldId",
+            "cropType" => "CropType",
+            "growthStage" => "GrowthStage",
+            "status" => "Status",
+            "plantingDate" => "PlantingDate",
+            "expectedHarvestDate" => "ExpectedHarvestDate",
+            "createdAt" => "CreatedAt",  // ✅ Map createdAt to CreatedAt
+            "updatedAt" => "UpdatedAt",  // ✅ Map updatedAt to UpdatedAt
+            _ => paginationParams.SortBy
+        };
+query = paginationParams.IsDescending
+            ? query.OrderByDescending(c => EF.Property<object>(c, sortColumn))
+            : query.OrderBy(c => EF.Property<object>(c, sortColumn));
+    }
         else
         {
             query = query.OrderByDescending(c => c.CreatedAt);

@@ -10,7 +10,7 @@ public class WorkerAuthResponseDto
     public string RefreshToken { get; set; } = string.Empty;
     public int FarmId { get; set; }
     public string FarmName { get; set; } = string.Empty;
-    public string Role { get; set; } = string.Empty;
+    public string Role { get; set; } = "Worker";  
     public DateTime AccessTokenExpiresAt { get; set; }
     public DateTime RefreshTokenExpiresAt { get; set; }
 }

@@ -37,8 +37,8 @@ public class JwtService : IJwtService
             new Claim(JwtRegisteredClaimNames.Email, admin.Email),
             new Claim(JwtRegisteredClaimNames.Name, admin.Name),
             new Claim("farmId", admin.FarmId.ToString()),
-            new Claim("role", "Admin"),
-            new Claim("userType", "Admin"),
+            new Claim("role", admin.Role ?? "Admin"),
+            new Claim("userType", admin.Role ?? "Admin"),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
@@ -54,6 +54,7 @@ public class JwtService : IJwtService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    // ✅ ADD THIS METHOD - Implementation for Worker
     public string GenerateAccessToken(Worker worker, int farmId)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
@@ -65,9 +66,9 @@ public class JwtService : IJwtService
             new Claim(JwtRegisteredClaimNames.Email, worker.Email),
             new Claim(JwtRegisteredClaimNames.Name, worker.Name),
             new Claim("farmId", farmId.ToString()),
-            new Claim("workerId", worker.Id.ToString()),
-            new Claim("role", worker.Role ?? "Worker"),
+            new Claim("role", "Worker"),
             new Claim("userType", "Worker"),
+            new Claim("workerId", worker.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
@@ -99,7 +100,7 @@ public class JwtService : IJwtService
             ValidateIssuer = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey)),
-            ValidateLifetime = false, // Don't validate expiry for refresh
+            ValidateLifetime = false,
             ValidIssuer = _issuer,
             ValidAudience = _audience,
             ClockSkew = TimeSpan.Zero

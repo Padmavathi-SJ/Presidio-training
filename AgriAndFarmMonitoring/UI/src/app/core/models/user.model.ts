@@ -4,8 +4,8 @@ export interface User {
   email: string;
   farmId: number;
   farmName: string;
-  role: 'Admin' | 'Worker';
-  userType: 'Admin' | 'Worker';
+  role: 'Admin' | 'Worker' | string; 
+  userType?: 'Admin' | 'Worker' | string; 
   accessToken: string;
   refreshToken: string;
   accessTokenExpiresAt: Date;

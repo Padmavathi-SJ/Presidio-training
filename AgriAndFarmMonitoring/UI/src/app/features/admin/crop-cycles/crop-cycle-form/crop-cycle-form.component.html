@@ -1,0 +1,87 @@
+<!-- src/app/features/admin/crop-cycles/crop-cycle-form/crop-cycle-form.component.html -->
+<div class="p-4 sm:p-6">
+  <h2 class="text-xl font-bold text-gray-800 mb-2">
+    {{ dialogData.mode === 'create' ? 'New Crop Cycle' : 'Edit Crop Cycle' }}
+  </h2>
+  <p class="text-sm text-gray-500 mb-4">
+    Field: {{ dialogData.fieldName }}
+  </p>
+
+  <form [formGroup]="cropCycleForm" (ngSubmit)="onSubmit()">
+    <div class="space-y-4">
+      <!-- Crop Type -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Crop Type *</mat-label>
+        <mat-select formControlName="cropType">
+          @for (type of cropTypes; track type) {
+            <mat-option [value]="type">{{ type | titlecase }}</mat-option>
+          }
+        </mat-select>
+        <mat-error *ngIf="hasError('cropType', 'required')">Crop type is required</mat-error>
+      </mat-form-field>
+
+      <!-- Planting Date -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Planting Date *</mat-label>
+        <input matInput [matDatepicker]="plantingPicker" formControlName="plantingDate">
+        <mat-datepicker-toggle matSuffix [for]="plantingPicker"></mat-datepicker-toggle>
+        <mat-datepicker #plantingPicker></mat-datepicker>
+        <mat-error *ngIf="hasError('plantingDate', 'required')">Planting date is required</mat-error>
+      </mat-form-field>
+
+      <!-- Expected Harvest Date -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Expected Harvest Date</mat-label>
+        <input matInput [matDatepicker]="harvestPicker" formControlName="expectedHarvestDate">
+        <mat-datepicker-toggle matSuffix [for]="harvestPicker"></mat-datepicker-toggle>
+        <mat-datepicker #harvestPicker></mat-datepicker>
+        <mat-error *ngIf="hasError('expectedHarvestDate', 'matDatepickerMin')">
+          Must be after planting date
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Growth Stage -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Growth Stage</mat-label>
+        <mat-select formControlName="growthStage">
+          @for (stage of growthStages; track stage) {
+            <mat-option [value]="stage">{{ stage | titlecase }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Status -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          @for (status of statuses; track status) {
+            <mat-option [value]="status">{{ status | titlecase }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-col sm:flex-row justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
+      <button mat-button type="button" (click)="onCancel()" [disabled]="isLoading" class="w-full sm:w-auto order-2 sm:order-1">
+        Cancel
+      </button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        [disabled]="cropCycleForm.invalid || isLoading"
+        class="!bg-primary-600 w-full sm:w-auto order-1 sm:order-2"
+      >
+        @if (isLoading) {
+          <span class="flex items-center justify-center">
+            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            Saving...
+          </span>
+        } @else {
+          <span>{{ dialogData.mode === 'create' ? 'Create' : 'Update' }}</span>
+        }
+      </button>
+    </div>
+  </form>
+</div>

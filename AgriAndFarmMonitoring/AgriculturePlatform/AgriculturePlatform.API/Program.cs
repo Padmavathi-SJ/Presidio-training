@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -79,14 +79,19 @@ builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-// Add CORS
+// ✅ FIX: SINGLE CORS POLICY - Only define this ONCE
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy.WithOrigins(
+                "http://localhost:4200",
+                "https://localhost:4200",
+                "http://localhost:5000"
+            )
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
     });
 });
 
@@ -94,7 +99,6 @@ builder.Services.AddCors(options =>
 var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "your-super-secret-key-minimum-32-characters-long";
 var jwtIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "AgriculturePlatform";
 var jwtAudience = builder.Configuration["JwtSettings:Audience"] ?? "AgriculturePlatformClients";
-// Changed from ExpiryDays to AccessTokenExpiryMinutes and RefreshTokenExpiryDays
 var accessTokenExpiryMinutes = int.Parse(builder.Configuration["JwtSettings:AccessTokenExpiryMinutes"] ?? "15");
 var refreshTokenExpiryDays = int.Parse(builder.Configuration["JwtSettings:RefreshTokenExpiryDays"] ?? "7");
 
@@ -105,17 +109,14 @@ builder.Services.AddSingleton<IJwtService>(provider =>
 // Add AuditLog Service
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
-// SignalR - ONLY ONCE and BEFORE building the app
+// SignalR
 builder.Services.AddSignalR();
 
-// Background IoT Simulator
+// Background Services
 builder.Services.AddHostedService<IoTSimulatorBackgroundService>();
-
-//  background service for scheduled reports
 builder.Services.AddHostedService<ScheduledReportBackgroundService>();
 
-
-// Add AutoMapper - Manual configuration
+// Add AutoMapper
 var mapperConfig = new MapperConfiguration(cfg =>
 {
     cfg.AddProfile<FieldMappingProfile>();
@@ -133,14 +134,12 @@ var mapperConfig = new MapperConfiguration(cfg =>
     cfg.AddProfile<HarvestMappingProfile>();
     cfg.AddProfile<QualityCheckMappingProfile>();
     cfg.AddProfile<YieldReportMappingProfile>();
-
 });
 
 var mapper = mapperConfig.CreateMapper();
 builder.Services.AddSingleton<IMapper>(mapper);
 
 builder.Services.AddValidatorsFromAssembly(typeof(CreateFieldValidator).Assembly);
-
 
 // Add Excel service
 builder.Services.AddScoped<IExcelService, ExcelService>();
@@ -164,7 +163,6 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IQualityCheckRepository, QualityCheckRepository>();
 builder.Services.AddScoped<IYieldReportRepository, YieldReportRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-
 
 // Register Services
 builder.Services.AddScoped<IAdminService, AdminService>();
@@ -193,9 +191,7 @@ builder.Services.AddScoped<IYieldReportService, YieldReportService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
-
 builder.Services.AddScoped<ObservationStatisticsFormatter>();
-
 
 // Background Service
 builder.Services.AddHostedService<WeatherUpdateBackgroundService>();
@@ -215,7 +211,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey))
         };
         
-        // Add event handlers for debugging
         options.Events = new JwtBearerEvents
         {
             OnAuthenticationFailed = context =>
@@ -240,7 +235,7 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Configure pipeline
+// ✅ FIX: Configure pipeline in the CORRECT ORDER
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -248,20 +243,24 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+// ✅ CORS must be BEFORE Authentication and Authorization
+app.UseCors("AllowAll");
+
+// ✅ Authentication and Authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+// ✅ Map Hubs
+app.MapHub<MonitoringHub>("/monitoringHub");
+app.MapHub<SensorHub>("/sensorHub");
+
+app.MapControllers();
+
 // Create database
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.EnsureCreated();
 }
-
-// ✅ Map Hubs - This is CORRECT after building the app
-app.MapHub<MonitoringHub>("/monitoringHub");
-app.MapHub<SensorHub>("/sensorHub");
-
-app.UseCors("AllowAll");
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
 
 app.Run();

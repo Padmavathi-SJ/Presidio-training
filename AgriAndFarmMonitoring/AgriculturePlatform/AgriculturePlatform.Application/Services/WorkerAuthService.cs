@@ -112,7 +112,7 @@ public class WorkerAuthService : IWorkerAuthService
             RefreshToken = refreshTokenValue,
             FarmId = worker.FarmId,
             FarmName = farm.FarmName,
-            Role = worker.Role ?? "WORKER",
+           Role = "Worker", 
             AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_accessTokenExpiryMinutes),
             RefreshTokenExpiresAt = refreshToken.ExpiryDate
         };
@@ -198,7 +198,7 @@ public class WorkerAuthService : IWorkerAuthService
             RefreshToken = newRefreshTokenValue,
             FarmId = worker.FarmId,
             FarmName = farm.FarmName,
-            Role = worker.Role ?? "WORKER",
+          Role = "Worker", 
             AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_accessTokenExpiryMinutes),
             RefreshTokenExpiresAt = newRefreshToken.ExpiryDate
         };
@@ -246,7 +246,7 @@ public class WorkerAuthService : IWorkerAuthService
             new Claim(JwtRegisteredClaimNames.Name, worker.Name),
             new Claim("farmId", worker.FarmId.ToString()),
             new Claim("workerId", worker.Id.ToString()),
-            new Claim("role", "WORKER"),
+            new Claim("role", "Worker"),
             new Claim("userType", "Worker"),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)

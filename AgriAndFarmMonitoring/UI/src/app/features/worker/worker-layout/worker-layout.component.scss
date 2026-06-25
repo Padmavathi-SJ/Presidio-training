@@ -1,0 +1,43 @@
+:host {
+  display: block;
+  height: 100vh;
+}
+
+::ng-deep {
+  .mat-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+}
+
+.sidebar-link {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin: 2px 8px;
+  
+  &:hover {
+    background-color: rgba(45, 106, 79, 0.08);
+  }
+  
+  &.active {
+    background-color: rgba(45, 106, 79, 0.12) !important;
+    
+    mat-icon {
+      color: #2d6a4f !important;
+    }
+    
+    span {
+      color: #2d6a4f !important;
+      font-weight: 600;
+    }
+  }
+}
+
+.mat-mdc-list-item {
+  border-radius: 8px;
+  
+  &.mdc-list-item--with-leading-icon {
+    padding-left: 16px;
+  }
+}

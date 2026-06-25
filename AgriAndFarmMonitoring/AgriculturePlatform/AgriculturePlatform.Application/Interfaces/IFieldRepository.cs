@@ -21,6 +21,7 @@ public interface IFieldRepository
     Task<PagedResult<Field>> GetPagedAsync(
         int farmId, 
         string? searchTerm, 
+        string? location,  
         string? soilType, 
         string? status,
         bool includeDeleted,

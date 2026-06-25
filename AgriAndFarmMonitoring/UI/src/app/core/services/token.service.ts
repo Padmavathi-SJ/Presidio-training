@@ -1,3 +1,4 @@
+// src/app/core/services/token.service.ts
 import { Injectable } from '@angular/core';
 import { User } from '../models/user.model';
 
@@ -10,6 +11,7 @@ export class TokenService {
   private readonly USER_KEY = 'user';
 
   setTokens(accessToken: string, refreshToken: string): void {
+    console.log('💾 Storing tokens');
     localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
     localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
   }
@@ -23,6 +25,7 @@ export class TokenService {
   }
 
   setUser(user: User): void {
+    console.log('💾 Storing user data');
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));
   }
 
@@ -32,6 +35,7 @@ export class TokenService {
       try {
         return JSON.parse(userStr);
       } catch {
+        console.warn('⚠️ Failed to parse user data');
         return null;
       }
     }
@@ -39,19 +43,47 @@ export class TokenService {
   }
 
   clearTokens(): void {
+    console.log('🗑️ Clearing tokens');
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
   }
 
   clearUser(): void {
+    console.log('🗑️ Clearing user data');
     localStorage.removeItem(this.USER_KEY);
+  }
+
+  clearAll(): void {
+    console.log('🗑️ Clearing all auth data');
+    this.clearTokens();
+    this.clearUser();
   }
 
   isTokenExpired(): boolean {
     const user = this.getUser();
-    if (!user?.accessTokenExpiresAt) {
+    if (!user) {
       return true;
     }
-    return new Date(user.accessTokenExpiresAt) <= new Date();
+    
+    const token = this.getAccessToken();
+    if (!token) {
+      return true;
+    }
+    
+    const expiryDate = user.accessTokenExpiresAt;
+    if (!expiryDate) {
+      return true;
+    }
+    
+    // ✅ Add 30 seconds buffer for safety
+    const bufferMs = 30 * 1000;
+    const expiryTime = new Date(expiryDate).getTime();
+    const currentTime = Date.now();
+    
+    const isExpired = expiryTime - currentTime < bufferMs;
+    if (isExpired) {
+      console.log('⏰ Token is expired or expiring soon');
+    }
+    return isExpired;
   }
 }

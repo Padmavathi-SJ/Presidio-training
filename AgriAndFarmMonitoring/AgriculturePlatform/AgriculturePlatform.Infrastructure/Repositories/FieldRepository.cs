@@ -93,48 +93,98 @@ public class FieldRepository : IFieldRepository
         return await query.AnyAsync();
     }
 
-    public async Task<PagedResult<Field>> GetPagedAsync(
-        int farmId, 
-        string? searchTerm, 
-        string? soilType, 
-        string? status,
-        bool includeDeleted,
-        PaginationParams paginationParams)
-    {
-        var specification = new FieldSpecification(farmId, searchTerm, soilType, status, includeDeleted);
-        
-        var query = _context.Fields.Where(specification.Criteria!);
-        
-        // Apply sorting
-        if (!string.IsNullOrWhiteSpace(paginationParams.SortBy))
-        {
-            query = paginationParams.IsDescending
-                ? query.OrderByDescending(f => EF.Property<object>(f, paginationParams.SortBy))
-                : query.OrderBy(f => EF.Property<object>(f, paginationParams.SortBy));
-        }
-        else
-        {
-            query = query.OrderByDescending(f => f.CreatedAt);
-        }
-        
-        var totalCount = await query.CountAsync();
-        
-        var items = await query
-            .Skip((paginationParams.Page - 1) * paginationParams.PageSize)
-            .Take(paginationParams.PageSize)
-            .Include(f => f.Farm)
-            .Include(f => f.CropCycles)
-            .ToListAsync();
-        
-        return new PagedResult<Field>
-        {
-            Items = items,
-            TotalCount = totalCount,
-            Page = paginationParams.Page,
-            PageSize = paginationParams.PageSize
-        };
-    }
 
+// AgriculturePlatform.Infrastructure/Repositories/FieldRepository.cs
+
+public async Task<PagedResult<Field>> GetPagedAsync(
+    int farmId, 
+    string? searchTerm,      // For FieldName search
+    string? location,        // For Location search - ADD THIS
+    string? soilType, 
+    string? status,
+    bool includeDeleted,
+    PaginationParams paginationParams)
+{
+    // Start with farmId filter
+    var query = _context.Fields
+        .Include(f => f.Farm)
+        .Include(f => f.Admin)
+        .Include(f => f.CropCycles)
+        .Where(f => f.FarmId == farmId);
+    
+    // Soft delete filter
+    if (!includeDeleted)
+    {
+        query = query.Where(f => !f.IsDeleted);
+    }
+    
+    // ✅ FIX: Search by FieldName (searchTerm)
+    if (!string.IsNullOrWhiteSpace(searchTerm))
+    {
+        var searchTermLower = searchTerm.Trim().ToLower();
+        query = query.Where(f => f.FieldName.ToLower().Contains(searchTermLower));
+    }
+    
+    // ✅ FIX: Filter by Location (separate filter)
+    if (!string.IsNullOrWhiteSpace(location))
+    {
+        var locationLower = location.Trim().ToLower();
+        query = query.Where(f => f.Location != null && f.Location.ToLower().Contains(locationLower));
+    }
+    
+    // Soil type filter
+    if (!string.IsNullOrWhiteSpace(soilType) && 
+        Enum.TryParse<SoilTypeEnum>(soilType, true, out var parsedSoilType))
+    {
+        query = query.Where(f => f.SoilType == parsedSoilType);
+    }
+    
+    // Status filter
+    if (!string.IsNullOrWhiteSpace(status) && 
+        Enum.TryParse<FieldStatusEnum>(status, true, out var parsedStatus))
+    {
+        query = query.Where(f => f.Status == parsedStatus);
+    }
+    
+    // Apply sorting
+    if (!string.IsNullOrWhiteSpace(paginationParams.SortBy))
+    {
+        var sortColumn = paginationParams.SortBy switch
+        {
+            "fieldName" => "FieldName",
+            "location" => "Location",
+            "areaHectares" => "AreaHectares",
+            "soilType" => "SoilType",
+            "status" => "Status",
+            "createdAt" => "CreatedAt",
+            "updatedAt" => "UpdatedAt",
+            _ => paginationParams.SortBy
+        };
+        
+        query = paginationParams.IsDescending
+            ? query.OrderByDescending(f => EF.Property<object>(f, sortColumn))
+            : query.OrderBy(f => EF.Property<object>(f, sortColumn));
+    }
+    else
+    {
+        query = query.OrderByDescending(f => f.CreatedAt);
+    }
+    
+    var totalCount = await query.CountAsync();
+    
+    var items = await query
+        .Skip((paginationParams.Page - 1) * paginationParams.PageSize)
+        .Take(paginationParams.PageSize)
+        .ToListAsync();
+    
+    return new PagedResult<Field>
+    {
+        Items = items,
+        TotalCount = totalCount,
+        Page = paginationParams.Page,
+        PageSize = paginationParams.PageSize
+    };
+}
 public async Task<int> GetActiveCropsCountAsync(int fieldId)
 {
     return await _context.CropCycles

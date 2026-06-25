@@ -169,7 +169,7 @@ if (!string.IsNullOrWhiteSpace(dto.Status))
         {
             Page = filter.Page ?? 1,
             PageSize = filter.PageSize ?? 10,
-            SortBy = filter.SortBy,
+            SortBy = filter.SortBy ?? "CreatedAt",
             IsDescending = filter.IsDescending
         };
 

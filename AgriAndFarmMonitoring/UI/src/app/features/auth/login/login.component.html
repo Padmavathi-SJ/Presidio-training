@@ -1,0 +1,73 @@
+<!-- src/app/features/auth/login/login.component.html -->
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <!-- Logo / Header -->
+    <div class="text-center">
+      <div class="flex justify-center">
+        <div class="h-16 w-16 bg-primary-600 rounded-full flex items-center justify-center">
+          <span class="text-2xl text-white font-bold">🌿</span>
+        </div>
+      </div>
+      <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+        Welcome Back
+      </h2>
+      <p class="mt-2 text-sm text-gray-600">
+        Sign in to your Farm Management Platform
+      </p>
+    </div>
+
+    <!-- Login Form -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
+      <div class="space-y-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Email address</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="you@example.com">
+          <mat-icon matPrefix class="text-gray-400">email</mat-icon>
+          <mat-error *ngIf="loginForm.get('email')?.hasError('required')">
+            Email is required
+          </mat-error>
+          <mat-error *ngIf="loginForm.get('email')?.hasError('email')">
+            Please enter a valid email
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Password</mat-label>
+          <input matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'">
+          <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
+          <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
+            Password is required
+          </mat-error>
+          <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">
+            Password must be at least 6 characters
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+        {{ errorMessage }}
+      </div>
+
+      <button mat-raised-button color="primary" class="w-full !py-3 text-base font-semibold" 
+              [disabled]="isLoading || loginForm.invalid" type="submit">
+        <div class="flex items-center justify-center">
+          <span *ngIf="!isLoading">Sign In</span>
+          <div *ngIf="isLoading" class="flex items-center">
+            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            <span>Signing in...</span>
+          </div>
+        </div>
+      </button>
+
+      <div class="text-sm text-center">
+        <span class="text-gray-600">Don't have an account?</span>
+        <a routerLink="/auth/register" class="ml-1 font-medium text-primary-600 hover:text-primary-500">
+          Register your farm
+        </a>
+      </div>
+    </form>
+  </div>
+</div>

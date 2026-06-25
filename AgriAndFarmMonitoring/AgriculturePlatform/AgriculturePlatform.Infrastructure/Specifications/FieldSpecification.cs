@@ -9,12 +9,13 @@ public class FieldSpecification : BaseSpecification<Field>
     public FieldSpecification(
         int farmId, 
         string? searchTerm = null, 
+        string? location = null, 
         string? soilType = null, 
         string? status = null, 
         bool includeDeleted = false,
-        bool hasCoordinates = false)  // NEW parameter
+        bool hasCoordinates = false)
     {
-        // Base filter - always filter by farm
+        // ✅ Now this will combine with other criteria instead of replacing
         AddCriteria(f => f.FarmId == farmId);
         
         // Soft delete filter
@@ -23,12 +24,18 @@ public class FieldSpecification : BaseSpecification<Field>
             AddCriteria(f => !f.IsDeleted);
         }
         
-        // Search filter
-        if (!string.IsNullOrWhiteSpace(searchTerm))
+     if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            AddCriteria(f => f.FieldName.Contains(searchTerm) || 
-                            (f.Location != null && f.Location.Contains(searchTerm)));
+            var searchTermLower = searchTerm.Trim().ToLower();
+            AddCriteria(f => f.FieldName.ToLower().Contains(searchTermLower));
         }
+
+        if (!string.IsNullOrWhiteSpace(location))
+        {
+            var locationLower = location.Trim().ToLower();
+            AddCriteria(f => f.Location != null && f.Location.ToLower().Contains(locationLower));
+        }
+        
         
         // Soil type filter
         if (!string.IsNullOrWhiteSpace(soilType) && 
@@ -44,7 +51,7 @@ public class FieldSpecification : BaseSpecification<Field>
             AddCriteria(f => f.Status == parsedStatus);
         }
         
-        // Filter by coordinates presence - NEW
+        // Filter by coordinates presence
         if (hasCoordinates)
         {
             AddCriteria(f => f.Latitude.HasValue && f.Longitude.HasValue);

@@ -60,7 +60,19 @@ public class FieldsController : ControllerBase
     public async Task<IActionResult> GetAll([FromQuery] FieldFilterDto filter)
     {
         var farmId = GetCurrentFarmId();
+        Console.WriteLine("=== DEBUG: All Claims ===");
+    foreach (var claim in User.Claims)
+    {
+        Console.WriteLine($"{claim.Type}: {claim.Value}");
+    }
+    Console.WriteLine($"=== FarmId from token: {farmId} ===");
+
         var result = await _fieldService.GetAllAsync(filter, farmId);
+        if (result.Success && result.Data != null)
+    {
+        Console.WriteLine($"✅ Returning {result.Data.TotalCount} fields for Farm {farmId}");
+    }
+    
         return Ok(result);
     }
 

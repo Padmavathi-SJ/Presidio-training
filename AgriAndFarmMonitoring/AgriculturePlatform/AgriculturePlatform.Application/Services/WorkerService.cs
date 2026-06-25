@@ -39,6 +39,7 @@ public class WorkerService : IWorkerService
         worker.AdminId = adminId;
         worker.CreatedBy = adminId;
         worker.IsActive = true;
+        worker.Role = "Worker";
 
         var created = await _workerRepository.CreateAsync(worker);
 
@@ -46,6 +47,7 @@ public class WorkerService : IWorkerService
         await _auditLogService.LogCreateAsync(farmId, adminId, "Worker", created.Id, created, ipAddress, userAgent);
 
         var result = _mapper.Map<WorkerDto>(created);
+        result.Role = "Worker"; 
         return ApiResponse<WorkerDto>.Ok(result, "Worker created successfully");
     }
 

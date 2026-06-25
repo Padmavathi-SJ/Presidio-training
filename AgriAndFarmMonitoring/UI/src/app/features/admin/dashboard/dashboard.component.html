@@ -1,0 +1,97 @@
+<!-- src/app/features/admin/dashboard/dashboard.component.html -->
+<div class="dashboard-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Loading dashboard...</p>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!isLoading" class="dashboard-content">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+      <div>
+        <h1 class="welcome-title">Welcome back, {{ userName }}!</h1>
+        <p class="welcome-subtitle">{{ farmName }} - {{ currentDate | date:'fullDate' }}</p>
+      </div>
+      <button mat-raised-button color="primary">
+        <mat-icon>add</mat-icon>
+        Add Field
+      </button>
+    </div>
+
+    <!-- Stats Cards - Empty, ready for data -->
+    <div class="stats-grid">
+      <mat-card class="stat-card">
+        <div class="stat-content">
+          <div>
+            <p class="stat-label">Total Fields</p>
+            <h3 class="stat-value">{{ stats.totalFields }}</h3>
+          </div>
+          <div class="stat-icon-wrapper">
+            <mat-icon class="stat-icon">agriculture</mat-icon>
+          </div>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <div class="stat-content">
+          <div>
+            <p class="stat-label">Active Crop Cycles</p>
+            <h3 class="stat-value">{{ stats.activeCropCycles }}</h3>
+          </div>
+          <div class="stat-icon-wrapper">
+            <mat-icon class="stat-icon">grass</mat-icon>
+          </div>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <div class="stat-content">
+          <div>
+            <p class="stat-label">Critical Alerts</p>
+            <h3 class="stat-value">{{ stats.criticalAlerts }}</h3>
+          </div>
+          <div class="stat-icon-wrapper">
+            <mat-icon class="stat-icon">notifications_active</mat-icon>
+          </div>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <div class="stat-content">
+          <div>
+            <p class="stat-label">Today's Tasks</p>
+            <h3 class="stat-value">{{ stats.todayTasks }}</h3>
+          </div>
+          <div class="stat-icon-wrapper">
+            <mat-icon class="stat-icon">assignment</mat-icon>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- Placeholder for Recent Activity -->
+    <mat-card class="activity-card">
+      <div class="activity-header">
+        <h3 class="activity-title">Recent Activity</h3>
+        <button mat-button color="primary">
+          View All
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="recentActivities.length === 0" class="empty-state">
+        <mat-icon class="empty-icon">inbox</mat-icon>
+        <p class="empty-text">No recent activity</p>
+        <p class="empty-subtext">Activities will appear here once you start using the platform</p>
+      </div>
+
+      <!-- Activity Items - Ready for data -->
+      <div *ngFor="let activity of recentActivities" class="activity-item">
+        <!-- Activity content will go here -->
+      </div>
+    </mat-card>
+  </div>
+</div>

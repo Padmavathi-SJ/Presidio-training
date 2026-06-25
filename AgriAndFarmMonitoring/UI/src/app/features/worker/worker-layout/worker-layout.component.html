@@ -1,0 +1,132 @@
+<!-- src/app/features/worker/worker-layout/worker-layout.component.html -->
+<div class="h-screen flex flex-col bg-surface">
+  <!-- Top Navigation Bar -->
+  <mat-toolbar 
+    color="primary" 
+    class="!bg-primary-700 !h-16 !px-4 flex-shrink-0 sticky top-0 z-[1000]"
+  >
+    <button 
+      mat-icon-button 
+      (click)="toggleSidebar()" 
+      class="!text-white mr-2"
+      aria-label="Toggle sidebar"
+    >
+      <mat-icon>menu</mat-icon>
+    </button>
+    
+    <!-- Brand -->
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🌿</span>
+      <span class="text-white text-xl font-semibold tracking-wide">AgriMonitor</span>
+      <span class="bg-white/15 px-3 py-0.5 rounded-full text-xs font-medium text-white/90 ml-2">
+        Worker
+      </span>
+    </div>
+    
+    <!-- Spacer -->
+    <span class="flex-1"></span>
+    
+    <!-- Current Route Title -->
+    <span class="text-white/90 text-base font-medium hidden md:block">
+      {{ currentRoute() }}
+    </span>
+    
+    <!-- Spacer -->
+    <span class="flex-1"></span>
+    
+    <!-- User Info -->
+    <span class="text-white/90 text-sm mr-3 hidden md:block">
+      {{ user?.name }}
+    </span>
+    
+    <!-- User Menu -->
+    <button 
+      mat-icon-button 
+      [matMenuTriggerFor]="userMenu" 
+      class="!text-white"
+      aria-label="User menu"
+    >
+      <mat-icon>account_circle</mat-icon>
+    </button>
+    
+    <mat-menu #userMenu="matMenu" class="user-menu">
+      <button mat-menu-item routerLink="/worker/profile">
+        <mat-icon>person</mat-icon>
+        <span>Profile</span>
+      </button>
+      <button mat-menu-item routerLink="/worker/settings">
+        <mat-icon>settings</mat-icon>
+        <span>Settings</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="logout()" class="!text-red-600 hover:!bg-red-50">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
+  </mat-toolbar>
+
+  <!-- Sidenav Container -->
+  <mat-sidenav-container class="flex-1 h-[calc(100vh-64px)] bg-surface">
+    <!-- Sidebar Navigation -->
+    <mat-sidenav 
+      mode="side" 
+      [opened]="isSidebarOpen()"
+      class="!w-[280px] !bg-white !border-r !border-gray-200 transition-all duration-300"
+      [class.!w-[72px]]="!isSidebarOpen()"
+    >
+      <mat-nav-list class="pt-2">
+        <!-- Farm Info -->
+        <div class="flex items-center px-4 py-4 gap-3">
+          <div class="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0">
+            <mat-icon class="!text-primary-700">agriculture</mat-icon>
+          </div>
+          <div class="flex flex-col overflow-hidden transition-all duration-300" [class.hidden]="!isSidebarOpen()">
+            <span class="font-semibold text-gray-800 text-sm whitespace-nowrap">
+              {{ user?.farmName || 'Farm' }}
+            </span>
+            <span class="text-xs text-gray-500 whitespace-nowrap">Worker</span>
+          </div>
+        </div>
+        
+        <mat-divider></mat-divider>
+        
+        <!-- Navigation Items -->
+        @for (item of navItems; track item.route) {
+          <a 
+            mat-list-item 
+            [routerLink]="item.route" 
+            routerLinkActive="active-link"
+            #link="routerLinkActive"
+            class="!mx-3 !my-1 !rounded-lg transition-all duration-200 cursor-pointer !h-11"
+            [class]="link.isActive ? '!bg-primary-50 !text-primary-700' : 'hover:!bg-gray-100'"
+            (click)="currentRoute.set(item.label)"
+          >
+            <mat-icon 
+              matListItemIcon 
+              class="!mr-3"
+              [class]="link.isActive ? '!text-primary-700' : '!text-gray-500'"
+            >
+              {{ item.icon }}
+            </mat-icon>
+            <span 
+              matListItemTitle 
+              class="text-sm font-medium"
+              [class]="link.isActive ? '!text-primary-700' : '!text-gray-700'"
+              [class.hidden]="!isSidebarOpen()"
+            >
+              {{ item.label }}
+            </span>
+          </a>
+        }
+      </mat-nav-list>
+    </mat-sidenav>
+
+    <!-- Main Content Area -->
+    <mat-sidenav-content class="p-6 bg-surface min-h-[calc(100vh-64px)] overflow-y-auto">
+      <div class="max-w-[1440px] mx-auto">
+        <router-outlet></router-outlet>
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

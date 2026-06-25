@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "dgSpecHash": "CtKK5hz8gAc=",
+  "success": true,
+  "projectFilePath": "/Users/padmavathisj/Documents/Presidio-Training/25-06-2026/Kubernetes/MyApi/MyApi.csproj",
+  "expectedPackageFiles": [
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.logging.abstractions/8.0.0/microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/npgsql/8.0.0/npgsql.8.0.0.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Npgsql' 8.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-x9vc-6hfv-hg8c",
+      "libraryId": "Npgsql",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
+}

@@ -1,9 +1,10 @@
+// src/app/core/services/auth.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
-import { tap, catchError, map } from 'rxjs/operators';
-import { environment } from '@env/environment';
+import { tap, catchError, map, finalize } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 import { 
   LoginRequest, 
   AuthResponse, 
@@ -26,25 +27,67 @@ export class AuthService {
   public currentUser$ = this.currentUserSubject.asObservable();
 
   private readonly API_URL = environment.apiUrl;
+  private isLoggingIn = false;
 
   constructor() {
     this.loadUserFromStorage();
   }
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
+    if (this.isLoggingIn) {
+      return throwError(() => new Error('Login already in progress'));
+    }
+    
+    this.isLoggingIn = true;
+    this.clearUser();
+    
     return this.http.post<AuthResponse>(`${this.API_URL}/auth/login`, credentials)
       .pipe(
         tap((response: AuthResponse) => {
           if (response.success && response.data) {
+            console.log('✅ Login API success, storing user data');
             const user = this.mapToUser(response.data);
             this.setUser(user);
           }
         }),
-        catchError(this.handleError)
+        map((response) => {
+          this.isLoggingIn = false;
+          return response;
+        }),
+        catchError((error) => {
+          this.isLoggingIn = false;
+          this.clearUser();
+          return this.handleError(error);
+        })
       );
   }
 
+  // ✅ Get redirect URL based on user role
+getRedirectUrl(user: User | null): string {
+  if (!user) return '/auth/login';
+  
+  // ✅ Normalize role for comparison
+  const role = (user.role || user.userType || '').toLowerCase();
+  
+  if (role === 'admin') {
+    return '/admin/dashboard';
+  } else if (role === 'worker') {
+    return '/worker/dashboard';
+  }
+  
+  return '/auth/login';
+}
+
+  // ✅ Redirect user based on role
+  redirectBasedOnRole(user: User | null): void {
+    const redirectUrl = this.getRedirectUrl(user);
+    console.log(`🔄 Redirecting to: ${redirectUrl}`);
+    this.router.navigate([redirectUrl]);
+  }
+
   register(registrationData: RegisterRequest): Observable<AuthResponse> {
+    this.clearUser();
+    
     return this.http.post<AuthResponse>(`${this.API_URL}/auth/register`, registrationData)
       .pipe(
         tap((response: AuthResponse) => {
@@ -53,7 +96,10 @@ export class AuthService {
             this.setUser(user);
           }
         }),
-        catchError(this.handleError)
+        catchError((error) => {
+          this.clearUser();
+          return this.handleError(error);
+        })
       );
   }
 
@@ -62,6 +108,7 @@ export class AuthService {
     const accessToken = this.tokenService.getAccessToken();
 
     if (!refreshToken || !accessToken) {
+      this.forceLogout();
       return throwError(() => new Error('No refresh token available'));
     }
 
@@ -76,28 +123,42 @@ export class AuthService {
           }
         }),
         catchError((error) => {
-          this.logout();
+          this.forceLogout();
           return throwError(() => error);
         })
       );
   }
 
-  logout(revokeToken?: string): Observable<any> {
-    const refreshToken = revokeToken || this.tokenService.getRefreshToken();
+  logout(revokeToken?: boolean): Observable<any> {
+    const refreshToken = this.tokenService.getRefreshToken();
     
-    if (refreshToken) {
+    if (refreshToken && revokeToken !== false) {
       return this.http.post(`${this.API_URL}/auth/revoke-token`, { refreshToken })
         .pipe(
-          tap(() => this.clearUser()),
+          finalize(() => {
+            this.forceLogout();
+          }),
           catchError(() => {
-            this.clearUser();
+            this.forceLogout();
             return throwError(() => new Error('Logout failed'));
           })
         );
     } else {
-      this.clearUser();
-      return new Observable(subscriber => subscriber.next({ success: true }));
+      this.forceLogout();
+      return new Observable(subscriber => {
+        subscriber.next({ success: true });
+        subscriber.complete();
+      });
     }
+  }
+
+  forceLogout(): void {
+    console.log('🔴 Force logout - clearing all data');
+    this.isLoggingIn = false;
+    this.clearUser();
+    this.router.navigate(['/auth/login'], { 
+      queryParams: { t: Date.now() }
+    });
   }
 
   validateToken(): Observable<boolean> {
@@ -105,7 +166,7 @@ export class AuthService {
       .pipe(
         map(() => true),
         catchError(() => {
-          this.logout();
+          this.forceLogout();
           return throwError(() => false);
         })
       );
@@ -115,23 +176,30 @@ export class AuthService {
     return this.http.post(`${this.API_URL}/auth/change-password`, request)
       .pipe(
         tap(() => {
-          this.logout();
+          this.forceLogout();
         }),
         catchError(this.handleError)
       );
   }
 
   isLoggedIn(): boolean {
-    return !!this.tokenService.getAccessToken() && !!this.currentUserSubject.value;
+    const token = this.tokenService.getAccessToken();
+    const user = this.currentUserSubject.value;
+    return !!token && !!user && !this.tokenService.isTokenExpired() && !this.isLoggingIn;
   }
 
-  isAdmin(): boolean {
-    return this.currentUserSubject.value?.role === 'Admin';
-  }
+isAdmin(): boolean {
+  const user = this.currentUserSubject.value;
+  const role = (user?.role || user?.userType || '').toLowerCase();
+  return role === 'admin';
+}
 
-  isWorker(): boolean {
-    return this.currentUserSubject.value?.role === 'Worker';
-  }
+isWorker(): boolean {
+  const user = this.currentUserSubject.value;
+  const role = (user?.role || user?.userType || '').toLowerCase();
+  return role === 'worker';
+}
+
 
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
@@ -146,40 +214,55 @@ export class AuthService {
   }
 
   private setUser(user: User): void {
+    console.log('✅ Setting user data');
+    console.log('📝 User Role:', user.role || user.userType);
     this.tokenService.setTokens(user.accessToken, user.refreshToken);
     this.tokenService.setUser(user);
     this.currentUserSubject.next(user);
   }
 
   private updateUser(user: User): void {
+    console.log('🔄 Updating user data');
     this.tokenService.setTokens(user.accessToken, user.refreshToken);
     this.tokenService.setUser(user);
     this.currentUserSubject.next(user);
   }
 
   private clearUser(): void {
-    this.tokenService.clearTokens();
-    this.tokenService.clearUser();
+    console.log('🗑️ Clearing user data');
+    this.tokenService.clearAll();
     this.currentUserSubject.next(null);
-    this.router.navigate(['/auth/login']);
   }
 
   private loadUserFromStorage(): void {
     const user = this.tokenService.getUser();
-    if (user && this.tokenService.getAccessToken()) {
+    const token = this.tokenService.getAccessToken();
+    
+    if (user && token && !this.tokenService.isTokenExpired()) {
+      console.log('📂 Loading user from storage');
       this.currentUserSubject.next(user);
+    } else {
+      console.log('🗑️ No valid user in storage, clearing');
+      this.clearUser();
     }
   }
 
   private mapToUser(data: any): User {
+    // Get role from either role or userType field
+    const role = data.role || data.userType || 'Unknown';
+    
+    const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+
+     console.log(`📝 Mapping user with role: ${normalizedRole}`);
+  
     return {
       id: data.id,
       name: data.name,
       email: data.email,
       farmId: data.farmId,
       farmName: data.farmName,
-      role: data.userType === 'Admin' ? 'Admin' : 'Worker',
-      userType: data.userType,
+      role: role,
+      userType: data.userType || role,
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
       accessTokenExpiresAt: new Date(data.accessTokenExpiresAt),
@@ -188,7 +271,7 @@ export class AuthService {
   }
 
   private handleError(error: any): Observable<never> {
-    console.error('Auth error:', error);
+    console.error('❌ Auth error:', error);
     return throwError(() => error);
   }
 }
