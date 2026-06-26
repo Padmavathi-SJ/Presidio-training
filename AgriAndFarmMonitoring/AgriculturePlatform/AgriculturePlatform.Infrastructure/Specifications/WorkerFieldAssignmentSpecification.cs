@@ -7,11 +7,13 @@ public class WorkerFieldAssignmentSpecification : BaseSpecification<WorkerFieldA
 {
     public WorkerFieldAssignmentSpecification(
         int farmId,
-        int? workerId,
-        int? fieldId,
-        bool? isActive,
-        DateTime? assignedDateFrom,
-        DateTime? assignedDateTo,
+        int? workerId = null,
+        int? fieldId = null,
+        bool? isActive = null,
+        DateTime? assignedDateFrom = null,
+        DateTime? assignedDateTo = null,
+        DateTime? endDateFrom = null,      // ✅ Added
+        DateTime? endDateTo = null,        // ✅ Added
         bool includeDeleted = false)
     {
         // Base filter - by farm
@@ -44,16 +46,33 @@ public class WorkerFieldAssignmentSpecification : BaseSpecification<WorkerFieldA
         // Filter by assigned date range
         if (assignedDateFrom.HasValue)
         {
-            AddCriteria(a => a.AssignedDate >= assignedDateFrom.Value);
+            var fromDate = assignedDateFrom.Value.Date.ToUniversalTime();
+            AddCriteria(a => a.AssignedDate >= fromDate);
         }
+        
         if (assignedDateTo.HasValue)
         {
-            AddCriteria(a => a.AssignedDate <= assignedDateTo.Value);
+            var toDate = assignedDateTo.Value.Date.AddDays(1).AddSeconds(-1).ToUniversalTime();
+            AddCriteria(a => a.AssignedDate <= toDate);
         }
 
-        // Include navigation properties
+        // ✅ Filter by end date range
+        if (endDateFrom.HasValue)
+        {
+            var fromDate = endDateFrom.Value.Date.ToUniversalTime();
+            AddCriteria(a => a.EndDate >= fromDate);
+        }
+        
+        if (endDateTo.HasValue)
+        {
+            var toDate = endDateTo.Value.Date.AddDays(1).AddSeconds(-1).ToUniversalTime();
+            AddCriteria(a => a.EndDate <= toDate);
+        }
+
+        // Include navigation
         AddInclude(a => a.Worker);
         AddInclude(a => a.Field);
         AddInclude(a => a.Farm);
+        AddInclude(a => a.Admin);
     }
 }

@@ -135,18 +135,19 @@ public class WorkerProfileService : IWorkerProfileService
         }
 
         // FIXED: Use LogAsync instead (8 parameters, but last two are optional)
-        await _auditLogService.LogAsync(
-            farmId,           // farmId
-            null,             // adminId
-            workerId,         // workerId
-            "CHANGE_PASSWORD", // action
-            "Worker",         // entityType
-            worker.Id,        // entityId
-            null,             // oldValue
-            null,             // newValue
-            null,             // ipAddress
-            null);            // userAgent
-
+         await _auditLogService.LogAsync(
+        farmId,           // farmId
+        null,             // adminId
+        workerId,         // workerId
+        "CHANGE_PASSWORD",// action
+        "Worker",         // entityType
+        worker.Id,        // entityId
+        null,             // oldValue
+        null,             // newValue
+        null,             // ipAddress
+        null              // userAgent
+    );
+    
         return ApiResponse<bool>.Ok(true, "Password changed successfully");
     }
 

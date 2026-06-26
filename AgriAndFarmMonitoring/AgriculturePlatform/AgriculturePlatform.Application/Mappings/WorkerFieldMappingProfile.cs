@@ -10,20 +10,25 @@ public class WorkerFieldMappingProfile : Profile
 {
     public WorkerFieldMappingProfile()
     {
+        // ✅ Map Field to WorkerFieldListDto
         CreateMap<Field, WorkerFieldListDto>()
             .ForMember(dest => dest.AssignmentId, opt => opt.Ignore())
             .ForMember(dest => dest.ActiveCropCount, opt => opt.Ignore())
             .ForMember(dest => dest.SoilType, opt => opt.MapFrom(src => src.SoilType != null ? src.SoilType.ToString() : null))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status != null ? src.Status.ToString() : null));
 
+        // ✅ Map Field to WorkerFieldDetailDto
         CreateMap<Field, WorkerFieldDetailDto>()
             .ForMember(dest => dest.AssignmentId, opt => opt.Ignore())
             .ForMember(dest => dest.AssignedDate, opt => opt.Ignore())
             .ForMember(dest => dest.Notes, opt => opt.Ignore())
             .ForMember(dest => dest.CropCycles, opt => opt.Ignore())
             .ForMember(dest => dest.SoilType, opt => opt.MapFrom(src => src.SoilType != null ? src.SoilType.ToString() : null))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status != null ? src.Status.ToString() : null));
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status != null ? src.Status.ToString() : null))
+            .ForMember(dest => dest.Latitude, opt => opt.MapFrom(src => src.Latitude))
+            .ForMember(dest => dest.Longitude, opt => opt.MapFrom(src => src.Longitude));
 
+        // ✅ Map CropCycle to WorkerCropCycleDto
         CreateMap<CropCycle, WorkerCropCycleDto>()
             .ForMember(dest => dest.CropType, opt => opt.MapFrom(src => src.CropType != null ? src.CropType.ToString() : null))
             .ForMember(dest => dest.GrowthStage, opt => opt.MapFrom(src => src.GrowthStage != null ? src.GrowthStage.ToString() : null))

@@ -12,7 +12,7 @@ public class CropCycleService : ICropCycleService
 {
     private readonly ICropCycleRepository _cropCycleRepository;
     private readonly IFieldRepository _fieldRepository;
-    private readonly IAuditLogService _auditLogService;
+  
     private readonly IMapper _mapper;
 
     public CropCycleService(
@@ -23,7 +23,7 @@ public class CropCycleService : ICropCycleService
     {
         _cropCycleRepository = cropCycleRepository;
         _fieldRepository = fieldRepository;
-        _auditLogService = auditLogService;
+       
         _mapper = mapper;
     }
 
@@ -72,7 +72,7 @@ if (!string.IsNullOrWhiteSpace(dto.Status))
     var created = await _cropCycleRepository.CreateAsync(cropCycle);
 
     // Audit log
-    await _auditLogService.LogCreateAsync(farmId, adminId, "CropCycle", created.Id, created, ipAddress, userAgent);
+   
 
     var result = _mapper.Map<CropCycleDto>(created);
     return ApiResponse<CropCycleDto>.Ok(result, "Crop cycle created successfully");
@@ -125,7 +125,7 @@ if (!string.IsNullOrWhiteSpace(dto.Status))
         await _cropCycleRepository.UpdateAsync(cropCycle);
 
         // Audit log
-        await _auditLogService.LogUpdateAsync(farmId, adminId, "CropCycle", cropCycle.Id, oldCropCycle, cropCycle, ipAddress, userAgent);
+     
 
         var result = _mapper.Map<CropCycleDto>(cropCycle);
         return ApiResponse<CropCycleDto>.Ok(result, "Crop cycle updated successfully");
@@ -146,7 +146,7 @@ if (!string.IsNullOrWhiteSpace(dto.Status))
 
         await _cropCycleRepository.SoftDeleteAsync(cropCycle, adminId);
 
-        await _auditLogService.LogSoftDeleteAsync(farmId, adminId, "CropCycle", cropCycle.Id, cropCycle, ipAddress, userAgent);
+      
 
         return ApiResponse<bool>.Ok(true, "Crop cycle deleted successfully");
     }

@@ -51,12 +51,13 @@ public class WorkerAuthService : IWorkerAuthService
         if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
             throw new BadRequestException("Email and password are required");
 
-        // Find worker by email
+        // ✅ FIX: Get the worker first WITHOUT farmId
         var worker = await _workerRepository.GetByEmailAsync(dto.Email.Trim().ToLower());
+        
         if (worker == null)
             throw new UnauthorizedException("Invalid email or password");
 
-        // Check if worker is active
+        // ✅ Check if worker is active
         if (!worker.IsActive)
             throw new UnauthorizedException("Account is deactivated. Please contact administrator.");
 
@@ -112,7 +113,7 @@ public class WorkerAuthService : IWorkerAuthService
             RefreshToken = refreshTokenValue,
             FarmId = worker.FarmId,
             FarmName = farm.FarmName,
-           Role = "Worker", 
+            Role = "Worker", 
             AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_accessTokenExpiryMinutes),
             RefreshTokenExpiresAt = refreshToken.ExpiryDate
         };
@@ -160,7 +161,7 @@ public class WorkerAuthService : IWorkerAuthService
         refreshToken.IsUsed = true;
         await _refreshTokenRepository.UpdateAsync(refreshToken);
 
-        // Get worker details - FIX: Add farmId parameter
+        // Get worker details - Get the worker's farmId first
         var worker = await _workerRepository.GetByIdAsync(workerId, 0, false);
         if (worker == null || !worker.IsActive)
             throw new UnauthorizedException("Worker not found or inactive");
@@ -198,7 +199,7 @@ public class WorkerAuthService : IWorkerAuthService
             RefreshToken = newRefreshTokenValue,
             FarmId = worker.FarmId,
             FarmName = farm.FarmName,
-          Role = "Worker", 
+            Role = "Worker", 
             AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_accessTokenExpiryMinutes),
             RefreshTokenExpiresAt = newRefreshToken.ExpiryDate
         };

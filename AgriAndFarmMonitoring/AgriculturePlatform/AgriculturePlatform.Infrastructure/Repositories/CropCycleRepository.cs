@@ -66,6 +66,7 @@ public class CropCycleRepository : ICropCycleRepository
         cropCycle.UpdatedAt = DateTime.UtcNow;
         _context.CropCycles.Update(cropCycle);
         await _context.SaveChangesAsync();
+        
     }
 
     public async Task SoftDeleteAsync(CropCycle cropCycle, int deletedBy)

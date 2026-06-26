@@ -821,220 +821,282 @@ modelBuilder.Entity<YieldReport>(entity =>
         });
     }
     
-    
-    
-    // =============================================
-    // GLOBAL AUDIT LOGGING - UPDATED SaveChangesAsync
-    // =============================================
+ // AgriculturePlatform.Infrastructure/Context/AppDbContext.cs
 
-
-public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+private JsonDocument? SerializeToJsonDocument(object? obj)
 {
-    var entries = ChangeTracker.Entries()
-        .Where(e => e.State == EntityState.Modified || e.State == EntityState.Added || e.State == EntityState.Deleted);
+    if (obj == null) return null;
     
-    var auditLogs = new List<AuditLog>();
-    var now = DateTime.UtcNow;
-    
-    // Get current user info from HttpContext
-    var (adminId, workerId, farmId, ipAddress, userAgent) = GetCurrentUserInfo();
-    
-    foreach (var entityEntry in entries)
+    var options = new JsonSerializerOptions
     {
-        // Skip AuditLog entity itself to avoid infinite loop
-        if (entityEntry.Entity is AuditLog)
-            continue;
+        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+        WriteIndented = false,
+        // ✅ Add this to convert enums to strings
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
+    
+    var json = JsonSerializer.Serialize(obj, options);
+    return JsonDocument.Parse(json);
+}   
+    
+   
+
+    // =============================================
+    // GLOBAL AUDIT LOGGING - SaveChangesAsync
+    // =============================================
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Modified || e.State == EntityState.Added || e.State == EntityState.Deleted);
         
-        var entityType = entityEntry.Entity.GetType().Name;
-        var entityId = GetEntityId(entityEntry.Entity);
-        var entityFarmId = farmId ?? GetFarmIdFromEntity(entityEntry.Entity);
+        var auditLogs = new List<AuditLog>();
+        var now = DateTime.UtcNow;
         
-        // Handle DateTime conversions to UTC
-        ConvertDateTimesToUtc(entityEntry);
+        // Get current user info from HttpContext
+        var userInfo = GetCurrentUserInfo();
+        var adminId = userInfo.adminId;
+        var workerId = userInfo.workerId;
+        var farmId = userInfo.farmId;
+        var ipAddress = userInfo.ipAddress;
+        var userAgent = userInfo.userAgent;
         
-        switch (entityEntry.State)
+        // JSON options with enum converter
+        var jsonOptions = new JsonSerializerOptions
         {
-            case EntityState.Added:
-                // Set audit fields
-                HandleAuditFields(entityEntry, adminId, workerId, now);
-                
-                // Get full entity state
-                var addedEntityState = GetEntityState(entityEntry.Entity);
-                
-                auditLogs.Add(new AuditLog
-                {
-                    FarmId = entityFarmId,
-                    AdminId = adminId,
-                    WorkerId = workerId,
-                    Action = "CREATE",
-                    EntityType = entityType,
-                    EntityId = entityId,
-                    OldValue = null,
-                    NewValue = SerializeToJsonDocument(addedEntityState),
-                    IpAddress = ipAddress,
-                    UserAgent = userAgent,
-                    CreatedAt = now
-                });
-                break;
-                
-            case EntityState.Modified:
-                // Get changed properties
-                var changedProperties = entityEntry.Properties
-                    .Where(p => p.IsModified && !AreValuesEqual(p.OriginalValue, p.CurrentValue))
-                    .ToList();
-                
-                if (changedProperties.Any())
-                {
+            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+            WriteIndented = false,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        };
+        
+        foreach (var entityEntry in entries)
+        {
+            // Skip AuditLog entity itself
+            if (entityEntry.Entity is AuditLog)
+                continue;
+            
+            // Skip SensorReadings
+            if (entityEntry.Entity is SensorReading)
+                continue;
+            
+            // Skip WeatherData
+            if (entityEntry.Entity is WeatherData)
+                continue;
+            
+            var entityType = entityEntry.Entity.GetType().Name;
+            var entityId = GetEntityId(entityEntry.Entity);
+            var entityFarmId = farmId ?? GetFarmIdFromEntity(entityEntry.Entity);
+            
+            // Handle DateTime conversions to UTC
+            ConvertDateTimesToUtc(entityEntry);
+            
+            switch (entityEntry.State)
+            {
+                case EntityState.Added:
                     // Set audit fields
                     HandleAuditFields(entityEntry, adminId, workerId, now);
                     
-                    // Get OLD state (before changes)
-                    var oldEntityState = GetEntityState(entityEntry.Entity, useOriginalValues: true);
-                    
-                    // Get NEW state (after changes) -  Renamed to newEntityStateValue
-                    var newEntityStateValue = GetEntityState(entityEntry.Entity, useOriginalValues: false);
+                    // Serialize entity with enum converter
+                    var addedJson = JsonSerializer.Serialize(entityEntry.Entity, jsonOptions);
                     
                     auditLogs.Add(new AuditLog
                     {
                         FarmId = entityFarmId,
                         AdminId = adminId,
                         WorkerId = workerId,
-                        Action = "UPDATE",
+                        Action = "CREATE",
                         EntityType = entityType,
                         EntityId = entityId,
-                        OldValue = SerializeToJsonDocument(oldEntityState),
-                        NewValue = SerializeToJsonDocument(newEntityStateValue),
+                        OldValue = null,
+                        NewValue = JsonDocument.Parse(addedJson),
                         IpAddress = ipAddress,
                         UserAgent = userAgent,
                         CreatedAt = now
                     });
-                }
-                break;
-                
-            case EntityState.Deleted:
-                // For soft delete, we handle it in repository, but if hard delete occurs
-                var deletedEntityState = GetEntityState(entityEntry.Entity, useOriginalValues: true);
-                
-                auditLogs.Add(new AuditLog
-                {
-                    FarmId = entityFarmId,
-                    AdminId = adminId,
-                    WorkerId = workerId,
-                    Action = "DELETE",
-                    EntityType = entityType,
-                    EntityId = entityId,
-                    OldValue = SerializeToJsonDocument(deletedEntityState),
-                    NewValue = null,
-                    IpAddress = ipAddress,
-                    UserAgent = userAgent,
-                    CreatedAt = now
-                });
-                break;
+                    break;
+                    
+                case EntityState.Modified:
+                    // Get changed properties
+                    var changedProperties = entityEntry.Properties
+                        .Where(p => p.IsModified && !AreValuesEqual(p.OriginalValue, p.CurrentValue))
+                        .ToList();
+                    
+                    if (changedProperties.Any())
+                    {
+                        // Set audit fields
+                        HandleAuditFields(entityEntry, adminId, workerId, now);
+                        
+                        // Get OLD state
+                        var oldDict = GetEntityState(entityEntry.Entity, useOriginalValues: true);
+                        var oldJson = JsonSerializer.Serialize(oldDict, jsonOptions);
+                        
+                        // Get NEW state
+                        var newDict = GetEntityState(entityEntry.Entity, useOriginalValues: false);
+                        var newJson = JsonSerializer.Serialize(newDict, jsonOptions);
+                        
+                        auditLogs.Add(new AuditLog
+                        {
+                            FarmId = entityFarmId,
+                            AdminId = adminId,
+                            WorkerId = workerId,
+                            Action = "UPDATE",
+                            EntityType = entityType,
+                            EntityId = entityId,
+                            OldValue = JsonDocument.Parse(oldJson),
+                            NewValue = JsonDocument.Parse(newJson),
+                            IpAddress = ipAddress,
+                            UserAgent = userAgent,
+                            CreatedAt = now
+                        });
+                    }
+                    break;
+                    
+                case EntityState.Deleted:
+                    var deletedDict = GetEntityState(entityEntry.Entity, useOriginalValues: true);
+                    var deletedJson = JsonSerializer.Serialize(deletedDict, jsonOptions);
+                    
+                    auditLogs.Add(new AuditLog
+                    {
+                        FarmId = entityFarmId,
+                        AdminId = adminId,
+                        WorkerId = workerId,
+                        Action = "DELETE",
+                        EntityType = entityType,
+                        EntityId = entityId,
+                        OldValue = JsonDocument.Parse(deletedJson),
+                        NewValue = null,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        CreatedAt = now
+                    });
+                    break;
+            }
         }
+        
+        // Add all audit logs
+        if (auditLogs.Any())
+        {
+            await AuditLogs.AddRangeAsync(auditLogs, cancellationToken);
+        }
+        
+        return await base.SaveChangesAsync(cancellationToken);
     }
-    
-    // Add all audit logs
-    if (auditLogs.Any())
-    {
-        await AuditLogs.AddRangeAsync(auditLogs, cancellationToken);
-    }
-    
-    return await base.SaveChangesAsync(cancellationToken);
-}
-// Helper method to get full entity state
+
+    // =============================================
+    // HELPER METHODS
+    // =============================================
 private Dictionary<string, object?> GetEntityState(object entity, bool useOriginalValues = false)
 {
     var state = new Dictionary<string, object?>();
-    var properties = entity.GetType().GetProperties();
-    
-    foreach (var property in properties)
+    var entry = Entry(entity);
+
+    foreach (var property in entity.GetType().GetProperties())
     {
-        // Skip navigation properties to avoid circular references
-        if (property.PropertyType.IsClass && property.PropertyType != typeof(string) && 
-            property.PropertyType.Namespace?.StartsWith("AgriculturePlatform.Domain.Entities") == true)
-        {
-            continue;
-        }
-        
         try
         {
+            // Skip navigation properties
+            if (property.PropertyType.IsClass &&
+                property.PropertyType != typeof(string) &&
+                property.PropertyType.Namespace?.StartsWith("AgriculturePlatform.Domain.Entities") == true)
+            {
+                continue;
+            }
+
             object? value;
+
             if (useOriginalValues)
             {
-                // For original values, we need to get from ChangeTracker
-                var entry = Entry(entity);
-                var propertyEntry = entry.Property(property.Name);
-                value = propertyEntry.OriginalValue;
+                var propertyEntry = entry.Properties
+                    .FirstOrDefault(p => p.Metadata.Name == property.Name);
+
+                value = propertyEntry?.OriginalValue;
             }
             else
             {
                 value = property.GetValue(entity);
             }
-            
-            // Format DateTime for better readability
+
+            if (value == null)
+            {
+                state[property.Name] = null;
+                continue;
+            }
+
+            // Convert enums to string
+            var propertyType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+
+            if (propertyType.IsEnum)
+            {
+                state[property.Name] = value.ToString();
+                continue;
+            }
+
+            // Format DateTime
             if (value is DateTime dt)
             {
-                value = dt.ToString("yyyy-MM-dd HH:mm:ss.fffZ");
+                state[property.Name] = dt.ToUniversalTime()
+                    .ToString("yyyy-MM-dd HH:mm:ss.fffZ");
+                continue;
             }
-            
+
             state[property.Name] = value;
         }
         catch
         {
-            // Skip properties that can't be accessed
+            // Ignore inaccessible properties
         }
     }
-    
+
     return state;
 }
 
-// Updated GetCurrentUserInfo to include UserAgent
-private (int? adminId, int? workerId, int? farmId, string ipAddress, string? userAgent) GetCurrentUserInfo()
-{
-    var httpContext = _httpContextAccessor?.HttpContext;
-    if (httpContext == null)
-        return (null, null, null, "127.0.0.1", null);
-    
-    // Get Admin ID (from token)
-    var adminIdClaim = httpContext.User.FindFirst("adminId")?.Value ?? 
-                      httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    int? adminId = null;
-    if (!string.IsNullOrEmpty(adminIdClaim) && int.TryParse(adminIdClaim, out var aId))
+    private (int? adminId, int? workerId, int? farmId, string ipAddress, string? userAgent) GetCurrentUserInfo()
     {
-        var userType = httpContext.User.FindFirst("userType")?.Value;
-        if (userType == "Admin")
-            adminId = aId;
+        var httpContext = _httpContextAccessor?.HttpContext;
+        if (httpContext == null)
+            return (null, null, null, "127.0.0.1", null);
+        
+        // Get Admin ID (from token)
+        var adminIdClaim = httpContext.User.FindFirst("adminId")?.Value ?? 
+                          httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        int? adminId = null;
+        if (!string.IsNullOrEmpty(adminIdClaim) && int.TryParse(adminIdClaim, out var aId))
+        {
+            var userType = httpContext.User.FindFirst("userType")?.Value;
+            if (userType == "Admin")
+                adminId = aId;
+        }
+        
+        // Get Worker ID (from token)
+        var workerIdClaim = httpContext.User.FindFirst("workerId")?.Value;
+        int? workerId = null;
+        if (!string.IsNullOrEmpty(workerIdClaim) && int.TryParse(workerIdClaim, out var wId))
+        {
+            var userType = httpContext.User.FindFirst("userType")?.Value;
+            if (userType == "Worker")
+                workerId = wId;
+        }
+        
+        // Get Farm ID (from token)
+        var farmIdClaim = httpContext.User.FindFirst("farmId")?.Value;
+        int? farmId = null;
+        if (!string.IsNullOrEmpty(farmIdClaim) && int.TryParse(farmIdClaim, out var fId))
+            farmId = fId;
+        
+        // Get IP Address
+        var ip = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (string.IsNullOrEmpty(ip))
+            ip = httpContext.Connection.RemoteIpAddress?.ToString();
+        var ipAddress = ip ?? "127.0.0.1";
+        
+        // Get User Agent
+        var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
+        if (string.IsNullOrEmpty(userAgent))
+            userAgent = null;
+        
+        return (adminId, workerId, farmId, ipAddress, userAgent);
     }
-    
-    // Get Worker ID (from token)
-    var workerIdClaim = httpContext.User.FindFirst("workerId")?.Value;
-    int? workerId = null;
-    if (!string.IsNullOrEmpty(workerIdClaim) && int.TryParse(workerIdClaim, out var wId))
-    {
-        var userType = httpContext.User.FindFirst("userType")?.Value;
-        if (userType == "Worker")
-            workerId = wId;
-    }
-    
-    // Get Farm ID (from token)
-    var farmIdClaim = httpContext.User.FindFirst("farmId")?.Value;
-    int? farmId = null;
-    if (!string.IsNullOrEmpty(farmIdClaim) && int.TryParse(farmIdClaim, out var fId))
-        farmId = fId;
-    
-    // Get IP Address
-    var ip = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-    if (string.IsNullOrEmpty(ip))
-        ip = httpContext.Connection.RemoteIpAddress?.ToString();
-    var ipAddress = ip ?? "127.0.0.1";
-    
-    // Get User Agent
-    var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
-    if (string.IsNullOrEmpty(userAgent))
-        userAgent = null;
-    
-    return (adminId, workerId, farmId, ipAddress, userAgent);
-}   
+
     private void ConvertDateTimesToUtc(EntityEntry entityEntry)
     {
         var properties = entityEntry.Entity.GetType().GetProperties()
@@ -1054,7 +1116,7 @@ private (int? adminId, int? workerId, int? farmId, string ipAddress, string? use
             }
         }
     }
-    
+
     private void HandleAuditFields(EntityEntry entityEntry, int? adminId, int? workerId, DateTime now)
     {
         if (entityEntry.Entity is BaseEntity baseEntity)
@@ -1071,25 +1133,24 @@ private (int? adminId, int? workerId, int? farmId, string ipAddress, string? use
             }
         }
     }
-    
-private int? GetEntityId(object entity)
-{
-    // Use reflection to find Id property
-    var idProperty = entity.GetType().GetProperty("Id");
-    if (idProperty == null) return null;
-    
-    var value = idProperty.GetValue(entity);
-    if (value == null) return null;
-    
-    // Handle different numeric types
-    return value switch
+
+    private int? GetEntityId(object entity)
     {
-        int intValue => intValue,
-        long longValue => (int)longValue,
-        short shortValue => (int)shortValue,
-        _ => null
-    };
-}   
+        var idProperty = entity.GetType().GetProperty("Id");
+        if (idProperty == null) return null;
+        
+        var value = idProperty.GetValue(entity);
+        if (value == null) return null;
+        
+        return value switch
+        {
+            int intValue => intValue,
+            long longValue => (int)longValue,
+            short shortValue => (int)shortValue,
+            _ => null
+        };
+    }
+
     private int? GetFarmIdFromEntity(object entity)
     {
         var farmIdProp = entity.GetType().GetProperty("FarmId");
@@ -1100,26 +1161,12 @@ private int? GetEntityId(object entity)
         }
         return null;
     }
-    
+
     private bool AreValuesEqual(object? original, object? current)
     {
         if (original == null && current == null) return true;
         if (original == null || current == null) return false;
         return original.Equals(current);
-    }
-    
-    private JsonDocument? SerializeToJsonDocument(object? obj)
-    {
-        if (obj == null) return null;
-        
-        var options = new JsonSerializerOptions
-        {
-            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
-            WriteIndented = false
-        };
-        
-        var json = JsonSerializer.Serialize(obj, options);
-        return JsonDocument.Parse(json);
     }
 
 

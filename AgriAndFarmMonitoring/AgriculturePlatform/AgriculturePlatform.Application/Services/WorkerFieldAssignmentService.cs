@@ -4,15 +4,13 @@ using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Application.DTOs.WorkerField;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Domain.Entities.WorkerManagement;
-// Remove the using for DTOs.Worker to avoid ambiguity
-// using AgriculturePlatform.Application.DTOs.Worker;
 
 namespace AgriculturePlatform.Application.Services;
 
 public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
 {
     private readonly IWorkerFieldAssignmentRepository _assignmentRepository;
-    private readonly IWorkerRepository _workerRepository;
+    private readonly IWorkerRepository _workerRepository;  // ✅ ADD THIS - Was missing
     private readonly IFieldRepository _fieldRepository;
     private readonly ICropCycleRepository _cropCycleRepository;
     private readonly IAuditLogService _auditLogService;
@@ -20,53 +18,44 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
 
     public WorkerFieldAssignmentService(
         IWorkerFieldAssignmentRepository assignmentRepository,
-        IWorkerRepository workerRepository,
+        IWorkerRepository workerRepository,  // ✅ Fix parameter name
         IFieldRepository fieldRepository,
         ICropCycleRepository cropCycleRepository,
         IAuditLogService auditLogService,
         IMapper mapper)
     {
         _assignmentRepository = assignmentRepository;
-        _workerRepository = workerRepository;
+        _workerRepository = workerRepository;  // ✅ Assign to the field
         _fieldRepository = fieldRepository;
         _cropCycleRepository = cropCycleRepository;
         _auditLogService = auditLogService;
         _mapper = mapper;
     }
 
-    // =============================================
-    // ADMIN OPERATIONS
-    // =============================================
-
     public async Task<ApiResponse<WorkerFieldAssignmentDto>> AssignFieldToWorkerAsync(AssignFieldToWorkerDto dto, int farmId, int adminId, string ipAddress, string userAgent)
     {
-        // Validate adminId
         if (adminId <= 0)
         {
             return ApiResponse<WorkerFieldAssignmentDto>.Fail("Invalid admin ID. Please login again.");
         }
 
-        // Validate worker exists
         var worker = await _workerRepository.GetByIdAsync(dto.WorkerId, farmId);
         if (worker == null)
         {
             return ApiResponse<WorkerFieldAssignmentDto>.Fail($"Worker with ID {dto.WorkerId} not found");
         }
 
-        // Validate field exists
         var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
         if (field == null)
         {
             return ApiResponse<WorkerFieldAssignmentDto>.Fail($"Field with ID {dto.FieldId} not found");
         }
 
-        // Check if already assigned
         if (await _assignmentRepository.IsFieldAssignedToWorkerAsync(dto.FieldId, dto.WorkerId, farmId))
         {
             return ApiResponse<WorkerFieldAssignmentDto>.Fail($"Field '{field.FieldName}' is already assigned to worker '{worker.Name}'");
         }
 
-        // Create assignment
         var assignment = new WorkerFieldAssignment
         {
             FarmId = farmId,
@@ -83,7 +72,6 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
 
         var created = await _assignmentRepository.CreateAsync(assignment);
 
-        // Audit log with ipAddress and userAgent
         await _auditLogService.LogCreateAsync(farmId, adminId, "WorkerFieldAssignment", created.Id, created, ipAddress, userAgent);
 
         var result = _mapper.Map<WorkerFieldAssignmentDto>(created);
@@ -92,7 +80,6 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
 
     public async Task<ApiResponse<WorkerFieldAssignmentDto>> UpdateAssignmentAsync(int id, AssignFieldToWorkerDto dto, int farmId, int adminId, string ipAddress, string userAgent)
     {
-        // Validate adminId
         if (adminId <= 0)
         {
             return ApiResponse<WorkerFieldAssignmentDto>.Fail("Invalid admin ID. Please login again.");
@@ -106,7 +93,7 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
 
         var oldAssignment = _mapper.Map<WorkerFieldAssignment>(assignment);
 
-        // Update fields
+        // Update Worker
         if (dto.WorkerId > 0 && dto.WorkerId != assignment.WorkerId)
         {
             var worker = await _workerRepository.GetByIdAsync(dto.WorkerId, farmId);
@@ -117,6 +104,7 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
             assignment.WorkerId = dto.WorkerId;
         }
 
+        // Update Field
         if (dto.FieldId > 0 && dto.FieldId != assignment.FieldId)
         {
             var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
@@ -127,17 +115,37 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
             assignment.FieldId = dto.FieldId;
         }
 
+        // Update Assigned Date
+        if (dto.AssignedDate.HasValue)
+        {
+            assignment.AssignedDate = dto.AssignedDate.Value.ToUniversalTime();
+        }
+
+        // Update End Date
         if (dto.EndDate.HasValue)
-            assignment.EndDate = dto.EndDate;
+        {
+            assignment.EndDate = dto.EndDate.Value.ToUniversalTime();
+        }
+        else if (dto.EndDate == null)
+        {
+            assignment.EndDate = null;
+        }
+
+        // Update Notes
         if (!string.IsNullOrWhiteSpace(dto.Notes))
+        {
             assignment.Notes = dto.Notes;
+        }
+        else if (dto.Notes == null)
+        {
+            assignment.Notes = null;
+        }
 
         assignment.UpdatedAt = DateTime.UtcNow;
         assignment.UpdatedBy = adminId;
 
         await _assignmentRepository.UpdateAsync(assignment);
 
-        // Audit log
         await _auditLogService.LogUpdateAsync(farmId, adminId, "WorkerFieldAssignment", assignment.Id, oldAssignment, assignment, ipAddress, userAgent);
 
         var result = _mapper.Map<WorkerFieldAssignmentDto>(assignment);
@@ -176,6 +184,8 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
             filter.IsActive,
             filter.AssignedDateFrom,
             filter.AssignedDateTo,
+            filter.EndDateFrom,
+            filter.EndDateTo,
             paginationParams);
 
         var dtos = _mapper.Map<List<WorkerFieldAssignmentDto>>(pagedResult.Items);
@@ -190,10 +200,6 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
 
         return ApiResponse<PagedResult<WorkerFieldAssignmentDto>>.Ok(result);
     }
-
-    // =============================================
-    // WORKER OPERATIONS
-    // =============================================
 
     public async Task<ApiResponse<List<AgriculturePlatform.Application.DTOs.Worker.WorkerFieldDetailDto>>> GetMyAssignedFieldsAsync(int workerId, int farmId)
     {

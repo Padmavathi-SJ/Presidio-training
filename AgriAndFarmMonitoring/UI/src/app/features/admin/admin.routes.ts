@@ -20,12 +20,12 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: 'workers',
         loadComponent: () => import('./workers/workers.component')
-          .then(c => c.Workers)
+          .then(c => c.WorkersComponent)
       },
       {
         path: 'worker-fields',
         loadComponent: () => import('./worker-fields/worker-fields.component')
-          .then(c => c.WorkerFields)
+          .then(c => c.WorkerFieldsComponent)
       },
       {
         path: 'observations',

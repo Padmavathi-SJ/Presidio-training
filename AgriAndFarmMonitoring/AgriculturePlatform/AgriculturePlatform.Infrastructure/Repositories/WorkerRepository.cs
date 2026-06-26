@@ -37,7 +37,7 @@ public class WorkerRepository : IWorkerRepository
         return await query.FirstOrDefaultAsync();
     }
 
-    public async Task<Worker?> GetByEmailAsync(string email)
+public async Task<Worker?> GetByEmailAsync(string email)
 {
     return await _context.Workers
         .Include(w => w.Farm)

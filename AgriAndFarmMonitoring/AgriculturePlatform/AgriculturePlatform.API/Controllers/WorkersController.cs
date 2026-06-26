@@ -148,22 +148,31 @@ public class WorkersController : ControllerBase
         return Ok(result);
     }
 
-    // PUT: api/farms/{farmId}/workers/{id}/reset-password
-    [HttpPut("{id}/reset-password")]
-    public async Task<IActionResult> ResetPassword(int id, [FromBody] ChangeWorkerPasswordDto dto)
+// AgriculturePlatform.API/Controllers/WorkersController.cs
+
+// PUT: api/farms/{farmId}/workers/{id}/reset-password
+[HttpPut("{id}/reset-password")]
+public async Task<IActionResult> ResetPassword(int id, [FromBody] ResetPasswordDto dto)
+{
+    // ✅ Validate that passwords match
+    if (dto.NewPassword != dto.ConfirmPassword)
     {
-        var farmId = GetCurrentFarmId();
-        var adminId = GetCurrentAdminId();
-        var ipAddress = GetIpAddress();
-        var userAgent = GetUserAgent();
-        
-        var result = await _workerService.ResetPasswordAsync(id, farmId, adminId, dto.NewPassword, ipAddress, userAgent);
-        
-        if (!result.Success)
-            return BadRequest(result);
-            
-        return Ok(result);
+        return BadRequest(new { success = false, message = "Passwords do not match" });
     }
+
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var ipAddress = GetIpAddress();
+    var userAgent = GetUserAgent();
+    
+    var result = await _workerService.ResetPasswordAsync(id, farmId, adminId, dto.NewPassword, ipAddress, userAgent);
+    
+    if (!result.Success)
+        return BadRequest(result);
+        
+    return Ok(result);
+}
+
 
     // DELETE: api/farms/{farmId}/workers/{id}
     [HttpDelete("{id}")]

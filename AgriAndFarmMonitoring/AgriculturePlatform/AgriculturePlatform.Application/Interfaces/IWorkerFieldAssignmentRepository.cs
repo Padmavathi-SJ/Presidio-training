@@ -12,9 +12,10 @@ public interface IWorkerFieldAssignmentRepository
     Task<WorkerFieldAssignment> CreateAsync(WorkerFieldAssignment assignment);
     Task UpdateAsync(WorkerFieldAssignment assignment);
     Task SoftDeleteAsync(WorkerFieldAssignment assignment, int deletedBy);
-    Task<PagedResult<WorkerFieldAssignment>> GetPagedAssignmentsAsync(
+ Task<PagedResult<WorkerFieldAssignment>> GetPagedAssignmentsAsync(
         int farmId, int? workerId, int? fieldId, bool? isActive,
         DateTime? assignedDateFrom, DateTime? assignedDateTo,
+        DateTime? endDateFrom, DateTime? endDateTo,  // ✅ Added
         PaginationParams paginationParams);
     
     // Worker operations

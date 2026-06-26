@@ -8,6 +8,9 @@ public class WorkerFieldFilterDto
     public bool? IsActive { get; set; }
     public DateTime? AssignedDateFrom { get; set; }
     public DateTime? AssignedDateTo { get; set; }
+    // ✅ Add EndDate filters
+    public DateTime? EndDateFrom { get; set; }
+    public DateTime? EndDateTo { get; set; }
     public int? Page { get; set; } = 1;
     public int? PageSize { get; set; } = 10;
     public string? SortBy { get; set; } = "AssignedDate";

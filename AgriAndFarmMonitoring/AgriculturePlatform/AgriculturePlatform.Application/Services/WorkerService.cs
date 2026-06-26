@@ -44,7 +44,7 @@ public class WorkerService : IWorkerService
         var created = await _workerRepository.CreateAsync(worker);
 
         // Audit log
-        await _auditLogService.LogCreateAsync(farmId, adminId, "Worker", created.Id, created, ipAddress, userAgent);
+       await _auditLogService.LogCreateAsync(farmId, adminId, "Worker", created.Id, created, ipAddress, userAgent);
 
         var result = _mapper.Map<WorkerDto>(created);
         result.Role = "Worker"; 
@@ -74,11 +74,12 @@ public class WorkerService : IWorkerService
         // Update properties
         if (!string.IsNullOrWhiteSpace(dto.Name)) worker.Name = dto.Name;
         if (!string.IsNullOrWhiteSpace(dto.Phone)) worker.Phone = dto.Phone;
-        if (!string.IsNullOrWhiteSpace(dto.Role)) worker.Role = dto.Role?.ToUpper();
-        if (dto.IsActive.HasValue) worker.IsActive = dto.IsActive.Value;
+        worker.Role = "Worker";
+    if (dto.IsActive.HasValue) worker.IsActive = dto.IsActive.Value;
 
-        worker.UpdatedAt = DateTime.UtcNow;
-        worker.UpdatedBy = adminId;
+    worker.UpdatedAt = DateTime.UtcNow;
+    worker.UpdatedBy = adminId;
+
 
         await _workerRepository.UpdateAsync(worker);
 
@@ -182,7 +183,18 @@ public class WorkerService : IWorkerService
 
         await _workerRepository.UpdateAsync(worker);
 
-        await _auditLogService.LogAsync(farmId, adminId, worker.Id, "ACTIVATE", "Worker", worker.Id, null, worker, ipAddress, userAgent);
+     await _auditLogService.LogAsync(
+        farmId,           // farmId
+        adminId,          // adminId
+        null,             // workerId
+        "ACTIVATE",       // action
+        "Worker",         // entityType
+        worker.Id,        // entityId
+        null,             // oldValue
+        null,             // newValue
+        ipAddress,        // ipAddress
+        userAgent         // userAgent
+    );
 
         return ApiResponse<bool>.Ok(true, "Worker activated successfully");
     }
@@ -206,27 +218,46 @@ public class WorkerService : IWorkerService
 
         await _workerRepository.UpdateAsync(worker);
 
-        await _auditLogService.LogAsync(farmId, adminId, worker.Id, "DEACTIVATE", "Worker", worker.Id, null, worker, ipAddress, userAgent);
+        await _auditLogService.LogAsync(
+        farmId,           // farmId
+        adminId,          // adminId
+        null,             // workerId
+        "DEACTIVATE",     // action
+        "Worker",         // entityType
+        worker.Id,        // entityId
+        null,             // oldValue
+        null,             // newValue
+        ipAddress,        // ipAddress
+        userAgent         // userAgent
+    );
 
         return ApiResponse<bool>.Ok(true, "Worker deactivated successfully");
     }
 
-    public async Task<ApiResponse<bool>> ResetPasswordAsync(int id, int farmId, int adminId, string newPassword, string ipAddress, string userAgent)
+// AgriculturePlatform.Application/Services/WorkerService.cs
+
+public async Task<ApiResponse<bool>> ResetPasswordAsync(int id, int farmId, int adminId, string newPassword, string ipAddress, string userAgent)
+{
+    var worker = await _workerRepository.GetByIdAsync(id, farmId);
+    if (worker == null)
     {
-        var worker = await _workerRepository.GetByIdAsync(id, farmId);
-        if (worker == null)
-        {
-            return ApiResponse<bool>.Fail($"Worker with ID {id} not found");
-        }
-
-        var passwordHash = HashPassword(newPassword);
-        await _workerRepository.UpdatePasswordAsync(id, passwordHash);
-
-        await _auditLogService.LogAsync(farmId, adminId, worker.Id, "RESET_PASSWORD", "Worker", worker.Id, null, new { PasswordReset = true }, ipAddress, userAgent);
-
-        return ApiResponse<bool>.Ok(true, "Password reset successfully");
+        return ApiResponse<bool>.Fail($"Worker with ID {id} not found");
     }
 
+    // ✅ Validate password strength
+    if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+    {
+        return ApiResponse<bool>.Fail("New password must be at least 6 characters long");
+    }
+
+    var passwordHash = HashPassword(newPassword);
+    await _workerRepository.UpdatePasswordAsync(id, passwordHash);
+
+    // Audit log
+    await _auditLogService.LogAsync(farmId, adminId, worker.Id, "RESET_PASSWORD", "Worker", worker.Id, null, new { PasswordReset = true }, ipAddress, userAgent);
+
+    return ApiResponse<bool>.Ok(true, "Password reset successfully");
+}
     public async Task<ApiResponse<WorkerLoginHistoryDto>> GetLoginHistoryAsync(int id, int farmId)
     {
         var worker = await _workerRepository.GetByIdAsync(id, farmId);

@@ -9,7 +9,6 @@ using AgriculturePlatform.Domain.Entities.WorkerManagement;
 using AgriculturePlatform.Tests.Helpers;
 using AgriculturePlatform.Application.Common;
 
-
 namespace AgriculturePlatform.Tests.Services.WorkerManagement;
 
 public class WorkerFieldAssignmentServiceTests
@@ -29,7 +28,6 @@ public class WorkerFieldAssignmentServiceTests
         _cropCycleRepositoryMock = new Mock<ICropCycleRepository>();
         _auditLogServiceMock = new Mock<IAuditLogService>();
         
-        // Use MapperHelper to create proper mapper
         var mapper = MapperHelper.CreateMapper();
         
         _assignmentService = new WorkerFieldAssignmentService(
@@ -170,6 +168,13 @@ public class WorkerFieldAssignmentServiceTests
         // Arrange
         var filter = new WorkerFieldFilterDto
         {
+            WorkerId = null,
+            FieldId = null,
+            IsActive = null,
+            AssignedDateFrom = null,
+            AssignedDateTo = null,
+            EndDateFrom = null,     // ✅ Added
+            EndDateTo = null,       // ✅ Added
             Page = 1,
             PageSize = 10
         };
@@ -189,9 +194,17 @@ public class WorkerFieldAssignmentServiceTests
             PageSize = 10
         };
         
+        // ✅ Update the mock with all parameters including endDateFrom and endDateTo
         _assignmentRepositoryMock.Setup(r => r.GetPagedAssignmentsAsync(
-            farmId, filter.WorkerId, filter.FieldId, filter.IsActive,
-            filter.AssignedDateFrom, filter.AssignedDateTo, It.IsAny<PaginationParams>()))
+            farmId,
+            filter.WorkerId,
+            filter.FieldId,
+            filter.IsActive,
+            filter.AssignedDateFrom,
+            filter.AssignedDateTo,
+            filter.EndDateFrom,    // ✅ Added
+            filter.EndDateTo,      // ✅ Added
+            It.IsAny<PaginationParams>()))
             .ReturnsAsync(pagedResult);
 
         // Act
@@ -202,5 +215,172 @@ public class WorkerFieldAssignmentServiceTests
         result.Success.Should().BeTrue();
         result.Data.Items.Should().NotBeNull();
         result.Data.TotalCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task GetAllAssignmentsAsync_WithDateFilters_ReturnsFilteredResult()
+    {
+        // Arrange
+        var fromDate = DateTime.UtcNow.AddDays(-30);
+        var toDate = DateTime.UtcNow;
+        
+        var filter = new WorkerFieldFilterDto
+        {
+            WorkerId = null,
+            FieldId = null,
+            IsActive = true,
+            AssignedDateFrom = fromDate,
+            AssignedDateTo = toDate,
+            EndDateFrom = null,     // ✅ Added
+            EndDateTo = null,       // ✅ Added
+            Page = 1,
+            PageSize = 10
+        };
+        int farmId = 1;
+        
+        var assignments = new List<WorkerFieldAssignment>
+        {
+            TestHelper.CreateTestAssignment(1, 1, 1, farmId)
+        };
+        
+        var pagedResult = new PagedResult<WorkerFieldAssignment>
+        {
+            Items = assignments,
+            TotalCount = 1,
+            Page = 1,
+            PageSize = 10
+        };
+        
+        // ✅ Update the mock with all parameters
+        _assignmentRepositoryMock.Setup(r => r.GetPagedAssignmentsAsync(
+            farmId,
+            filter.WorkerId,
+            filter.FieldId,
+            filter.IsActive,
+            filter.AssignedDateFrom,
+            filter.AssignedDateTo,
+            filter.EndDateFrom,    // ✅ Added
+            filter.EndDateTo,      // ✅ Added
+            It.IsAny<PaginationParams>()))
+            .ReturnsAsync(pagedResult);
+
+        // Act
+        var result = await _assignmentService.GetAllAssignmentsAsync(filter, farmId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Data.Items.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetAllAssignmentsAsync_WithEndDateFilters_ReturnsFilteredResult()
+    {
+        // Arrange
+        var fromDate = DateTime.UtcNow.AddDays(-30);
+        var toDate = DateTime.UtcNow;
+        
+        var filter = new WorkerFieldFilterDto
+        {
+            WorkerId = null,
+            FieldId = null,
+            IsActive = true,
+            AssignedDateFrom = null,
+            AssignedDateTo = null,
+            EndDateFrom = fromDate,   // ✅ Added
+            EndDateTo = toDate,       // ✅ Added
+            Page = 1,
+            PageSize = 10
+        };
+        int farmId = 1;
+        
+        var assignments = new List<WorkerFieldAssignment>
+        {
+            TestHelper.CreateTestAssignment(1, 1, 1, farmId)
+        };
+        
+        var pagedResult = new PagedResult<WorkerFieldAssignment>
+        {
+            Items = assignments,
+            TotalCount = 1,
+            Page = 1,
+            PageSize = 10
+        };
+        
+        // ✅ Update the mock with all parameters
+        _assignmentRepositoryMock.Setup(r => r.GetPagedAssignmentsAsync(
+            farmId,
+            filter.WorkerId,
+            filter.FieldId,
+            filter.IsActive,
+            filter.AssignedDateFrom,
+            filter.AssignedDateTo,
+            filter.EndDateFrom,    // ✅ Added
+            filter.EndDateTo,      // ✅ Added
+            It.IsAny<PaginationParams>()))
+            .ReturnsAsync(pagedResult);
+
+        // Act
+        var result = await _assignmentService.GetAllAssignmentsAsync(filter, farmId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Data.Items.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetAllAssignmentsAsync_WithWorkerAndFieldFilters_ReturnsFilteredResult()
+    {
+        // Arrange
+        var filter = new WorkerFieldFilterDto
+        {
+            WorkerId = 1,
+            FieldId = 2,
+            IsActive = true,
+            AssignedDateFrom = null,
+            AssignedDateTo = null,
+            EndDateFrom = null,     // ✅ Added
+            EndDateTo = null,       // ✅ Added
+            Page = 1,
+            PageSize = 10
+        };
+        int farmId = 1;
+        
+        var assignments = new List<WorkerFieldAssignment>
+        {
+            TestHelper.CreateTestAssignment(1, 1, 2, farmId)
+        };
+        
+        var pagedResult = new PagedResult<WorkerFieldAssignment>
+        {
+            Items = assignments,
+            TotalCount = 1,
+            Page = 1,
+            PageSize = 10
+        };
+        
+        // ✅ Update the mock with all parameters
+        _assignmentRepositoryMock.Setup(r => r.GetPagedAssignmentsAsync(
+            farmId,
+            filter.WorkerId,
+            filter.FieldId,
+            filter.IsActive,
+            filter.AssignedDateFrom,
+            filter.AssignedDateTo,
+            filter.EndDateFrom,    // ✅ Added
+            filter.EndDateTo,      // ✅ Added
+            It.IsAny<PaginationParams>()))
+            .ReturnsAsync(pagedResult);
+
+        // Act
+        var result = await _assignmentService.GetAllAssignmentsAsync(filter, farmId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Data.Items.Count.Should().Be(1);
+        result.Data.Items.First().WorkerId.Should().Be(1);
+        result.Data.Items.First().FieldId.Should().Be(2);
     }
 }

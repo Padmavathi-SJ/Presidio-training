@@ -1,5 +1,6 @@
 // AgriculturePlatform.Application/Interfaces/IWorkerFieldAssignmentService.cs
 using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Worker;
 using AgriculturePlatform.Application.DTOs.WorkerField;
 
 namespace AgriculturePlatform.Application.Interfaces;
@@ -12,6 +13,6 @@ public interface IWorkerFieldAssignmentService
     Task<ApiResponse<bool>> RemoveAssignmentAsync(int id, int farmId, int adminId, string ipAddress, string userAgent);
     Task<ApiResponse<PagedResult<WorkerFieldAssignmentDto>>> GetAllAssignmentsAsync(WorkerFieldFilterDto filter, int farmId);
     
-    // Worker operations - Use fully qualified name
+    // Worker operations - Use fully qualified name with the full namespace
     Task<ApiResponse<List<AgriculturePlatform.Application.DTOs.Worker.WorkerFieldDetailDto>>> GetMyAssignedFieldsAsync(int workerId, int farmId);
 }

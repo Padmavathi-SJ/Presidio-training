@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { WorkerFields } from './worker-fields';
+import { WorkerFields } from './worker-fields.component';
 
 describe('WorkerFields', () => {
   let component: WorkerFields;

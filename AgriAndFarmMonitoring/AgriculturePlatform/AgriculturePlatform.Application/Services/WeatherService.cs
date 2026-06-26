@@ -173,86 +173,95 @@ public class WeatherService : IWeatherService
         return ApiResponse<List<WeatherAlertDto>>.Ok(allAlerts);
     }
 
-    public async Task<ApiResponse<WeatherDataDto>> AddManualWeatherEntryAsync(ManualWeatherEntryDto dto, int farmId, int adminId)
+// AgriculturePlatform.Application/Services/WeatherService.cs
+
+public async Task<ApiResponse<WeatherDataDto>> AddManualWeatherEntryAsync(
+    ManualWeatherEntryDto dto, int farmId, int adminId)
+{
+    var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
+    if (field == null)
     {
-        var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
-        if (field == null)
-        {
-            return ApiResponse<WeatherDataDto>.Fail($"Field with ID {dto.FieldId} not found");
-        }
-
-        var weather = new WeatherData
-        {
-            FarmId = farmId,
-            AdminId = adminId,
-            FieldId = dto.FieldId,
-            Temperature = dto.Temperature,
-            Humidity = dto.Humidity,
-            RainfallMm = dto.RainfallMm,
-            WindSpeed = dto.WindSpeed,
-            Condition = !string.IsNullOrWhiteSpace(dto.Condition) 
-                ? Enum.Parse<WeatherConditionEnum>(dto.Condition, true) 
-                : null,
-            RecordedAt = dto.RecordedAt,
-            CreatedBy = adminId,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var created = await _weatherRepository.CreateAsync(weather);
-        
-        await _auditLogService.LogCreateAsync(farmId, adminId, "WeatherData", created.Id, created, null, null);
-
-        var result = _mapper.Map<WeatherDataDto>(created);
-        result.FieldName = field.FieldName;
-        
-        return ApiResponse<WeatherDataDto>.Ok(result, "Weather data added successfully");
+        return ApiResponse<WeatherDataDto>.Fail($"Field with ID {dto.FieldId} not found");
     }
 
-    public async Task<ApiResponse<bool>> UpdateWeatherDataAsync(int id, ManualWeatherEntryDto dto, int farmId, int adminId)
+    var weather = new WeatherData
     {
-        var weather = await _weatherRepository.GetByIdAsync(id, farmId);
-        if (weather == null)
-        {
-            return ApiResponse<bool>.Fail($"Weather record with ID {id} not found");
-        }
+        FarmId = farmId,
+        AdminId = adminId,
+        FieldId = dto.FieldId,
+        Temperature = dto.Temperature,
+        Humidity = dto.Humidity,
+        RainfallMm = dto.RainfallMm,
+        WindSpeed = dto.WindSpeed,
+        Condition = !string.IsNullOrWhiteSpace(dto.Condition) 
+            ? Enum.Parse<WeatherConditionEnum>(dto.Condition, true) 
+            : null,
+        RecordedAt = dto.RecordedAt,
+        CreatedBy = adminId,
+        CreatedAt = DateTime.UtcNow
+    };
 
-        var oldWeather = _mapper.Map<WeatherData>(weather);
+    var created = await _weatherRepository.CreateAsync(weather);
+    
+    // ❌ REMOVE this line - audit logging is now skipped globally
+    // await _auditLogService.LogCreateAsync(farmId, adminId, "WeatherData", created.Id, created, null, null);
 
-        if (dto.Temperature.HasValue)
-            weather.Temperature = dto.Temperature;
-        if (dto.Humidity.HasValue)
-            weather.Humidity = dto.Humidity;
-        if (dto.RainfallMm.HasValue)
-            weather.RainfallMm = dto.RainfallMm;
-        if (dto.WindSpeed.HasValue)
-            weather.WindSpeed = dto.WindSpeed;
-        if (!string.IsNullOrWhiteSpace(dto.Condition))
-            weather.Condition = Enum.Parse<WeatherConditionEnum>(dto.Condition, true);
-        
-        weather.UpdatedAt = DateTime.UtcNow;
-        weather.UpdatedBy = adminId;
+    var result = _mapper.Map<WeatherDataDto>(created);
+    result.FieldName = field.FieldName;
+    
+    return ApiResponse<WeatherDataDto>.Ok(result, "Weather data added successfully");
+}
 
-        await _weatherRepository.UpdateAsync(weather);
-
-        await _auditLogService.LogUpdateAsync(farmId, adminId, "WeatherData", weather.Id, oldWeather, weather, null, null);
-
-        return ApiResponse<bool>.Ok(true, "Weather data updated successfully");
+public async Task<ApiResponse<bool>> UpdateWeatherDataAsync(
+    int id, ManualWeatherEntryDto dto, int farmId, int adminId)
+{
+    var weather = await _weatherRepository.GetByIdAsync(id, farmId);
+    if (weather == null)
+    {
+        return ApiResponse<bool>.Fail($"Weather record with ID {id} not found");
     }
 
-    public async Task<ApiResponse<bool>> DeleteWeatherDataAsync(int id, int farmId, int adminId)
+    var oldWeather = _mapper.Map<WeatherData>(weather);
+
+    if (dto.Temperature.HasValue)
+        weather.Temperature = dto.Temperature;
+    if (dto.Humidity.HasValue)
+        weather.Humidity = dto.Humidity;
+    if (dto.RainfallMm.HasValue)
+        weather.RainfallMm = dto.RainfallMm;
+    if (dto.WindSpeed.HasValue)
+        weather.WindSpeed = dto.WindSpeed;
+    if (!string.IsNullOrWhiteSpace(dto.Condition))
+        weather.Condition = Enum.Parse<WeatherConditionEnum>(dto.Condition, true);
+    
+    weather.UpdatedAt = DateTime.UtcNow;
+    weather.UpdatedBy = adminId;
+
+    await _weatherRepository.UpdateAsync(weather);
+
+    // ❌ REMOVE this line - audit logging is now skipped globally
+    // await _auditLogService.LogUpdateAsync(farmId, adminId, "WeatherData", weather.Id, oldWeather, weather, null, null);
+
+    return ApiResponse<bool>.Ok(true, "Weather data updated successfully");
+}
+
+public async Task<ApiResponse<bool>> DeleteWeatherDataAsync(
+    int id, int farmId, int adminId)
+{
+    var weather = await _weatherRepository.GetByIdAsync(id, farmId);
+    if (weather == null)
     {
-        var weather = await _weatherRepository.GetByIdAsync(id, farmId);
-        if (weather == null)
-        {
-            return ApiResponse<bool>.Fail($"Weather record with ID {id} not found");
-        }
-
-        await _weatherRepository.DeleteAsync(weather);
-        
-        await _auditLogService.LogDeleteAsync(farmId, adminId, "WeatherData", weather.Id, weather, null, null);
-
-        return ApiResponse<bool>.Ok(true, "Weather data deleted successfully");
+        return ApiResponse<bool>.Fail($"Weather record with ID {id} not found");
     }
+
+    await _weatherRepository.DeleteAsync(weather);
+    
+    // ❌ REMOVE this line - audit logging is now skipped globally
+    // await _auditLogService.LogDeleteAsync(farmId, adminId, "WeatherData", weather.Id, weather, null, null);
+
+    return ApiResponse<bool>.Ok(true, "Weather data deleted successfully");
+}
+
 
     public async Task<ApiResponse<bool>> RefreshWeatherDataAsync(int fieldId, int farmId, int adminId)
     {
