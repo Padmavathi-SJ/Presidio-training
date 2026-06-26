@@ -193,3 +193,36 @@
     background: #94a3b8;
   }
 }
+
+// src/styles.scss - Add these for better datepicker styling
+
+// Datepicker styling
+.mat-datepicker-content {
+  .mat-calendar {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
+  
+  .mat-calendar-body-selected {
+    background-color: #2d6a4f !important;
+  }
+  
+  .mat-calendar-body-today {
+    border-color: #2d6a4f !important;
+  }
+  
+  .mat-calendar-body-cell:not(.mat-calendar-body-disabled):hover > .mat-calendar-body-cell-content:not(.mat-calendar-body-selected):not(.mat-calendar-body-comparison-identical) {
+    background-color: rgba(45, 106, 79, 0.12) !important;
+  }
+}
+
+// Mobile datepicker
+@media (max-width: 640px) {
+  .mat-datepicker-content {
+    .mat-calendar {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+  }
+}

@@ -1,5 +1,5 @@
 // src/app/features/admin/fields/fields.component.ts
-import { Component, inject, OnInit, signal, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ViewChild, ElementRef, DestroyRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -20,7 +20,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
-import { finalize, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { finalize, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { FieldService } from '../services/field.service';
 import { Field, FieldFilterDto, FIELD_STATUS_OPTIONS, SOIL_TYPE_OPTIONS, STATUS_COLORS, SOIL_TYPE_COLORS } from '../models/field.model';
@@ -64,11 +65,12 @@ export class FieldsComponent implements OnInit {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
+  private destroyRef = inject(DestroyRef);
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
-  // State
-  isLoading = signal(true);
+  // ✅ State Signals
+  isLoading = signal(false);
   isImporting = signal(false);
   fields = signal<Field[]>([]);
   totalCount = signal(0);
@@ -78,14 +80,21 @@ export class FieldsComponent implements OnInit {
   sortDirection = signal<'asc' | 'desc'>('desc');
   selectedFields = signal<number[]>([]);
   statistics = signal<any>(null);
-  
-  // ✅ Crop Cycles State - Moved here
   selectedField = signal<Field | null>(null);
 
-  // Filter form
-  filterForm: FormGroup;
+  // ✅ Computed Signals
+  hasFields = computed(() => this.fields().length > 0);
+  isEmpty = computed(() => !this.isLoading() && this.fields().length === 0);
+  selectedCount = computed(() => this.selectedFields().length);
+  hasSelected = computed(() => this.selectedCount() > 0);
+  allSelected = computed(() => this.hasFields() && this.selectedCount() === this.fields().length);
+  isIndeterminate = computed(() => this.selectedCount() > 0 && this.selectedCount() < this.fields().length);
 
-  // Table columns - ✅ Updated with crop cycles button
+  // ✅ Filter form
+  filterForm: FormGroup;
+  private destroy$ = new Subject<void>();
+
+  // ✅ Table columns
   displayedColumns = [
     'select',
     'fieldName',
@@ -98,11 +107,14 @@ export class FieldsComponent implements OnInit {
     'actions'
   ];
 
-  // Options
+  // ✅ Options
   statusOptions = FIELD_STATUS_OPTIONS;
   soilTypeOptions = SOIL_TYPE_OPTIONS;
   statusColors = STATUS_COLORS;
   soilTypeColors = SOIL_TYPE_COLORS;
+
+  // ✅ Trigger for reload
+  private reloadTrigger = signal(0);
 
   constructor() {
     this.filterForm = this.fb.group({
@@ -111,23 +123,50 @@ export class FieldsComponent implements OnInit {
       soilType: [''],
       status: ['']
     });
+
+    // ✅ Effect to watch for reload triggers
+    effect(() => {
+      const trigger = this.reloadTrigger();
+      if (trigger > 0 || trigger === 0) {
+        this.loadFields();
+        this.loadStatistics();
+      }
+    });
   }
 
   ngOnInit(): void {
     this.loadFields();
+    this.loadStatistics();
+    this.setupFilterSubscription();
+  }
 
+  // ✅ Called when crop cycles change
+  onCropCyclesChanged(): void {
+    console.log('🔄 Crop cycles changed, refreshing fields...');
+    this.triggerReload();
+  }
+
+  private setupFilterSubscription(): void {
     this.filterForm.valueChanges
       .pipe(
         debounceTime(500),
-        distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+        distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
+        takeUntil(this.destroy$)
       )
       .subscribe(() => {
         this.pageIndex.set(0);
-        this.loadFields();
+        this.triggerReload();
       });
   }
 
-  // ✅ Crop Cycles Methods - Moved here
+  private triggerReload(): void {
+    this.reloadTrigger.update(value => value + 1);
+  }
+
+  refresh(): void {
+    this.triggerReload();
+  }
+
   openCropCycles(field: Field): void {
     this.selectedField.set(field);
   }
@@ -136,21 +175,16 @@ export class FieldsComponent implements OnInit {
     this.selectedField.set(null);
   }
 
-  // Load fields with filters and pagination
   loadFields(): void {
-    this.isLoading.set(true);
-
     const farmId = this.authService.getFarmId();
     
-    console.log('=== DEBUG: Frontend FarmId ===');
-    console.log('FarmId from AuthService:', farmId);
-    console.log('Current User:', this.authService.getCurrentUser());
-
     if (!farmId) {
       this.isLoading.set(false);
       this.showError('No farm found. Please login again.');
       return;
     }
+
+    this.isLoading.set(true);
 
     const filterValues = this.filterForm.value;
     
@@ -165,15 +199,12 @@ export class FieldsComponent implements OnInit {
       sortBy: this.sortField(),
       isDescending: this.sortDirection() === 'desc'
     };
-    
-    console.log('📤 Sending filter:', filter);
 
     this.fieldService.getFields(farmId, filter)
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (response) => {
           if (response.success) {
-            console.log(`✅ Received ${response.data.items.length} fields for Farm ${farmId}`);
             this.fields.set(response.data.items);
             this.totalCount.set(response.data.totalCount);
           } else {
@@ -185,8 +216,6 @@ export class FieldsComponent implements OnInit {
           this.showError('Failed to load fields');
         }
       });
-
-    this.loadStatistics();
   }
 
   loadStatistics(): void {
@@ -203,35 +232,32 @@ export class FieldsComponent implements OnInit {
     });
   }
 
-  // Pagination
   onPageChange(event: PageEvent): void {
     this.pageSize.set(event.pageSize);
     this.pageIndex.set(event.pageIndex);
-    this.loadFields();
+    this.triggerReload();
   }
 
-  // Sorting
   onSortChange(sort: Sort): void {
     this.sortField.set(sort.active);
     this.sortDirection.set(sort.direction || 'desc');
     this.pageIndex.set(0);
-    this.loadFields();
+    this.triggerReload();
   }
 
-  // Selection
   toggleSelection(fieldId: number): void {
-    const current = this.selectedFields();
-    if (current.includes(fieldId)) {
-      this.selectedFields.set(current.filter(id => id !== fieldId));
-    } else {
-      this.selectedFields.set([...current, fieldId]);
-    }
+    this.selectedFields.update(current => {
+      if (current.includes(fieldId)) {
+        return current.filter(id => id !== fieldId);
+      } else {
+        return [...current, fieldId];
+      }
+    });
   }
 
   toggleAllSelection(): void {
     const currentFields = this.fields();
-    const selected = this.selectedFields();
-    if (selected.length === currentFields.length && currentFields.length > 0) {
+    if (this.allSelected()) {
       this.selectedFields.set([]);
     } else {
       this.selectedFields.set(currentFields.map(f => f.id));
@@ -242,7 +268,6 @@ export class FieldsComponent implements OnInit {
     return this.selectedFields().includes(fieldId);
   }
 
-  // CRUD Operations
   openCreateDialog(): void {
     const dialogRef = this.dialog.open(FieldFormComponent, {
       width: '600px',
@@ -252,7 +277,7 @@ export class FieldsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.loadFields();
+        this.triggerReload();
         this.showSuccess('Field created successfully');
       }
     });
@@ -267,7 +292,7 @@ export class FieldsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.loadFields();
+        this.triggerReload();
         this.showSuccess('Field updated successfully');
       }
     });
@@ -282,7 +307,7 @@ export class FieldsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.loadFields();
+        this.triggerReload();
         this.showSuccess('Field location updated successfully');
       }
     });
@@ -312,7 +337,7 @@ export class FieldsComponent implements OnInit {
           .subscribe({
             next: (response) => {
               if (response.success) {
-                this.loadFields();
+                this.triggerReload();
                 this.showSuccess('Field deleted successfully');
               } else {
                 this.showError(response.message || 'Failed to delete field');
@@ -328,8 +353,7 @@ export class FieldsComponent implements OnInit {
   }
 
   bulkDelete(): void {
-    const selectedIds = this.selectedFields();
-    if (selectedIds.length === 0) {
+    if (!this.hasSelected()) {
       this.showError('Please select fields to delete');
       return;
     }
@@ -339,7 +363,7 @@ export class FieldsComponent implements OnInit {
       maxWidth: '90vw',
       data: {
         title: 'Bulk Delete Fields',
-        message: `Are you sure you want to delete ${selectedIds.length} selected field(s)? This action can be undone.`,
+        message: `Are you sure you want to delete ${this.selectedCount()} selected field(s)? This action can be undone.`,
         confirmText: 'Delete All',
         cancelText: 'Cancel',
         type: 'warning'
@@ -352,13 +376,13 @@ export class FieldsComponent implements OnInit {
         if (!farmId) return;
 
         this.isLoading.set(true);
-        this.fieldService.bulkDeleteFields(farmId, selectedIds)
+        this.fieldService.bulkDeleteFields(farmId, this.selectedFields())
           .pipe(finalize(() => this.isLoading.set(false)))
           .subscribe({
             next: (response) => {
               if (response.success) {
                 this.selectedFields.set([]);
-                this.loadFields();
+                this.triggerReload();
                 this.showSuccess(`${response.data.successCount} fields deleted successfully`);
               } else {
                 this.showError(response.message || 'Failed to delete fields');
@@ -373,7 +397,6 @@ export class FieldsComponent implements OnInit {
     });
   }
 
-  // Import/Export
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
@@ -424,7 +447,7 @@ export class FieldsComponent implements OnInit {
               this.showWarning(`Imported ${result.successCount} fields, ${result.failedCount} failed`);
               console.warn('Import errors:', result.errors);
             }
-            this.loadFields();
+            this.triggerReload();
           } else {
             this.showError(response.message || 'Failed to import fields');
           }
@@ -502,10 +525,9 @@ export class FieldsComponent implements OnInit {
       status: ''
     });
     this.pageIndex.set(0);
-    this.loadFields();
+    this.triggerReload();
   }
 
-  // Helper methods
   getStatusColor(status: string): string {
     return this.statusColors[status] || 'text-gray-600 bg-gray-50';
   }
@@ -533,7 +555,6 @@ export class FieldsComponent implements OnInit {
     });
   }
 
-  // Notification helpers
   private showSuccess(message: string): void {
     this.snackBar.open(message, 'Close', {
       duration: 3000,
@@ -553,5 +574,10 @@ export class FieldsComponent implements OnInit {
       duration: 5000,
       panelClass: ['bg-yellow-600', 'text-white']
     });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

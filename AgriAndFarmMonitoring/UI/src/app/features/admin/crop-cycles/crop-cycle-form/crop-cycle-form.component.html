@@ -23,18 +23,39 @@
       <!-- Planting Date -->
       <mat-form-field class="w-full" appearance="outline">
         <mat-label>Planting Date *</mat-label>
-        <input matInput [matDatepicker]="plantingPicker" formControlName="plantingDate">
+        <input 
+          matInput 
+          [matDatepicker]="plantingPicker" 
+          formControlName="plantingDate"
+          placeholder="Select planting date"
+          readonly
+        >
         <mat-datepicker-toggle matSuffix [for]="plantingPicker"></mat-datepicker-toggle>
-        <mat-datepicker #plantingPicker></mat-datepicker>
+        <mat-datepicker 
+          #plantingPicker 
+          [startView]="'month'"
+          [touchUi]="isMobile()"
+        ></mat-datepicker>
         <mat-error *ngIf="hasError('plantingDate', 'required')">Planting date is required</mat-error>
       </mat-form-field>
 
       <!-- Expected Harvest Date -->
       <mat-form-field class="w-full" appearance="outline">
         <mat-label>Expected Harvest Date</mat-label>
-        <input matInput [matDatepicker]="harvestPicker" formControlName="expectedHarvestDate">
+        <input 
+          matInput 
+          [matDatepicker]="harvestPicker" 
+          formControlName="expectedHarvestDate"
+          placeholder="Select expected harvest date"
+          [min]="getMinHarvestDate()"
+          readonly
+        >
         <mat-datepicker-toggle matSuffix [for]="harvestPicker"></mat-datepicker-toggle>
-        <mat-datepicker #harvestPicker></mat-datepicker>
+        <mat-datepicker 
+          #harvestPicker 
+          [startView]="'month'"
+          [touchUi]="isMobile()"
+        ></mat-datepicker>
         <mat-error *ngIf="hasError('expectedHarvestDate', 'matDatepickerMin')">
           Must be after planting date
         </mat-error>
@@ -63,17 +84,17 @@
 
     <!-- Actions -->
     <div class="flex flex-col sm:flex-row justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
-      <button mat-button type="button" (click)="onCancel()" [disabled]="isLoading" class="w-full sm:w-auto order-2 sm:order-1">
+      <button mat-button type="button" (click)="onCancel()" [disabled]="isLoading()" class="w-full sm:w-auto order-2 sm:order-1">
         Cancel
       </button>
       <button 
         mat-raised-button 
         color="primary" 
         type="submit" 
-        [disabled]="cropCycleForm.invalid || isLoading"
+        [disabled]="cropCycleForm.invalid || isLoading()"
         class="!bg-primary-600 w-full sm:w-auto order-1 sm:order-2"
       >
-        @if (isLoading) {
+        @if (isLoading()) {
           <span class="flex items-center justify-center">
             <mat-spinner diameter="20" class="mr-2"></mat-spinner>
             Saving...

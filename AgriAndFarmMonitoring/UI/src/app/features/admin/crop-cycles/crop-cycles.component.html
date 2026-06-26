@@ -30,8 +30,8 @@
     </div>
   }
 
-  <!-- Empty State -->
-  @if (!isLoading() && cropCycles().length === 0) {
+  <!-- Empty State - using computed signal -->
+  @if (isEmpty()) {
     <div class="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
       <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
         <mat-icon class="text-3xl text-gray-400">grass</mat-icon>
@@ -42,7 +42,7 @@
   }
 
   <!-- Crop Cycle Cards -->
-  @if (!isLoading() && cropCycles().length > 0) {
+  @if (hasCropCycles()) {
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       @for (cycle of cropCycles(); track cycle.id) {
         <mat-card class="crop-cycle-card border-t-4 border-primary-500 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
@@ -133,8 +133,8 @@
     </div>
   }
 
-  <!-- Pagination -->
-  @if (totalCount() > pageSize()) {
+  <!-- Pagination - using computed signal -->
+  @if (showPagination()) {
     <div class="flex justify-center mt-6">
       <mat-paginator 
         [length]="totalCount()"

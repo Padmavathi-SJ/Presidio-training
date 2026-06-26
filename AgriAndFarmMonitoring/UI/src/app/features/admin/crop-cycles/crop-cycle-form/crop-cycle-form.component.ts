@@ -1,5 +1,5 @@
 // src/app/features/admin/crop-cycles/crop-cycle-form/crop-cycle-form.component.ts
-import { Component, inject } from '@angular/core';
+import { Component, inject, HostListener, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -16,6 +16,7 @@ import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
 import { CropCycleService } from '../../services/crop-cycle.service';
 import { CropCycle, CROP_TYPES, GROWTH_STAGES, CROP_STATUSES } from '../../models/crop-cycle.model';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_NATIVE_DATE_FORMATS, NativeDateAdapter } from '@angular/material/core';
 
 interface DialogData {
   mode: 'create' | 'edit';
@@ -41,6 +42,10 @@ interface DialogData {
     MatSnackBarModule,
     MatProgressSpinnerModule
   ],
+  providers: [
+    { provide: DateAdapter, useClass: NativeDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: MAT_NATIVE_DATE_FORMATS }
+  ],
   templateUrl: './crop-cycle-form.component.html'
 })
 export class CropCycleFormComponent {
@@ -50,16 +55,23 @@ export class CropCycleFormComponent {
   private dialogRef = inject(MatDialogRef<CropCycleFormComponent>);
   private snackBar = inject(MatSnackBar);
   
-  // ✅ Make dialogData public so it's accessible in template
   dialogData = inject<DialogData>(MAT_DIALOG_DATA);
 
+  // ✅ Signal for form
   cropCycleForm: FormGroup;
-  isLoading = false;
+  
+  // ✅ State signals
+  isLoading = signal(false);
+  isMobile = signal(false);
+
+  // ✅ Constants
   cropTypes = CROP_TYPES;
   growthStages = GROWTH_STAGES;
   statuses = CROP_STATUSES;
 
   constructor() {
+    this.isMobile.set(window.innerWidth < 640);
+
     this.cropCycleForm = this.fb.group({
       cropType: ['', Validators.required],
       plantingDate: ['', Validators.required],
@@ -84,13 +96,30 @@ export class CropCycleFormComponent {
     });
   }
 
+  @HostListener('window:resize', ['$event'])
+  onResize(event: Event): void {
+    this.isMobile.set(window.innerWidth < 640);
+  }
+
   validateHarvestDate(): void {
     const plantingDate = this.cropCycleForm.get('plantingDate')?.value;
     const harvestDate = this.cropCycleForm.get('expectedHarvestDate')?.value;
     
     if (plantingDate && harvestDate && harvestDate <= plantingDate) {
       this.cropCycleForm.get('expectedHarvestDate')?.setErrors({ matDatepickerMin: true });
+    } else if (plantingDate && harvestDate && harvestDate > plantingDate) {
+      this.cropCycleForm.get('expectedHarvestDate')?.setErrors(null);
     }
+  }
+
+  getMinHarvestDate(): Date {
+    const plantingDate = this.cropCycleForm.get('plantingDate')?.value;
+    if (plantingDate) {
+      const minDate = new Date(plantingDate);
+      minDate.setDate(minDate.getDate() + 1);
+      return minDate;
+    }
+    return new Date();
   }
 
   onSubmit(): void {
@@ -99,11 +128,11 @@ export class CropCycleFormComponent {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
     const farmId = this.authService.getFarmId();
     if (!farmId) {
       this.snackBar.open('Farm ID not found', 'Close', { duration: 3000 });
-      this.isLoading = false;
+      this.isLoading.set(false);
       return;
     }
 
@@ -126,7 +155,7 @@ export class CropCycleFormComponent {
     }
 
     request
-      .pipe(finalize(() => this.isLoading = false))
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (response) => {
           if (response.success) {
@@ -134,14 +163,15 @@ export class CropCycleFormComponent {
           } else {
             this.snackBar.open(response.message || 'Operation failed', 'Close', {
               duration: 5000,
-              panelClass: ['bg-red-600', 'text-white']
+              panelClass: ['error-snackbar']
             });
           }
         },
-        error: () => {
+        error: (error) => {
+          console.error('Error saving crop cycle:', error);
           this.snackBar.open('Failed to save crop cycle', 'Close', {
             duration: 5000,
-            panelClass: ['bg-red-600', 'text-white']
+            panelClass: ['error-snackbar']
           });
         }
       });

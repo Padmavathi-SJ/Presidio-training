@@ -78,7 +78,7 @@
       </div>
     </div>
 
-    <!-- Statistics Cards - Professional Design -->
+    <!-- Statistics Cards -->
     @if (statistics()) {
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6">
         <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 border-l-4 border-primary-500 hover:border-primary-600 hover:-translate-y-0.5">
@@ -150,7 +150,7 @@
       </div>
     }
 
-    <!-- Filter Bar - Elegant Design -->
+    <!-- Filter Bar -->
     <mat-card class="mb-6 p-4 sm:p-6 shadow-sm border border-gray-100 rounded-xl">
       <form [formGroup]="filterForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div>
@@ -206,11 +206,11 @@
       </form>
     </mat-card>
 
-    <!-- Bulk Actions -->
-    @if (selectedFields().length > 0) {
+    <!-- Bulk Actions - Using computed signals -->
+    @if (hasSelected()) {
       <div class="bg-primary-50 rounded-xl p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-primary-100">
         <span class="text-sm text-gray-700 font-medium">
-          <span class="bg-primary-600 text-white px-2 py-0.5 rounded-full text-xs mr-2">{{ selectedFields().length }}</span>
+          <span class="bg-primary-600 text-white px-2 py-0.5 rounded-full text-xs mr-2">{{ selectedCount() }}</span>
           field(s) selected
         </span>
         <div class="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -236,7 +236,7 @@
       </div>
     }
 
-    <!-- Table - Professional Design -->
+    <!-- Table -->
     <mat-card class="shadow-sm border border-gray-100 rounded-xl overflow-hidden">
       <div class="relative overflow-x-auto">
         @if (isLoading()) {
@@ -249,8 +249,8 @@
             <ng-container matColumnDef="select">
               <th mat-header-cell *matHeaderCellDef class="w-10">
                 <mat-checkbox 
-                  [checked]="selectedFields().length === fields().length && fields().length > 0"
-                  [indeterminate]="selectedFields().length > 0 && selectedFields().length !== fields().length"
+                  [checked]="allSelected()"
+                  [indeterminate]="isIndeterminate()"
                   (change)="toggleAllSelection()"
                 ></mat-checkbox>
               </th>
@@ -382,8 +382,8 @@
             <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-gray-50 transition-colors"></tr>
           </table>
 
-          <!-- Empty State -->
-          @if (fields().length === 0) {
+          <!-- Empty State - Using computed signal -->
+          @if (isEmpty()) {
             <div class="text-center py-16">
               <div class="w-24 h-24 mx-auto bg-primary-50 rounded-full flex items-center justify-center mb-4">
                 <mat-icon class="text-5xl text-primary-300">agriculture</mat-icon>
@@ -407,31 +407,39 @@
     </mat-card>
 
     <!-- Crop Cycles Section -->
-    @if (selectedField()) {
-      <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 animate-fadeIn">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
-          <div class="flex items-center gap-3">
-            <div class="p-2 bg-primary-50 rounded-lg">
-              <mat-icon class="text-primary-600">grass</mat-icon>
-            </div>
-            <h2 class="text-xl font-semibold text-gray-800">
-              Crop Cycles for <span class="text-primary-700">{{ selectedField()?.fieldName }}</span>
-            </h2>
-          </div>
-          <button 
-            mat-icon-button 
-            (click)="closeCropCycles()"
-            matTooltip="Close"
-            class="!text-gray-400 hover:!text-gray-600"
-          >
-            <mat-icon>close</mat-icon>
-          </button>
+<!-- src/app/features/admin/fields/fields.component.html -->
+<!-- Update the Crop Cycles section -->
+
+<!-- Crop Cycles Section -->
+@if (selectedField()) {
+  <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 animate-fadeIn">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-primary-50 rounded-lg">
+          <mat-icon class="text-primary-600">grass</mat-icon>
         </div>
-        <app-crop-cycles 
-          [fieldId]="selectedField()?.id || 0"
-          [fieldName]="selectedField()?.fieldName || ''"
-        ></app-crop-cycles>
+        <h2 class="text-xl font-semibold text-gray-800">
+          Crop Cycles for <span class="text-primary-700">{{ selectedField()?.fieldName }}</span>
+        </h2>
       </div>
-    }
+      <button 
+        mat-icon-button 
+        (click)="closeCropCycles()"
+        matTooltip="Close"
+        class="!text-gray-400 hover:!text-gray-600"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <!-- ✅ Add (cropCyclesChanged) event binding -->
+    <app-crop-cycles 
+      [fieldId]="selectedField()?.id || 0"
+      [fieldName]="selectedField()?.fieldName || ''"
+      (cropCyclesChanged)="onCropCyclesChanged()"
+    ></app-crop-cycles>
+  </div>
+}
+
+
   </div>
 </div>

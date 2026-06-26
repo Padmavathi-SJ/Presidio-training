@@ -1,5 +1,5 @@
 // src/app/features/admin/crop-cycles/crop-cycles.component.ts
-import { Component, inject, Input, OnInit, OnChanges, SimpleChanges, signal } from '@angular/core';
+import { Component, inject, Input, OnInit, OnChanges, SimpleChanges, signal, computed, effect, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,6 +11,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
 import { CropCycleService } from '../services/crop-cycle.service';
@@ -39,45 +41,80 @@ import {
     MatTooltipModule,
     MatMenuModule,
     MatPaginatorModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ],
   templateUrl: './crop-cycles.component.html'
 })
-export class CropCyclesComponent implements OnInit, OnChanges {  // ✅ Add OnChanges
+export class CropCyclesComponent implements OnInit, OnChanges {
   private authService = inject(AuthService);
   private cropCycleService = inject(CropCycleService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
-  @Input() fieldId!: number;
-  @Input() fieldName: string = '';
+  // ✅ Inputs
+  private _fieldId = signal<number>(0);
+  private _fieldName = signal<string>('');
 
+  @Input() set fieldId(value: number) {
+    this._fieldId.set(value);
+  }
+  get fieldId(): number {
+    return this._fieldId();
+  }
+
+  @Input() set fieldName(value: string) {
+    this._fieldName.set(value);
+  }
+  get fieldName(): string {
+    return this._fieldName();
+  }
+
+  // ✅ Output - Notify parent when crop cycles change
+  @Output() cropCyclesChanged = new EventEmitter<void>();
+
+  // ✅ State Signals
   isLoading = signal(false);
   cropCycles = signal<CropCycle[]>([]);
   totalCount = signal(0);
   pageSize = signal(6);
   pageIndex = signal(0);
 
+  // ✅ Computed Signals
+  hasCropCycles = computed(() => this.cropCycles().length > 0);
+  isEmpty = computed(() => !this.isLoading() && this.cropCycles().length === 0);
+  showPagination = computed(() => this.totalCount() > this.pageSize());
+
+  // ✅ Constants
   cropTypes = CROP_TYPES;
   growthStages = GROWTH_STAGES;
   statuses = CROP_STATUSES;
 
-  ngOnInit(): void {
-    this.loadCropCycles();
-  }
+  // ✅ Effect to watch for fieldId changes
+  private loadEffect = effect(() => {
+    const id = this._fieldId();
+    if (id > 0) {
+      this.pageIndex.set(0);
+      this.loadCropCycles();
+    }
+  });
 
-  // ✅ Add ngOnChanges to detect input changes
-  ngOnChanges(changes: SimpleChanges): void {
-    // If fieldId changes, reload crop cycles
-    if (changes['fieldId'] && !changes['fieldId'].firstChange) {
-      this.pageIndex.set(0); // Reset to first page
+  ngOnInit(): void {
+    if (this._fieldId() > 0) {
       this.loadCropCycles();
     }
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    // Handled by effect
+  }
+
   loadCropCycles(): void {
     const farmId = this.authService.getFarmId();
-    if (!farmId || !this.fieldId) {
+    const currentFieldId = this._fieldId();
+    
+    if (!farmId || !currentFieldId) {
       this.cropCycles.set([]);
       this.totalCount.set(0);
       return;
@@ -86,21 +123,18 @@ export class CropCyclesComponent implements OnInit, OnChanges {  // ✅ Add OnCh
     this.isLoading.set(true);
 
     const filter = {
-      fieldId: this.fieldId,
+      fieldId: currentFieldId,
       page: this.pageIndex() + 1,
       pageSize: this.pageSize(),
       sortBy: 'CreatedAt',
       isDescending: false
     };
 
-    console.log(`📤 Loading crop cycles for field ${this.fieldId} (${this.fieldName})`);
-
     this.cropCycleService.getCropCycles(farmId, filter)
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (response) => {
           if (response.success) {
-            console.log(`✅ Loaded ${response.data.items.length} crop cycles for field ${this.fieldId}`);
             this.cropCycles.set(response.data.items);
             this.totalCount.set(response.data.totalCount);
           } else {
@@ -112,25 +146,34 @@ export class CropCyclesComponent implements OnInit, OnChanges {  // ✅ Add OnCh
           console.error('Error loading crop cycles:', error);
           this.cropCycles.set([]);
           this.totalCount.set(0);
-          this.snackBar.open('Failed to load crop cycles', 'Close', { duration: 3000 });
+          this.showError('Failed to load crop cycles');
         }
       });
+  }
+
+  // ✅ Notify parent when crop cycles data changes
+  private notifyParent(): void {
+    this.cropCyclesChanged.emit();
   }
 
   openCreateDialog(): void {
     const dialogRef = this.dialog.open(CropCycleFormComponent, {
       width: '600px',
       maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
       data: { 
         mode: 'create', 
-        fieldId: this.fieldId,
-        fieldName: this.fieldName
+        fieldId: this._fieldId(),
+        fieldName: this._fieldName()
       }
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.loadCropCycles();
+        // ✅ Notify parent
+        this.notifyParent();
         this.showSuccess('Crop cycle created successfully');
       }
     });
@@ -140,17 +183,21 @@ export class CropCyclesComponent implements OnInit, OnChanges {  // ✅ Add OnCh
     const dialogRef = this.dialog.open(CropCycleFormComponent, {
       width: '600px',
       maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
       data: { 
         mode: 'edit', 
         cropCycle: cycle,
-        fieldId: this.fieldId,
-        fieldName: this.fieldName
+        fieldId: this._fieldId(),
+        fieldName: this._fieldName()
       }
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.loadCropCycles();
+        // ✅ Notify parent
+        this.notifyParent();
         this.showSuccess('Crop cycle updated successfully');
       }
     });
@@ -181,6 +228,8 @@ export class CropCyclesComponent implements OnInit, OnChanges {  // ✅ Add OnCh
             next: (response) => {
               if (response.success) {
                 this.loadCropCycles();
+                // ✅ Notify parent
+                this.notifyParent();
                 this.showSuccess('Crop cycle deleted successfully');
               } else {
                 this.showError(response.message || 'Failed to delete');
@@ -231,14 +280,14 @@ export class CropCyclesComponent implements OnInit, OnChanges {  // ✅ Add OnCh
   private showSuccess(message: string): void {
     this.snackBar.open(message, 'Close', {
       duration: 3000,
-      panelClass: ['bg-green-600', 'text-white']
+      panelClass: ['success-snackbar']
     });
   }
 
   private showError(message: string): void {
     this.snackBar.open(message, 'Close', {
       duration: 3000,
-      panelClass: ['bg-red-600', 'text-white']
+      panelClass: ['error-snackbar']
     });
   }
 }
