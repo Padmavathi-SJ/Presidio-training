@@ -19,7 +19,7 @@ public interface ITaskService
     Task<ApiResponse<IEnumerable<TaskDto>>> GetOverdueTasksAsync(int farmId);
     Task<ApiResponse<IEnumerable<TaskDto>>> GetActiveTasksAsync(int farmId);
     
-    // Task management
+    // Task management - ✅ Keep only one version (without IP/UserAgent for now)
     Task<ApiResponse<TaskDto>> UpdateTaskStatusAsync(int id, string status, int farmId, int adminId);
     Task<ApiResponse<TaskDto>> ReassignTaskAsync(int id, int newWorkerId, int farmId, int adminId);
     

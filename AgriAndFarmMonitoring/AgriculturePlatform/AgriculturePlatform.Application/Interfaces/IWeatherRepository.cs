@@ -20,4 +20,12 @@ public interface IWeatherRepository
     
     // Utility
     Task<bool> ExistsForFieldAsync(int fieldId, int farmId);
+    
+    // ✅ ADD STATISTICS METHODS
+    Task<int> GetTotalCountAsync(int farmId);
+    Task<int> GetFieldsWithDataCountAsync(int farmId);
+    Task<double> GetAverageTemperatureAsync(int farmId);
+    Task<double> GetAverageHumidityAsync(int farmId);
+    Task<double> GetTotalRainfallAsync(int farmId);
+   
 }

@@ -6,10 +6,12 @@ using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
 using AgriculturePlatform.Domain.Enums;
 
+
 namespace AgriculturePlatform.Application.Services;
 
 public class WeatherService : IWeatherService
 {
+    private readonly IWeatherAlertRepository _weatherAlertRepository;
     private readonly IWeatherRepository _weatherRepository;
     private readonly IFieldRepository _fieldRepository;
     private readonly IAdminRepository _adminRepository;  
@@ -17,24 +19,147 @@ public class WeatherService : IWeatherService
     private readonly IAuditLogService _auditLogService;
     private readonly IMapper _mapper;
     private readonly ILogger<WeatherService> _logger;
+  
 
     public WeatherService(
         IWeatherRepository weatherRepository,
+        IWeatherAlertRepository weatherAlertRepository,
         IFieldRepository fieldRepository,
         IAdminRepository adminRepository, 
         IWeatherApiService weatherApiService,
         IAuditLogService auditLogService,
         IMapper mapper,
-        ILogger<WeatherService> logger)
+        ILogger<WeatherService> logger
+    )
     {
         _weatherRepository = weatherRepository;
+        _weatherAlertRepository = weatherAlertRepository; 
         _fieldRepository = fieldRepository;
         _adminRepository = adminRepository;  
         _weatherApiService = weatherApiService;
         _auditLogService = auditLogService;
         _mapper = mapper;
         _logger = logger;
+      
     }
+
+    // =============================================
+    // WEATHER ALERT METHODS
+    // =============================================
+
+    public async Task<ApiResponse<PagedResult<WeatherAlertDto>>> GetWeatherAlertsAsync(WeatherAlertFilterDto filter, int farmId)
+    {
+        var paginationParams = new PaginationParams
+        {
+            Page = filter.Page,
+            PageSize = filter.PageSize,
+            SortBy = filter.SortBy ?? "AlertTime",
+            IsDescending = filter.IsDescending
+        };
+
+        var pagedResult = await _weatherAlertRepository.GetPagedAlertsAsync(
+            farmId,
+            filter.FieldId,
+            filter.Severity,
+            filter.IsAcknowledged,
+            paginationParams);
+
+        var dtos = _mapper.Map<List<WeatherAlertDto>>(pagedResult.Items);
+
+        var result = new PagedResult<WeatherAlertDto>
+        {
+            Items = dtos,
+            TotalCount = pagedResult.TotalCount,
+            Page = pagedResult.Page,
+            PageSize = pagedResult.PageSize
+        };
+
+        return ApiResponse<PagedResult<WeatherAlertDto>>.Ok(result);
+    }
+
+    public async Task<ApiResponse<WeatherAlertDto>> GetWeatherAlertByIdAsync(int id, int farmId)
+    {
+        var alert = await _weatherAlertRepository.GetByIdAsync(id, farmId);
+        if (alert == null)
+        {
+            return ApiResponse<WeatherAlertDto>.Fail($"Weather alert with ID {id} not found");
+        }
+
+        var dto = _mapper.Map<WeatherAlertDto>(alert);
+        return ApiResponse<WeatherAlertDto>.Ok(dto);
+    }
+
+    public async Task<ApiResponse<WeatherAlertDto>> CreateWeatherAlertAsync(WeatherAlertCreateDto dto, int farmId, int adminId)
+    {
+        // Validate field
+        var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
+        if (field == null)
+        {
+            return ApiResponse<WeatherAlertDto>.Fail($"Field with ID {dto.FieldId} not found");
+        }
+
+        var alert = _mapper.Map<WeatherAlert>(dto);
+        alert.FarmId = farmId;
+        alert.AdminId = adminId;
+        alert.IsAcknowledged = false;
+        alert.AlertTime = DateTime.UtcNow;
+
+        var created = await _weatherAlertRepository.CreateAsync(alert);
+        var result = _mapper.Map<WeatherAlertDto>(created);
+        result.FieldName = field.FieldName;
+
+        return ApiResponse<WeatherAlertDto>.Ok(result, "Weather alert created successfully");
+    }
+
+    public async Task<ApiResponse<WeatherAlertDto>> UpdateWeatherAlertAsync(int id, WeatherAlertUpdateDto dto, int farmId, int adminId)
+    {
+        var alert = await _weatherAlertRepository.GetByIdAsync(id, farmId);
+        if (alert == null)
+        {
+            return ApiResponse<WeatherAlertDto>.Fail($"Weather alert with ID {id} not found");
+        }
+
+        _mapper.Map(dto, alert);
+        alert.UpdatedAt = DateTime.UtcNow;
+
+        await _weatherAlertRepository.UpdateAsync(alert);
+        var result = _mapper.Map<WeatherAlertDto>(alert);
+
+        return ApiResponse<WeatherAlertDto>.Ok(result, "Weather alert updated successfully");
+    }
+
+    public async Task<ApiResponse<bool>> DeleteWeatherAlertAsync(int id, int farmId, int adminId)
+    {
+        var alert = await _weatherAlertRepository.GetByIdAsync(id, farmId);
+        if (alert == null)
+        {
+            return ApiResponse<bool>.Fail($"Weather alert with ID {id} not found");
+        }
+
+        await _weatherAlertRepository.DeleteAsync(alert);
+        return ApiResponse<bool>.Ok(true, "Weather alert deleted successfully");
+    }
+
+    public async Task<ApiResponse<bool>> AcknowledgeWeatherAlertAsync(int id, int farmId, int adminId)
+    {
+        var result = await _weatherAlertRepository.AcknowledgeAlertAsync(id, adminId, farmId);
+        if (result == 0)
+        {
+            return ApiResponse<bool>.Fail($"Weather alert with ID {id} not found or already acknowledged");
+        }
+
+        return ApiResponse<bool>.Ok(true, "Weather alert acknowledged successfully");
+    }
+
+    public async Task<ApiResponse<bool>> AcknowledgeAllAlertsForFieldAsync(int fieldId, int farmId, int adminId)
+    {
+        var result = await _weatherAlertRepository.AcknowledgeAllByFieldAsync(fieldId, adminId, farmId);
+        return ApiResponse<bool>.Ok(true, $"Acknowledged {result} weather alerts");
+    }
+
+    // =============================================
+    // WEATHER DATA METHODS
+    // =============================================
 
     public async Task<ApiResponse<WeatherDataDto>> GetCurrentWeatherAsync(int fieldId, int farmId, int? adminId = null)
     {
@@ -151,117 +276,97 @@ public class WeatherService : IWeatherService
         return ApiResponse<PagedResult<WeatherDataDto>>.Ok(result);
     }
 
-    public async Task<ApiResponse<List<WeatherAlertDto>>> GetActiveWeatherAlertsAsync(int farmId)
+public async Task<ApiResponse<List<WeatherAlertDto>>> GetActiveWeatherAlertsAsync(int farmId)
+{
+    // ✅ Query the database for active alerts, not the weather API
+    var alerts = await _weatherAlertRepository.GetActiveAlertsAsync(farmId);
+    var dtos = _mapper.Map<List<WeatherAlertDto>>(alerts);
+    
+    // Get field names for each alert
+    foreach (var dto in dtos)
     {
-        var fields = await _fieldRepository.GetAllAsync(farmId);
-        var allAlerts = new List<WeatherAlertDto>();
+        var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
+        dto.FieldName = field?.FieldName ?? "Unknown Field";
+    }
+    
+    return ApiResponse<List<WeatherAlertDto>>.Ok(dtos);
+}
 
-        foreach (var field in fields)
+    public async Task<ApiResponse<WeatherDataDto>> AddManualWeatherEntryAsync(
+        ManualWeatherEntryDto dto, int farmId, int adminId)
+    {
+        var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
+        if (field == null)
         {
-            if (field.Latitude.HasValue && field.Longitude.HasValue)
-            {
-                var alerts = await _weatherApiService.GetWeatherAlertsAsync(field.Latitude.Value, field.Longitude.Value);
-                foreach (var alert in alerts)
-                {
-                    alert.FieldId = field.Id;
-                    alert.FieldName = field.FieldName;
-                    allAlerts.Add(alert);
-                }
-            }
+            return ApiResponse<WeatherDataDto>.Fail($"Field with ID {dto.FieldId} not found");
         }
 
-        return ApiResponse<List<WeatherAlertDto>>.Ok(allAlerts);
+        var weather = new WeatherData
+        {
+            FarmId = farmId,
+            AdminId = adminId,
+            FieldId = dto.FieldId,
+            Temperature = dto.Temperature,
+            Humidity = dto.Humidity,
+            RainfallMm = dto.RainfallMm,
+            WindSpeed = dto.WindSpeed,
+            Condition = !string.IsNullOrWhiteSpace(dto.Condition) 
+                ? Enum.Parse<WeatherConditionEnum>(dto.Condition, true) 
+                : null,
+            RecordedAt = dto.RecordedAt,
+            CreatedBy = adminId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var created = await _weatherRepository.CreateAsync(weather);
+        
+        var result = _mapper.Map<WeatherDataDto>(created);
+        result.FieldName = field.FieldName;
+        
+        return ApiResponse<WeatherDataDto>.Ok(result, "Weather data added successfully");
     }
 
-// AgriculturePlatform.Application/Services/WeatherService.cs
-
-public async Task<ApiResponse<WeatherDataDto>> AddManualWeatherEntryAsync(
-    ManualWeatherEntryDto dto, int farmId, int adminId)
-{
-    var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
-    if (field == null)
+    public async Task<ApiResponse<bool>> UpdateWeatherDataAsync(
+        int id, ManualWeatherEntryDto dto, int farmId, int adminId)
     {
-        return ApiResponse<WeatherDataDto>.Fail($"Field with ID {dto.FieldId} not found");
+        var weather = await _weatherRepository.GetByIdAsync(id, farmId);
+        if (weather == null)
+        {
+            return ApiResponse<bool>.Fail($"Weather record with ID {id} not found");
+        }
+
+        if (dto.Temperature.HasValue)
+            weather.Temperature = dto.Temperature;
+        if (dto.Humidity.HasValue)
+            weather.Humidity = dto.Humidity;
+        if (dto.RainfallMm.HasValue)
+            weather.RainfallMm = dto.RainfallMm;
+        if (dto.WindSpeed.HasValue)
+            weather.WindSpeed = dto.WindSpeed;
+        if (!string.IsNullOrWhiteSpace(dto.Condition))
+            weather.Condition = Enum.Parse<WeatherConditionEnum>(dto.Condition, true);
+        
+        weather.UpdatedAt = DateTime.UtcNow;
+        weather.UpdatedBy = adminId;
+
+        await _weatherRepository.UpdateAsync(weather);
+
+        return ApiResponse<bool>.Ok(true, "Weather data updated successfully");
     }
 
-    var weather = new WeatherData
+    public async Task<ApiResponse<bool>> DeleteWeatherDataAsync(
+        int id, int farmId, int adminId)
     {
-        FarmId = farmId,
-        AdminId = adminId,
-        FieldId = dto.FieldId,
-        Temperature = dto.Temperature,
-        Humidity = dto.Humidity,
-        RainfallMm = dto.RainfallMm,
-        WindSpeed = dto.WindSpeed,
-        Condition = !string.IsNullOrWhiteSpace(dto.Condition) 
-            ? Enum.Parse<WeatherConditionEnum>(dto.Condition, true) 
-            : null,
-        RecordedAt = dto.RecordedAt,
-        CreatedBy = adminId,
-        CreatedAt = DateTime.UtcNow
-    };
+        var weather = await _weatherRepository.GetByIdAsync(id, farmId);
+        if (weather == null)
+        {
+            return ApiResponse<bool>.Fail($"Weather record with ID {id} not found");
+        }
 
-    var created = await _weatherRepository.CreateAsync(weather);
-    
-    // ❌ REMOVE this line - audit logging is now skipped globally
-    // await _auditLogService.LogCreateAsync(farmId, adminId, "WeatherData", created.Id, created, null, null);
-
-    var result = _mapper.Map<WeatherDataDto>(created);
-    result.FieldName = field.FieldName;
-    
-    return ApiResponse<WeatherDataDto>.Ok(result, "Weather data added successfully");
-}
-
-public async Task<ApiResponse<bool>> UpdateWeatherDataAsync(
-    int id, ManualWeatherEntryDto dto, int farmId, int adminId)
-{
-    var weather = await _weatherRepository.GetByIdAsync(id, farmId);
-    if (weather == null)
-    {
-        return ApiResponse<bool>.Fail($"Weather record with ID {id} not found");
+        await _weatherRepository.DeleteAsync(weather);
+        
+        return ApiResponse<bool>.Ok(true, "Weather data deleted successfully");
     }
-
-    var oldWeather = _mapper.Map<WeatherData>(weather);
-
-    if (dto.Temperature.HasValue)
-        weather.Temperature = dto.Temperature;
-    if (dto.Humidity.HasValue)
-        weather.Humidity = dto.Humidity;
-    if (dto.RainfallMm.HasValue)
-        weather.RainfallMm = dto.RainfallMm;
-    if (dto.WindSpeed.HasValue)
-        weather.WindSpeed = dto.WindSpeed;
-    if (!string.IsNullOrWhiteSpace(dto.Condition))
-        weather.Condition = Enum.Parse<WeatherConditionEnum>(dto.Condition, true);
-    
-    weather.UpdatedAt = DateTime.UtcNow;
-    weather.UpdatedBy = adminId;
-
-    await _weatherRepository.UpdateAsync(weather);
-
-    // ❌ REMOVE this line - audit logging is now skipped globally
-    // await _auditLogService.LogUpdateAsync(farmId, adminId, "WeatherData", weather.Id, oldWeather, weather, null, null);
-
-    return ApiResponse<bool>.Ok(true, "Weather data updated successfully");
-}
-
-public async Task<ApiResponse<bool>> DeleteWeatherDataAsync(
-    int id, int farmId, int adminId)
-{
-    var weather = await _weatherRepository.GetByIdAsync(id, farmId);
-    if (weather == null)
-    {
-        return ApiResponse<bool>.Fail($"Weather record with ID {id} not found");
-    }
-
-    await _weatherRepository.DeleteAsync(weather);
-    
-    // ❌ REMOVE this line - audit logging is now skipped globally
-    // await _auditLogService.LogDeleteAsync(farmId, adminId, "WeatherData", weather.Id, weather, null, null);
-
-    return ApiResponse<bool>.Ok(true, "Weather data deleted successfully");
-}
-
 
     public async Task<ApiResponse<bool>> RefreshWeatherDataAsync(int fieldId, int farmId, int adminId)
     {
@@ -371,6 +476,10 @@ public async Task<ApiResponse<bool>> DeleteWeatherDataAsync(
         return ApiResponse<bool>.Ok(true, "Settings updated successfully");
     }
 
+    // =============================================
+    // PRIVATE HELPER METHODS
+    // =============================================
+
     private async Task CheckAndCreateWeatherAlertsAsync(WeatherData weather, int farmId, int adminId)
     {
         var alerts = new List<WeatherAlert>();
@@ -387,7 +496,8 @@ public async Task<ApiResponse<bool>> DeleteWeatherDataAsync(
                 Title = "High Temperature Alert",
                 Message = $"Temperature reached {weather.Temperature}°C which exceeds safe threshold of 35°C",
                 Temperature = weather.Temperature,
-                AlertTime = DateTime.UtcNow
+                AlertTime = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
             });
         }
         
@@ -403,7 +513,8 @@ public async Task<ApiResponse<bool>> DeleteWeatherDataAsync(
                 Title = "Heavy Rainfall Alert",
                 Message = $"Rainfall of {weather.RainfallMm}mm detected",
                 RainfallMm = weather.RainfallMm,
-                AlertTime = DateTime.UtcNow
+                AlertTime = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
             });
         }
         
@@ -419,8 +530,46 @@ public async Task<ApiResponse<bool>> DeleteWeatherDataAsync(
                 Title = "High Wind Alert",
                 Message = $"Wind speed reached {weather.WindSpeed} m/s",
                 WindSpeed = weather.WindSpeed,
-                AlertTime = DateTime.UtcNow
+                AlertTime = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
             });
         }
+
+        // Save alerts if any
+foreach (var alert in alerts)
+{
+    try
+    {
+        await _weatherAlertRepository.CreateAsync(alert);
+        _logger.LogInformation($"Created weather alert: {alert.Title} for field {weather.FieldId}");
+        
     }
+       
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, $"Failed to create weather alert for field {weather.FieldId}");
+    }
+}
+    }
+
+
+
+// In WeatherService.cs, implement it
+public async Task<ApiResponse<WeatherStatisticsDto>> GetWeatherStatisticsAsync(int farmId)
+{
+    var stats = new WeatherStatisticsDto
+    {
+        TotalRecords = await _weatherRepository.GetTotalCountAsync(farmId),
+        FieldsWithData = await _weatherRepository.GetFieldsWithDataCountAsync(farmId),
+        AverageTemperature = await _weatherRepository.GetAverageTemperatureAsync(farmId),
+        AverageHumidity = await _weatherRepository.GetAverageHumidityAsync(farmId),
+        TotalRainfall = await _weatherRepository.GetTotalRainfallAsync(farmId),
+        ActiveAlerts = await _weatherAlertRepository.GetActiveAlertCountAsync(farmId),
+        CriticalAlerts = await _weatherAlertRepository.GetCriticalAlertCountAsync(farmId),
+        LastUpdated = DateTime.UtcNow
+    };
+    
+    return ApiResponse<WeatherStatisticsDto>.Ok(stats);
+}
+
 }

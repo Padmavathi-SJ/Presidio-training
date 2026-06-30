@@ -271,17 +271,12 @@ public async Task<TaskStatisticsDto> GetTaskStatisticsAsync(int farmId)
         _context.Tasks.UpdateRange(tasks);
         return await _context.SaveChangesAsync();
     }
+
+    public async Task<WorkerTask?> GetByNameAsync(string taskName, int farmId)
+{
+    return await _context.Tasks
+        .Where(t => t.TaskName.ToString() == taskName && t.FarmId == farmId && !t.IsDeleted)
+        .FirstOrDefaultAsync();
 }
 
-public class TaskStatistics
-{
-    public int TotalTasks { get; set; }
-    public int PendingTasks { get; set; }
-    public int InProgressTasks { get; set; }
-    public int CompletedTasks { get; set; }
-    public int OverdueTasks { get; set; }
-    public int CancelledTasks { get; set; }
-    public Dictionary<string, int> TasksByPriority { get; set; } = new();
-    public Dictionary<string, int> TasksByType { get; set; } = new();
-    public double AverageCompletionTimeDays { get; set; }
 }

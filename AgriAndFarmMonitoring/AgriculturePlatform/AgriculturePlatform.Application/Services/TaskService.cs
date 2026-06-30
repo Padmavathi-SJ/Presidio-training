@@ -413,6 +413,8 @@ public class TaskService : ITaskService
     // BULK OPERATIONS (EXCEL)
     // =============================================
 
+// AgriculturePlatform.Application/Services/TaskService.cs
+
 public async Task<ApiResponse<BulkAssignResultDto>> BulkAssignTasksFromExcelAsync(Stream fileStream, int farmId, int adminId)
 {
     var result = new BulkAssignResultDto();
@@ -427,16 +429,63 @@ public async Task<ApiResponse<BulkAssignResultDto>> BulkAssignTasksFromExcelAsyn
         var excelTask = excelTasks[i];
         var rowNumber = i + 2;
 
-        var worker = await _workerRepository.GetByIdAsync(excelTask.WorkerId, farmId);
+        // ✅ Find worker by name
+        var worker = await _workerRepository.GetByNameAsync(excelTask.WorkerName, farmId);
         if (worker == null)
         {
-            errors.Add(new BulkAssignError { RowNumber = rowNumber, WorkerId = excelTask.WorkerId, ErrorMessage = $"Worker not found" });
+            errors.Add(new BulkAssignError 
+            { 
+                RowNumber = rowNumber, 
+                WorkerId = 0, 
+                ErrorMessage = $"Worker '{excelTask.WorkerName}' not found" 
+            });
             continue;
+        }
+
+        // ✅ Find field by name (optional)
+        int? fieldId = null;
+        if (!string.IsNullOrWhiteSpace(excelTask.FieldName))
+        {
+            var field = await _fieldRepository.GetByNameAsync(excelTask.FieldName, farmId);
+            if (field == null)
+            {
+                errors.Add(new BulkAssignError 
+                { 
+                    RowNumber = rowNumber, 
+                    WorkerId = worker.Id, 
+                    ErrorMessage = $"Field '{excelTask.FieldName}' not found" 
+                });
+                continue;
+            }
+            fieldId = field.Id;
+        }
+
+        // ✅ Find crop cycle by name (optional)
+        int? cropCycleId = null;
+        if (!string.IsNullOrWhiteSpace(excelTask.CropCycleName))
+        {
+            var cropCycle = await _cropCycleRepository.GetByNameAsync(excelTask.CropCycleName, farmId);
+            if (cropCycle == null)
+            {
+                errors.Add(new BulkAssignError 
+                { 
+                    RowNumber = rowNumber, 
+                    WorkerId = worker.Id, 
+                    ErrorMessage = $"Crop Cycle '{excelTask.CropCycleName}' not found" 
+                });
+                continue;
+            }
+            cropCycleId = cropCycle.Id;
         }
 
         if (!Enum.TryParse<TaskTypeEnum>(excelTask.TaskName, true, out var taskType))
         {
-            errors.Add(new BulkAssignError { RowNumber = rowNumber, WorkerId = excelTask.WorkerId, ErrorMessage = $"Invalid task name" });
+            errors.Add(new BulkAssignError 
+            { 
+                RowNumber = rowNumber, 
+                WorkerId = worker.Id, 
+                ErrorMessage = $"Invalid task name '{excelTask.TaskName}'" 
+            });
             continue;
         }
 
@@ -444,12 +493,12 @@ public async Task<ApiResponse<BulkAssignResultDto>> BulkAssignTasksFromExcelAsyn
         {
             FarmId = farmId,
             AdminId = adminId,
-            WorkerId = excelTask.WorkerId,
-            FieldId = excelTask.FieldId,
-            CropCycleId = excelTask.CropCycleId,
+            WorkerId = worker.Id,
+            FieldId = fieldId,
+            CropCycleId = cropCycleId,
             TaskName = taskType,
             AssignedDate = DateTime.UtcNow,
-            DueDate = excelTask.DueDate?.ToUniversalTime(),  // ← Ensure UTC
+            DueDate = excelTask.DueDate?.ToUniversalTime(),
             Priority = Enum.TryParse<TaskPriorityEnum>(excelTask.Priority, true, out var priority) ? priority : TaskPriorityEnum.MEDIUM,
             Notes = excelTask.Notes,
             Status = TaskStatusEnum.PENDING,
@@ -468,89 +517,119 @@ public async Task<ApiResponse<BulkAssignResultDto>> BulkAssignTasksFromExcelAsyn
     result.Errors = errors;
 
     return ApiResponse<BulkAssignResultDto>.Ok(result, $"Assigned {result.SuccessCount} of {result.TotalRequests} tasks");
-}    public async Task<ApiResponse<BulkAssignResultDto>> BulkUpdateStatusFromExcelAsync(Stream fileStream, int farmId, int adminId)
+}
+
+
+// AgriculturePlatform.Application/Services/TaskService.cs
+
+public async Task<ApiResponse<BulkAssignResultDto>> BulkUpdateStatusFromExcelAsync(Stream fileStream, int farmId, int adminId)
+{
+    var result = new BulkAssignResultDto();
+    var excelStatusUpdates = await _excelTaskService.ReadBulkStatusUpdateFromExcelAsync(fileStream);
+    
+    result.TotalRequests = excelStatusUpdates.Count;
+    var updatedCount = 0;
+    var errors = new List<BulkAssignError>();
+
+    for (int i = 0; i < excelStatusUpdates.Count; i++)
     {
-        var result = new BulkAssignResultDto();
-        var excelStatusUpdates = await _excelTaskService.ReadBulkStatusUpdateFromExcelAsync(fileStream);
-        
-        result.TotalRequests = excelStatusUpdates.Count;
-        var updatedCount = 0;
-        var errors = new List<BulkAssignError>();
+        var update = excelStatusUpdates[i];
+        var rowNumber = i + 2;
 
-        for (int i = 0; i < excelStatusUpdates.Count; i++)
+        // ✅ Find task by name
+        var task = await _taskRepository.GetByNameAsync(update.TaskName, farmId);
+        if (task == null)
         {
-            var update = excelStatusUpdates[i];
-            var rowNumber = i + 2;
-
-            var task = await _taskRepository.GetByIdAsync(update.TaskId, farmId);
-            if (task == null)
-            {
-                errors.Add(new BulkAssignError { RowNumber = rowNumber, WorkerId = 0, ErrorMessage = $"Task ID {update.TaskId} not found" });
-                continue;
-            }
-
-            if (!Enum.TryParse<TaskStatusEnum>(update.Status, true, out var status))
-            {
-                errors.Add(new BulkAssignError { RowNumber = rowNumber, WorkerId = 0, ErrorMessage = $"Invalid status '{update.Status}'" });
-                continue;
-            }
-
-            task.Status = status;
-            task.UpdatedAt = DateTime.UtcNow;
-            task.UpdatedBy = adminId;
-            await _taskRepository.UpdateAsync(task);
-            updatedCount++;
+            errors.Add(new BulkAssignError 
+            { 
+                RowNumber = rowNumber, 
+                WorkerId = 0, 
+                ErrorMessage = $"Task '{update.TaskName}' not found" 
+            });
+            continue;
         }
 
-        result.SuccessCount = updatedCount;
-        result.FailedCount = errors.Count;
-        result.Errors = errors;
-
-        return ApiResponse<BulkAssignResultDto>.Ok(result, $"Updated {result.SuccessCount} of {result.TotalRequests} tasks");
-    }
-
-    public async Task<ApiResponse<BulkAssignResultDto>> BulkReassignFromExcelAsync(Stream fileStream, int farmId, int adminId)
-    {
-        var result = new BulkAssignResultDto();
-        var excelReassignments = await _excelTaskService.ReadBulkReassignFromExcelAsync(fileStream);
-        
-        result.TotalRequests = excelReassignments.Count;
-        var reassignedCount = 0;
-        var errors = new List<BulkAssignError>();
-
-        for (int i = 0; i < excelReassignments.Count; i++)
+        if (!Enum.TryParse<TaskStatusEnum>(update.Status, true, out var status))
         {
-            var reassign = excelReassignments[i];
-            var rowNumber = i + 2;
-
-            var task = await _taskRepository.GetByIdAsync(reassign.TaskId, farmId);
-            if (task == null)
-            {
-                errors.Add(new BulkAssignError { RowNumber = rowNumber, WorkerId = 0, ErrorMessage = $"Task ID {reassign.TaskId} not found" });
-                continue;
-            }
-
-            var newWorker = await _workerRepository.GetByIdAsync(reassign.NewWorkerId, farmId);
-            if (newWorker == null)
-            {
-                errors.Add(new BulkAssignError { RowNumber = rowNumber, WorkerId = reassign.NewWorkerId, ErrorMessage = $"Worker not found" });
-                continue;
-            }
-
-            task.WorkerId = reassign.NewWorkerId;
-            task.Status = TaskStatusEnum.REASSIGNED;
-            task.UpdatedAt = DateTime.UtcNow;
-            task.UpdatedBy = adminId;
-            await _taskRepository.UpdateAsync(task);
-            reassignedCount++;
+            errors.Add(new BulkAssignError 
+            { 
+                RowNumber = rowNumber, 
+                WorkerId = 0, 
+                ErrorMessage = $"Invalid status '{update.Status}'" 
+            });
+            continue;
         }
 
-        result.SuccessCount = reassignedCount;
-        result.FailedCount = errors.Count;
-        result.Errors = errors;
-
-        return ApiResponse<BulkAssignResultDto>.Ok(result, $"Reassigned {result.SuccessCount} of {result.TotalRequests} tasks");
+        task.Status = status;
+        task.UpdatedAt = DateTime.UtcNow;
+        task.UpdatedBy = adminId;
+        await _taskRepository.UpdateAsync(task);
+        updatedCount++;
     }
+
+    result.SuccessCount = updatedCount;
+    result.FailedCount = errors.Count;
+    result.Errors = errors;
+
+    return ApiResponse<BulkAssignResultDto>.Ok(result, $"Updated {result.SuccessCount} of {result.TotalRequests} tasks");
+}
+
+// AgriculturePlatform.Application/Services/TaskService.cs
+
+public async Task<ApiResponse<BulkAssignResultDto>> BulkReassignFromExcelAsync(Stream fileStream, int farmId, int adminId)
+{
+    var result = new BulkAssignResultDto();
+    var excelReassignments = await _excelTaskService.ReadBulkReassignFromExcelAsync(fileStream);
+    
+    result.TotalRequests = excelReassignments.Count;
+    var reassignedCount = 0;
+    var errors = new List<BulkAssignError>();
+
+    for (int i = 0; i < excelReassignments.Count; i++)
+    {
+        var reassign = excelReassignments[i];
+        var rowNumber = i + 2;
+
+        // ✅ Find task by name
+        var task = await _taskRepository.GetByNameAsync(reassign.TaskName, farmId);
+        if (task == null)
+        {
+            errors.Add(new BulkAssignError 
+            { 
+                RowNumber = rowNumber, 
+                WorkerId = 0, 
+                ErrorMessage = $"Task '{reassign.TaskName}' not found" 
+            });
+            continue;
+        }
+
+        // ✅ Find new worker by name
+        var newWorker = await _workerRepository.GetByNameAsync(reassign.NewWorkerName, farmId);
+        if (newWorker == null)
+        {
+            errors.Add(new BulkAssignError 
+            { 
+                RowNumber = rowNumber, 
+                WorkerId = task.WorkerId, 
+                ErrorMessage = $"Worker '{reassign.NewWorkerName}' not found" 
+            });
+            continue;
+        }
+
+        task.WorkerId = newWorker.Id;
+        task.Status = TaskStatusEnum.REASSIGNED;
+        task.UpdatedAt = DateTime.UtcNow;
+        task.UpdatedBy = adminId;
+        await _taskRepository.UpdateAsync(task);
+        reassignedCount++;
+    }
+
+    result.SuccessCount = reassignedCount;
+    result.FailedCount = errors.Count;
+    result.Errors = errors;
+
+    return ApiResponse<BulkAssignResultDto>.Ok(result, $"Reassigned {result.SuccessCount} of {result.TotalRequests} tasks");
+}
 
     // =============================================
     // STATISTICS

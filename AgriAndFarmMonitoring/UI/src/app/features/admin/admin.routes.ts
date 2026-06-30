@@ -1,11 +1,14 @@
 // src/app/features/admin/admin.routes.ts
 import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from './admin-layout/admin-layout.component';
+import { AuthGuard } from '../../core/guards/auth.guard';
+import { AdminGuard } from '../../core/guards/admin.guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
     path: '',
     component: AdminLayoutComponent,
+    canActivate: [AuthGuard, AdminGuard],
     children: [
       {
         path: 'dashboard',
@@ -37,15 +40,39 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./sensors/sensors.component')
           .then(c => c.Sensors)
       },
+      // Weather Module Routes
       {
         path: 'weather',
         loadComponent: () => import('./weather/weather.component')
-          .then(c => c.Weather)
+          .then(c => c.WeatherComponent),
+        children: [
+          {
+            path: '',
+            redirectTo: 'dashboard',
+            pathMatch: 'full'
+          },
+          {
+            path: 'dashboard',
+            loadComponent: () => import('./weather/weather-dashboard/weather-dashboard.component')
+              .then(c => c.WeatherDashboardComponent)
+          },
+          {
+            path: 'alerts',
+            loadComponent: () => import('./weather/weather-alerts/weather-alerts.component')
+              .then(c => c.WeatherAlertsComponent)
+          },
+          {
+            path: 'history',
+            loadComponent: () => import('./weather/weather-data-history/weather-data-history.component')
+              .then(c => c.WeatherDataHistoryComponent)
+          },
+         
+        ]
       },
       {
         path: 'tasks',
         loadComponent: () => import('./tasks/tasks.component')
-          .then(c => c.Tasks)
+          .then(c => c.TasksComponent)
       },
       {
         path: 'harvests',

@@ -293,5 +293,13 @@ public async Task<int> GetFieldsCountByStatusAsync(int farmId, string status, bo
         .ToListAsync();
 }
 
+public async Task<Field?> GetByNameAsync(string fieldName, int farmId)
+{
+    return await _context.Fields
+        .Where(f => f.FieldName == fieldName && f.FarmId == farmId && !f.IsDeleted)
+        .FirstOrDefaultAsync();
+}
+
+
 
 }

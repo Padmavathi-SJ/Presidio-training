@@ -254,4 +254,11 @@ public async Task<bool> UpdateWorkerPasswordAsync(int workerId, string newPasswo
     return await _context.SaveChangesAsync() > 0;
 }
 
+public async Task<Worker?> GetByNameAsync(string name, int farmId)
+{
+    return await _context.Workers
+        .Where(w => w.Name == name && w.FarmId == farmId && !w.IsDeleted)
+        .FirstOrDefaultAsync();
+}
+
 }

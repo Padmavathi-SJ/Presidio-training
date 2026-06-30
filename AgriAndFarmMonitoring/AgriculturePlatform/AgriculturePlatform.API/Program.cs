@@ -163,6 +163,7 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IQualityCheckRepository, QualityCheckRepository>();
 builder.Services.AddScoped<IYieldReportRepository, YieldReportRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IWeatherAlertRepository, WeatherAlertRepository>();
 
 // Register Services
 builder.Services.AddScoped<IAdminService, AdminService>();
@@ -253,8 +254,11 @@ app.UseAuthorization();
 // ✅ Map Hubs
 app.MapHub<MonitoringHub>("/monitoringHub");
 app.MapHub<SensorHub>("/sensorHub");
+app.MapHub<WeatherHub>("/weatherHub");
 
 app.MapControllers();
+
+
 
 // Create database
 using (var scope = app.Services.CreateScope())

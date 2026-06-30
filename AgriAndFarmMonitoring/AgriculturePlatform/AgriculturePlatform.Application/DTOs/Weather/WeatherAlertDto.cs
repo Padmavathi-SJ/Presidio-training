@@ -6,8 +6,8 @@ public class WeatherAlertDto
     public int Id { get; set; }
     public int FieldId { get; set; }
     public string FieldName { get; set; } = string.Empty;
-    public string AlertType { get; set; } = string.Empty;      // Will store enum string value
-    public string Severity { get; set; } = string.Empty;       // Will store enum string value
+    public string AlertType { get; set; } = string.Empty;
+    public string Severity { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public double? Temperature { get; set; }
@@ -19,7 +19,5 @@ public class WeatherAlertDto
     public DateTime CreatedAt { get; set; }
 }
 
-public class AcknowledgeWeatherAlertDto
-{
-    public int AlertId { get; set; }
-}
+// Keep ONLY ONE version - remove the duplicate
+// public class AcknowledgeWeatherAlertDto { ... }  // ❌ REMOVE THIS DUPLICATE

@@ -87,15 +87,24 @@ public class WeatherRepository : IWeatherRepository
 
 
 
+// In WeatherRepository.cs
 public async Task<WeatherData> CreateAsync(WeatherData weatherData)
 {
-    //  Ensure AdminId is set (should not be null or 0)
     if (weatherData.AdminId == 0)
     {
-        throw new InvalidOperationException("AdminId is required for creating weather data");
+        // Try to get a default admin for the farm
+        var defaultAdmin = await _context.Admins
+            .Where(a => a.FarmId == weatherData.FarmId && a.IsActive && !a.IsDeleted)
+            .FirstOrDefaultAsync();
+        
+        if (defaultAdmin == null)
+            throw new InvalidOperationException("No active admin found for this farm");
+        
+        weatherData.AdminId = defaultAdmin.Id;
     }
     
     weatherData.RecordedAt = DateTime.UtcNow;
+    weatherData.CreatedAt = DateTime.UtcNow;
     await _context.WeatherData.AddAsync(weatherData);
     await _context.SaveChangesAsync();
     return weatherData;
@@ -119,4 +128,49 @@ public async Task<WeatherData> CreateAsync(WeatherData weatherData)
         return await _context.WeatherData
             .AnyAsync(w => w.FieldId == fieldId && w.FarmId == farmId);
     }
+
+    // AgriculturePlatform.Infrastructure/Repositories/WeatherRepository.cs
+// Add these methods:
+
+public async Task<int> GetTotalCountAsync(int farmId)
+{
+    return await _context.WeatherData
+        .Where(w => w.FarmId == farmId)
+        .CountAsync();
+}
+
+public async Task<int> GetFieldsWithDataCountAsync(int farmId)
+{
+    return await _context.WeatherData
+        .Where(w => w.FarmId == farmId)
+        .Select(w => w.FieldId)
+        .Distinct()
+        .CountAsync();
+}
+
+public async Task<double> GetAverageTemperatureAsync(int farmId)
+{
+    var result = await _context.WeatherData
+        .Where(w => w.FarmId == farmId && w.Temperature.HasValue)
+        .AverageAsync(w => w.Temperature ?? 0);
+    
+    return Math.Round(result, 1);
+}
+
+public async Task<double> GetAverageHumidityAsync(int farmId)
+{
+    var result = await _context.WeatherData
+        .Where(w => w.FarmId == farmId && w.Humidity.HasValue)
+        .AverageAsync(w => w.Humidity ?? 0);
+    
+    return Math.Round(result, 1);
+}
+
+public async Task<double> GetTotalRainfallAsync(int farmId)
+{
+    return await _context.WeatherData
+        .Where(w => w.FarmId == farmId && w.RainfallMm.HasValue)
+        .SumAsync(w => w.RainfallMm ?? 0);
+}
+
 }

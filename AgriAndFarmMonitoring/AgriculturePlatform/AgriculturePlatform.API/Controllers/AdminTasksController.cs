@@ -110,68 +110,83 @@ public class AdminTasksController : ControllerBase
     // CREATE/UPDATE/DELETE ENDPOINTS
     // =============================================
 
-    // POST: api/admin/farms/{farmId}/tasks
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateTaskDto dto)
-    {
-        var farmId = GetCurrentFarmId();
-        var adminId = GetCurrentAdminId();
-        var result = await _taskService.CreateAsync(dto, farmId, adminId);
+// AgriculturePlatform.API/Controllers/AdminTasksController.cs
+
+private string GetIpAddress()
+{
+    return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+}
+
+private string GetUserAgent()
+{
+    return HttpContext.Request.Headers["User-Agent"].ToString() ?? "Unknown";
+}
+
+// Update all methods to pass ipAddress and userAgent
+
+[HttpPost]
+public async Task<IActionResult> Create([FromBody] CreateTaskDto dto)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    
+    // ✅ Remove ipAddress and userAgent
+    var result = await _taskService.CreateAsync(dto, farmId, adminId);
+    
+    if (!result.Success)
+        return BadRequest(result);
         
-        if (!result.Success)
-            return BadRequest(result);
-            
-        return CreatedAtAction(nameof(GetById), new { farmId, id = result.Data?.Id }, result);
-    }
+    return CreatedAtAction(nameof(GetById), new { farmId, id = result.Data?.Id }, result);
+}
 
-    // PUT: api/admin/farms/{farmId}/tasks/{id}
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskDto dto)
-    {
-        var farmId = GetCurrentFarmId();
-        var adminId = GetCurrentAdminId();
-        var result = await _taskService.UpdateAsync(id, dto, farmId, adminId);
+
+// PUT: api/admin/farms/{farmId}/tasks/{id}
+[HttpPut("{id}")]
+public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskDto dto)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var result = await _taskService.UpdateAsync(id, dto, farmId, adminId);
+    
+    if (!result.Success)
+        return NotFound(result);
         
-        if (!result.Success)
-            return NotFound(result);
-            
-        return Ok(result);
-    }
+    return Ok(result);
+}
 
-    // PUT: api/admin/farms/{farmId}/tasks/{id}/status
-    [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateTaskStatusDto dto)
-    {
-        var farmId = GetCurrentFarmId();
-        var adminId = GetCurrentAdminId();
-        var result = await _taskService.UpdateTaskStatusAsync(id, dto.Status, farmId, adminId);
-        return Ok(result);
-    }
+// PUT: api/admin/farms/{farmId}/tasks/{id}/status
+[HttpPut("{id}/status")]
+public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateTaskStatusDto dto)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var result = await _taskService.UpdateTaskStatusAsync(id, dto.Status, farmId, adminId);
+    return Ok(result);
+}
 
-    // PUT: api/admin/farms/{farmId}/tasks/{id}/reassign
-    [HttpPut("{id}/reassign")]
-    public async Task<IActionResult> Reassign(int id, [FromBody] ReassignTaskDto dto)
-    {
-        var farmId = GetCurrentFarmId();
-        var adminId = GetCurrentAdminId();
-        var result = await _taskService.ReassignTaskAsync(id, dto.NewWorkerId, farmId, adminId);
-        return Ok(result);
-    }
+// PUT: api/admin/farms/{farmId}/tasks/{id}/reassign
+[HttpPut("{id}/reassign")]
+public async Task<IActionResult> Reassign(int id, [FromBody] ReassignTaskDto dto)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var result = await _taskService.ReassignTaskAsync(id, dto.NewWorkerId, farmId, adminId);
+    return Ok(result);
+}
 
-    // DELETE: api/admin/farms/{farmId}/tasks/{id}
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var farmId = GetCurrentFarmId();
-        var adminId = GetCurrentAdminId();
-        var result = await _taskService.DeleteAsync(id, farmId, adminId);
+// DELETE: api/admin/farms/{farmId}/tasks/{id}
+[HttpDelete("{id}")]
+public async Task<IActionResult> Delete(int id)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var result = await _taskService.DeleteAsync(id, farmId, adminId);
+    
+    if (!result.Success)
+        return BadRequest(result);
         
-        if (!result.Success)
-            return BadRequest(result);
-            
-        return Ok(result);
-    }
-
+    return Ok(result);
+}
     // =============================================
     // TEMPLATE DOWNLOADS
     // =============================================

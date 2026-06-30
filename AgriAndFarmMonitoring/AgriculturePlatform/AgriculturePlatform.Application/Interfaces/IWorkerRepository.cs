@@ -44,4 +44,5 @@ public interface IWorkerRepository
     Task<Worker?> GetWorkerWithFarmAsync(int workerId, int farmId);
     Task<bool> UpdateWorkerProfileAsync(Worker worker);
     Task<bool> UpdateWorkerPasswordAsync(int workerId, string newPasswordHash);
+    Task<Worker?> GetByNameAsync(string name, int farmId);
 }

@@ -39,4 +39,5 @@ public interface IFieldRepository
     Task<int> BulkSoftDeleteAsync(IEnumerable<int> ids, int farmId, int deletedBy);
     
     Task<List<Field>> GetByFarmIdAsync(int farmId);
+    Task<Field?> GetByNameAsync(string fieldName, int farmId);
 }

@@ -2,6 +2,7 @@
 using FluentAssertions;
 using Moq;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging; 
 using AgriculturePlatform.Application.Services;
 using AgriculturePlatform.Application.Interfaces;
 using Xunit;
@@ -19,7 +20,12 @@ public class WeatherApiServiceTests
         configurationMock.Setup(c => c["WeatherApi:ApiKey"]).Returns(_testApiKey);
         configurationMock.Setup(c => c["WeatherApi:BaseUrl"]).Returns("https://api.openweathermap.org/data/2.5");
         
-        _weatherApiService = new WeatherApiService(configurationMock.Object);
+        // ✅ FIX: Add the logger parameter
+        var loggerMock = new Mock<ILogger<WeatherApiService>>();
+        
+        _weatherApiService = new WeatherApiService(
+            configurationMock.Object,
+            loggerMock.Object); // ✅ Add logger
     }
 
     [Fact]

@@ -44,4 +44,5 @@ public interface ITaskRepository
     Task<int> BulkCreateAsync(IEnumerable<WorkerTask> tasks);
     Task<int> BulkUpdateStatusAsync(IEnumerable<int> taskIds, string status, int updatedBy);
     Task<int> BulkReassignAsync(IEnumerable<int> taskIds, int newWorkerId, int updatedBy);
+    Task<WorkerTask?> GetByNameAsync(string taskName, int farmId);
 }

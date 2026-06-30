@@ -1,0 +1,72 @@
+// src/app/features/admin/weather/weather-settings/weather-settings.component.scss
+.weather-settings {
+  // Slider customization
+  ::ng-deep {
+    .mat-mdc-slider {
+      width: 100%;
+      
+      .mdc-slider__thumb {
+        --mdc-slider-handle-color: #40916c;
+      }
+      
+      .mdc-slider__track {
+        --mdc-slider-track-color: #40916c;
+        --mdc-slider-track-active-color: #40916c;
+        --mdc-slider-track-inactive-color: #d9dadb;
+      }
+    }
+
+    // Card styles
+    .mat-mdc-card-header {
+      padding: 16px 16px 0;
+    }
+
+    .mat-mdc-card-content {
+      padding: 16px;
+    }
+
+    // Form field styles
+    .mat-mdc-form-field {
+      .mat-mdc-form-field-subscript-wrapper {
+        min-height: 20px;
+      }
+    }
+
+    // Snackbar styles
+    .success-snackbar {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .error-snackbar {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .warning-snackbar {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .info-snackbar {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+  }
+
+  // Form validation styles
+  .ng-invalid.ng-touched {
+    &.mat-mdc-form-field {
+      .mat-mdc-form-field-flex {
+        border-color: #dc2626;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .grid-cols-1.lg\:grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+}

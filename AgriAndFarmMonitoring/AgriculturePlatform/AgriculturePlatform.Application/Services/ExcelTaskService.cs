@@ -31,14 +31,14 @@ public class ExcelTaskService : IExcelTaskService
 
         for (int row = 2; row <= rowCount; row++)
         {
-            var workerId = GetIntValue(worksheet, row, 1);
-            if (workerId == null) continue;
+            var workerName = GetCellValue(worksheet, row, 1);
+            if (string.IsNullOrWhiteSpace(workerName)) continue;
 
             tasks.Add(new BulkAssignTaskExcelDto
             {
-                WorkerId = workerId.Value,
-                FieldId = GetIntValue(worksheet, row, 2),
-                CropCycleId = GetIntValue(worksheet, row, 3),
+                WorkerName = workerName,
+                FieldName = GetCellValue(worksheet, row, 2),
+                CropCycleName = GetCellValue(worksheet, row, 3),
                 TaskName = GetCellValue(worksheet, row, 4),
                 DueDate = GetDateTimeValue(worksheet, row, 5),
                 Priority = GetCellValue(worksheet, row, 6),
@@ -63,15 +63,15 @@ public class ExcelTaskService : IExcelTaskService
 
         for (int row = 2; row <= rowCount; row++)
         {
-            var taskId = GetIntValue(worksheet, row, 1);
-            if (taskId == null) continue;
+            var taskName = GetCellValue(worksheet, row, 1);
+            if (string.IsNullOrWhiteSpace(taskName)) continue;
 
             var status = GetCellValue(worksheet, row, 2);
             if (string.IsNullOrWhiteSpace(status)) continue;
 
             statusUpdates.Add(new BulkStatusUpdateExcelDto
             {
-                TaskId = taskId.Value,
+                TaskName = taskName,
                 Status = status.ToUpper()
             });
         }
@@ -93,16 +93,16 @@ public class ExcelTaskService : IExcelTaskService
 
         for (int row = 2; row <= rowCount; row++)
         {
-            var taskId = GetIntValue(worksheet, row, 1);
-            if (taskId == null) continue;
+            var taskName = GetCellValue(worksheet, row, 1);
+            if (string.IsNullOrWhiteSpace(taskName)) continue;
 
-            var newWorkerId = GetIntValue(worksheet, row, 2);
-            if (newWorkerId == null) continue;
+            var newWorkerName = GetCellValue(worksheet, row, 2);
+            if (string.IsNullOrWhiteSpace(newWorkerName)) continue;
 
             reassignments.Add(new BulkReassignExcelDto
             {
-                TaskId = taskId.Value,
-                NewWorkerId = newWorkerId.Value
+                TaskName = taskName,
+                NewWorkerName = newWorkerName
             });
         }
 
@@ -118,10 +118,10 @@ public class ExcelTaskService : IExcelTaskService
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add("Bulk Task Assignment");
 
-        // Headers
-        worksheet.Cells[1, 1].Value = "Worker ID*";
-        worksheet.Cells[1, 2].Value = "Field ID";
-        worksheet.Cells[1, 3].Value = "Crop Cycle ID";
+        // Headers - ✅ Use names instead of IDs
+        worksheet.Cells[1, 1].Value = "Worker Name*";
+        worksheet.Cells[1, 2].Value = "Field Name";
+        worksheet.Cells[1, 3].Value = "Crop Cycle Name";
         worksheet.Cells[1, 4].Value = "Task Name*";
         worksheet.Cells[1, 5].Value = "Due Date";
         worksheet.Cells[1, 6].Value = "Priority";
@@ -135,23 +135,29 @@ public class ExcelTaskService : IExcelTaskService
             range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
         }
 
-        // Sample data
-        worksheet.Cells[2, 1].Value = 1;
-        worksheet.Cells[2, 2].Value = 1;
-        worksheet.Cells[2, 3].Value = 1;
+        // Sample data - ✅ Use actual names
+        worksheet.Cells[2, 1].Value = "John Doe";
+        worksheet.Cells[2, 2].Value = "North Field";
+        worksheet.Cells[2, 3].Value = "Wheat Cycle 2026";
         worksheet.Cells[2, 4].Value = "IRRIGATION";
         worksheet.Cells[2, 5].Value = DateTime.Now.AddDays(3).ToString("yyyy-MM-dd");
         worksheet.Cells[2, 6].Value = "HIGH";
         worksheet.Cells[2, 7].Value = "Sample task note";
 
-        worksheet.Cells[3, 1].Value = 2;
-        worksheet.Cells[3, 2].Value = 2;
+        worksheet.Cells[3, 1].Value = "Jane Smith";
+        worksheet.Cells[3, 2].Value = "South Field";
         worksheet.Cells[3, 4].Value = "FERTILIZING";
         worksheet.Cells[3, 5].Value = DateTime.Now.AddDays(5).ToString("yyyy-MM-dd");
         worksheet.Cells[3, 6].Value = "MEDIUM";
 
+        worksheet.Cells[4, 1].Value = "Bob Johnson";
+        worksheet.Cells[4, 2].Value = "East Field";
+        worksheet.Cells[4, 4].Value = "PEST_CONTROL";
+        worksheet.Cells[4, 5].Value = DateTime.Now.AddDays(2).ToString("yyyy-MM-dd");
+        worksheet.Cells[4, 6].Value = "URGENT";
+
         // Valid values reference
-        int refRow = 5;
+        int refRow = 6;
         worksheet.Cells[refRow, 1].Value = "Valid Task Types:";
         worksheet.Cells[refRow, 2].Value = string.Join(", ", Enum.GetNames<TaskTypeEnum>());
         refRow++;
@@ -159,6 +165,8 @@ public class ExcelTaskService : IExcelTaskService
         worksheet.Cells[refRow, 2].Value = "LOW, MEDIUM, HIGH, URGENT";
         refRow++;
         worksheet.Cells[refRow, 1].Value = "Note: * indicates required field";
+        refRow++;
+        worksheet.Cells[refRow, 1].Value = "Note: Worker Name, Field Name, and Crop Cycle Name must match existing records exactly";
 
         worksheet.Cells.AutoFitColumns();
         return await Task.FromResult(package.GetAsByteArray());
@@ -169,7 +177,8 @@ public class ExcelTaskService : IExcelTaskService
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add("Bulk Status Update");
 
-        worksheet.Cells[1, 1].Value = "Task ID*";
+        // ✅ Use Task Name instead of Task ID
+        worksheet.Cells[1, 1].Value = "Task Name*";
         worksheet.Cells[1, 2].Value = "New Status*";
 
         using (var range = worksheet.Cells[1, 1, 1, 2])
@@ -179,18 +188,23 @@ public class ExcelTaskService : IExcelTaskService
             range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
         }
 
-        worksheet.Cells[2, 1].Value = 1;
+        // Sample data - ✅ Use actual task names
+        worksheet.Cells[2, 1].Value = "IRRIGATION - North Field";
         worksheet.Cells[2, 2].Value = "COMPLETED";
 
-        worksheet.Cells[3, 1].Value = 2;
+        worksheet.Cells[3, 1].Value = "FERTILIZING - South Field";
         worksheet.Cells[3, 2].Value = "IN_PROGRESS";
 
-        worksheet.Cells[4, 1].Value = 3;
+        worksheet.Cells[4, 1].Value = "PEST_CONTROL - East Field";
         worksheet.Cells[4, 2].Value = "CANCELLED";
 
         int refRow = 6;
         worksheet.Cells[refRow, 1].Value = "Valid Status Values:";
         worksheet.Cells[refRow, 2].Value = "PENDING, IN_PROGRESS, COMPLETED, CANCELLED";
+        refRow++;
+        worksheet.Cells[refRow, 1].Value = "Note: * indicates required field";
+        refRow++;
+        worksheet.Cells[refRow, 1].Value = "Note: Task Name must match existing task name exactly";
 
         worksheet.Cells.AutoFitColumns();
         return await Task.FromResult(package.GetAsByteArray());
@@ -201,8 +215,9 @@ public class ExcelTaskService : IExcelTaskService
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add("Bulk Reassign");
 
-        worksheet.Cells[1, 1].Value = "Task ID*";
-        worksheet.Cells[1, 2].Value = "New Worker ID*";
+        // ✅ Use Task Name and New Worker Name
+        worksheet.Cells[1, 1].Value = "Task Name*";
+        worksheet.Cells[1, 2].Value = "New Worker Name*";
 
         using (var range = worksheet.Cells[1, 1, 1, 2])
         {
@@ -211,14 +226,22 @@ public class ExcelTaskService : IExcelTaskService
             range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightYellow);
         }
 
-        worksheet.Cells[2, 1].Value = 1;
-        worksheet.Cells[2, 2].Value = 5;
+        // Sample data - ✅ Use actual names
+        worksheet.Cells[2, 1].Value = "IRRIGATION - North Field";
+        worksheet.Cells[2, 2].Value = "Jane Smith";
 
-        worksheet.Cells[3, 1].Value = 2;
-        worksheet.Cells[3, 2].Value = 5;
+        worksheet.Cells[3, 1].Value = "FERTILIZING - South Field";
+        worksheet.Cells[3, 2].Value = "Bob Johnson";
 
-        worksheet.Cells[4, 1].Value = 3;
-        worksheet.Cells[4, 2].Value = 6;
+        worksheet.Cells[4, 1].Value = "PEST_CONTROL - East Field";
+        worksheet.Cells[4, 2].Value = "Alice Williams";
+
+        int refRow = 6;
+        worksheet.Cells[refRow, 1].Value = "Note: * indicates required field";
+        refRow++;
+        worksheet.Cells[refRow, 1].Value = "Note: Task Name must match existing task name exactly";
+        refRow++;
+        worksheet.Cells[refRow, 1].Value = "Note: New Worker Name must match existing worker name exactly";
 
         worksheet.Cells.AutoFitColumns();
         return await Task.FromResult(package.GetAsByteArray());
@@ -233,24 +256,16 @@ public class ExcelTaskService : IExcelTaskService
         return worksheet.Cells[row, col].Text?.Trim() ?? string.Empty;
     }
 
-    private int? GetIntValue(ExcelWorksheet worksheet, int row, int col)
-    {
-        var value = GetCellValue(worksheet, row, col);
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        return int.TryParse(value, out var result) ? result : null;
-    }
-
     private DateTime? GetDateTimeValue(ExcelWorksheet worksheet, int row, int col)
     {
         var value = GetCellValue(worksheet, row, col);
         if (string.IsNullOrWhiteSpace(value)) return null;
         if (DateTime.TryParse(value, out var result))
-    {
-        // Convert to UTC
-        return result.Kind == DateTimeKind.Unspecified 
-            ? DateTime.SpecifyKind(result, DateTimeKind.Utc) 
-            : result.ToUniversalTime();
-    }
-    return null;
+        {
+            return result.Kind == DateTimeKind.Unspecified 
+                ? DateTime.SpecifyKind(result, DateTimeKind.Utc) 
+                : result.ToUniversalTime();
+        }
+        return null;
     }
 }

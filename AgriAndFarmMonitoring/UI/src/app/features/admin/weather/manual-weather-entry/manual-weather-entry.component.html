@@ -1,0 +1,127 @@
+<!-- src/app/features/admin/weather/manual-weather-entry/manual-weather-entry.component.html (UPDATED) -->
+<div class="p-4 sm:p-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between mb-4">
+    <div>
+      <h2 class="text-xl font-bold text-gray-800">
+        {{ isEditMode ? 'Edit Weather Data' : 'Add Manual Weather Data' }}
+      </h2>
+      <p class="text-sm text-gray-500 mt-1">
+        {{ isEditMode ? 'Update existing weather observations' : 'Enter weather observations manually for a field' }}
+      </p>
+    </div>
+    <button 
+      mat-icon-button 
+      (click)="onCancel()"
+      class="!w-8 !h-8 !text-gray-400 hover:!text-gray-600"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Form -->
+  <form [formGroup]="entryForm" (ngSubmit)="onSubmit()">
+    <div class="space-y-4">
+      <!-- Field Selection -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Field *</mat-label>
+        <mat-select formControlName="fieldId" [disabled]="isEditMode">
+          @for (field of fields; track field.id) {
+            <mat-option [value]="field.id">{{ field.fieldName }}</mat-option>
+          }
+        </mat-select>
+        <mat-error *ngIf="hasError('fieldId', 'required')">Field is required</mat-error>
+      </mat-form-field>
+
+      <!-- Weather Data Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <mat-form-field class="w-full" appearance="outline">
+          <mat-label>Temperature (°C)</mat-label>
+          <input matInput type="number" formControlName="temperature" step="0.1">
+          <mat-error *ngIf="hasError('temperature', 'min')">Temperature must be above -50°C</mat-error>
+          <mat-error *ngIf="hasError('temperature', 'max')">Temperature must be below 60°C</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-full" appearance="outline">
+          <mat-label>Humidity (%)</mat-label>
+          <input matInput type="number" formControlName="humidity" step="0.1">
+          <mat-error *ngIf="hasError('humidity', 'min')">Humidity must be 0% or higher</mat-error>
+          <mat-error *ngIf="hasError('humidity', 'max')">Humidity cannot exceed 100%</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-full" appearance="outline">
+          <mat-label>Rainfall (mm)</mat-label>
+          <input matInput type="number" formControlName="rainfallMm" step="0.1">
+          <mat-error *ngIf="hasError('rainfallMm', 'min')">Rainfall cannot be negative</mat-error>
+          <mat-error *ngIf="hasError('rainfallMm', 'max')">Rainfall cannot exceed 500mm</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-full" appearance="outline">
+          <mat-label>Wind Speed (m/s)</mat-label>
+          <input matInput type="number" formControlName="windSpeed" step="0.1">
+          <mat-error *ngIf="hasError('windSpeed', 'min')">Wind speed cannot be negative</mat-error>
+          <mat-error *ngIf="hasError('windSpeed', 'max')">Wind speed cannot exceed 200 m/s</mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Condition -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Weather Condition</mat-label>
+        <mat-select formControlName="condition">
+          <mat-option [value]="null">Select condition</mat-option>
+          @for (condition of weatherConditions; track condition) {
+            <mat-option [value]="condition">{{ condition | titlecase }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Recorded At -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Recorded Date & Time *</mat-label>
+        <input matInput [matDatepicker]="recordedPicker" formControlName="recordedAt" readonly>
+        <mat-datepicker-toggle matSuffix [for]="recordedPicker"></mat-datepicker-toggle>
+        <mat-datepicker #recordedPicker></mat-datepicker>
+        <mat-error *ngIf="hasError('recordedAt', 'required')">Recorded date is required</mat-error>
+      </mat-form-field>
+
+      <!-- Notes -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Notes (Optional)</mat-label>
+        <textarea matInput formControlName="notes" placeholder="Add any additional notes" rows="2" maxlength="500"></textarea>
+        <mat-hint align="end">{{ entryForm.get('notes')?.value?.length || 0 }}/500</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-col sm:flex-row justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
+      <button 
+        mat-button 
+        type="button" 
+        (click)="onCancel()" 
+        [disabled]="isLoading"
+        class="w-full sm:w-auto order-2 sm:order-1"
+      >
+        Cancel
+      </button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        [disabled]="entryForm.invalid || isLoading"
+        class="!bg-primary-600 w-full sm:w-auto order-1 sm:order-2"
+      >
+        @if (isLoading) {
+          <span class="flex items-center justify-center">
+            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            Saving...
+          </span>
+        } @else {
+          <span>
+            <mat-icon>save</mat-icon>
+            {{ isEditMode ? 'Update Weather Data' : 'Add Weather Data' }}
+          </span>
+        }
+      </button>
+    </div>
+  </form>
+</div>

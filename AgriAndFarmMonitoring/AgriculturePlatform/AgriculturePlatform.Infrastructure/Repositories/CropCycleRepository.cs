@@ -183,4 +183,23 @@ query = paginationParams.IsDescending
             .OrderBy(c => c.ExpectedHarvestDate)
             .ToListAsync();
     }
+
+public async Task<CropCycle?> GetByNameAsync(string cropCycleName, int farmId)
+{
+    // Convert the string to enum first if valid
+    if (Enum.TryParse<CropTypeEnum>(cropCycleName, true, out var cropType))
+    {
+        return await _context.CropCycles
+            .Where(c => c.CropType == cropType && c.FarmId == farmId && !c.IsDeleted)
+            .FirstOrDefaultAsync();
+    }
+    
+    // If not a valid enum, try to find by name using client evaluation
+    var allCropCycles = await _context.CropCycles
+        .Where(c => c.FarmId == farmId && !c.IsDeleted)
+        .ToListAsync();
+    
+    return allCropCycles.FirstOrDefault(c => c.CropType.ToString() == cropCycleName);
+}
+
 }

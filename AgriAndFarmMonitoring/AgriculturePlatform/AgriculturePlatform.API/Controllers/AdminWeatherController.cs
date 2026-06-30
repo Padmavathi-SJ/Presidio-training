@@ -151,4 +151,84 @@ public async Task<IActionResult> DebugFields()
     
     return Ok(result);
 }
+
+// GET: api/admin/farms/{farmId}/weather/alerts/active
+[HttpGet("alerts/active")]
+public async Task<IActionResult> GetActiveAlerts()
+{
+    var farmId = GetCurrentFarmId();
+    var result = await _weatherService.GetActiveWeatherAlertsAsync(farmId);
+    return Ok(result);
 }
+
+// GET: api/admin/farms/{farmId}/weather/alerts/{id}
+[HttpGet("alerts/{id}")]
+public async Task<IActionResult> GetAlertById(int id)
+{
+    var farmId = GetCurrentFarmId();
+    var result = await _weatherService.GetWeatherAlertByIdAsync(id, farmId);
+    return Ok(result);
+}
+
+// POST: api/admin/farms/{farmId}/weather/alerts
+[HttpPost("alerts")]
+public async Task<IActionResult> CreateAlert([FromBody] WeatherAlertCreateDto dto)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var result = await _weatherService.CreateWeatherAlertAsync(dto, farmId, adminId);
+    return Ok(result);
+}
+
+// PUT: api/admin/farms/{farmId}/weather/alerts/{id}
+[HttpPut("alerts/{id}")]
+public async Task<IActionResult> UpdateAlert(int id, [FromBody] WeatherAlertUpdateDto dto)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var result = await _weatherService.UpdateWeatherAlertAsync(id, dto, farmId, adminId);
+    return Ok(result);
+}
+
+// DELETE: api/admin/farms/{farmId}/weather/alerts/{id}
+[HttpDelete("alerts/{id}")]
+public async Task<IActionResult> DeleteAlert(int id)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var result = await _weatherService.DeleteWeatherAlertAsync(id, farmId, adminId);
+    return Ok(result);
+}
+
+// POST: api/admin/farms/{farmId}/weather/alerts/{id}/acknowledge
+[HttpPost("alerts/{id}/acknowledge")]
+public async Task<IActionResult> AcknowledgeAlert(int id)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var result = await _weatherService.AcknowledgeWeatherAlertAsync(id, farmId, adminId);
+    return Ok(result);
+}
+
+// POST: api/admin/farms/{farmId}/weather/alerts/acknowledge-all/{fieldId}
+[HttpPost("alerts/acknowledge-all/{fieldId}")]
+public async Task<IActionResult> AcknowledgeAllAlerts(int fieldId)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var result = await _weatherService.AcknowledgeAllAlertsForFieldAsync(fieldId, farmId, adminId);
+    return Ok(result);
+}
+
+// GET: api/admin/farms/{farmId}/weather/statistics
+[HttpGet("statistics")]
+public async Task<IActionResult> GetStatistics()
+{
+    var farmId = GetCurrentFarmId();
+    var result = await _weatherService.GetWeatherStatisticsAsync(farmId);
+    return Ok(result);
+}
+
+
+}
+

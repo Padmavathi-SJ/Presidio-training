@@ -1,0 +1,347 @@
+<!-- src/app/features/admin/weather/weather-dashboard/weather-dashboard.component.html -->
+<div class="weather-dashboard p-4 sm:p-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Weather Dashboard</h1>
+      <p class="text-sm text-gray-500">Real-time weather monitoring and alerts</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <!-- Field Selector -->
+     <form [formGroup]="filterForm">
+  <mat-form-field appearance="outline" class="!w-48">
+    <mat-label>Select Field</mat-label>
+    <mat-select formControlName="fieldId">
+      @for (field of fields; track field.id) {
+        <mat-option [value]="field.id">{{ field.fieldName }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</form>
+
+      <!-- Auto Refresh Toggle -->
+      <button 
+        mat-icon-button 
+        [matTooltip]="autoRefresh() ? 'Auto-refresh on' : 'Auto-refresh off'"
+        (click)="toggleAutoRefresh()"
+        [color]="autoRefresh() ? 'primary' : ''"
+        class="!w-10 !h-10"
+      >
+        <mat-icon>{{ autoRefresh() ? 'refresh' : 'refresh' }}</mat-icon>
+      </button>
+
+      <!-- Refresh Button -->
+      <button 
+        mat-raised-button 
+        color="primary"
+        (click)="refreshData()"
+        [disabled]="isRefreshing()"
+        class="!bg-primary-600 !text-white"
+      >
+        @if (isRefreshing()) {
+          <mat-spinner diameter="20" class="!inline-block mr-2"></mat-spinner>
+        } @else {
+          <mat-icon>sync</mat-icon>
+        }
+        Refresh
+      </button>
+
+      <!-- Manual Entry -->
+      <button 
+        mat-stroked-button 
+        color="primary"
+        (click)="openManualEntry()"
+        class="!border-primary-600 !text-primary-600"
+      >
+        <mat-icon>add</mat-icon>
+        Add Data
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+    <div class="card card-hover bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Temperature</span>
+        <mat-icon class="text-primary-600 text-sm">thermostat</mat-icon>
+      </div>
+      <div class="mt-1">
+        <span class="text-2xl font-bold text-gray-800">
+          {{ selectedField()?.temperature ?? '--' }}°C
+        </span>
+      </div>
+    </div>
+
+    <div class="card card-hover bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Humidity</span>
+        <mat-icon class="text-secondary-600 text-sm">water_drop</mat-icon>
+      </div>
+      <div class="mt-1">
+        <span class="text-2xl font-bold text-gray-800">
+          {{ selectedField()?.humidity ?? '--' }}%
+        </span>
+      </div>
+    </div>
+
+    <div class="card card-hover bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Wind Speed</span>
+        <mat-icon class="text-cyan-600 text-sm">air</mat-icon>
+      </div>
+      <div class="mt-1">
+        <span class="text-2xl font-bold text-gray-800">
+          {{ selectedField()?.windSpeed ?? '--' }} m/s
+        </span>
+      </div>
+    </div>
+
+    <div class="card card-hover bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Rainfall</span>
+        <mat-icon class="text-blue-600 text-sm">umbrella</mat-icon>
+      </div>
+      <div class="mt-1">
+        <span class="text-2xl font-bold text-gray-800">
+          {{ selectedField()?.rainfallMm ?? '--' }} mm
+        </span>
+      </div>
+    </div>
+
+    <div class="card card-hover bg-white rounded-xl p-4 shadow-sm border border-gray-100 cursor-pointer" (click)="alertCount() > 0 ? null : null">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Active Alerts</span>
+        <mat-icon class="text-red-600 text-sm">notifications_active</mat-icon>
+      </div>
+      <div class="mt-1">
+        <span class="text-2xl font-bold" [class.text-red-600]="alertCount() > 0">
+          {{ alertCount() }}
+        </span>
+        @if (criticalAlerts().length > 0) {
+          <span class="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+            {{ criticalAlerts().length }} critical
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="card card-hover bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</span>
+        <mat-icon class="text-yellow-600 text-sm">wb_sunny</mat-icon>
+      </div>
+      <div class="mt-1 flex items-center gap-2">
+        <span class="text-xl font-bold text-gray-800">
+          {{ selectedField()?.condition || '--' }}
+        </span>
+        <mat-icon class="text-xl" [class]="getWeatherClass(selectedField()?.condition || null)">
+          {{ getWeatherIcon(selectedField()?.condition || null) }}
+        </mat-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Current Weather & Charts -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Current Weather Card -->
+      <mat-card class="rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <mat-card-header class="!pb-2">
+          <div class="flex justify-between items-center w-full">
+            <div>
+              <mat-card-title class="text-lg font-semibold text-gray-800">Current Weather</mat-card-title>
+              <mat-card-subtitle class="text-sm text-gray-500">
+                {{ selectedField()?.fieldName || 'Select a field' }}
+                @if (lastUpdated()) {
+                  <span class="ml-2 text-xs">Updated: {{ formatDate(lastUpdated()) }}</span>
+                }
+              </mat-card-subtitle>
+            </div>
+            <button 
+              mat-icon-button 
+              (click)="refreshData()" 
+              [disabled]="isRefreshing()"
+              class="!w-8 !h-8"
+            >
+              <mat-icon class="text-sm">refresh</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+        <mat-card-content>
+          @if (isLoading()) {
+            <div class="flex justify-center items-center py-12">
+              <mat-spinner diameter="40"></mat-spinner>
+            </div>
+          } @else if (hasWeather()) {
+            <div class="flex flex-col md:flex-row gap-6">
+              <!-- Weather Main -->
+              <div class="flex-1 text-center md:text-left">
+                <div class="flex items-center justify-center md:justify-start gap-4">
+                  <div class="text-6xl font-bold text-gray-800">
+                    {{ selectedField()?.temperature ?? '--' }}°
+                  </div>
+                  <div class="flex flex-col items-start">
+                    <div class="flex items-center gap-2">
+                      <mat-icon class="text-3xl" [class]="getWeatherClass(selectedField()?.condition || null)">
+                        {{ getWeatherIcon(selectedField()?.condition || null) }}
+                      </mat-icon>
+                      <span class="text-lg font-medium text-gray-700">{{ selectedField()?.condition || '--' }}</span>
+                    </div>
+                    <div class="text-sm text-gray-500 mt-1">
+                      Feels like {{ (selectedField()?.temperature ?? 0) - 2 }}°C
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mt-6">
+                  <div class="bg-gray-50 rounded-lg p-3 text-center">
+                    <div class="text-xs text-gray-500 uppercase">Humidity</div>
+                    <div class="text-lg font-semibold text-gray-800">{{ selectedField()?.humidity ?? '--' }}%</div>
+                  </div>
+                  <div class="bg-gray-50 rounded-lg p-3 text-center">
+                    <div class="text-xs text-gray-500 uppercase">Wind</div>
+                    <div class="text-lg font-semibold text-gray-800">{{ selectedField()?.windSpeed ?? '--' }} m/s</div>
+                  </div>
+                  <div class="bg-gray-50 rounded-lg p-3 text-center">
+                    <div class="text-xs text-gray-500 uppercase">Rainfall</div>
+                    <div class="text-lg font-semibold text-gray-800">{{ selectedField()?.rainfallMm ?? '0' }} mm</div>
+                  </div>
+                  <div class="bg-gray-50 rounded-lg p-3 text-center">
+                    <div class="text-xs text-gray-500 uppercase">Recorded</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ formatTime(selectedField()?.recordedAt || '') }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="text-center py-8 text-gray-500">
+              <mat-icon class="text-4xl mb-2 text-gray-300">cloud_off</mat-icon>
+              <p>No weather data available</p>
+              <button mat-button color="primary" (click)="refreshData()" class="mt-2">
+                <mat-icon>sync</mat-icon> Fetch Weather
+              </button>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Charts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <mat-card class="rounded-xl shadow-sm border border-gray-100">
+          <mat-card-header class="!pb-2">
+            <mat-card-title class="text-sm font-semibold text-gray-700">Temperature Trend</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="h-48">
+              <canvas 
+                baseChart 
+                [data]="temperatureChartData" 
+                [options]="temperatureChartOptions"
+                [type]="temperatureChartType">
+              </canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="rounded-xl shadow-sm border border-gray-100">
+          <mat-card-header class="!pb-2">
+            <mat-card-title class="text-sm font-semibold text-gray-700">Humidity Trend</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="h-48">
+              <canvas 
+                baseChart 
+                [data]="humidityChartData" 
+                [options]="humidityChartOptions"
+                [type]="humidityChartType">
+              </canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Alerts Panel -->
+    <div class="lg:col-span-1">
+      <mat-card class="rounded-xl shadow-sm border border-gray-100 h-full">
+        <mat-card-header class="!pb-2">
+          <div class="flex justify-between items-center w-full">
+            <div>
+              <mat-card-title class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <mat-icon class="text-red-600">notifications_active</mat-icon>
+                Alerts
+                <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{{ alertCount() }}</span>
+              </mat-card-title>
+            </div>
+            <button 
+              mat-icon-button 
+              (click)="refreshData()" 
+              [disabled]="isRefreshing()"
+              class="!w-8 !h-8"
+            >
+              <mat-icon class="text-sm">refresh</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+        <mat-card-content>
+          @if (isLoading()) {
+            <div class="flex justify-center items-center py-8">
+              <mat-spinner diameter="30"></mat-spinner>
+            </div>
+          } @else if (hasAlerts()) {
+            <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+              @for (alert of activeAlerts(); track alert.id) {
+                <div 
+                  class="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                  [class]="getAlertSeverityClass(alert.severity)"
+                  (click)="viewAlertDetails(alert)"
+                >
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2">
+                        <mat-icon class="text-sm" [class.text-red-600]="alert.severity === 'WARNING' || alert.severity === 'EMERGENCY'">
+                          {{ getAlertSeverityIcon(alert.severity) }}
+                        </mat-icon>
+                        <span class="text-sm font-medium text-gray-800 truncate">{{ alert.title }}</span>
+                      </div>
+                      <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ alert.message }}</p>
+                      <div class="flex items-center gap-2 mt-2">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-medium {{ getSeverityColor(alert.severity) }}">
+                          {{ alert.severity }}
+                        </span>
+                        <span class="text-[10px] text-gray-500">{{ alert.fieldName }}</span>
+                        <span class="text-[10px] text-gray-400">{{ formatTime(alert.alertTime) }}</span>
+                      </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                      @if (!alert.isAcknowledged) {
+                        <button 
+                          mat-icon-button 
+                          class="!w-8 !h-8 !text-primary-600 hover:!bg-primary-50"
+                          (click)="acknowledgeAlert(alert, $event)"
+                          matTooltip="Acknowledge alert"
+                        >
+                          <mat-icon class="text-sm">check_circle</mat-icon>
+                        </button>
+                      } @else {
+                        <span class="text-xs text-gray-400">✓ Acknowledged</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="text-center py-8 text-gray-500">
+              <mat-icon class="text-4xl mb-2 text-gray-300">notifications_off</mat-icon>
+              <p>No active alerts</p>
+              <p class="text-xs mt-1">All clear! No weather alerts at this time</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

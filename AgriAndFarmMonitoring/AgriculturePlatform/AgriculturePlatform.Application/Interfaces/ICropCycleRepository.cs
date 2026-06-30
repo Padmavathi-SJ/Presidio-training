@@ -29,4 +29,5 @@ public interface ICropCycleRepository
     
     Task<int> GetActiveCountByFieldAsync(int fieldId);
     Task<IEnumerable<CropCycle>> GetOverdueCropCyclesAsync(int farmId);
+    Task<CropCycle?> GetByNameAsync(string cropCycleName, int farmId);
 }

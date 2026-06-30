@@ -1,0 +1,268 @@
+<!-- src/app/features/admin/weather/weather-settings/weather-settings.component.html -->
+<div class="p-4 sm:p-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Weather Settings</h1>
+      <p class="text-sm text-gray-500">Configure weather API settings and update preferences</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <!-- Test Connection -->
+      <button 
+        mat-stroked-button 
+        (click)="testConnection()"
+        [disabled]="isLoading() || isSaving()"
+      >
+        <mat-icon>wifi</mat-icon>
+        Test Connection
+      </button>
+
+      <!-- Reset -->
+      <button 
+        mat-stroked-button 
+        (click)="resetForm()"
+        [disabled]="isLoading() || isSaving() || !settingsForm.dirty"
+      >
+        <mat-icon>refresh</mat-icon>
+        Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-12">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+
+  <!-- Settings Form -->
+  @if (!isLoading()) {
+    <form [formGroup]="settingsForm" (ngSubmit)="onSubmit()">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Settings Card -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- API Configuration -->
+          <mat-card class="rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <mat-card-header class="!pb-2">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-primary-600">api</mat-icon>
+                <mat-card-title class="text-lg font-semibold text-gray-800">API Configuration</mat-card-title>
+              </div>
+              <mat-card-subtitle class="text-sm text-gray-500 mt-1">
+                Configure your weather API provider and credentials
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="space-y-4">
+                <!-- API Provider -->
+                <mat-form-field class="w-full" appearance="outline">
+                  <mat-label>API Provider *</mat-label>
+                  <mat-select formControlName="apiProvider">
+                    @for (provider of apiProviders; track provider.value) {
+                      <mat-option [value]="provider.value">{{ provider.label }}</mat-option>
+                    }
+                  </mat-select>
+                  <mat-error *ngIf="hasError('apiProvider', 'required')">API Provider is required</mat-error>
+                </mat-form-field>
+
+                <!-- API Key -->
+                <mat-form-field class="w-full" appearance="outline">
+                  <mat-label>API Key *</mat-label>
+                  <input matInput formControlName="apiKey" placeholder="Enter your API key" type="password">
+                  <button 
+                    mat-icon-button 
+                    matSuffix 
+                    type="button"
+                    (click)="settingsForm.get('apiKey')?.value ? null : null"
+                    [matTooltip]="settingsForm.get('apiKey')?.value ? 'Key is set' : 'Enter your API key'"
+                  >
+                    <mat-icon>lock</mat-icon>
+                  </button>
+                  <mat-error *ngIf="hasError('apiKey', 'required')">API Key is required</mat-error>
+                  <mat-error *ngIf="hasError('apiKey', 'minlength')">API Key must be at least 10 characters</mat-error>
+                </mat-form-field>
+
+                <!-- Base URL -->
+                <mat-form-field class="w-full" appearance="outline">
+                  <mat-label>Base URL *</mat-label>
+                  <input matInput formControlName="baseUrl" placeholder="https://api.openweathermap.org/data/2.5">
+                  <mat-error *ngIf="hasError('baseUrl', 'required')">Base URL is required</mat-error>
+                </mat-form-field>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Update Settings -->
+          <mat-card class="rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <mat-card-header class="!pb-2">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-secondary-600">sync</mat-icon>
+                <mat-card-title class="text-lg font-semibold text-gray-800">Update Preferences</mat-card-title>
+              </div>
+              <mat-card-subtitle class="text-sm text-gray-500 mt-1">
+                Configure how often weather data is automatically updated
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="space-y-6">
+                <!-- Update Interval -->
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-medium text-gray-700">Update Interval</label>
+                    <span class="text-sm font-semibold text-primary-600">
+                      {{ formatUpdateInterval(settingsForm.get('updateIntervalMinutes')?.value || 60) }}
+                    </span>
+                  </div>
+                  <mat-slider
+                    formControlName="updateIntervalMinutes"
+                    [min]="15"
+                    [max]="360"
+                    [step]="15"
+                    class="w-full"
+                    [displayWith]="formatUpdateInterval"
+                  >
+                    <input matSliderThumb>
+                  </mat-slider>
+                  <div class="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>15 min</span>
+                    <span>1 hr</span>
+                    <span>3 hrs</span>
+                    <span>6 hrs</span>
+                  </div>
+                </div>
+
+                <!-- Auto Update Toggle -->
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <div class="text-sm font-medium text-gray-700">Auto-Update</div>
+                    <div class="text-xs text-gray-500">Automatically fetch weather data at the specified interval</div>
+                  </div>
+                  <mat-slide-toggle formControlName="autoUpdateEnabled" color="primary">
+                    {{ settingsForm.get('autoUpdateEnabled')?.value ? 'Enabled' : 'Disabled' }}
+                  </mat-slide-toggle>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <!-- Sidebar - Summary Card -->
+        <div class="lg:col-span-1 space-y-6">
+          <!-- Current Settings Summary -->
+          <mat-card class="rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <mat-card-header class="!pb-2">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-gray-600">info</mat-icon>
+                <mat-card-title class="text-lg font-semibold text-gray-800">Summary</mat-card-title>
+              </div>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span class="text-sm text-gray-600">Provider</span>
+                  <span class="text-sm font-medium text-gray-800">
+                    {{ settingsForm.get('apiProvider')?.value || 'Not set' }}
+                  </span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span class="text-sm text-gray-600">API Key</span>
+                  <span class="text-sm font-medium text-gray-800">
+                    @if (settingsForm.get('apiKey')?.value) {
+                      <span class="flex items-center gap-1 text-green-600">
+                        <mat-icon class="text-sm">check_circle</mat-icon> Configured
+                      </span>
+                    } @else {
+                      <span class="text-red-500">Not configured</span>
+                    }
+                  </span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span class="text-sm text-gray-600">Update Interval</span>
+                  <span class="text-sm font-medium text-gray-800">
+                    {{ formatUpdateInterval(settingsForm.get('updateIntervalMinutes')?.value || 60) }}
+                  </span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span class="text-sm text-gray-600">Auto-Update</span>
+                  <span class="text-sm font-medium" [class.text-green-600]="settingsForm.get('autoUpdateEnabled')?.value" [class.text-gray-400]="!settingsForm.get('autoUpdateEnabled')?.value">
+                    {{ settingsForm.get('autoUpdateEnabled')?.value ? 'Enabled' : 'Disabled' }}
+                  </span>
+                </div>
+                <div class="flex justify-between items-center py-2">
+                  <span class="text-sm text-gray-600">Status</span>
+                  <span class="text-sm font-medium">
+                    @if (settingsForm.valid && settingsForm.get('apiKey')?.value) {
+                      <span class="text-green-600 flex items-center gap-1">
+                        <mat-icon class="text-sm">check_circle</mat-icon> Ready
+                      </span>
+                    } @else {
+                      <span class="text-yellow-600 flex items-center gap-1">
+                        <mat-icon class="text-sm">warning</mat-icon> Incomplete
+                      </span>
+                    }
+                  </span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Help Card -->
+          <mat-card class="rounded-xl shadow-sm border border-blue-100 bg-blue-50/30">
+            <mat-card-content class="!p-4">
+              <div class="flex items-start gap-3">
+                <mat-icon class="text-blue-600 text-sm mt-0.5">help</mat-icon>
+                <div>
+                  <h4 class="text-sm font-semibold text-blue-800">Need help?</h4>
+                  <p class="text-xs text-blue-700 mt-1">
+                    Get your API key from your weather provider's dashboard.
+                    For OpenWeatherMap, visit their API keys section.
+                  </p>
+                  <div class="mt-2 flex flex-wrap gap-2">
+                    <a href="https://openweathermap.org/api" target="_blank" 
+                       class="text-xs text-blue-600 hover:text-blue-800 underline">
+                      OpenWeatherMap Docs
+                    </a>
+                    <a href="https://www.weatherapi.com/docs/" target="_blank"
+                       class="text-xs text-blue-600 hover:text-blue-800 underline">
+                      WeatherAPI Docs
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- Save Actions -->
+      <div class="flex flex-col sm:flex-row justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
+        <button 
+          mat-button 
+          type="button" 
+          (click)="resetForm()" 
+          [disabled]="isSaving() || !settingsForm.dirty"
+          class="w-full sm:w-auto order-2 sm:order-1"
+        >
+          Reset Changes
+        </button>
+        <button 
+          mat-raised-button 
+          color="primary" 
+          type="submit" 
+          [disabled]="settingsForm.invalid || isSaving() || !settingsForm.dirty"
+          class="!bg-primary-600 w-full sm:w-auto order-1 sm:order-2"
+        >
+          @if (isSaving()) {
+            <span class="flex items-center justify-center">
+              <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+              Saving...
+            </span>
+          } @else {
+            <span><mat-icon>save</mat-icon> Save Settings</span>
+          }
+        </button>
+      </div>
+    </form>
+  }
+</div>

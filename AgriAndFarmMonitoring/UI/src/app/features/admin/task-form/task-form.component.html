@@ -1,0 +1,111 @@
+<!-- src/app/features/admin/task-form/task-form.component.html -->
+<div class="p-4 sm:p-6">
+  <h2 class="text-xl font-bold text-gray-800 mb-2">
+    {{ mode === 'create' ? 'Create New Task' : 'Edit Task' }}
+  </h2>
+  <p class="text-sm text-gray-500 mb-4">
+    {{ mode === 'create' ? 'Assign a new task to a worker' : 'Update task details' }}
+  </p>
+
+  @if (isLoadingDropdowns) {
+    <div class="flex justify-center items-center py-8">
+      <mat-spinner diameter="30"></mat-spinner>
+    </div>
+  }
+
+  <form [formGroup]="taskForm" (ngSubmit)="onSubmit()">
+    <div class="space-y-4">
+      <!-- Worker -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Assign To *</mat-label>
+        <mat-select formControlName="workerId">
+          @for (worker of workers; track worker.id) {
+            <mat-option [value]="worker.id">{{ worker.name }} ({{ worker.email }})</mat-option>
+          }
+        </mat-select>
+        <mat-error *ngIf="hasError('workerId', 'required')">Worker is required</mat-error>
+      </mat-form-field>
+
+      <!-- Task Type -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Task Type *</mat-label>
+        <mat-select formControlName="taskName">
+          @for (type of taskTypes; track type) {
+            <mat-option [value]="type">{{ type | titlecase }}</mat-option>
+          }
+        </mat-select>
+        <mat-error *ngIf="hasError('taskName', 'required')">Task type is required</mat-error>
+      </mat-form-field>
+
+      <!-- Field -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Field (Optional)</mat-label>
+        <mat-select formControlName="fieldId">
+          <mat-option [value]="null">None</mat-option>
+          @for (field of fields; track field.id) {
+            <mat-option [value]="field.id">{{ field.fieldName }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Crop Cycle -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Crop Cycle (Optional)</mat-label>
+        <mat-select formControlName="cropCycleId">
+          <mat-option [value]="null">None</mat-option>
+          @for (cycle of cropCycles; track cycle.id) {
+            <mat-option [value]="cycle.id">{{ cycle.cropType }} - {{ cycle.growthStage }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Due Date -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Due Date</mat-label>
+        <input matInput [matDatepicker]="duePicker" formControlName="dueDate" placeholder="Select due date" readonly>
+        <mat-datepicker-toggle matSuffix [for]="duePicker"></mat-datepicker-toggle>
+        <mat-datepicker #duePicker [startView]="'month'"></mat-datepicker>
+        <mat-error *ngIf="hasError('dueDate', 'matDatepickerMin')">Due date must be in the future</mat-error>
+      </mat-form-field>
+
+      <!-- Priority -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Priority</mat-label>
+        <mat-select formControlName="priority">
+          @for (priority of priorities; track priority.value) {
+            <mat-option [value]="priority.value">{{ priority.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Notes -->
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Notes (Optional)</mat-label>
+        <textarea matInput formControlName="notes" placeholder="Add any notes about this task" rows="2"></textarea>
+        <mat-error *ngIf="hasError('notes', 'maxlength')">Notes cannot exceed 500 characters</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="flex flex-col sm:flex-row justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
+      <button mat-button type="button" (click)="onCancel()" [disabled]="isLoading" class="w-full sm:w-auto order-2 sm:order-1">
+        Cancel
+      </button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        [disabled]="taskForm.invalid || isLoading || isLoadingDropdowns"
+        class="!bg-primary-600 w-full sm:w-auto order-1 sm:order-2"
+      >
+        @if (isLoading) {
+          <span class="flex items-center justify-center">
+            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            {{ mode === 'create' ? 'Creating...' : 'Updating...' }}
+          </span>
+        } @else {
+          <span>{{ mode === 'create' ? 'Create Task' : 'Update Task' }}</span>
+        }
+      </button>
+    </div>
+  </form>
+</div>

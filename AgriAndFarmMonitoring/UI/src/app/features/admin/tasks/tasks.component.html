@@ -1,1 +1,522 @@
-<p>tasks works!</p>
+<!-- src/app/features/admin/tasks/tasks.component.html -->
+<div class="min-h-screen bg-gradient-to-br from-amber-50/50 via-white to-green-50/30">
+  <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6">
+    <!-- Page Header -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-800 via-primary-700 to-primary-600 p-4 sm:p-6 md:p-8 mb-4 md:mb-6 shadow-xl">
+      <div class="absolute top-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-white/5 rounded-full blur-3xl -translate-y-12 translate-x-12"></div>
+      <div class="absolute bottom-0 left-0 w-24 sm:w-32 h-24 sm:h-32 bg-white/5 rounded-full blur-2xl translate-y-8 -translate-x-8"></div>
+      
+      <div class="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+        <div class="flex items-center gap-3 sm:gap-4">
+          <div class="p-2 sm:p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+            <mat-icon class="text-2xl sm:text-3xl text-white">task</mat-icon>
+          </div>
+          <div>
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight">Tasks</h1>
+            <p class="text-green-100/80 text-xs sm:text-sm mt-0.5 sm:mt-1 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-300 inline-block"></span>
+              Manage farm tasks and assignments
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+          <button 
+            mat-raised-button 
+            class="!bg-white/10 !text-white hover:!bg-white/20 backdrop-blur-sm text-xs sm:text-sm font-medium border border-white/20"
+            (click)="toggleViewMode()"
+          >
+            <mat-icon class="!text-white text-sm">view_module</mat-icon>
+            {{ viewMode() === 'table' ? 'Kanban' : 'Table' }}
+          </button>
+          <button 
+            mat-raised-button 
+            class="!bg-white !text-primary-700 hover:!bg-green-50 text-xs sm:text-sm font-medium shadow-lg"
+            (click)="openCreateDialog()"
+            [disabled]="isLoading()"
+          >
+            <mat-icon class="!text-primary-700 text-sm">add</mat-icon>
+            New Task
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Statistics -->
+    @if (statistics()) {
+      <app-task-statistics [statistics]="statistics()"></app-task-statistics>
+    }
+
+    <!-- Filter Bar -->
+    <mat-card class="mb-4 md:mb-6 p-2 sm:p-3 md:p-4 shadow-sm border border-gray-100 rounded-xl">
+      <form [formGroup]="filterForm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-xs sm:text-sm">Worker</mat-label>
+              <mat-select formControlName="workerId" class="text-sm">
+                <mat-option [value]="null">All</mat-option>
+                @for (worker of workers; track worker.id) {
+                  <mat-option [value]="worker.id">{{ worker.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+          
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-xs sm:text-sm">Field</mat-label>
+              <mat-select formControlName="fieldId" class="text-sm">
+                <mat-option [value]="null">All</mat-option>
+                @for (field of fields; track field.id) {
+                  <mat-option [value]="field.id">{{ field.fieldName }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+          
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-xs sm:text-sm">Status</mat-label>
+              <mat-select formControlName="status" class="text-sm">
+                <mat-option [value]="null">All</mat-option>
+                @for (status of statuses; track status.value) {
+                  <mat-option [value]="status.value">{{ status.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+          
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-xs sm:text-sm">Priority</mat-label>
+              <mat-select formControlName="priority" class="text-sm">
+                <mat-option [value]="null">All</mat-option>
+                @for (priority of priorities; track priority.value) {
+                  <mat-option [value]="priority.value">{{ priority.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mt-2 sm:mt-3">
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-xs sm:text-sm">Assigned Date From</mat-label>
+              <input matInput formControlName="assignedDateFrom" [matDatepicker]="fromPicker" class="text-sm">
+              <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+              <mat-datepicker #fromPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+          
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-xs sm:text-sm">Assigned Date To</mat-label>
+              <input matInput formControlName="assignedDateTo" [matDatepicker]="toPicker" class="text-sm">
+              <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+              <mat-datepicker #toPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+          
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-xs sm:text-sm">Due Date From</mat-label>
+              <input matInput formControlName="dueDateFrom" [matDatepicker]="dueFromPicker" class="text-sm">
+              <mat-datepicker-toggle matSuffix [for]="dueFromPicker"></mat-datepicker-toggle>
+              <mat-datepicker #dueFromPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+          
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-xs sm:text-sm">Due Date To</mat-label>
+              <input matInput formControlName="dueDateTo" [matDatepicker]="dueToPicker" class="text-sm">
+              <mat-datepicker-toggle matSuffix [for]="dueToPicker"></mat-datepicker-toggle>
+              <mat-datepicker #dueToPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 mt-2 sm:mt-3">
+          <mat-checkbox formControlName="isOverdue">Overdue Only</mat-checkbox>
+          <mat-checkbox formControlName="activeOnly">Active Only</mat-checkbox>
+          <div class="flex-1"></div>
+          <button 
+            mat-raised-button 
+            (click)="resetFilters()" 
+            matTooltip="Reset Filters"
+            class="!bg-gray-100 !text-gray-700 hover:!bg-gray-200 text-xs sm:text-sm font-medium"
+          >
+            <mat-icon class="text-gray-500 text-sm">refresh</mat-icon>
+            Reset Filters
+          </button>
+        </div>
+      </form>
+    </mat-card>
+
+    <!-- Bulk Actions & Excel Operations -->
+<div class="flex flex-wrap items-center gap-2 mb-4">
+  <!-- Bulk Assign Button -->
+  <button 
+    mat-raised-button 
+    color="primary"
+    (click)="openBulkAssignDialog()"
+    class="!bg-primary-600 !text-white text-xs sm:text-sm"
+    [disabled]="isLoading()"
+  >
+    <mat-icon class="!text-white text-sm">group_add</mat-icon>
+    Bulk Assign
+  </button>
+  
+  <mat-divider vertical></mat-divider>
+      
+      <!-- Assign Template & Import -->
+ <button 
+  mat-stroked-button 
+  (click)="downloadTemplate('assign')"
+  class="text-xs sm:text-sm"
+  [disabled]="isLoading()"
+>
+  <mat-icon>file_download</mat-icon>
+  Assign Template
+</button>
+
+      
+ <!-- FIX: Make the entire button clickable for file upload -->
+<div class="relative inline-flex">
+  <button 
+    mat-stroked-button 
+    class="text-xs sm:text-sm !relative !z-0"
+    [disabled]="isLoading()"
+  >
+    <mat-icon>upload_file</mat-icon>
+    Import Assign
+  </button>
+  <input 
+    type="file" 
+    accept=".xlsx,.xls" 
+    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer !z-10"
+    (change)="onFileSelected($event, 'assign')"
+    [disabled]="isLoading()"
+  >
+</div>
+
+<mat-divider vertical></mat-divider>
+  
+      
+   <!-- Status Template & Import -->
+<button 
+  mat-stroked-button 
+  (click)="downloadTemplate('status')"
+  class="text-xs sm:text-sm"
+  [disabled]="isLoading()"
+>
+  <mat-icon>file_download</mat-icon>
+  Status Template
+</button>
+      
+     <!-- FIX: Make the entire button clickable for file upload -->
+<div class="relative inline-flex">
+  <button 
+    mat-stroked-button 
+    class="text-xs sm:text-sm !relative !z-0"
+    [disabled]="isLoading()"
+  >
+    <mat-icon>upload_file</mat-icon>
+    Import Status
+  </button>
+  <input 
+    type="file" 
+    accept=".xlsx,.xls" 
+    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer !z-10"
+    (change)="onFileSelected($event, 'status')"
+    [disabled]="isLoading()"
+  >
+</div>
+
+<mat-divider vertical></mat-divider>
+      
+   <!-- Reassign Template & Import -->
+<button 
+  mat-stroked-button 
+  (click)="downloadTemplate('reassign')"
+  class="text-xs sm:text-sm"
+  [disabled]="isLoading()"
+>
+  <mat-icon>file_download</mat-icon>
+  Reassign Template
+</button>
+      
+   <!-- FIX: Make the entire button clickable for file upload -->
+<div class="relative inline-flex">
+  <button 
+    mat-stroked-button 
+    class="text-xs sm:text-sm !relative !z-0"
+    [disabled]="isLoading()"
+  >
+    <mat-icon>upload_file</mat-icon>
+    Import Reassign
+  </button>
+  <input 
+    type="file" 
+    accept=".xlsx,.xls" 
+    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer !z-10"
+    (change)="onFileSelected($event, 'reassign')"
+    [disabled]="isLoading()"
+  >
+</div>
+</div>
+
+<!-- Template Instructions -->
+<div class="bg-blue-50 rounded-lg p-3 mb-4 border border-blue-200">
+  <div class="flex items-start gap-2">
+    <mat-icon class="text-blue-600 text-sm mt-0.5">info</mat-icon>
+    <div class="text-xs text-blue-800">
+      <p class="font-medium">Excel Templates Usage:</p>
+      <ul class="list-disc list-inside mt-1 space-y-0.5 text-blue-700">
+        <li><strong>Assign Template:</strong> Use Worker Name, Field Name, Crop Cycle Name (all must match existing records)</li>
+        <li><strong>Status Template:</strong> Use Task Name and New Status (PENDING, IN_PROGRESS, COMPLETED, CANCELLED)</li>
+        <li><strong>Reassign Template:</strong> Use Task Name and New Worker Name (must match existing records)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+    <!-- Bulk Actions for Selected Tasks -->
+    @if (hasSelected()) {
+      <div class="bg-primary-50 rounded-xl p-2 sm:p-3 mb-3 sm:mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 border border-primary-100">
+        <span class="text-xs sm:text-sm text-gray-700 font-medium">
+          <span class="bg-primary-600 text-white px-2 py-0.5 rounded-full text-xs mr-2">{{ selectedCount() }}</span>
+          task(s) selected
+        </span>
+        <div class="flex flex-wrap gap-2">
+          <button 
+            mat-stroked-button 
+            (click)="bulkUpdateStatus('COMPLETED')"
+            class="text-xs sm:text-sm"
+            [disabled]="isLoading()"
+          >
+            <mat-icon>check_circle</mat-icon>
+            Mark Complete
+          </button>
+          <button 
+            mat-stroked-button 
+            (click)="bulkUpdateStatus('IN_PROGRESS')"
+            class="text-xs sm:text-sm"
+            [disabled]="isLoading()"
+          >
+            <mat-icon>play_circle</mat-icon>
+            Start Progress
+          </button>
+          <button 
+            mat-button 
+            (click)="selectedTasks.set([])"
+            [disabled]="isLoading()"
+            class="text-xs sm:text-sm text-gray-500"
+          >
+            Clear Selection
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Table View -->
+    @if (viewMode() === 'table') {
+      <mat-card class="shadow-sm border border-gray-100 rounded-xl overflow-hidden">
+        <div class="relative overflow-x-auto">
+          @if (isLoading()) {
+            <div class="flex justify-center items-center py-12 sm:py-20">
+              <mat-spinner diameter="40"></mat-spinner>
+            </div>
+          } @else {
+            <table mat-table [dataSource]="tasks()" matSort (matSortChange)="onSortChange($event)" class="w-full">
+              <!-- Select Column -->
+              <ng-container matColumnDef="select">
+                <th mat-header-cell *matHeaderCellDef class="w-8 sm:w-10">
+                  <mat-checkbox 
+                    [checked]="allSelected()"
+                    [indeterminate]="isIndeterminate()"
+                    (change)="toggleAllSelection()"
+                  ></mat-checkbox>
+                </th>
+                <td mat-cell *matCellDef="let task">
+                  <mat-checkbox 
+                    [checked]="isSelected(task.id)"
+                    (change)="toggleSelection(task.id)"
+                  ></mat-checkbox>
+                </td>
+              </ng-container>
+
+              <!-- Task Name -->
+              <ng-container matColumnDef="taskName">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Task</th>
+                <td mat-cell *matCellDef="let task" class="font-medium text-gray-800 text-xs sm:text-sm cursor-pointer hover:text-primary-600" (click)="viewTaskDetail(task)">
+                  {{ task.taskName | titlecase }}
+                </td>
+              </ng-container>
+
+              <!-- Worker Name -->
+              <ng-container matColumnDef="workerName">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Assigned To</th>
+                <td mat-cell *matCellDef="let task" class="text-gray-700 text-xs sm:text-sm">{{ task.workerName }}</td>
+              </ng-container>
+
+              <!-- Field Name -->
+              <ng-container matColumnDef="fieldName">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Field</th>
+                <td mat-cell *matCellDef="let task" class="text-gray-600 text-xs sm:text-sm">{{ task.fieldName || '-' }}</td>
+              </ng-container>
+
+              <!-- Priority -->
+              <ng-container matColumnDef="priority">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Priority</th>
+                <td mat-cell *matCellDef="let task">
+                  <span class="text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium {{ getPriorityColor(task.priority) }}">
+                    {{ task.priority }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Status -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Status</th>
+                <td mat-cell *matCellDef="let task">
+                  <mat-select 
+                    [value]="task.status" 
+                    (selectionChange)="updateTaskStatus(task, $event.value)"
+                    class="text-[10px] sm:text-xs"
+                    [disabled]="isLoading()"
+                  >
+                    @for (status of statuses; track status.value) {
+                      <mat-option [value]="status.value">
+                        <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-medium {{ status.color }}">
+                          {{ status.label }}
+                        </span>
+                      </mat-option>
+                    }
+                  </mat-select>
+                </td>
+              </ng-container>
+
+              <!-- Due Date -->
+              <ng-container matColumnDef="dueDate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Due Date</th>
+                <td mat-cell *matCellDef="let task" class="text-gray-600 text-xs sm:text-sm" [class.text-red-600]="task.isOverdue">
+                  {{ formatDate(task.dueDate) }}
+                  @if (task.isOverdue) {
+                    <mat-icon class="text-red-500 text-sm align-middle">warning</mat-icon>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Actions -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="text-right font-semibold text-gray-700 text-xs sm:text-sm">Actions</th>
+                <td mat-cell *matCellDef="let task" class="text-right whitespace-nowrap">
+                  <button 
+                    mat-icon-button 
+                    matTooltip="View Details"
+                    (click)="viewTaskDetail(task)"
+                    class="!text-primary-600 hover:!bg-primary-50"
+                    [disabled]="isLoading()"
+                  >
+                    <mat-icon class="text-sm sm:text-base">visibility</mat-icon>
+                  </button>
+                  <button 
+                    mat-icon-button 
+                    matTooltip="Edit"
+                    (click)="openEditDialog(task)"
+                    class="!text-blue-600 hover:!bg-blue-50"
+                    [disabled]="isLoading()"
+                  >
+                    <mat-icon class="text-sm sm:text-base">edit</mat-icon>
+                  </button>
+                  <button 
+                    mat-icon-button 
+                    matTooltip="Delete"
+                    (click)="deleteTask(task)"
+                    class="!text-red-600 hover:!bg-red-50"
+                    [disabled]="isLoading()"
+                  >
+                    <mat-icon class="text-sm sm:text-base">delete</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-gray-50 transition-colors"></tr>
+            </table>
+
+            <!-- Empty State -->
+            @if (isEmpty()) {
+              <div class="text-center py-12 sm:py-16">
+                <div class="w-16 h-16 sm:w-24 sm:h-24 mx-auto bg-primary-50 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                  <mat-icon class="text-3xl sm:text-5xl text-primary-300">task</mat-icon>
+                </div>
+                <p class="text-gray-500 text-base sm:text-lg font-medium">No tasks found</p>
+                <p class="text-gray-400 text-xs sm:text-sm mt-1">Click "New Task" to create your first task</p>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Paginator -->
+        <mat-paginator 
+          [length]="totalCount()"
+          [pageSize]="pageSize()"
+          [pageSizeOptions]="[5, 10, 25, 50, 100]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons
+          class="border-t border-gray-200 text-xs sm:text-sm"
+        ></mat-paginator>
+      </mat-card>
+    }
+
+    <!-- Kanban Board View -->
+    @if (viewMode() === 'kanban') {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        @for (status of statuses; track status.value) {
+          <div class="bg-gray-50 rounded-xl p-3 sm:p-4 border border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full {{ status.color.split(' ')[0] }}"></span>
+                {{ status.label }}
+                <span class="text-xs bg-gray-200 px-2 py-0.5 rounded-full">
+                  {{ tasks().filter(t => t.status === status.value).length }}
+                </span>
+              </h3>
+            </div>
+            <div class="space-y-2">
+              @for (task of tasks() | filterByStatus: status.value; track task.id) {
+                <div class="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer border-l-4 {{ getPriorityColor(task.priority).split(' ')[0].replace('bg-', 'border-') }}"
+                     (click)="viewTaskDetail(task)">
+                  <div class="flex items-start justify-between">
+                    <span class="text-sm font-medium text-gray-800">{{ task.taskName | titlecase }}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-medium {{ getPriorityColor(task.priority) }}">
+                      {{ task.priority }}
+                    </span>
+                  </div>
+                  <p class="text-xs text-gray-600 mt-1">{{ task.workerName }}</p>
+                  <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+                    <span>{{ task.fieldName || 'No field' }}</span>
+                    <span [class.text-red-600]="task.isOverdue">
+                      {{ task.dueDate ? (task.dueDate | date:'MMM d') : 'No due date' }}
+                    </span>
+                  </div>
+                  <div class="flex justify-end mt-2 gap-1">
+                    <button mat-icon-button size="small" (click)="$event.stopPropagation(); openEditDialog(task)" class="!text-blue-600 !w-6 !h-6">
+                      <mat-icon class="text-sm">edit</mat-icon>
+                    </button>
+                    <button mat-icon-button size="small" (click)="$event.stopPropagation(); deleteTask(task)" class="!text-red-600 !w-6 !h-6">
+                      <mat-icon class="text-sm">delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

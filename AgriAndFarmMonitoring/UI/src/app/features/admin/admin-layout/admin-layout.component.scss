@@ -1,53 +1,72 @@
-:host {
-  display: block;
+// src/app/features/admin/admin-layout/admin-layout.component.scss
+.sidenav-container {
   height: 100vh;
 }
 
-::ng-deep {
-  .mat-toolbar {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+.mat-sidenav {
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
   }
 }
 
-.sidebar-link {
-  transition: all 0.2s ease;
-  border-radius: 8px;
-  margin: 2px 8px;
-  
+.nav-item {
+  height: 44px !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0 12px !important;
+
   &:hover {
-    background-color: rgba(45, 106, 79, 0.08);
+    background-color: #f3f4f6;
   }
-  
+
   &.active {
-    background-color: rgba(45, 106, 79, 0.12) !important;
-    
-    mat-icon {
+    background-color: #e8f5e9;
+    color: #2d6a4f;
+
+    .mat-icon {
       color: #2d6a4f !important;
     }
-    
-    span {
+
+    .text-gray-700 {
       color: #2d6a4f !important;
-      font-weight: 600;
     }
+  }
+
+  .mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #6b7280;
   }
 }
 
-.mat-mdc-list-item {
-  border-radius: 8px;
-  
-  &.mdc-list-item--with-leading-icon {
-    padding-left: 16px;
-  }
+.mobile-sidenav {
+  width: 280px !important;
 }
 
-// Badge styling
-.badge-pending {
-  background-color: #dc2626;
-  color: white;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 9999px;
+// Responsive adjustments
+@media (max-width: 640px) {
+  .mat-toolbar {
+    padding: 0 12px !important;
+  }
+
+  .nav-item {
+    height: 40px !important;
+    font-size: 13px;
+
+    .mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
 }
