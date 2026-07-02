@@ -2,6 +2,7 @@
 using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Application.DTOs.Sensor;
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Enums;
 
 namespace AgriculturePlatform.Application.Interfaces;
 
@@ -9,9 +10,16 @@ public interface ISensorReadingRepository
 {
     Task<SensorReading?> GetByIdAsync(int id, int farmId);
     Task<SensorReading> CreateAsync(SensorReading reading);
+    
+    // ✅ Updated - accepts SensorTypeEnum? instead of string
     Task<PagedResult<SensorReading>> GetPagedAsync(
-        int farmId, int? fieldId, int? cropCycleId, string? sensorType,
-        DateTime? fromDate, DateTime? toDate, PaginationParams paginationParams);
+        int farmId, 
+        int? fieldId, 
+        int? cropCycleId, 
+        SensorTypeEnum? sensorType,  // ✅ Changed from string to SensorTypeEnum?
+        DateTime? fromDate, 
+        DateTime? toDate, 
+        PaginationParams paginationParams);
     
     Task<IEnumerable<SensorReading>> GetLatestPerFieldAsync(int farmId);
     Task<IEnumerable<SensorReading>> GetByFieldAndDateRangeAsync(int fieldId, int farmId, DateTime fromDate, DateTime toDate);

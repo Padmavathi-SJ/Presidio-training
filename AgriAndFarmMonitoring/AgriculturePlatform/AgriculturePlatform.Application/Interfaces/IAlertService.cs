@@ -19,4 +19,5 @@ public interface IAlertService
     
     // Alert creation
     Task<Alert?> CheckAndCreateAlertAsync(int fieldId, int cropCycleId, string sensorType, decimal value, int farmId, int adminId);
+    Task<ApiResponse<AlertDashboardDto>> GetDashboardAlertsAsync(int farmId);
 }

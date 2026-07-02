@@ -35,10 +35,43 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./observations/observations.component')
           .then(c => c.Observations)
       },
+      // ✅ Sensor Module Routes
       {
         path: 'sensors',
         loadComponent: () => import('./sensors/sensors.component')
-          .then(c => c.Sensors)
+          .then(c => c.SensorsComponent),
+        children: [
+          {
+            path: '',
+            redirectTo: 'dashboard',
+            pathMatch: 'full'
+          },
+          {
+            path: 'dashboard',
+            loadComponent: () => import('./sensors/sensor-dashboard/sensor-dashboard.component')
+              .then(c => c.SensorDashboardComponent)
+          },
+          {
+            path: 'readings',
+            loadComponent: () => import('./sensors/sensor-readings/sensor-readings.component')
+              .then(c => c.SensorReadingsComponent)
+          },
+          {
+            path: 'statistics',
+            loadComponent: () => import('./sensors/sensor-statistics/sensor-statistics.component')
+              .then(c => c.SensorStatisticsComponent)
+          },
+          {
+            path: 'alerts',
+            loadComponent: () => import('./sensors/alerts/alerts.component')
+              .then(c => c.AlertsComponent)
+          },
+          {
+            path: 'field/:fieldId',
+            loadComponent: () => import('./sensors/field-sensor-details/field-sensor-details.component')
+              .then(c => c.FieldSensorDetailsComponent)
+          }
+        ]
       },
       // Weather Module Routes
       {
@@ -66,7 +99,6 @@ export const ADMIN_ROUTES: Routes = [
             loadComponent: () => import('./weather/weather-data-history/weather-data-history.component')
               .then(c => c.WeatherDataHistoryComponent)
           },
-         
         ]
       },
       {

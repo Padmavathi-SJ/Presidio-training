@@ -236,6 +236,10 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+
+// ✅ CORS must be BEFORE Authentication and Authorization
+app.UseCors("AllowAll");
+
 // ✅ FIX: Configure pipeline in the CORRECT ORDER
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -243,9 +247,6 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Farm Management API v1");
     c.RoutePrefix = "swagger";
 });
-
-// ✅ CORS must be BEFORE Authentication and Authorization
-app.UseCors("AllowAll");
 
 // ✅ Authentication and Authorization
 app.UseAuthentication();

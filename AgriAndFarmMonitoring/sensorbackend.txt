@@ -1,0 +1,4143 @@
+namespace AgriculturePlatform.Domain.Enums;
+
+// Crop types
+public enum CropTypeEnum
+{
+    WHEAT,
+    MAIZE,
+    RICE,
+    BARLEY,
+    SOYBEAN,
+    COTTON,
+    HAZELNUT,
+    POTATO,
+    TOMATO,
+    ONION,
+    GRAPE,
+    APPLE
+}
+
+// Growth stages
+public enum GrowthStageEnum
+{
+    GERMINATION,    // Seed sprouting (0-10 days)
+    SEEDLING,       // Early growth (10-20 days)
+    VEGETATIVE,     // Leaf/stem growth (20-60 days)
+    FLOWERING,      // Flower/bloom stage (60-80 days)
+    FRUITING,       // Fruit development (80-100 days)
+    MATURITY,       // Ready for harvest (100-120 days)
+    HARVESTED       // Harvest completed
+}
+
+// Field status
+public enum FieldStatusEnum
+{
+    ACTIVE,         // Currently in use
+    FALLOW,         // Resting/not planted
+    PREPARING,      // Being prepared for planting
+    MAINTENANCE,    // Under maintenance
+    RETIRED         // No longer in use
+}
+
+// Soil types
+public enum SoilTypeEnum
+{
+    CLAY,           // Heavy, water-retentive
+    SANDY,          // Light, well-draining
+    SILTY,          // Fertile, moisture-retentive
+    LOAMY,          // Ideal, balanced
+    PEATY,          // High organic matter
+    CHALKY          // Alkaline, stony
+}
+
+// Sensor types
+public enum SensorTypeEnum
+{
+    SOIL_MOISTURE,   // Soil water content (%)
+    SOIL_TEMP,       // Soil temperature (°C)
+    AIR_TEMP,        // Air temperature (°C)
+    AIR_HUMIDITY,    // Relative humidity (%)
+    LIGHT_INTENSITY, // Light/lux level (lux)
+    SOIL_PH,         // Soil acidity (pH)
+    NPK_NITROGEN,    // Nitrogen level (ppm)
+    NPK_PHOSPHORUS,  // Phosphorus level (ppm)
+    NPK_POTASSIUM,   // Potassium level (ppm)
+    WIND_SPEED,      // Wind velocity (m/s)
+    RAINFALL,        // Precipitation (mm)
+    LEAF_WETNESS     // Leaf moisture (%)
+}
+
+// Alert types
+public enum AlertTypeEnum
+{
+    DROUGHT_STRESS,        // Low soil moisture
+    WATERLOGGED,           // Excess water
+    HEAT_STRESS,           // High temperature
+    COLD_STRESS,           // Low temperature/frost
+    NUTRIENT_DEFICIENCY,   // Low NPK levels
+    PEST_INFESTATION,      // Pest detected
+    DISEASE_OUTBREAK,      // Crop disease
+    WEED_PRESSURE,         // High weed growth
+    SOIL_PH_ALERT,         // pH out of range
+    HARVEST_READY,         // Crop ready for harvest
+    IRRIGATION_NEEDED,     // Water required
+    FERTILIZER_NEEDED      // Fertilizer required
+}
+
+// Alert severity levels
+public enum AlertSeverityEnum
+{
+    LOW,       // Informational, monitor only
+    MEDIUM,    // Action recommended
+    HIGH,      // Action required soon
+    CRITICAL   // Immediate action required
+}
+
+// Crop health status
+public enum CropHealthEnum
+{
+    EXCELLENT,   // Perfect condition
+    GOOD,        // Slightly below optimal
+    AVERAGE,     // Acceptable condition
+    POOR,        // Significant issues
+    CRITICAL     // Severe problems
+}
+
+// Weather conditions
+public enum WeatherConditionEnum
+{
+    CLEAR,
+    CLOUDY,
+    RAINY,
+    STORMY,
+    SNOWY,
+    FOGGY,
+    WINDY
+}
+
+// Weather alert types (for external weather warnings)
+public enum WeatherAlertTypeEnum
+{
+    STORM,          // Thunderstorm, cyclone, hurricane
+    FROST,          // Freezing conditions
+    HEAT_WAVE,      // Extreme high temperatures
+    HEAVY_RAIN,     // Excessive rainfall, flood risk
+    HIGH_WIND,      // Strong winds, storm conditions
+    DROUGHT,        // Extended dry period
+    HAIL,           // Hailstorm risk
+    TORNADO,        // Tornado warning
+    FLOOD,          // Flooding risk
+    WILDFIRE        // Fire risk due to dry conditions
+}
+
+
+// Weather alert severity (for external weather warnings)
+public enum WeatherAlertSeverityEnum
+{
+    ADVISORY,       // Minor weather event
+    WATCH,          // Conditions are favorable for severe weather
+    WARNING,        // Severe weather is imminent or occurring
+    EMERGENCY       // Extreme threat to life and property
+}
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Text.Json;
+using System.Security.Claims; 
+using Microsoft.AspNetCore.Http;
+using AgriculturePlatform.Domain.Entities.AdminEntities;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Entities.WorkerManagement;
+using AgriculturePlatform.Domain.Entities.YieldReports;
+using AgriculturePlatform.Domain.Common;
+
+
+namespace AgriculturePlatform.Infrastructure.Context;
+
+public class AppDbContext : DbContext
+{
+      private readonly IHttpContextAccessor? _httpContextAccessor;
+          public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {
+    }
+
+     public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor) 
+        : base(options)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
+    
+    // Admin DbSets
+    public DbSet<Farm> Farms { get; set; }
+    public DbSet<Admin> Admins { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    
+    // Crop Monitoring DbSets
+    public DbSet<Field> Fields { get; set; }
+    public DbSet<CropCycle> CropCycles { get; set; }
+    public DbSet<SensorReading> SensorReadings { get; set; }
+    public DbSet<Alert> Alerts { get; set; }
+    public DbSet<AlertThreshold> AlertThresholds { get; set; }  // ADD THIS
+    public DbSet<Observation> Observations { get; set; }
+    public DbSet<WeatherData> WeatherData { get; set; }
+    public DbSet<WeatherAlert> WeatherAlerts { get; set; }
+    
+    // Worker Management DbSets
+    public DbSet<Worker> Workers { get; set; }
+    public DbSet<WorkerTask> Tasks { get; set; }
+    public DbSet<WorkerFieldAssignment> WorkerFieldAssignments { get; set; }
+    
+    // Yield Reports DbSets
+    public DbSet<Harvest> Harvests { get; set; }
+    public DbSet<QualityCheck> QualityChecks { get; set; }
+    public DbSet<YieldReport> YieldReports { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        
+        // =============================================
+        // FARM CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Farm>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.FarmName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Email).HasMaxLength(100);
+            entity.Property(e => e.Phone).HasMaxLength(20);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.State).HasMaxLength(100);
+            entity.Property(e => e.Country).HasMaxLength(100);
+            entity.Property(e => e.PostalCode).HasMaxLength(20);
+            
+            entity.HasMany(e => e.Admins)
+                  .WithOne(a => a.Farm)
+                  .HasForeignKey(a => a.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        // =============================================
+        // ADMIN CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Admin>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Phone).HasMaxLength(20);
+            entity.Property(e => e.PasswordResetToken).HasMaxLength(255);
+            
+            entity.HasOne(e => e.Creator)
+                  .WithMany(e => e.CreatedAdmins)
+                  .HasForeignKey(e => e.CreatedBy)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasIndex(e => e.FarmId);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+ // =============================================
+        // REFRESH TOKEN
+        // =============================================
+      
+modelBuilder.Entity<RefreshToken>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    entity.HasIndex(e => e.Token).IsUnique();
+    entity.Property(e => e.Token).IsRequired().HasMaxLength(500);
+    entity.Property(e => e.JwtId).IsRequired().HasMaxLength(100);
+    entity.Property(e => e.ExpiryDate).HasColumnType("timestamp with time zone");
+    entity.Property(e => e.CreatedByIp).HasMaxLength(45);
+    entity.Property(e => e.RevokedByIp).HasMaxLength(45);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Cascade);
+          
+    entity.HasOne(e => e.Worker)
+          .WithMany()
+          .HasForeignKey(e => e.WorkerId)
+          .OnDelete(DeleteBehavior.Cascade);
+          
+    entity.HasIndex(e => new { e.AdminId, e.IsRevoked });
+    entity.HasIndex(e => new { e.WorkerId, e.IsRevoked });
+    entity.HasIndex(e => e.ExpiryDate);
+});    
+
+
+        // =============================================
+        // FIELD CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Field>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FieldName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Location).HasMaxLength(200);
+            entity.Property(e => e.AreaHectares).HasPrecision(10, 2);
+            entity.Property(e => e.SoilType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.Latitude).HasPrecision(10, 8);
+            entity.Property(e => e.Longitude).HasPrecision(11, 8);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.Fields)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.Fields)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.Status });
+            entity.HasIndex(e => e.AdminId);
+            entity.HasIndex(e => e.FieldName);
+        });
+        
+        // =============================================
+        // CROP CYCLE CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<CropCycle>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CropType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.GrowthStage).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.CropCycles)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.CropCycles)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.Status });
+            entity.HasIndex(e => e.FieldId);
+            entity.HasIndex(e => e.PlantingDate);
+        });
+        
+        // =============================================
+        // SENSOR READING CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<SensorReading>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SensorType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Value).HasPrecision(10, 2);
+            entity.Property(e => e.Unit).HasMaxLength(20);
+            entity.Property(e => e.RecordedAt).HasColumnType("timestamp with time zone");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.SensorReadings)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.SensorReadings)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany(f => f.SensorReadings)
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.CropCycle)
+                  .WithMany(c => c.SensorReadings)
+                  .HasForeignKey(e => e.CropCycleId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            // Relationship with Alerts
+            entity.HasMany(e => e.Alerts)
+                  .WithOne()
+                  .HasForeignKey("SensorReadingId")
+                  .OnDelete(DeleteBehavior.SetNull);
+                  
+            entity.HasIndex(e => new { e.FieldId, e.RecordedAt });
+            entity.HasIndex(e => new { e.FarmId, e.RecordedAt });
+            entity.HasIndex(e => e.SensorType);
+        });
+        
+        // =============================================
+        // ALERT CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Alert>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AlertType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Severity).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.Message).HasMaxLength(1000);
+            entity.Property(e => e.SensorValue).HasPrecision(10, 2);
+            entity.Property(e => e.ThresholdValue).HasPrecision(10, 2);
+            entity.Property(e => e.ResolvedAt).HasColumnType("timestamp with time zone");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.Alerts)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.Alerts)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany(f => f.Alerts)
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.CropCycle)
+                  .WithMany(c => c.Alerts)
+                  .HasForeignKey(e => e.CropCycleId)
+                  .OnDelete(DeleteBehavior.SetNull);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.IsResolved });
+            entity.HasIndex(e => new { e.FieldId, e.IsResolved });
+            entity.HasIndex(e => e.Severity);
+            entity.HasIndex(e => e.AlertType);
+        });
+        
+        // =============================================
+        // ALERT THRESHOLD CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<AlertThreshold>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CropType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.GrowthStage).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.SensorType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.MinValue).HasPrecision(10, 2);
+            entity.Property(e => e.MaxValue).HasPrecision(10, 2);
+            entity.Property(e => e.Severity).HasMaxLength(20);
+            entity.Property(e => e.NotificationEmails).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany()
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany()
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.CropType, e.GrowthStage, e.SensorType })
+                  .IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
+        
+  // =============================================
+// OBSERVATION CONFIGURATION - UPDATED WITH VALIDATION FIELDS
+// =============================================
+modelBuilder.Entity<Observation>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    // Basic properties
+    entity.Property(e => e.CropHealth)
+          .HasConversion<string>()
+          .HasMaxLength(20);
+    entity.Property(e => e.PestType)
+          .HasMaxLength(100);
+    entity.Property(e => e.Notes)
+          .HasMaxLength(1000);
+    entity.Property(e => e.ObservationDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    
+    // NEW: Validation and comments fields
+    entity.Property(e => e.ValidationStatus)
+          .IsRequired()
+          .HasMaxLength(20)
+          .HasDefaultValue("pending")
+          .HasComment("pending, verified, questioned, invalid");
+    entity.Property(e => e.AdminNotes)
+          .HasMaxLength(1000)
+          .HasComment("Admin's questions or comments on the observation");
+    entity.Property(e => e.WorkerResponse)
+          .HasMaxLength(1000)
+          .HasComment("Worker's response to admin questions");
+    entity.Property(e => e.FlagReason)
+          .HasMaxLength(50)
+          .HasComment("outlier, inconsistent_data, missing_info, duplicate");
+    entity.Property(e => e.ValidatedAt)
+          .HasColumnType("timestamp with time zone")
+          .HasComment("When the observation was validated");
+    
+    // Relationships
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.Observations)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()  // Admin doesn't have an Observations collection
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.Field)
+          .WithMany(f => f.Observations)
+          .HasForeignKey(e => e.FieldId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.CropCycle)
+          .WithMany(cc => cc.Observations)
+          .HasForeignKey(e => e.CropCycleId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Worker)
+          .WithMany(w => w.Observations)
+          .HasForeignKey(e => e.WorkerId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    // NEW: Validator relationship
+    entity.HasOne(e => e.Validator)
+          .WithMany()  // Admin doesn't have a ValidatedObservations collection
+          .HasForeignKey(e => e.ValidatedBy)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    // Indexes for performance
+    entity.HasIndex(e => new { e.FieldId, e.ObservationDate })
+          .HasDatabaseName("IX_Observations_Field_Date");
+    entity.HasIndex(e => e.WorkerId)
+          .HasDatabaseName("IX_Observations_WorkerId");
+    entity.HasIndex(e => e.ValidationStatus)
+          .HasDatabaseName("IX_Observations_ValidationStatus");
+    entity.HasIndex(e => new { e.FarmId, e.ValidationStatus })
+          .HasDatabaseName("IX_Observations_Farm_ValidationStatus");
+    entity.HasIndex(e => e.ValidatedBy)
+          .HasDatabaseName("IX_Observations_ValidatedBy");
+    entity.HasIndex(e => e.ObservationDate)
+          .HasDatabaseName("IX_Observations_Date");
+}); 
+
+        // =============================================
+        // WEATHER DATA CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<WeatherData>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Temperature).HasPrecision(5, 2);
+            entity.Property(e => e.Humidity).HasPrecision(5, 2);
+            entity.Property(e => e.RainfallMm).HasPrecision(6, 2);
+            entity.Property(e => e.WindSpeed).HasPrecision(5, 2);
+            entity.Property(e => e.Condition).HasConversion<string>().HasMaxLength(20);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.WeatherData)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.FieldId, e.RecordedAt });
+        });
+        
+        // =============================================
+        // WEATHER ALERT CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<WeatherAlert>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AlertType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Severity).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Message).HasMaxLength(1000);
+            entity.Property(e => e.Temperature).HasPrecision(5, 2);
+            entity.Property(e => e.WindSpeed).HasPrecision(5, 2);
+            entity.Property(e => e.RainfallMm).HasPrecision(6, 2);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany()
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany()
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany()
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Acknowledger)
+                  .WithMany()
+                  .HasForeignKey(e => e.AcknowledgedBy)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.FieldId });
+            entity.HasIndex(e => e.AlertType);
+            entity.HasIndex(e => e.Severity);
+            entity.HasIndex(e => e.AlertTime);
+            entity.HasIndex(e => e.IsAcknowledged);
+            entity.HasIndex(e => e.ExpiresAt);
+        });
+        
+        // =============================================
+        // WORKER CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Worker>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.PasswordHash).HasMaxLength(255); 
+            entity.Property(e => e.Phone).HasMaxLength(20);
+            entity.Property(e => e.Role).HasMaxLength(50);
+            entity.Property(e => e.LastLoginAt).HasColumnType("timestamp with time zone");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.Workers)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.Workers)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.Role });
+            entity.HasIndex(e => e.IsActive);
+        });
+        
+        // =============================================
+        // WORKER TASK CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<WorkerTask>(entity =>
+        {
+            entity.ToTable("Tasks");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TaskName).HasConversion<string>().HasMaxLength(100);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.Priority).HasConversion<string>().HasMaxLength(20);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.Tasks)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.Tasks)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.WorkerId, e.Status });
+            entity.HasIndex(e => new { e.FarmId, e.Status });
+            entity.HasIndex(e => new { e.Status, e.DueDate });
+        });
+        
+        // =============================================
+        // WORKER FIELD ASSIGNMENT CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<WorkerFieldAssignment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany()
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany()
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasOne(e => e.Worker)
+                  .WithMany()
+                  .HasForeignKey(e => e.WorkerId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany()
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.WorkerId, e.FieldId });
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.AssignedDate);
+        });
+        
+// =============================================
+// HARVEST CONFIGURATION - UPDATED WITH ALL FIELDS
+// =============================================
+modelBuilder.Entity<Harvest>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    // Basic properties
+    entity.Property(e => e.QuantityKg)
+          .HasPrecision(12, 2)
+          .IsRequired();
+    entity.Property(e => e.QualityGrade)
+          .HasConversion<string>()
+          .HasMaxLength(10);
+    entity.Property(e => e.HarvestMethod)
+          .HasConversion<string>()
+          .HasMaxLength(20);
+    entity.Property(e => e.HarvestDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    
+    // Approval Workflow properties
+    entity.Property(e => e.ApprovalStatus)
+          .HasMaxLength(20)
+          .HasDefaultValue("PENDING");
+    entity.Property(e => e.RejectionReason)
+          .HasMaxLength(500);
+    entity.Property(e => e.AdminNotes)
+          .HasMaxLength(1000);
+    entity.Property(e => e.WorkerResponse)
+          .HasMaxLength(1000);
+    entity.Property(e => e.ApprovedAt)
+          .HasColumnType("timestamp with time zone");
+    
+    // Financial and tracking properties
+    entity.Property(e => e.PricePerKg)
+          .HasPrecision(10, 2);
+    entity.Property(e => e.BatchNumber)
+          .HasMaxLength(50);
+    entity.Property(e => e.Notes)
+          .HasMaxLength(1000);
+    
+    // Computed property - ignore for database
+    entity.Ignore(e => e.TotalValue);
+    
+    // Relationships
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.Harvests)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.Field)
+          .WithMany()
+          .HasForeignKey(e => e.FieldId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.CropCycle)
+          .WithMany(cc => cc.Harvests)
+          .HasForeignKey(e => e.CropCycleId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.Harvester)
+          .WithMany(w => w.Harvests)
+          .HasForeignKey(e => e.HarvestedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Submitter)
+          .WithMany()
+          .HasForeignKey(e => e.SubmittedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Approver)
+          .WithMany()
+          .HasForeignKey(e => e.ApprovedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    // Indexes for performance
+    entity.HasIndex(e => new { e.FarmId, e.HarvestDate })
+          .HasDatabaseName("IX_Harvests_Farm_Date");
+    entity.HasIndex(e => e.CropCycleId)
+          .HasDatabaseName("IX_Harvests_CropCycleId");
+    entity.HasIndex(e => e.ApprovalStatus)
+          .HasDatabaseName("IX_Harvests_ApprovalStatus");
+    entity.HasIndex(e => e.SubmittedBy)
+          .HasDatabaseName("IX_Harvests_SubmittedBy");
+    entity.HasIndex(e => e.HarvestedBy)
+          .HasDatabaseName("IX_Harvests_HarvestedBy");
+    entity.HasIndex(e => e.BatchNumber)
+          .HasDatabaseName("IX_Harvests_BatchNumber");
+});
+
+
+// =============================================
+// QUALITY CHECK CONFIGURATION
+// =============================================
+modelBuilder.Entity<QualityCheck>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    entity.Property(e => e.MoisturePct).HasPrecision(5, 2);
+    entity.Property(e => e.DefectPct).HasPrecision(5, 2);
+    entity.Property(e => e.FinalGrade).HasConversion<string>().HasMaxLength(10);
+    entity.Property(e => e.ApprovalStatus).HasMaxLength(20).HasDefaultValue("PENDING");
+    entity.Property(e => e.RejectionReason).HasMaxLength(500);
+    entity.Property(e => e.AdminNotes).HasMaxLength(1000);
+    entity.Property(e => e.WorkerResponse).HasMaxLength(1000);
+    entity.Property(e => e.CheckDate).HasColumnType("timestamp with time zone");
+    entity.Property(e => e.ApprovedAt).HasColumnType("timestamp with time zone");
+    
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.QualityChecks)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Harvest)
+          .WithMany(h => h.QualityChecks)
+          .HasForeignKey(e => e.HarvestId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Checker)
+          .WithMany(w => w.QualityChecks)
+          .HasForeignKey(e => e.CheckedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Approver)
+          .WithMany()
+          .HasForeignKey(e => e.ApprovedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasIndex(e => e.HarvestId);
+    entity.HasIndex(e => e.CheckedBy);
+    entity.HasIndex(e => e.ApprovalStatus);
+    entity.HasIndex(e => e.CheckDate);
+});
+
+
+// =============================================
+// YIELD REPORT CONFIGURATION - CORRECTED
+// =============================================
+modelBuilder.Entity<YieldReport>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    // Basic properties
+    entity.Property(e => e.ReportName)
+          .IsRequired()
+          .HasMaxLength(200);
+    entity.Property(e => e.ReportType)
+          .HasMaxLength(20);
+    entity.Property(e => e.StartDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    entity.Property(e => e.EndDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    
+    // Yield statistics
+    entity.Property(e => e.TotalYieldKg)
+          .HasPrecision(12, 2);
+    entity.Property(e => e.AverageYieldPerHectare)  // ✅ Use correct property name
+          .HasPrecision(10, 2);
+    entity.Property(e => e.TotalHarvests);
+    entity.Property(e => e.AveragePricePerKg)
+          .HasPrecision(10, 2);
+    entity.Property(e => e.TotalValue)
+          .HasPrecision(12, 2);
+    
+    // Quality statistics
+    entity.Property(e => e.AverageQualityGrade)  // ✅ Use correct property name
+          .HasMaxLength(10);
+    entity.Property(e => e.PassRate)
+          .HasPrecision(5, 2);
+    entity.Property(e => e.RejectionRate)
+          .HasPrecision(5, 2);
+    
+    // JSON fields
+    entity.Property(e => e.FieldBreakdownJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.CropTypeBreakdownJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.MonthlyTrendJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.QualityDistributionJson)
+          .HasColumnType("jsonb");
+    
+    // Export tracking
+    entity.Property(e => e.FilePath)
+          .HasMaxLength(500);
+    entity.Property(e => e.FileFormat)
+          .HasMaxLength(20);
+    entity.Property(e => e.ExportedAt)
+          .HasColumnType("timestamp with time zone");
+       
+    // Scheduling
+    entity.Property(e => e.ScheduleCron)
+          .HasMaxLength(100);
+    entity.Property(e => e.LastGeneratedAt)
+          .HasColumnType("timestamp with time zone");
+    entity.Property(e => e.NextScheduledRun)
+          .HasColumnType("timestamp with time zone");
+    
+    // Relationships
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.YieldReports)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.CropCycle)
+          .WithMany(cc => cc.YieldReports)
+          .HasForeignKey(e => e.CropCycleId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Field)
+          .WithMany()
+          .HasForeignKey(e => e.FieldId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Exporter)
+          .WithMany()
+          .HasForeignKey(e => e.ExportedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    // Indexes for performance
+    entity.HasIndex(e => new { e.FarmId, e.StartDate, e.EndDate })
+          .HasDatabaseName("IX_YieldReports_Farm_DateRange");
+    entity.HasIndex(e => e.CropCycleId)
+          .HasDatabaseName("IX_YieldReports_CropCycleId");
+    entity.HasIndex(e => e.FieldId)
+          .HasDatabaseName("IX_YieldReports_FieldId");
+    entity.HasIndex(e => e.ReportType)
+          .HasDatabaseName("IX_YieldReports_ReportType");
+    entity.HasIndex(e => e.IsScheduled)
+          .HasDatabaseName("IX_YieldReports_IsScheduled");
+    entity.HasIndex(e => e.NextScheduledRun)
+          .HasDatabaseName("IX_YieldReports_NextScheduledRun");
+    entity.HasIndex(e => e.CreatedAt)
+          .HasDatabaseName("IX_YieldReports_CreatedAt");
+});
+
+        // =============================================
+        // AUDIT LOG CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Action).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.EntityType).HasMaxLength(50);
+            entity.Property(e => e.IpAddress).HasMaxLength(45);
+            entity.Property(e => e.OldValue).HasColumnType("jsonb");
+            entity.Property(e => e.NewValue).HasColumnType("jsonb");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.AuditLogs)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.SetNull);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.CreatedAt });
+            entity.HasIndex(e => new { e.EntityType, e.EntityId });
+            entity.HasIndex(e => e.Action);
+        });
+        
+        // =============================================
+        // NOTIFICATION CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Type).HasMaxLength(50);
+            entity.Property(e => e.Metadata).HasColumnType("jsonb");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.Notifications)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.WorkerId, e.IsRead });
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.AdminId);
+        });
+    }
+    
+ // AgriculturePlatform.Infrastructure/Context/AppDbContext.cs
+
+private JsonDocument? SerializeToJsonDocument(object? obj)
+{
+    if (obj == null) return null;
+    
+    var options = new JsonSerializerOptions
+    {
+        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+        WriteIndented = false,
+        // ✅ Add this to convert enums to strings
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
+    
+    var json = JsonSerializer.Serialize(obj, options);
+    return JsonDocument.Parse(json);
+}   
+    
+   
+
+    // =============================================
+    // GLOBAL AUDIT LOGGING - SaveChangesAsync
+    // =============================================
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Modified || e.State == EntityState.Added || e.State == EntityState.Deleted);
+        
+        var auditLogs = new List<AuditLog>();
+        var now = DateTime.UtcNow;
+        
+        // Get current user info from HttpContext
+        var userInfo = GetCurrentUserInfo();
+        var adminId = userInfo.adminId;
+        var workerId = userInfo.workerId;
+        var farmId = userInfo.farmId;
+        var ipAddress = userInfo.ipAddress;
+        var userAgent = userInfo.userAgent;
+        
+        // JSON options with enum converter
+        var jsonOptions = new JsonSerializerOptions
+        {
+            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+            WriteIndented = false,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        };
+        
+        foreach (var entityEntry in entries)
+        {
+            // Skip AuditLog entity itself
+            if (entityEntry.Entity is AuditLog)
+                continue;
+            
+            // Skip SensorReadings
+            if (entityEntry.Entity is SensorReading)
+                continue;
+            
+            // Skip WeatherData
+            if (entityEntry.Entity is WeatherData)
+                continue;
+            
+            var entityType = entityEntry.Entity.GetType().Name;
+            var entityId = GetEntityId(entityEntry.Entity);
+            var entityFarmId = farmId ?? GetFarmIdFromEntity(entityEntry.Entity);
+            
+            // Handle DateTime conversions to UTC
+            ConvertDateTimesToUtc(entityEntry);
+            
+            switch (entityEntry.State)
+            {
+                case EntityState.Added:
+                    // Set audit fields
+                    HandleAuditFields(entityEntry, adminId, workerId, now);
+                    
+                    // Serialize entity with enum converter
+                    var addedJson = JsonSerializer.Serialize(entityEntry.Entity, jsonOptions);
+                    
+                    auditLogs.Add(new AuditLog
+                    {
+                        FarmId = entityFarmId,
+                        AdminId = adminId,
+                        WorkerId = workerId,
+                        Action = "CREATE",
+                        EntityType = entityType,
+                        EntityId = entityId,
+                        OldValue = null,
+                        NewValue = JsonDocument.Parse(addedJson),
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        CreatedAt = now
+                    });
+                    break;
+                    
+                case EntityState.Modified:
+                    // Get changed properties
+                    var changedProperties = entityEntry.Properties
+                        .Where(p => p.IsModified && !AreValuesEqual(p.OriginalValue, p.CurrentValue))
+                        .ToList();
+                    
+                    if (changedProperties.Any())
+                    {
+                        // Set audit fields
+                        HandleAuditFields(entityEntry, adminId, workerId, now);
+                        
+                        // Get OLD state
+                        var oldDict = GetEntityState(entityEntry.Entity, useOriginalValues: true);
+                        var oldJson = JsonSerializer.Serialize(oldDict, jsonOptions);
+                        
+                        // Get NEW state
+                        var newDict = GetEntityState(entityEntry.Entity, useOriginalValues: false);
+                        var newJson = JsonSerializer.Serialize(newDict, jsonOptions);
+                        
+                        auditLogs.Add(new AuditLog
+                        {
+                            FarmId = entityFarmId,
+                            AdminId = adminId,
+                            WorkerId = workerId,
+                            Action = "UPDATE",
+                            EntityType = entityType,
+                            EntityId = entityId,
+                            OldValue = JsonDocument.Parse(oldJson),
+                            NewValue = JsonDocument.Parse(newJson),
+                            IpAddress = ipAddress,
+                            UserAgent = userAgent,
+                            CreatedAt = now
+                        });
+                    }
+                    break;
+                    
+                case EntityState.Deleted:
+                    var deletedDict = GetEntityState(entityEntry.Entity, useOriginalValues: true);
+                    var deletedJson = JsonSerializer.Serialize(deletedDict, jsonOptions);
+                    
+                    auditLogs.Add(new AuditLog
+                    {
+                        FarmId = entityFarmId,
+                        AdminId = adminId,
+                        WorkerId = workerId,
+                        Action = "DELETE",
+                        EntityType = entityType,
+                        EntityId = entityId,
+                        OldValue = JsonDocument.Parse(deletedJson),
+                        NewValue = null,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        CreatedAt = now
+                    });
+                    break;
+            }
+        }
+        
+        // Add all audit logs
+        if (auditLogs.Any())
+        {
+            await AuditLogs.AddRangeAsync(auditLogs, cancellationToken);
+        }
+        
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    // =============================================
+    // HELPER METHODS
+    // =============================================
+private Dictionary<string, object?> GetEntityState(object entity, bool useOriginalValues = false)
+{
+    var state = new Dictionary<string, object?>();
+    var entry = Entry(entity);
+
+    foreach (var property in entity.GetType().GetProperties())
+    {
+        try
+        {
+            // Skip navigation properties
+            if (property.PropertyType.IsClass &&
+                property.PropertyType != typeof(string) &&
+                property.PropertyType.Namespace?.StartsWith("AgriculturePlatform.Domain.Entities") == true)
+            {
+                continue;
+            }
+
+            object? value;
+
+            if (useOriginalValues)
+            {
+                var propertyEntry = entry.Properties
+                    .FirstOrDefault(p => p.Metadata.Name == property.Name);
+
+                value = propertyEntry?.OriginalValue;
+            }
+            else
+            {
+                value = property.GetValue(entity);
+            }
+
+            if (value == null)
+            {
+                state[property.Name] = null;
+                continue;
+            }
+
+            // Convert enums to string
+            var propertyType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+
+            if (propertyType.IsEnum)
+            {
+                state[property.Name] = value.ToString();
+                continue;
+            }
+
+            // Format DateTime
+            if (value is DateTime dt)
+            {
+                state[property.Name] = dt.ToUniversalTime()
+                    .ToString("yyyy-MM-dd HH:mm:ss.fffZ");
+                continue;
+            }
+
+            state[property.Name] = value;
+        }
+        catch
+        {
+            // Ignore inaccessible properties
+        }
+    }
+
+    return state;
+}
+
+    private (int? adminId, int? workerId, int? farmId, string ipAddress, string? userAgent) GetCurrentUserInfo()
+    {
+        var httpContext = _httpContextAccessor?.HttpContext;
+        if (httpContext == null)
+            return (null, null, null, "127.0.0.1", null);
+        
+        // Get Admin ID (from token)
+        var adminIdClaim = httpContext.User.FindFirst("adminId")?.Value ?? 
+                          httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        int? adminId = null;
+        if (!string.IsNullOrEmpty(adminIdClaim) && int.TryParse(adminIdClaim, out var aId))
+        {
+            var userType = httpContext.User.FindFirst("userType")?.Value;
+            if (userType == "Admin")
+                adminId = aId;
+        }
+        
+        // Get Worker ID (from token)
+        var workerIdClaim = httpContext.User.FindFirst("workerId")?.Value;
+        int? workerId = null;
+        if (!string.IsNullOrEmpty(workerIdClaim) && int.TryParse(workerIdClaim, out var wId))
+        {
+            var userType = httpContext.User.FindFirst("userType")?.Value;
+            if (userType == "Worker")
+                workerId = wId;
+        }
+        
+        // Get Farm ID (from token)
+        var farmIdClaim = httpContext.User.FindFirst("farmId")?.Value;
+        int? farmId = null;
+        if (!string.IsNullOrEmpty(farmIdClaim) && int.TryParse(farmIdClaim, out var fId))
+            farmId = fId;
+        
+        // Get IP Address
+        var ip = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (string.IsNullOrEmpty(ip))
+            ip = httpContext.Connection.RemoteIpAddress?.ToString();
+        var ipAddress = ip ?? "127.0.0.1";
+        
+        // Get User Agent
+        var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
+        if (string.IsNullOrEmpty(userAgent))
+            userAgent = null;
+        
+        return (adminId, workerId, farmId, ipAddress, userAgent);
+    }
+
+    private void ConvertDateTimesToUtc(EntityEntry entityEntry)
+    {
+        var properties = entityEntry.Entity.GetType().GetProperties()
+            .Where(p => p.PropertyType == typeof(DateTime) || p.PropertyType == typeof(DateTime?));
+        
+        foreach (var property in properties)
+        {
+            var currentValue = property.GetValue(entityEntry.Entity);
+            if (currentValue != null)
+            {
+                var dateTime = (DateTime)currentValue;
+                if (dateTime.Kind != DateTimeKind.Utc)
+                {
+                    var utcValue = DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+                    property.SetValue(entityEntry.Entity, utcValue);
+                }
+            }
+        }
+    }
+
+    private void HandleAuditFields(EntityEntry entityEntry, int? adminId, int? workerId, DateTime now)
+    {
+        if (entityEntry.Entity is BaseEntity baseEntity)
+        {
+            if (entityEntry.State == EntityState.Added)
+            {
+                baseEntity.CreatedAt = now;
+                baseEntity.CreatedBy = adminId ?? workerId;
+            }
+            else if (entityEntry.State == EntityState.Modified)
+            {
+                baseEntity.UpdatedAt = now;
+                baseEntity.UpdatedBy = adminId ?? workerId;
+            }
+        }
+    }
+
+    private int? GetEntityId(object entity)
+    {
+        var idProperty = entity.GetType().GetProperty("Id");
+        if (idProperty == null) return null;
+        
+        var value = idProperty.GetValue(entity);
+        if (value == null) return null;
+        
+        return value switch
+        {
+            int intValue => intValue,
+            long longValue => (int)longValue,
+            short shortValue => (int)shortValue,
+            _ => null
+        };
+    }
+
+    private int? GetFarmIdFromEntity(object entity)
+    {
+        var farmIdProp = entity.GetType().GetProperty("FarmId");
+        if (farmIdProp != null)
+        {
+            var value = farmIdProp.GetValue(entity);
+            return value as int?;
+        }
+        return null;
+    }
+
+    private bool AreValuesEqual(object? original, object? current)
+    {
+        if (original == null && current == null) return true;
+        if (original == null || current == null) return false;
+        return original.Equals(current);
+    }
+
+
+}
+
+
+DTOs:
+
+// AgriculturePlatform.Application/DTOs/Sensor/SensorReadingDto.cs
+namespace AgriculturePlatform.Application.DTOs.Sensor;
+
+public class SensorReadingDto
+{
+    public long Id { get; set; }
+    public int FieldId { get; set; }
+    public string FieldName { get; set; } = string.Empty;
+    public int CropCycleId { get; set; }
+    public string? CropType { get; set; }
+    public string? SensorType { get; set; }
+    public decimal? Value { get; set; }
+    public string? Unit { get; set; }
+    public DateTime RecordedAt { get; set; }
+    public bool IsThresholdViolation { get; set; }
+    public string? AlertType { get; set; }
+}
+
+// AgriculturePlatform.Application/DTOs/Sensor/SensorReadingFilterDto.cs
+namespace AgriculturePlatform.Application.DTOs.Sensor;
+
+public class SensorReadingFilterDto
+{
+    public int? FieldId { get; set; }
+    public int? CropCycleId { get; set; }
+    public string? SensorType { get; set; }
+    public DateTime? FromDate { get; set; }
+    public DateTime? ToDate { get; set; }
+    public bool? LatestOnly { get; set; }
+    public string? GroupBy { get; set; } // Day, Week, Month
+    public int? Page { get; set; } = 1;
+    public int? PageSize { get; set; } = 50;
+    public string? SortBy { get; set; } = "RecordedAt";
+    public bool IsDescending { get; set; } = true;
+}
+
+// AgriculturePlatform.Application/DTOs/Sensor/SensorStatisticsDto.cs
+namespace AgriculturePlatform.Application.DTOs.Sensor;
+
+public class SensorStatisticsDto
+{
+    public string Period { get; set; } = string.Empty;
+    public Dictionary<string, DailySensorStats> DailyStats { get; set; } = new();
+    public Dictionary<string, WeeklySensorStats> WeeklyStats { get; set; } = new();
+    public Dictionary<string, MonthlySensorStats> MonthlyStats { get; set; } = new();
+}
+
+public class DailySensorStats
+{
+    public DateTime Date { get; set; }
+    public decimal? AvgSoilMoisture { get; set; }
+    public decimal? AvgSoilTemp { get; set; }
+    public decimal? AvgAirTemp { get; set; }
+    public decimal? AvgHumidity { get; set; }
+    public int ReadingsCount { get; set; }
+    public int AlertCount { get; set; }
+}
+
+public class WeeklySensorStats
+{
+    public int WeekNumber { get; set; }
+    public int Year { get; set; }
+    public decimal? AvgSoilMoisture { get; set; }
+    public decimal? AvgSoilTemp { get; set; }
+    public int AlertCount { get; set; }
+}
+
+public class MonthlySensorStats
+{
+    public string Month { get; set; } = string.Empty;
+    public int Year { get; set; }
+    public decimal? AvgSoilMoisture { get; set; }
+    public decimal? AvgSoilTemp { get; set; }
+    public int AlertCount { get; set; }
+}
+
+// AgriculturePlatform.Application/DTOs/Alert/AlertDashboardDto.cs
+namespace AgriculturePlatform.Application.DTOs.Alert;
+
+public class AlertDashboardDto
+{
+    public int TotalAlerts { get; set; }
+    public int CriticalAlerts { get; set; }
+    public int HighAlerts { get; set; }
+    public int MediumAlerts { get; set; }
+    public int LowAlerts { get; set; }
+    public int ResolvedAlerts { get; set; }
+    public int UnresolvedAlerts { get; set; }
+    public Dictionary<string, int> AlertsByField { get; set; } = new();
+    public Dictionary<string, int> AlertsByType { get; set; } = new();
+    public List<RecentAlertDto> RecentAlerts { get; set; } = new();
+}
+
+public class RecentAlertDto
+{
+    public int Id { get; set; }
+    public string FieldName { get; set; } = string.Empty;
+    public string AlertType { get; set; } = string.Empty;
+    public string Severity { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public bool IsResolved { get; set; }
+}
+
+// AgriculturePlatform.Application/DTOs/Alert/AlertDto.cs
+namespace AgriculturePlatform.Application.DTOs.Alert;
+
+public class AlertDto
+{
+    public int Id { get; set; }
+    public int FieldId { get; set; }
+    public string FieldName { get; set; } = string.Empty;
+    public int? CropCycleId { get; set; }
+    public string? CropType { get; set; }
+    public string? AlertType { get; set; }
+    public string? Severity { get; set; }
+    public string? Message { get; set; }
+    public bool IsResolved { get; set; }
+    public decimal? SensorValue { get; set; }
+    public decimal? ThresholdValue { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? ResolvedAt { get; set; }
+}
+
+// AgriculturePlatform.Application/DTOs/Alert/AlertFilterDto.cs
+namespace AgriculturePlatform.Application.DTOs.Alert;
+
+public class AlertFilterDto
+{
+    public int? FieldId { get; set; }
+    public int? CropCycleId { get; set; }
+    public string? AlertType { get; set; }
+    public string? Severity { get; set; }
+    public bool? IsResolved { get; set; }
+    public DateTime? FromDate { get; set; }
+    public DateTime? ToDate { get; set; }
+    public int? Page { get; set; } = 1;
+    public int? PageSize { get; set; } = 20;
+    public string? SortBy { get; set; } = "CreatedAt";
+    public bool IsDescending { get; set; } = true;
+}
+
+// AgriculturePlatform.Application/DTOs/Alert/AlertStatisticsDto.cs
+namespace AgriculturePlatform.Application.DTOs.Alert;
+
+public class AlertStatisticsDto
+{
+    public int TotalAlerts { get; set; }
+    public int ResolvedAlerts { get; set; }
+    public int UnresolvedAlerts { get; set; }
+    public Dictionary<string, int> AlertsByType { get; set; } = new();
+    public Dictionary<string, int> AlertsBySeverity { get; set; } = new();
+    public Dictionary<string, int> AlertsByField { get; set; } = new();
+    public List<AlertTrendDto> RecentTrend { get; set; } = new();
+}
+
+public class AlertTrendDto
+{
+    public DateTime Date { get; set; }
+    public int Count { get; set; }
+}
+
+// AgriculturePlatform.Application/DTOs/Alert/AlertThresholdDto.cs
+namespace AgriculturePlatform.Application.DTOs.Alert;
+
+public class AlertThresholdDto
+{
+    public int Id { get; set; }
+    public string CropType { get; set; } = string.Empty;
+    public string GrowthStage { get; set; } = string.Empty;
+    public string SensorType { get; set; } = string.Empty;
+    public decimal MinValue { get; set; }
+    public decimal MaxValue { get; set; }
+    public string Severity { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public string? NotificationEmails { get; set; }
+}
+
+public class CreateAlertThresholdDto
+{
+    public string CropType { get; set; } = string.Empty;
+    public string GrowthStage { get; set; } = string.Empty;
+    public string SensorType { get; set; } = string.Empty;
+    public decimal MinValue { get; set; }
+    public decimal MaxValue { get; set; }
+    public string Severity { get; set; } = "MEDIUM";
+    public string? NotificationEmails { get; set; }
+}
+
+// AgriculturePlatform.Application/DTOs/Alert/ResolveAlertDto.cs
+namespace AgriculturePlatform.Application.DTOs.Alert;
+
+public class ResolveAlertDto
+{
+    public int AlertId { get; set; }
+    public string? ResolutionNotes { get; set; }
+}
+
+Events:
+
+// AgriculturePlatform.Application/Events/AlertCreatedEvent.cs
+namespace AgriculturePlatform.Application.Events;
+
+public class AlertCreatedEvent
+{
+    public int FarmId { get; set; }
+    public int AlertId { get; set; }
+    public string AlertTitle { get; set; } = string.Empty;
+    public string FieldName { get; set; } = string.Empty;
+    public int FieldId { get; set; }
+    public string Severity { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}
+
+// AgriculturePlatform.Application/Events/IEventPublisher.cs
+namespace AgriculturePlatform.Application.Events;
+
+public interface IEventPublisher
+{
+    Task PublishAsync<T>(T @event) where T : class;
+}
+
+// AgriculturePlatform.Application/Mappings/AlertMappingProfile.cs
+using AutoMapper;
+using AgriculturePlatform.Application.DTOs.Alert;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Application.Mappings;
+
+public class AlertMappingProfile : Profile
+{
+    public AlertMappingProfile()
+    {
+        CreateMap<Alert, AlertDto>()
+            .ForMember(dest => dest.FieldName, opt => opt.MapFrom(src => src.Field != null ? src.Field.FieldName : string.Empty))
+            .ForMember(dest => dest.CropType, opt => opt.MapFrom(src => src.CropCycle != null && src.CropCycle.CropType != null ? src.CropCycle.CropType.ToString() : string.Empty))
+            .ForMember(dest => dest.AlertType, opt => opt.MapFrom(src => src.AlertType.ToString()))
+            .ForMember(dest => dest.Severity, opt => opt.MapFrom(src => src.Severity.ToString()))
+            .ForMember(dest => dest.SensorValue, opt => opt.MapFrom(src => src.SensorValue))  // Now exists
+            .ForMember(dest => dest.ThresholdValue, opt => opt.Ignore());  // Keep as ignore if not in entity
+
+        CreateMap<AlertThreshold, AlertThresholdDto>()
+            .ForMember(dest => dest.CropType, opt => opt.MapFrom(src => src.CropType))
+            .ForMember(dest => dest.GrowthStage, opt => opt.MapFrom(src => src.GrowthStage));
+
+        CreateMap<CreateAlertThresholdDto, AlertThreshold>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.FarmId, opt => opt.Ignore())
+            .ForMember(dest => dest.AdminId, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore());
+    }
+}
+
+// AgriculturePlatform.Application/Mappings/SensorMappingProfile.cs
+using AutoMapper;
+using AgriculturePlatform.Application.DTOs.Sensor;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Application.Mappings;
+
+public class SensorMappingProfile : Profile
+{
+    public SensorMappingProfile()
+    {
+        CreateMap<SensorReading, SensorReadingDto>()
+            .ForMember(dest => dest.FieldName, opt => opt.MapFrom(src => src.Field != null ? src.Field.FieldName : string.Empty))
+            .ForMember(dest => dest.CropType, opt => opt.MapFrom(src => src.CropCycle != null && src.CropCycle.CropType != null ? src.CropCycle.CropType.ToString() : string.Empty))
+            .ForMember(dest => dest.SensorType, opt => opt.MapFrom(src => src.SensorType.ToString()))
+            .ForMember(dest => dest.IsThresholdViolation, opt => opt.MapFrom(src => src.Alerts != null && src.Alerts.Any()));  // Now works
+    }
+}
+
+// AgriculturePlatform.Application/Validators/SensorReadingFilterValidator.cs
+using FluentValidation;
+using AgriculturePlatform.Application.DTOs.Sensor;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Application.Validators;
+
+public class SensorReadingFilterValidator : AbstractValidator<SensorReadingFilterDto>
+{
+    public SensorReadingFilterValidator()
+    {
+        RuleFor(x => x.FieldId)
+            .GreaterThan(0).WithMessage("Field ID must be greater than 0")
+            .When(x => x.FieldId.HasValue);
+
+        RuleFor(x => x.CropCycleId)
+            .GreaterThan(0).WithMessage("Crop cycle ID must be greater than 0")
+            .When(x => x.CropCycleId.HasValue);
+
+        RuleFor(x => x.SensorType)
+            .Must(BeValidSensorType).WithMessage($"Invalid sensor type. Valid values: {string.Join(", ", Enum.GetNames<SensorTypeEnum>())}")
+            .When(x => !string.IsNullOrWhiteSpace(x.SensorType));
+
+        RuleFor(x => x.FromDate)
+            .LessThanOrEqualTo(x => x.ToDate).WithMessage("From date must be less than or equal to To date")
+            .When(x => x.FromDate.HasValue && x.ToDate.HasValue);
+
+        RuleFor(x => x.Page)
+            .GreaterThanOrEqualTo(1).WithMessage("Page must be at least 1");
+
+        RuleFor(x => x.PageSize)
+            .GreaterThanOrEqualTo(1).WithMessage("Page size must be at least 1")
+            .LessThanOrEqualTo(500).WithMessage("Page size cannot exceed 500");
+
+        RuleFor(x => x.GroupBy)
+            .Must(g => string.IsNullOrWhiteSpace(g) || new[] { "day", "week", "month" }.Contains(g.ToLower()))
+            .WithMessage("Group by must be 'day', 'week', or 'month'");
+    }
+
+    private bool BeValidSensorType(string? sensorType)
+    {
+        if (string.IsNullOrWhiteSpace(sensorType)) return true;
+        return Enum.TryParse<SensorTypeEnum>(sensorType, true, out _);
+    }
+}
+
+// AgriculturePlatform.Application/Validators/AlertFilterValidator.cs
+using FluentValidation;
+using AgriculturePlatform.Application.DTOs.Alert;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Application.Validators;
+
+public class AlertFilterValidator : AbstractValidator<AlertFilterDto>
+{
+    public AlertFilterValidator()
+    {
+        RuleFor(x => x.FieldId)
+            .GreaterThan(0).WithMessage("Field ID must be greater than 0")
+            .When(x => x.FieldId.HasValue);
+
+        RuleFor(x => x.CropCycleId)
+            .GreaterThan(0).WithMessage("Crop cycle ID must be greater than 0")
+            .When(x => x.CropCycleId.HasValue);
+
+        RuleFor(x => x.AlertType)
+            .Must(BeValidAlertType).WithMessage($"Invalid alert type. Valid values: {string.Join(", ", Enum.GetNames<AlertTypeEnum>())}")
+            .When(x => !string.IsNullOrWhiteSpace(x.AlertType));
+
+        RuleFor(x => x.Severity)
+            .Must(BeValidSeverity).WithMessage($"Invalid severity. Valid values: {string.Join(", ", Enum.GetNames<AlertSeverityEnum>())}")
+            .When(x => !string.IsNullOrWhiteSpace(x.Severity));
+
+        RuleFor(x => x.FromDate)
+            .LessThanOrEqualTo(x => x.ToDate).WithMessage("From date must be less than or equal to To date")
+            .When(x => x.FromDate.HasValue && x.ToDate.HasValue);
+
+        RuleFor(x => x.Page)
+            .GreaterThanOrEqualTo(1).WithMessage("Page must be at least 1");
+
+        RuleFor(x => x.PageSize)
+            .GreaterThanOrEqualTo(1).WithMessage("Page size must be at least 1")
+            .LessThanOrEqualTo(200).WithMessage("Page size cannot exceed 200");
+    }
+
+    private bool BeValidAlertType(string? alertType)
+    {
+        if (string.IsNullOrWhiteSpace(alertType)) return true;
+        return Enum.TryParse<AlertTypeEnum>(alertType, true, out _);
+    }
+
+    private bool BeValidSeverity(string? severity)
+    {
+        if (string.IsNullOrWhiteSpace(severity)) return true;
+        return Enum.TryParse<AlertSeverityEnum>(severity, true, out _);
+    }
+}
+
+// AgriculturePlatform.Application/Validators/AlertThresholdValidator.cs
+using FluentValidation;
+using AgriculturePlatform.Application.DTOs.Alert;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Application.Validators;
+
+public class CreateAlertThresholdValidator : AbstractValidator<CreateAlertThresholdDto>
+{
+    public CreateAlertThresholdValidator()
+    {
+        RuleFor(x => x.CropType)
+            .NotEmpty().WithMessage("Crop type is required")
+            .Must(BeValidCropType).WithMessage($"Invalid crop type. Valid values: {string.Join(", ", Enum.GetNames<CropTypeEnum>())}");
+
+        RuleFor(x => x.GrowthStage)
+            .NotEmpty().WithMessage("Growth stage is required")
+            .Must(BeValidGrowthStage).WithMessage($"Invalid growth stage. Valid values: {string.Join(", ", Enum.GetNames<GrowthStageEnum>())}");
+
+        RuleFor(x => x.SensorType)
+            .NotEmpty().WithMessage("Sensor type is required")
+            .Must(BeValidSensorType).WithMessage($"Invalid sensor type. Valid values: {string.Join(", ", Enum.GetNames<SensorTypeEnum>())}");
+
+        RuleFor(x => x.MinValue)
+            .LessThan(x => x.MaxValue).WithMessage("Min value must be less than Max value");
+
+        RuleFor(x => x.MaxValue)
+            .GreaterThan(x => x.MinValue).WithMessage("Max value must be greater than Min value");
+
+        RuleFor(x => x.Severity)
+            .Must(BeValidSeverity).WithMessage($"Invalid severity. Valid values: LOW, MEDIUM, HIGH, CRITICAL");
+
+        RuleFor(x => x.NotificationEmails)
+            .EmailAddress().WithMessage("Invalid email format")
+            .When(x => !string.IsNullOrWhiteSpace(x.NotificationEmails));
+    }
+
+    private bool BeValidCropType(string cropType)
+    {
+        return Enum.TryParse<CropTypeEnum>(cropType, true, out _);
+    }
+
+    private bool BeValidGrowthStage(string growthStage)
+    {
+        return Enum.TryParse<GrowthStageEnum>(growthStage, true, out _);
+    }
+
+    private bool BeValidSensorType(string sensorType)
+    {
+        return Enum.TryParse<SensorTypeEnum>(sensorType, true, out _);
+    }
+
+    private bool BeValidSeverity(string severity)
+    {
+        return Enum.TryParse<AlertSeverityEnum>(severity, true, out _);
+    }
+}
+
+// AgriculturePlatform.Infrastructure/Specifications/BaseSpecification.cs
+using System.Linq.Expressions;
+
+namespace AgriculturePlatform.Infrastructure.Specifications;
+
+public abstract class BaseSpecification<T>
+{
+    public Expression<Func<T, bool>>? Criteria { get; private set; }
+    public List<Expression<Func<T, object>>> Includes { get; } = new();
+    public List<string> IncludeStrings { get; } = new();
+    public Expression<Func<T, object>>? OrderBy { get; private set; }
+    public Expression<Func<T, object>>? OrderByDescending { get; private set; }
+    public int Take { get; private set; }
+    public int Skip { get; private set; }
+    public bool IsPagingEnabled { get; private set; }
+
+    // ✅ FIX: Combine criteria instead of replacing
+    protected void AddCriteria(Expression<Func<T, bool>> criteria)
+    {
+        if (Criteria == null)
+        {
+            Criteria = criteria;
+        }
+        else
+        {
+            // Combine with AND
+            var parameter = Expression.Parameter(typeof(T));
+            var left = new ReplaceParameterVisitor(Criteria.Parameters[0], parameter).Visit(Criteria.Body);
+            var right = new ReplaceParameterVisitor(criteria.Parameters[0], parameter).Visit(criteria.Body);
+            var combined = Expression.AndAlso(left!, right!);
+            var lambda = Expression.Lambda<Func<T, bool>>(combined, parameter);
+            Criteria = lambda;
+        }
+    }
+
+    protected void AddInclude(Expression<Func<T, object>> includeExpression)
+    {
+        Includes.Add(includeExpression);
+    }
+
+    protected void AddInclude(string includeString)
+    {
+        IncludeStrings.Add(includeString);
+    }
+
+    protected void ApplyPaging(int skip, int take)
+    {
+        Skip = skip;
+        Take = take;
+        IsPagingEnabled = true;
+    }
+
+    protected void ApplyOrderBy(Expression<Func<T, object>> orderByExpression)
+    {
+        OrderBy = orderByExpression;
+    }
+
+    protected void ApplyOrderByDescending(Expression<Func<T, object>> orderByDescendingExpression)
+    {
+        OrderByDescending = orderByDescendingExpression;
+    }
+
+    // ✅ Helper class to replace parameter in expression
+    private class ReplaceParameterVisitor : ExpressionVisitor
+    {
+        private readonly ParameterExpression _oldParameter;
+        private readonly ParameterExpression _newParameter;
+
+        public ReplaceParameterVisitor(ParameterExpression oldParameter, ParameterExpression newParameter)
+        {
+            _oldParameter = oldParameter;
+            _newParameter = newParameter;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return node == _oldParameter ? _newParameter : base.VisitParameter(node);
+        }
+    }
+}
+
+// AgriculturePlatform.Infrastructure/Specifications/SensorReadingSpecification.cs
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Infrastructure.Specifications;
+
+public class SensorReadingSpecification : BaseSpecification<SensorReading>
+{
+    public SensorReadingSpecification(
+        int farmId,
+        int? fieldId,
+        int? cropCycleId,
+        string? sensorType,
+        DateTime? fromDate,
+        DateTime? toDate,
+        bool? latestOnly)
+    {
+        // Base filter - by farm
+        AddCriteria(s => s.FarmId == farmId);
+
+        // Filter by field
+        if (fieldId.HasValue)
+        {
+            AddCriteria(s => s.FieldId == fieldId.Value);
+        }
+
+        // Filter by crop cycle
+        if (cropCycleId.HasValue)
+        {
+            AddCriteria(s => s.CropCycleId == cropCycleId.Value);
+        }
+
+        // Filter by sensor type
+        if (!string.IsNullOrWhiteSpace(sensorType) && 
+            Enum.TryParse<SensorTypeEnum>(sensorType, true, out var parsedSensorType))
+        {
+            AddCriteria(s => s.SensorType == parsedSensorType);
+        }
+
+        // Filter by date range
+        if (fromDate.HasValue)
+        {
+            AddCriteria(s => s.RecordedAt >= fromDate.Value);
+        }
+        if (toDate.HasValue)
+        {
+            AddCriteria(s => s.RecordedAt <= toDate.Value);
+        }
+
+        // Latest only - gets most recent reading per field and sensor type
+        if (latestOnly.HasValue && latestOnly.Value)
+        {
+            // This will be handled in the repository with grouping
+            // Add criteria to include only records that are the latest per field/sensor
+        }
+
+        // Include navigation properties
+        AddInclude(s => s.Field);
+        AddInclude(s => s.CropCycle);
+        AddInclude(s => s.Alerts);
+        
+        // Default ordering - newest first
+        ApplyOrderByDescending(s => s.RecordedAt);
+    }
+
+    // Constructor for latest readings per field
+    public static SensorReadingSpecification LatestPerField(int farmId)
+    {
+        return new SensorReadingSpecification(farmId, null, null, null, null, null, true);
+    }
+
+    // Constructor for threshold violations
+    public static SensorReadingSpecification ThresholdViolations(int farmId, DateTime? fromDate, DateTime? toDate)
+    {
+        var spec = new SensorReadingSpecification(farmId, null, null, null, fromDate, toDate, false);
+        // Add criteria for readings that have associated alerts
+        spec.AddCriteria(s => s.Alerts != null && s.Alerts.Any());
+        return spec;
+    }
+}
+
+// AgriculturePlatform.Application/Interfaces/IAlertNotificationService.cs
+namespace AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+
+public interface IAlertNotificationService
+{
+    Task NotifyNewAlertAsync(int farmId, object alertData);
+    Task NotifyAlertResolvedAsync(int farmId, object resolutionData);
+    Task NotifySensorReadingAsync(int farmId, object readingData);
+    Task SendAlertNotificationsAsync(Alert alert, int farmId);
+    Task SendTestAlertEmailAsync(string recipientEmail, string recipientName);
+}
+
+// AgriculturePlatform.Application/Interfaces/IAlertRepository.cs
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Alert;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+
+namespace AgriculturePlatform.Application.Interfaces;
+
+public interface IAlertRepository
+{
+    Task<Alert?> GetByIdAsync(int id, int farmId);
+    Task<Alert> CreateAsync(Alert alert);
+    Task UpdateAsync(Alert alert);
+    Task<PagedResult<Alert>> GetPagedAsync(
+        int farmId, int? fieldId, int? cropCycleId, string? alertType,
+        string? severity, bool? isResolved, DateTime? fromDate, DateTime? toDate,
+        PaginationParams paginationParams);
+    
+    Task<int> GetUnresolvedCountAsync(int farmId);
+    Task<AlertStatisticsDto> GetStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate);
+    Task<int> BulkResolveAsync(IEnumerable<int> alertIds, int resolvedBy);
+    Task<IEnumerable<Alert>> GetCriticalAlertsAsync(int farmId);
+}
+
+// Application/Interfaces/IAlertService.cs
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Alert;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+
+namespace AgriculturePlatform.Application.Interfaces;
+
+public interface IAlertService
+{
+    // Query methods
+    Task<ApiResponse<PagedResult<AlertDto>>> GetAllAlertsAsync(AlertFilterDto filter, int farmId);
+    Task<ApiResponse<AlertDto>> GetAlertByIdAsync(int id, int farmId);
+    Task<ApiResponse<AlertStatisticsDto>> GetAlertStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate);
+    Task<ApiResponse<int>> GetUnresolvedCountAsync(int farmId);
+    Task<ApiResponse<IEnumerable<AlertDto>>> GetCriticalAlertsAsync(int farmId);
+    
+    // Action methods
+    Task<ApiResponse<AlertDto>> ResolveAlertAsync(int id, ResolveAlertDto dto, int farmId, int adminId);
+    
+    // Alert creation
+    Task<Alert?> CheckAndCreateAlertAsync(int fieldId, int cropCycleId, string sensorType, decimal value, int farmId, int adminId);
+    Task<ApiResponse<AlertDashboardDto>> GetDashboardAlertsAsync(int farmId);
+}
+
+// AgriculturePlatform.Application/Interfaces/IAlertThresholdRepository.cs
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+
+namespace AgriculturePlatform.Application.Interfaces;
+
+public interface IAlertThresholdRepository
+{
+    Task<AlertThreshold?> GetByIdAsync(int id, int farmId);
+    Task<IEnumerable<AlertThreshold>> GetAllAsync(int farmId);
+    Task<AlertThreshold?> GetByCropAndStageAsync(string cropType, string growthStage, string sensorType, int farmId);
+    Task<AlertThreshold> CreateAsync(AlertThreshold threshold);
+    Task UpdateAsync(AlertThreshold threshold);
+    Task DeleteAsync(AlertThreshold threshold);
+    Task<bool> ExistsAsync(int id, int farmId);
+     Task<AlertThreshold?> GetThresholdsAsync(int farmId, string cropType, string growthStage, string sensorType);
+}
+
+// AgriculturePlatform.Application/Interfaces/ISensorReadingRepository.cs
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Sensor;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+
+namespace AgriculturePlatform.Application.Interfaces;
+
+public interface ISensorReadingRepository
+{
+    Task<SensorReading?> GetByIdAsync(int id, int farmId);
+    Task<SensorReading> CreateAsync(SensorReading reading);
+    Task<PagedResult<SensorReading>> GetPagedAsync(
+        int farmId, int? fieldId, int? cropCycleId, string? sensorType,
+        DateTime? fromDate, DateTime? toDate, PaginationParams paginationParams);
+    
+    Task<IEnumerable<SensorReading>> GetLatestPerFieldAsync(int farmId);
+    Task<IEnumerable<SensorReading>> GetByFieldAndDateRangeAsync(int fieldId, int farmId, DateTime fromDate, DateTime toDate);
+    Task<IEnumerable<SensorReading>> GetThresholdViolationsAsync(int farmId, DateTime? fromDate, DateTime? toDate);
+    
+    Task<byte[]> ExportToExcelAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate);
+    
+    Task<SensorStatisticsDto> GetAverageReadingsAsync(int farmId, string groupBy, DateTime? fromDate, DateTime? toDate);
+    
+    Task<int> BulkCreateAsync(IEnumerable<SensorReading> readings);
+}
+
+// AgriculturePlatform.Application/Interfaces/ISensorReadingService.cs
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Sensor;
+
+namespace AgriculturePlatform.Application.Interfaces;
+
+public interface ISensorReadingService
+{
+    Task<ApiResponse<PagedResult<SensorReadingDto>>> GetAllReadingsAsync(SensorReadingFilterDto filter, int farmId);
+    Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetLatestReadingsPerFieldAsync(int farmId);
+    Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetReadingsByDateRangeAsync(int fieldId, int farmId, DateTime fromDate, DateTime toDate);
+    Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetThresholdViolationsAsync(int farmId, DateTime? fromDate, DateTime? toDate);
+    Task<ApiResponse<byte[]>> ExportToExcelAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate);
+    Task<ApiResponse<SensorStatisticsDto>> GetAverageReadingsAsync(int farmId, string groupBy, DateTime? fromDate, DateTime? toDate);
+}
+
+// Application/Services/AlertNotificationService.cs
+using Microsoft.Extensions.Logging;
+using AgriculturePlatform.Application.DTOs.Email;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Entities.WorkerManagement;
+using AgriculturePlatform.Domain.Entities.AdminEntities;
+using System.Text.Json;
+
+namespace AgriculturePlatform.Application.Services;
+
+public class AlertNotificationService : IAlertNotificationService
+{
+    private readonly IEmailService _emailService;
+    private readonly IWorkerRepository _workerRepository;
+    private readonly IAdminRepository _adminRepository;
+    private readonly IFieldRepository _fieldRepository;
+    private readonly ICropCycleRepository _cropCycleRepository;
+    private readonly IWorkerFieldAssignmentRepository _assignmentRepository;
+    private readonly ILogger<AlertNotificationService> _logger;
+    private readonly Dictionary<string, DateTime> _lastNotificationSent = new();
+
+    public AlertNotificationService(
+        IEmailService emailService,
+        IWorkerRepository workerRepository,
+        IAdminRepository adminRepository,
+        IFieldRepository fieldRepository,
+        ICropCycleRepository cropCycleRepository,
+        IWorkerFieldAssignmentRepository assignmentRepository,
+        ILogger<AlertNotificationService> logger)
+    {
+        _emailService = emailService;
+        _workerRepository = workerRepository;
+        _adminRepository = adminRepository;
+        _fieldRepository = fieldRepository;
+        _cropCycleRepository = cropCycleRepository;
+        _assignmentRepository = assignmentRepository;
+        _logger = logger;
+    }
+
+    // ✅ IMPLEMENT MISSING METHODS
+    public async Task NotifyNewAlertAsync(int farmId, object alertData)
+    {
+        _logger.LogInformation($"New alert created for farm {farmId}: {JsonSerializer.Serialize(alertData)}");
+        
+        // You can add additional notification logic here (SignalR, WebSocket, etc.)
+        await Task.CompletedTask;
+    }
+
+    public async Task NotifyAlertResolvedAsync(int farmId, object resolutionData)
+    {
+        _logger.LogInformation($"Alert resolved for farm {farmId}: {JsonSerializer.Serialize(resolutionData)}");
+        
+        // You can add additional notification logic here (SignalR, WebSocket, etc.)
+        await Task.CompletedTask;
+    }
+
+    public async Task NotifySensorReadingAsync(int farmId, object readingData)
+    {
+        _logger.LogInformation($"New sensor reading for farm {farmId}: {JsonSerializer.Serialize(readingData)}");
+        
+        // You can add additional notification logic here (SignalR, WebSocket, etc.)
+        await Task.CompletedTask;
+    }
+
+    // ✅ EXISTING METHODS
+    public async Task SendAlertNotificationsAsync(Alert alert, int farmId)
+    {
+        var notificationKey = $"{farmId}_{alert.FieldId}_{alert.AlertType}";
+        
+        // Check if we've sent a notification recently (cooldown period)
+        if (_lastNotificationSent.TryGetValue(notificationKey, out var lastSent) &&
+            (DateTime.UtcNow - lastSent).TotalMinutes < 30)
+        {
+            _logger.LogInformation($"Skipping notification for {notificationKey} - cooldown active");
+            return;
+        }
+        
+        var field = await _fieldRepository.GetByIdAsync(alert.FieldId, farmId);
+        var cropCycle = alert.CropCycleId.HasValue 
+            ? await _cropCycleRepository.GetByIdAsync(alert.CropCycleId.Value, farmId) 
+            : null;
+        
+        // Get assigned workers for this field
+        var assignedWorkers = await GetAssignedWorkersForFieldAsync(alert.FieldId, farmId);
+        
+        // Get admins for this farm
+        var admins = await _adminRepository.GetByFarmIdAsync(farmId);
+        
+        var emailAlert = new SensorAlertEmailDto
+        {
+            FarmName = field?.Farm?.FarmName ?? "Farm",
+            FieldName = field?.FieldName ?? "Unknown Field",
+            CropType = cropCycle?.CropType?.ToString() ?? "Unknown",
+            SensorType = alert.AlertType?.ToString() ?? "Unknown",
+            CurrentValue = alert.SensorValue ?? 0,
+            ThresholdValue = alert.ThresholdValue ?? 0,
+            Severity = alert.Severity?.ToString() ?? "MEDIUM",
+            Message = alert.Message ?? "Sensor reading exceeded threshold",
+            AlertTime = alert.CreatedAt,
+            RecommendedAction = GetRecommendedAction(alert),
+            DashboardLink = "http://localhost:5000/dashboard"
+        };
+        
+        var recipients = new List<(string Email, string Name)>();
+        
+        // Add admins
+        foreach (var admin in admins)
+        {
+            recipients.Add((admin.Email, admin.Name));
+        }
+        
+        // Add assigned workers
+        foreach (var worker in assignedWorkers)
+        {
+            recipients.Add((worker.Email, worker.Name));
+        }
+        
+        if (recipients.Any())
+        {
+            await _emailService.SendBulkSensorAlertEmailsAsync(emailAlert, recipients);
+            _lastNotificationSent[notificationKey] = DateTime.UtcNow;
+            _logger.LogInformation($"Sent {recipients.Count} alert notifications for field {alert.FieldId}");
+        }
+    }
+
+    public async Task SendTestAlertEmailAsync(string recipientEmail, string recipientName)
+    {
+        var testAlert = new SensorAlertEmailDto
+        {
+            FarmName = "Test Farm",
+            FieldName = "Test Field",
+            CropType = "WHEAT",
+            SensorType = "SOIL_MOISTURE",
+            CurrentValue = 85,
+            ThresholdValue = 70,
+            Severity = "CRITICAL",
+            Message = "This is a test alert message",
+            AlertTime = DateTime.UtcNow,
+            RecommendedAction = "Please check the system configuration",
+            DashboardLink = "http://localhost:5000/dashboard"
+        };
+        
+        await _emailService.SendSensorAlertEmailAsync(testAlert, recipientEmail, recipientName);
+    }
+
+    private async Task<List<Worker>> GetAssignedWorkersForFieldAsync(int fieldId, int farmId)
+    {
+        var assignments = await _assignmentRepository.GetWorkerFieldAssignmentsByFieldAsync(fieldId, farmId);
+        var workers = new List<Worker>();
+        
+        foreach (var assignment in assignments)
+        {
+            var worker = await _workerRepository.GetByIdAsync(assignment.WorkerId, farmId);
+            if (worker != null)
+                workers.Add(worker);
+        }
+        
+        return workers;
+    }
+
+    private string GetRecommendedAction(Alert alert)
+    {
+        return alert.AlertType?.ToString() switch
+        {
+            "DROUGHT_STRESS" => "Increase irrigation frequency. Check soil moisture levels daily.",
+            "WATERLOGGED" => "Reduce irrigation. Ensure proper drainage systems are working.",
+            "HEAT_STRESS" => "Increase shade coverage if possible. Ensure adequate irrigation during peak heat.",
+            "COLD_STRESS" => "Consider frost protection measures. Delay planting if expecting freeze.",
+            "NUTRIENT_DEFICIENCY" => "Apply recommended fertilizer. Conduct soil test for specific deficiencies.",
+            "PEST_INFESTATION" => "Apply appropriate pesticide. Monitor pest population daily.",
+            "DISEASE_OUTBREAK" => "Apply fungicide. Remove infected plants immediately.",
+            "SOIL_PH_ALERT" => "Apply lime to raise pH or sulfur to lower pH. Retest soil after treatment.",
+            _ => "Monitor the situation closely. Consult with agricultural expert if needed."
+        };
+    }
+}
+
+// Application/Services/AlertService.cs
+using AutoMapper;
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Alert;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Application.Services;
+
+public class AlertService : IAlertService
+{
+    private readonly IAlertRepository _alertRepository;
+    private readonly IAlertThresholdRepository _alertThresholdRepository;
+    private readonly IFieldRepository _fieldRepository;
+    private readonly ICropCycleRepository _cropCycleRepository;
+    private readonly IAuditLogService _auditLogService;
+    private readonly IMapper _mapper;
+    private readonly IAlertNotificationService _notificationService;
+
+    public AlertService(
+        IAlertRepository alertRepository,
+        IAlertThresholdRepository alertThresholdRepository,
+        IFieldRepository fieldRepository,
+        ICropCycleRepository cropCycleRepository,
+        IAuditLogService auditLogService,
+        IMapper mapper,
+        IAlertNotificationService notificationService)
+    {
+        _alertRepository = alertRepository;
+        _alertThresholdRepository = alertThresholdRepository;
+        _fieldRepository = fieldRepository;
+        _cropCycleRepository = cropCycleRepository;
+        _auditLogService = auditLogService;
+        _mapper = mapper;
+        _notificationService = notificationService;
+    }
+
+    public async Task<ApiResponse<PagedResult<AlertDto>>> GetAllAlertsAsync(AlertFilterDto filter, int farmId)
+    {
+        var paginationParams = new PaginationParams
+        {
+            Page = filter.Page ?? 1,
+            PageSize = filter.PageSize ?? 20,
+            SortBy = filter.SortBy,
+            IsDescending = filter.IsDescending
+        };
+
+        var pagedResult = await _alertRepository.GetPagedAsync(
+            farmId, filter.FieldId, filter.CropCycleId, filter.AlertType,
+            filter.Severity, filter.IsResolved, filter.FromDate, filter.ToDate, paginationParams);
+
+        var dtos = _mapper.Map<List<AlertDto>>(pagedResult.Items);
+        
+        var result = new PagedResult<AlertDto>
+        {
+            Items = dtos,
+            TotalCount = pagedResult.TotalCount,
+            Page = pagedResult.Page,
+            PageSize = pagedResult.PageSize
+        };
+
+        return ApiResponse<PagedResult<AlertDto>>.Ok(result);
+    }
+
+    public async Task<ApiResponse<AlertDto>> GetAlertByIdAsync(int id, int farmId)
+    {
+        var alert = await _alertRepository.GetByIdAsync(id, farmId);
+        if (alert == null)
+        {
+            return ApiResponse<AlertDto>.Fail($"Alert with ID {id} not found");
+        }
+
+        var result = _mapper.Map<AlertDto>(alert);
+        return ApiResponse<AlertDto>.Ok(result);
+    }
+
+    public async Task<ApiResponse<AlertStatisticsDto>> GetAlertStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate)
+    {
+        var stats = await _alertRepository.GetStatisticsAsync(farmId, fromDate, toDate);
+        return ApiResponse<AlertStatisticsDto>.Ok(stats);
+    }
+
+    public async Task<ApiResponse<int>> GetUnresolvedCountAsync(int farmId)
+    {
+        var count = await _alertRepository.GetUnresolvedCountAsync(farmId);
+        return ApiResponse<int>.Ok(count);
+    }
+
+    public async Task<ApiResponse<IEnumerable<AlertDto>>> GetCriticalAlertsAsync(int farmId)
+    {
+        var alerts = await _alertRepository.GetCriticalAlertsAsync(farmId);
+        var dtos = _mapper.Map<IEnumerable<AlertDto>>(alerts);
+        return ApiResponse<IEnumerable<AlertDto>>.Ok(dtos);
+    }
+
+    public async Task<ApiResponse<AlertDto>> ResolveAlertAsync(int id, ResolveAlertDto dto, int farmId, int adminId)
+    {
+        var alert = await _alertRepository.GetByIdAsync(id, farmId);
+        if (alert == null)
+        {
+            return ApiResponse<AlertDto>.Fail($"Alert with ID {id} not found");
+        }
+
+        if (alert.IsResolved)
+        {
+            return ApiResponse<AlertDto>.Fail("Alert is already resolved");
+        }
+
+        alert.IsResolved = true;
+        alert.ResolvedAt = DateTime.UtcNow;
+        alert.UpdatedBy = adminId;
+        alert.UpdatedAt = DateTime.UtcNow;
+
+        await _alertRepository.UpdateAsync(alert);
+        
+        await _auditLogService.LogUpdateAsync(farmId, adminId, "Alert", alert.Id, null, 
+            new { IsResolved = true, ResolutionNotes = dto.ResolutionNotes }, null, null);
+
+        await _notificationService.NotifyAlertResolvedAsync(farmId, new { AlertId = id, ResolvedAt = DateTime.UtcNow });
+
+        var result = _mapper.Map<AlertDto>(alert);
+        return ApiResponse<AlertDto>.Ok(result, "Alert resolved successfully");
+    }
+
+    public async Task<Alert?> CheckAndCreateAlertAsync(int fieldId, int cropCycleId, string sensorType, decimal value, int farmId, int adminId)
+    {
+        // Get thresholds for this sensor type, crop type, and growth stage
+        var cropCycle = await _cropCycleRepository.GetByIdAsync(cropCycleId, farmId);
+        if (cropCycle == null) return null;
+        
+       var threshold = await _alertThresholdRepository.GetThresholdsAsync(
+        farmId, 
+        cropCycle.CropType?.ToString() ?? "UNKNOWN", 
+        cropCycle.GrowthStage?.ToString() ?? "UNKNOWN", 
+        sensorType);
+
+        if (threshold == null) return null;
+        
+        AlertSeverityEnum? severity = null;
+        string message = null;
+        
+        // Check if value exceeds threshold
+        if (value < threshold.MinValue)
+        {
+            severity = GetSeverityForDeviation(threshold.MinValue - value, threshold.MinValue);
+            message = $"{sensorType} is too LOW: {value} (Min: {threshold.MinValue})";
+        }
+        else if (value > threshold.MaxValue)
+        {
+            severity = GetSeverityForDeviation(value - threshold.MaxValue, threshold.MaxValue);
+            message = $"{sensorType} is too HIGH: {value} (Max: {threshold.MaxValue})";
+        }
+        
+        if (severity != null)
+        {
+            var alert = new Alert
+            {
+                FarmId = farmId,
+                AdminId = adminId,
+                FieldId = fieldId,
+                CropCycleId = cropCycleId,
+                AlertType = GetAlertType(sensorType, value, threshold),  // ✅ Pass parameters
+                Severity = severity,
+                Message = message,
+                SensorValue = value,
+                ThresholdValue = severity == AlertSeverityEnum.CRITICAL ? threshold.MaxValue : threshold.MinValue,
+                IsResolved = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            var createdAlert = await _alertRepository.CreateAsync(alert);
+            
+            // Send email notifications for HIGH and CRITICAL alerts
+            if (severity == AlertSeverityEnum.HIGH || severity == AlertSeverityEnum.CRITICAL)
+            {
+                await _notificationService.SendAlertNotificationsAsync(createdAlert, farmId);
+            }
+            
+            return createdAlert;
+        }
+        
+        return null;
+    }
+
+   private AlertSeverityEnum GetSeverityForDeviation(decimal deviation, decimal threshold)
+{
+    var deviationPercentage = (deviation / threshold) * 100;
+    
+    if (deviationPercentage >= 30)
+        return AlertSeverityEnum.CRITICAL;
+    else if (deviationPercentage >= 15)
+        return AlertSeverityEnum.HIGH;
+    else if (deviationPercentage >= 5)
+        return AlertSeverityEnum.MEDIUM;
+    else
+        return AlertSeverityEnum.LOW;
+}
+
+   private AlertTypeEnum GetAlertType(string sensorType, decimal value, AlertThreshold threshold)
+{
+    return sensorType switch
+    {
+        "SOIL_MOISTURE" when value < threshold.MinValue => AlertTypeEnum.DROUGHT_STRESS,
+        "SOIL_MOISTURE" when value > threshold.MaxValue => AlertTypeEnum.WATERLOGGED,
+        "AIR_TEMP" when value > threshold.MaxValue => AlertTypeEnum.HEAT_STRESS,
+        "AIR_TEMP" when value < threshold.MinValue => AlertTypeEnum.COLD_STRESS,
+        "SOIL_PH" when value < threshold.MinValue || value > threshold.MaxValue => AlertTypeEnum.SOIL_PH_ALERT,
+        "NPK_NITROGEN" when value < threshold.MinValue => AlertTypeEnum.NUTRIENT_DEFICIENCY,
+        "NPK_PHOSPHORUS" when value < threshold.MinValue => AlertTypeEnum.NUTRIENT_DEFICIENCY,
+        "NPK_POTASSIUM" when value < threshold.MinValue => AlertTypeEnum.NUTRIENT_DEFICIENCY,
+        _ => AlertTypeEnum.IRRIGATION_NEEDED
+    };
+}
+
+    private string GenerateAlertMessage(AlertTypeEnum alertType, string sensorType, decimal value, AlertThreshold threshold)
+    {
+        return alertType switch
+        {
+            AlertTypeEnum.DROUGHT_STRESS => $"Soil moisture critically low: {value}% (threshold: {threshold.MinValue}%)",
+            AlertTypeEnum.WATERLOGGED => $"Excess soil moisture detected: {value}% (threshold: {threshold.MaxValue}%)",
+            AlertTypeEnum.HEAT_STRESS => $"High temperature stress: {value}°C (threshold: {threshold.MaxValue}°C)",
+            AlertTypeEnum.COLD_STRESS => $"Low temperature stress: {value}°C (threshold: {threshold.MinValue}°C)",
+            AlertTypeEnum.SOIL_PH_ALERT => $"Soil pH out of range: {value} (optimal: {threshold.MinValue}-{threshold.MaxValue})",
+            _ => $"{sensorType} reading {value} is outside optimal range (optimal: {threshold.MinValue}-{threshold.MaxValue})"
+        };
+    }
+
+    private async Task SendEmailNotificationAsync(string emails, Alert alert, Field field)
+    {
+        // TODO: Implement email sending logic here
+        await Task.CompletedTask;
+    }
+
+    // AgriculturePlatform.Application/Services/AlertService.cs
+// Add this method to the AlertService class:
+
+public async Task<ApiResponse<AlertDashboardDto>> GetDashboardAlertsAsync(int farmId)
+{
+    // Get all alerts for the farm
+    var alerts = await _alertRepository.GetPagedAsync(
+        farmId, null, null, null, null, null, null, null,
+        new PaginationParams { Page = 1, PageSize = 1000 });
+    
+    var dashboard = new AlertDashboardDto
+    {
+        TotalAlerts = alerts.Items.Count,
+        ResolvedAlerts = alerts.Items.Count(a => a.IsResolved),
+        UnresolvedAlerts = alerts.Items.Count(a => !a.IsResolved),
+        CriticalAlerts = alerts.Items.Count(a => a.Severity == AlertSeverityEnum.CRITICAL && !a.IsResolved),
+        HighAlerts = alerts.Items.Count(a => a.Severity == AlertSeverityEnum.HIGH && !a.IsResolved),
+        MediumAlerts = alerts.Items.Count(a => a.Severity == AlertSeverityEnum.MEDIUM && !a.IsResolved),
+        LowAlerts = alerts.Items.Count(a => a.Severity == AlertSeverityEnum.LOW && !a.IsResolved),
+        AlertsByField = alerts.Items
+            .Where(a => a.Field != null)
+            .GroupBy(a => a.Field!.FieldName)
+            .ToDictionary(g => g.Key, g => g.Count()),
+        AlertsByType = alerts.Items
+            .GroupBy(a => a.AlertType.ToString())
+            .ToDictionary(g => g.Key, g => g.Count()),
+        RecentAlerts = alerts.Items
+            .Where(a => !a.IsResolved)
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(10)
+            .Select(a => new RecentAlertDto
+            {
+                Id = a.Id,
+                FieldName = a.Field?.FieldName ?? "Unknown Field",
+                AlertType = a.AlertType.ToString(),
+                Severity = a.Severity.ToString(),
+                Message = a.Message ?? "No message",
+                CreatedAt = a.CreatedAt,
+                IsResolved = a.IsResolved
+            })
+            .ToList()
+    };
+    
+    return ApiResponse<AlertDashboardDto>.Ok(dashboard);
+}
+
+}
+
+// AgriculturePlatform.Application/Services/AlertThresholdService.cs
+using AutoMapper;
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Alert;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+
+namespace AgriculturePlatform.Application.Services;
+
+public class AlertThresholdService : IAlertThresholdService
+{
+    private readonly IAlertThresholdRepository _thresholdRepository;
+    private readonly IAuditLogService _auditLogService;
+    private readonly IMapper _mapper;
+
+    public AlertThresholdService(
+        IAlertThresholdRepository thresholdRepository,
+        IAuditLogService auditLogService,
+        IMapper mapper)
+    {
+        _thresholdRepository = thresholdRepository;
+        _auditLogService = auditLogService;
+        _mapper = mapper;
+    }
+
+    public async Task<ApiResponse<IEnumerable<AlertThresholdDto>>> GetAllThresholdsAsync(int farmId)
+    {
+        var thresholds = await _thresholdRepository.GetAllAsync(farmId);
+        var dtos = _mapper.Map<IEnumerable<AlertThresholdDto>>(thresholds);
+        return ApiResponse<IEnumerable<AlertThresholdDto>>.Ok(dtos);
+    }
+
+    public async Task<ApiResponse<AlertThresholdDto>> GetThresholdByIdAsync(int id, int farmId)
+    {
+        var threshold = await _thresholdRepository.GetByIdAsync(id, farmId);
+        if (threshold == null)
+        {
+            return ApiResponse<AlertThresholdDto>.Fail($"Threshold with ID {id} not found");
+        }
+        var dto = _mapper.Map<AlertThresholdDto>(threshold);
+        return ApiResponse<AlertThresholdDto>.Ok(dto);
+    }
+
+    public async Task<ApiResponse<AlertThresholdDto>> CreateThresholdAsync(CreateAlertThresholdDto dto, int farmId, int adminId)
+    {
+        // Check if threshold already exists for this crop type and growth stage
+        var existing = await _thresholdRepository.GetByCropAndStageAsync(
+            dto.CropType, dto.GrowthStage, dto.SensorType, farmId);
+        
+        if (existing != null)
+        {
+            return ApiResponse<AlertThresholdDto>.Fail($"Threshold already exists for {dto.CropType} - {dto.GrowthStage} - {dto.SensorType}");
+        }
+
+        var threshold = new AlertThreshold
+        {
+            FarmId = farmId,
+            AdminId = adminId,
+            CropType = dto.CropType,
+            GrowthStage = dto.GrowthStage,
+            SensorType = dto.SensorType,
+            MinValue = dto.MinValue,
+            MaxValue = dto.MaxValue,
+            Severity = dto.Severity,
+            IsActive = true,
+            NotificationEmails = dto.NotificationEmails,
+            CreatedBy = adminId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var created = await _thresholdRepository.CreateAsync(threshold);
+        await _auditLogService.LogCreateAsync(farmId, adminId, "AlertThreshold", created.Id, created, null, null);
+
+        var result = _mapper.Map<AlertThresholdDto>(created);
+        return ApiResponse<AlertThresholdDto>.Ok(result, "Threshold created successfully");
+    }
+
+    public async Task<ApiResponse<AlertThresholdDto>> UpdateThresholdAsync(int id, UpdateAlertThresholdDto dto, int farmId, int adminId)
+    {
+        var threshold = await _thresholdRepository.GetByIdAsync(id, farmId);
+        if (threshold == null)
+        {
+            return ApiResponse<AlertThresholdDto>.Fail($"Threshold with ID {id} not found");
+        }
+
+        var oldThreshold = _mapper.Map<AlertThreshold>(threshold);
+
+        if (dto.MinValue.HasValue) threshold.MinValue = dto.MinValue.Value;
+        if (dto.MaxValue.HasValue) threshold.MaxValue = dto.MaxValue.Value;
+        if (!string.IsNullOrWhiteSpace(dto.Severity)) threshold.Severity = dto.Severity;
+        if (dto.IsActive.HasValue) threshold.IsActive = dto.IsActive.Value;
+        if (!string.IsNullOrWhiteSpace(dto.NotificationEmails)) threshold.NotificationEmails = dto.NotificationEmails;
+
+        threshold.UpdatedAt = DateTime.UtcNow;
+        threshold.UpdatedBy = adminId;
+
+        await _thresholdRepository.UpdateAsync(threshold);
+        await _auditLogService.LogUpdateAsync(farmId, adminId, "AlertThreshold", threshold.Id, oldThreshold, threshold, null, null);
+
+        var result = _mapper.Map<AlertThresholdDto>(threshold);
+        return ApiResponse<AlertThresholdDto>.Ok(result, "Threshold updated successfully");
+    }
+
+    public async Task<ApiResponse<bool>> DeleteThresholdAsync(int id, int farmId, int adminId)
+    {
+        var threshold = await _thresholdRepository.GetByIdAsync(id, farmId);
+        if (threshold == null)
+        {
+            return ApiResponse<bool>.Fail($"Threshold with ID {id} not found");
+        }
+
+        await _thresholdRepository.DeleteAsync(threshold);
+        await _auditLogService.LogDeleteAsync(farmId, adminId, "AlertThreshold", threshold.Id, threshold, null, null);
+
+        return ApiResponse<bool>.Ok(true, "Threshold deleted successfully");
+    }
+}
+
+// Add IAlertThresholdService interface
+public interface IAlertThresholdService
+{
+    Task<ApiResponse<IEnumerable<AlertThresholdDto>>> GetAllThresholdsAsync(int farmId);
+    Task<ApiResponse<AlertThresholdDto>> GetThresholdByIdAsync(int id, int farmId);
+    Task<ApiResponse<AlertThresholdDto>> CreateThresholdAsync(CreateAlertThresholdDto dto, int farmId, int adminId);
+    Task<ApiResponse<AlertThresholdDto>> UpdateThresholdAsync(int id, UpdateAlertThresholdDto dto, int farmId, int adminId);
+    Task<ApiResponse<bool>> DeleteThresholdAsync(int id, int farmId, int adminId);
+}
+
+// UpdateAlertThresholdDto
+public class UpdateAlertThresholdDto
+{
+    public decimal? MinValue { get; set; }
+    public decimal? MaxValue { get; set; }
+    public string? Severity { get; set; }
+    public bool? IsActive { get; set; }
+    public string? NotificationEmails { get; set; }
+}
+
+// AgriculturePlatform.Application/Services/SensorReadingService.cs
+using AutoMapper;
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Sensor;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+
+namespace AgriculturePlatform.Application.Services;
+
+public class SensorReadingService : ISensorReadingService
+{
+    private readonly ISensorReadingRepository _sensorRepository;
+    private readonly IFieldRepository _fieldRepository;
+    private readonly IMapper _mapper;
+
+    public SensorReadingService(
+        ISensorReadingRepository sensorRepository,
+        IFieldRepository fieldRepository,
+        IMapper mapper)
+    {
+        _sensorRepository = sensorRepository;
+        _fieldRepository = fieldRepository;
+        _mapper = mapper;
+    }
+
+    public async Task<ApiResponse<PagedResult<SensorReadingDto>>> GetAllReadingsAsync(SensorReadingFilterDto filter, int farmId)
+    {
+        var paginationParams = new PaginationParams
+        {
+            Page = filter.Page ?? 1,
+            PageSize = filter.PageSize ?? 50,
+            SortBy = filter.SortBy,
+            IsDescending = filter.IsDescending
+        };
+
+        var pagedResult = await _sensorRepository.GetPagedAsync(
+            farmId, filter.FieldId, filter.CropCycleId, filter.SensorType,
+            filter.FromDate, filter.ToDate, paginationParams);
+
+        var dtos = _mapper.Map<List<SensorReadingDto>>(pagedResult.Items);
+        
+        var result = new PagedResult<SensorReadingDto>
+        {
+            Items = dtos,
+            TotalCount = pagedResult.TotalCount,
+            Page = pagedResult.Page,
+            PageSize = pagedResult.PageSize
+        };
+
+        return ApiResponse<PagedResult<SensorReadingDto>>.Ok(result);
+    }
+
+    public async Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetLatestReadingsPerFieldAsync(int farmId)
+    {
+        var readings = await _sensorRepository.GetLatestPerFieldAsync(farmId);
+        var dtos = _mapper.Map<IEnumerable<SensorReadingDto>>(readings);
+        return ApiResponse<IEnumerable<SensorReadingDto>>.Ok(dtos);
+    }
+
+public async Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetReadingsByDateRangeAsync(
+    int fieldId, int farmId, DateTime fromDate, DateTime toDate)
+{
+    // Ensure dates are UTC
+    if (fromDate.Kind != DateTimeKind.Utc)
+        fromDate = DateTime.SpecifyKind(fromDate, DateTimeKind.Utc);
+    if (toDate.Kind != DateTimeKind.Utc)
+        toDate = DateTime.SpecifyKind(toDate, DateTimeKind.Utc);
+    
+    var readings = await _sensorRepository.GetByFieldAndDateRangeAsync(fieldId, farmId, fromDate, toDate);
+    var dtos = _mapper.Map<IEnumerable<SensorReadingDto>>(readings);
+    return ApiResponse<IEnumerable<SensorReadingDto>>.Ok(dtos);
+}
+
+    public async Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetThresholdViolationsAsync(
+        int farmId, DateTime? fromDate, DateTime? toDate)
+    {
+        var violations = await _sensorRepository.GetThresholdViolationsAsync(farmId, fromDate, toDate);
+        var dtos = _mapper.Map<IEnumerable<SensorReadingDto>>(violations);
+        return ApiResponse<IEnumerable<SensorReadingDto>>.Ok(dtos);
+    }
+
+    public async Task<ApiResponse<byte[]>> ExportToExcelAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate)
+    {
+        var excelData = await _sensorRepository.ExportToExcelAsync(farmId, fieldId, fromDate, toDate);
+        return ApiResponse<byte[]>.Ok(excelData);
+    }
+
+    public async Task<ApiResponse<SensorStatisticsDto>> GetAverageReadingsAsync(
+        int farmId, string groupBy, DateTime? fromDate, DateTime? toDate)
+    {
+        var stats = await _sensorRepository.GetAverageReadingsAsync(farmId, groupBy, fromDate, toDate);
+        return ApiResponse<SensorStatisticsDto>.Ok(stats);
+    }
+}
+
+// AgriculturePlatform.Infrastructure/Repositories/AlertRepository.cs
+using Microsoft.EntityFrameworkCore;
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Alert;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Enums;
+using AgriculturePlatform.Infrastructure.Context;
+using AgriculturePlatform.Infrastructure.Specifications;
+
+namespace AgriculturePlatform.Infrastructure.Repositories;
+
+public class AlertRepository : IAlertRepository
+{
+    private readonly AppDbContext _context;
+
+    public AlertRepository(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<Alert?> GetByIdAsync(int id, int farmId)
+    {
+        return await _context.Alerts
+            .Include(a => a.Field)
+            .Include(a => a.CropCycle)
+            .FirstOrDefaultAsync(a => a.Id == id && a.FarmId == farmId);
+    }
+
+    public async Task<Alert> CreateAsync(Alert alert)
+    {
+        alert.CreatedAt = DateTime.UtcNow;
+        await _context.Alerts.AddAsync(alert);
+        await _context.SaveChangesAsync();
+        return alert;
+    }
+
+    public async Task UpdateAsync(Alert alert)
+    {
+        alert.UpdatedAt = DateTime.UtcNow;
+        _context.Alerts.Update(alert);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<PagedResult<Alert>> GetPagedAsync(
+        int farmId, int? fieldId, int? cropCycleId, string? alertType,
+        string? severity, bool? isResolved, DateTime? fromDate, DateTime? toDate,
+        PaginationParams paginationParams)
+    {
+        var specification = new AlertSpecification(
+            farmId, fieldId, cropCycleId, alertType, severity, isResolved, fromDate, toDate);
+
+        var query = _context.Alerts
+            .Include(a => a.Field)
+            .Include(a => a.CropCycle)
+            .Where(specification.Criteria!);
+
+        // Apply sorting
+        if (!string.IsNullOrWhiteSpace(paginationParams.SortBy))
+        {
+            query = paginationParams.IsDescending
+                ? query.OrderByDescending(a => EF.Property<object>(a, paginationParams.SortBy))
+                : query.OrderBy(a => EF.Property<object>(a, paginationParams.SortBy));
+        }
+        else
+        {
+            query = query.OrderByDescending(a => a.CreatedAt);
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .Skip((paginationParams.Page - 1) * paginationParams.PageSize)
+            .Take(paginationParams.PageSize)
+            .ToListAsync();
+
+        return new PagedResult<Alert>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = paginationParams.Page,
+            PageSize = paginationParams.PageSize
+        };
+    }
+
+    public async Task<int> GetUnresolvedCountAsync(int farmId)
+    {
+        return await _context.Alerts
+            .CountAsync(a => a.FarmId == farmId && !a.IsResolved);
+    }
+
+    public async Task<AlertStatisticsDto> GetStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate)
+    {
+        var query = _context.Alerts.Where(a => a.FarmId == farmId);
+
+        if (fromDate.HasValue)
+            query = query.Where(a => a.CreatedAt >= fromDate.Value);
+        if (toDate.HasValue)
+            query = query.Where(a => a.CreatedAt <= toDate.Value);
+
+        var alerts = await query.ToListAsync();
+
+        var stats = new AlertStatisticsDto
+        {
+            TotalAlerts = alerts.Count,
+            ResolvedAlerts = alerts.Count(a => a.IsResolved),
+            UnresolvedAlerts = alerts.Count(a => !a.IsResolved),
+            AlertsByType = alerts.GroupBy(a => a.AlertType.ToString())
+                .ToDictionary(g => g.Key, g => g.Count()),
+            AlertsBySeverity = alerts.GroupBy(a => a.Severity.ToString())
+                .ToDictionary(g => g.Key, g => g.Count()),
+            AlertsByField = alerts.Where(a => a.Field != null)
+                .GroupBy(a => a.Field!.FieldName)
+                .ToDictionary(g => g.Key, g => g.Count()),
+            RecentTrend = alerts
+                .GroupBy(a => a.CreatedAt.Date)
+                .OrderByDescending(g => g.Key)
+                .Take(30)
+                .Select(g => new AlertTrendDto { Date = g.Key, Count = g.Count() })
+                .OrderBy(t => t.Date)
+                .ToList()
+        };
+
+        return stats;
+    }
+
+    public async Task<int> BulkResolveAsync(IEnumerable<int> alertIds, int resolvedBy)
+    {
+        var alerts = await _context.Alerts
+            .Where(a => alertIds.Contains(a.Id) && !a.IsResolved)
+            .ToListAsync();
+
+        foreach (var alert in alerts)
+        {
+            alert.IsResolved = true;
+            alert.ResolvedAt = DateTime.UtcNow;
+            alert.UpdatedBy = resolvedBy;
+            alert.UpdatedAt = DateTime.UtcNow;
+        }
+
+        _context.Alerts.UpdateRange(alerts);
+        return await _context.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<Alert>> GetCriticalAlertsAsync(int farmId)
+    {
+        return await _context.Alerts
+            .Include(a => a.Field)
+            .Where(a => a.FarmId == farmId && 
+                        a.Severity == AlertSeverityEnum.CRITICAL && 
+                        !a.IsResolved)
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(50)
+            .ToListAsync();
+    }
+}
+
+// AgriculturePlatform.Infrastructure/Repositories/AlertThresholdRepository.cs
+using Microsoft.EntityFrameworkCore;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Infrastructure.Context;
+
+namespace AgriculturePlatform.Infrastructure.Repositories;
+
+public class AlertThresholdRepository : IAlertThresholdRepository
+{
+    private readonly AppDbContext _context;
+
+    public AlertThresholdRepository(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<AlertThreshold?> GetByIdAsync(int id, int farmId)
+    {
+        return await _context.Set<AlertThreshold>()
+            .FirstOrDefaultAsync(t => t.Id == id && t.FarmId == farmId && !t.IsDeleted);
+    }
+
+    public async Task<IEnumerable<AlertThreshold>> GetAllAsync(int farmId)
+    {
+        return await _context.Set<AlertThreshold>()
+            .Where(t => t.FarmId == farmId && t.IsActive && !t.IsDeleted)
+            .ToListAsync();
+    }
+
+    public async Task<AlertThreshold?> GetByCropAndStageAsync(string cropType, string growthStage, string sensorType, int farmId)
+    {
+        return await _context.Set<AlertThreshold>()
+            .FirstOrDefaultAsync(t => t.FarmId == farmId && 
+                                       t.CropType == cropType && 
+                                       t.GrowthStage == growthStage &&
+                                       t.SensorType == sensorType &&
+                                       t.IsActive && 
+                                       !t.IsDeleted);
+    }
+
+    public async Task<AlertThreshold> CreateAsync(AlertThreshold threshold)
+    {
+        threshold.CreatedAt = DateTime.UtcNow;
+        await _context.Set<AlertThreshold>().AddAsync(threshold);
+        await _context.SaveChangesAsync();
+        return threshold;
+    }
+
+    public async Task UpdateAsync(AlertThreshold threshold)
+    {
+        threshold.UpdatedAt = DateTime.UtcNow;
+        _context.Set<AlertThreshold>().Update(threshold);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(AlertThreshold threshold)
+    {
+        threshold.IsDeleted = true;
+        threshold.DeletedAt = DateTime.UtcNow;
+        _context.Set<AlertThreshold>().Update(threshold);
+        await _context.SaveChangesAsync();
+    }
+
+    // Infrastructure/Repositories/AlertThresholdRepository.cs
+public async Task<AlertThreshold?> GetThresholdsAsync(int farmId, string cropType, string growthStage, string sensorType)
+{
+    return await _context.AlertThresholds
+        .FirstOrDefaultAsync(t => t.FarmId == farmId && 
+                                   t.CropType == cropType && 
+                                   t.GrowthStage == growthStage && 
+                                   t.SensorType == sensorType &&
+                                   t.IsActive);
+}
+
+    public async Task<bool> ExistsAsync(int id, int farmId)
+    {
+        return await _context.Set<AlertThreshold>()
+            .AnyAsync(t => t.Id == id && t.FarmId == farmId && !t.IsDeleted);
+    }
+}
+
+// AgriculturePlatform.Infrastructure/Repositories/SensorReadingRepository.cs
+using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Sensor;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Enums;
+using AgriculturePlatform.Infrastructure.Context;
+using AgriculturePlatform.Infrastructure.Specifications;
+
+
+namespace AgriculturePlatform.Infrastructure.Repositories;
+
+public class SensorReadingRepository : ISensorReadingRepository
+{
+    private readonly AppDbContext _context;
+
+    public SensorReadingRepository(AppDbContext context)
+    {
+        _context = context;
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+    }
+
+    public async Task<SensorReading?> GetByIdAsync(int id, int farmId)
+    {
+        return await _context.SensorReadings
+            .Include(s => s.Field)
+            .Include(s => s.CropCycle)
+            .FirstOrDefaultAsync(s => s.Id == id && s.FarmId == farmId);
+    }
+
+    public async Task<SensorReading> CreateAsync(SensorReading reading)
+    {
+        reading.RecordedAt = DateTime.UtcNow;
+        await _context.SensorReadings.AddAsync(reading);
+        await _context.SaveChangesAsync();
+        return reading;
+    }
+
+    public async Task<PagedResult<SensorReading>> GetPagedAsync(
+        int farmId, int? fieldId, int? cropCycleId, string? sensorType,
+        DateTime? fromDate, DateTime? toDate, PaginationParams paginationParams)
+    {
+        var query = _context.SensorReadings
+            .Include(s => s.Field)
+            .Include(s => s.CropCycle)
+            .Where(s => s.FarmId == farmId);
+
+        if (fieldId.HasValue)
+            query = query.Where(s => s.FieldId == fieldId.Value);
+        if (cropCycleId.HasValue)
+            query = query.Where(s => s.CropCycleId == cropCycleId.Value);
+        if (!string.IsNullOrWhiteSpace(sensorType))
+            query = query.Where(s => s.SensorType.ToString() == sensorType);
+        if (fromDate.HasValue)
+            query = query.Where(s => s.RecordedAt >= fromDate.Value);
+        if (toDate.HasValue)
+            query = query.Where(s => s.RecordedAt <= toDate.Value);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(s => s.RecordedAt)
+            .Skip((paginationParams.Page - 1) * paginationParams.PageSize)
+            .Take(paginationParams.PageSize)
+            .ToListAsync();
+
+        return new PagedResult<SensorReading>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = paginationParams.Page,
+            PageSize = paginationParams.PageSize
+        };
+    }
+
+    public async Task<IEnumerable<SensorReading>> GetLatestPerFieldAsync(int farmId)
+    {
+        return await _context.SensorReadings
+            .Include(s => s.Field)
+            .Where(s => s.FarmId == farmId)
+            .GroupBy(s => new { s.FieldId, s.SensorType })
+            .Select(g => g.OrderByDescending(s => s.RecordedAt).FirstOrDefault())
+            .ToListAsync();
+    }
+
+// AgriculturePlatform.Infrastructure/Repositories/SensorReadingRepository.cs
+
+public async Task<IEnumerable<SensorReading>> GetByFieldAndDateRangeAsync(
+    int fieldId, int farmId, DateTime fromDate, DateTime toDate)
+{
+    // Convert to UTC and use date part only
+    var fromDateUtc = fromDate.ToUniversalTime().Date;
+    var toDateUtc = toDate.ToUniversalTime().Date;
+    
+    return await _context.SensorReadings
+        .Include(s => s.Field)
+        .Where(s => s.FieldId == fieldId && s.FarmId == farmId && 
+                    s.RecordedAt.Date >= fromDateUtc && s.RecordedAt.Date <= toDateUtc)
+        .OrderBy(s => s.RecordedAt)
+        .ToListAsync();
+}
+
+    public async Task<IEnumerable<SensorReading>> GetThresholdViolationsAsync(
+        int farmId, DateTime? fromDate, DateTime? toDate)
+    {
+        var query = _context.SensorReadings
+            .Include(s => s.Field)
+            .Include(s => s.Alerts)
+            .Where(s => s.FarmId == farmId && s.Alerts.Any());
+
+        if (fromDate.HasValue)
+            query = query.Where(s => s.RecordedAt >= fromDate.Value);
+        if (toDate.HasValue)
+            query = query.Where(s => s.RecordedAt <= toDate.Value);
+
+        return await query.ToListAsync();
+    }
+
+    public async Task<byte[]> ExportToExcelAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate)
+    {
+        var query = _context.SensorReadings
+            .Include(s => s.Field)
+            .Where(s => s.FarmId == farmId);
+
+        if (fieldId.HasValue)
+            query = query.Where(s => s.FieldId == fieldId.Value);
+        if (fromDate.HasValue)
+            query = query.Where(s => s.RecordedAt >= fromDate.Value);
+        if (toDate.HasValue)
+            query = query.Where(s => s.RecordedAt <= toDate.Value);
+
+        var readings = await query.ToListAsync();
+
+        using var package = new ExcelPackage();
+        var worksheet = package.Workbook.Worksheets.Add("Sensor Readings");
+
+        // Headers
+        worksheet.Cells[1, 1].Value = "Field";
+        worksheet.Cells[1, 2].Value = "Crop Cycle";
+        worksheet.Cells[1, 3].Value = "Sensor Type";
+        worksheet.Cells[1, 4].Value = "Value";
+        worksheet.Cells[1, 5].Value = "Unit";
+        worksheet.Cells[1, 6].Value = "Recorded At";
+
+        for (int i = 0; i < readings.Count; i++)
+        {
+            var reading = readings[i];
+            var row = i + 2;
+            worksheet.Cells[row, 1].Value = reading.Field?.FieldName;
+            worksheet.Cells[row, 2].Value = reading.CropCycleId;
+            worksheet.Cells[row, 3].Value = reading.SensorType.ToString();
+            worksheet.Cells[row, 4].Value = reading.Value;
+            worksheet.Cells[row, 5].Value = reading.Unit;
+            worksheet.Cells[row, 6].Value = reading.RecordedAt.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+
+        worksheet.Cells.AutoFitColumns();
+        return package.GetAsByteArray();
+    }
+
+    public async Task<SensorStatisticsDto> GetAverageReadingsAsync(
+        int farmId, string groupBy, DateTime? fromDate, DateTime? toDate)
+    {
+        var query = _context.SensorReadings.Where(s => s.FarmId == farmId);
+        
+        if (fromDate.HasValue)
+            query = query.Where(s => s.RecordedAt >= fromDate.Value);
+        if (toDate.HasValue)
+            query = query.Where(s => s.RecordedAt <= toDate.Value);
+
+        var stats = new SensorStatisticsDto { Period = groupBy };
+        var readings = await query.ToListAsync();
+
+        if (groupBy?.ToLower() == "day")
+        {
+            stats.DailyStats = readings
+                .GroupBy(s => s.RecordedAt.Date)
+                .ToDictionary(
+                    g => g.Key.ToString("yyyy-MM-dd"),
+                    g => new DailySensorStats
+                    {
+                        Date = g.Key,
+                        AvgSoilMoisture = g.Where(s => s.SensorType == SensorTypeEnum.SOIL_MOISTURE).Average(s => s.Value),
+                        AvgSoilTemp = g.Where(s => s.SensorType == SensorTypeEnum.SOIL_TEMP).Average(s => s.Value),
+                        AvgAirTemp = g.Where(s => s.SensorType == SensorTypeEnum.AIR_TEMP).Average(s => s.Value),
+                        AvgHumidity = g.Where(s => s.SensorType == SensorTypeEnum.AIR_HUMIDITY).Average(s => s.Value),
+                        ReadingsCount = g.Count()
+                    });
+        }
+        else if (groupBy?.ToLower() == "week")
+        {
+            stats.WeeklyStats = readings
+                .GroupBy(s => new { Year = s.RecordedAt.Year, Week = System.Globalization.CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(s.RecordedAt, System.Globalization.CalendarWeekRule.FirstDay, DayOfWeek.Monday) })
+                .ToDictionary(
+                    g => $"{g.Key.Year}-W{g.Key.Week}",
+                    g => new WeeklySensorStats
+                    {
+                        WeekNumber = g.Key.Week,
+                        Year = g.Key.Year,
+                        AvgSoilMoisture = g.Where(s => s.SensorType == SensorTypeEnum.SOIL_MOISTURE).Average(s => s.Value),
+                        AvgSoilTemp = g.Where(s => s.SensorType == SensorTypeEnum.SOIL_TEMP).Average(s => s.Value),
+                        AlertCount = g.SelectMany(s => s.Alerts).Count()
+                    });
+        }
+
+        return stats;
+    }
+
+    public async Task<int> BulkCreateAsync(IEnumerable<SensorReading> readings)
+    {
+        await _context.SensorReadings.AddRangeAsync(readings);
+        return await _context.SaveChangesAsync();
+    }
+}
+
+// AgriculturePlatform.API/BackgroundServices/IoTSimulatorBackgroundService.cs
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.API.Hubs;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Enums;
+using AgriculturePlatform.Domain.Entities.AdminEntities; 
+
+namespace AgriculturePlatform.API.BackgroundServices;
+
+public class IoTSimulatorBackgroundService : BackgroundService
+{
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IHubContext<SensorHub> _hubContext;
+    private readonly ILogger<IoTSimulatorBackgroundService> _logger;
+    private readonly Random _random = new();
+    
+    // Realistic value ranges for different sensor types
+    private readonly Dictionary<string, (decimal Min, decimal Max, string Unit)> _sensorRanges = new()
+    {
+        { "SOIL_MOISTURE", (15m, 45m, "%") },
+        { "SOIL_TEMP", (15m, 35m, "°C") },
+        { "AIR_TEMP", (10m, 45m, "°C") },
+        { "AIR_HUMIDITY", (30m, 90m, "%") },
+        { "LIGHT_INTENSITY", (0m, 1200m, "lux") }
+    };
+    
+    private readonly string[] _sensorTypes = { "SOIL_MOISTURE", "SOIL_TEMP", "AIR_TEMP", "AIR_HUMIDITY", "LIGHT_INTENSITY" };
+    
+    public IoTSimulatorBackgroundService(
+        IServiceScopeFactory scopeFactory,
+        IHubContext<SensorHub> hubContext,
+        ILogger<IoTSimulatorBackgroundService> logger)
+    {
+        _scopeFactory = scopeFactory;
+        _hubContext = hubContext;
+        _logger = logger;
+    }
+    
+
+protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+{
+    _logger.LogInformation("IoT Simulator Background Service started");
+    
+    while (!stoppingToken.IsCancellationRequested)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var fieldRepository = scope.ServiceProvider.GetRequiredService<IFieldRepository>();
+            var sensorRepository = scope.ServiceProvider.GetRequiredService<ISensorReadingRepository>();
+            var alertService = scope.ServiceProvider.GetRequiredService<IAlertService>();
+            var farmRepository = scope.ServiceProvider.GetRequiredService<IFarmRepository>();
+            var adminRepository = scope.ServiceProvider.GetRequiredService<IAdminRepository>();
+            
+            // Get all active farms
+            var farms = await farmRepository.GetAllActiveAsync();
+            
+            foreach (var farm in farms)
+            {
+                //  Use GetByFarmIdAsync instead of GetAllAsync
+                var admins = await adminRepository.GetByFarmIdAsync(farm.Id);
+                var adminId = admins.FirstOrDefault()?.Id ?? 1;
+                
+                _logger.LogInformation($"Using Admin ID: {adminId} for farm {farm.FarmName}");
+                
+                var fields = await fieldRepository.GetAllAsync(farm.Id);
+                
+                foreach (var field in fields)
+                {
+                    if (!field.Latitude.HasValue || !field.Longitude.HasValue)
+                    {
+                        _logger.LogWarning($"Field {field.FieldName} has no coordinates - skipping");
+                        continue;
+                    }
+                    
+                    var cropCycles = await GetActiveCropCyclesAsync(scope, field.Id, farm.Id);
+                    
+                    foreach (var cropCycle in cropCycles)
+                    {
+                        foreach (var sensorType in _sensorTypes)
+                        {
+                            var reading = GenerateSensorReading(field.Id, cropCycle.Id, sensorType, farm.Id, adminId);
+                            
+                            var created = await sensorRepository.CreateAsync(reading);
+                            
+                            await _hubContext.Clients.Group($"farm-{farm.Id}")
+                                .SendAsync("ReceiveSensorReading", new
+                                {
+                                    Id = created.Id,
+                                    FieldId = field.Id,
+                                    FieldName = field.FieldName,
+                                    CropCycleId = cropCycle.Id,
+                                    SensorType = sensorType,
+                                    Value = reading.Value,
+                                    Unit = _sensorRanges[sensorType].Unit,
+                                    RecordedAt = reading.RecordedAt
+                                });
+                            
+                            await alertService.CheckAndCreateAlertAsync(
+                                field.Id, cropCycle.Id, sensorType, reading.Value ?? 0, farm.Id, adminId);
+                        }
+                    }
+                }
+            }
+            
+            _logger.LogInformation("IoT simulation cycle completed");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in IoT simulation cycle");
+        }
+        
+        await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+    }
+    
+    _logger.LogInformation("IoT Simulator Background Service stopped");
+}
+
+private SensorReading GenerateSensorReading(int fieldId, int cropCycleId, string sensorType, int farmId, int adminId)
+{
+    var range = _sensorRanges[sensorType];
+    var value = (decimal)(_random.NextDouble() * (double)(range.Max - range.Min) + (double)range.Min);
+    
+    // Add some realistic patterns based on time of day for temperature
+    if (sensorType == "AIR_TEMP")
+    {
+        var hour = DateTime.UtcNow.AddHours(5).Hour; // IST timezone
+        var dayFactor = (decimal)Math.Sin(Math.PI * (hour - 6) / 12);
+        value = 25m + (dayFactor * 10m);
+        value = Math.Clamp(value, range.Min, range.Max);
+    }
+    
+    return new SensorReading
+    {
+        FarmId = farmId,           
+        AdminId = adminId,         
+        FieldId = fieldId,
+        CropCycleId = cropCycleId,
+        SensorType = Enum.Parse<SensorTypeEnum>(sensorType),
+        Value = Math.Round(value, 2),
+        Unit = range.Unit,
+        RecordedAt = DateTime.UtcNow
+    };
+}  
+
+    private async Task<List<Farm>> GetActiveFarmsAsync(IServiceScope scope)
+    {
+        var farmRepository = scope.ServiceProvider.GetRequiredService<IFarmRepository>();
+        return (await farmRepository.GetAllActiveAsync()).ToList();
+    }
+    
+    private async Task<List<CropCycle>> GetActiveCropCyclesAsync(IServiceScope scope, int fieldId, int farmId)
+    {
+        var cropCycleRepository = scope.ServiceProvider.GetRequiredService<ICropCycleRepository>();
+        var allCycles = await cropCycleRepository.GetAllAsync(farmId);
+        return allCycles.Where(c => c.FieldId == fieldId && c.Status == TaskStatusEnum.IN_PROGRESS).ToList();
+    }
+}
+
+
+// API/Configuration/EmailSettings.cs
+namespace AgriculturePlatform.API.Configuration;
+
+public class EmailSettings
+{
+    public string SmtpServer { get; set; } = "smtp.gmail.com";
+    public int SmtpPort { get; set; } = 587;
+    public string SenderEmail { get; set; } = string.Empty;
+    public string SenderPassword { get; set; } = string.Empty;
+    public bool EnableSsl { get; set; } = true;
+    public string SenderName { get; set; } = "Farm Management System";
+}
+
+// AgriculturePlatform.API/Hubs/MonitoringHub.cs
+using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
+
+namespace AgriculturePlatform.API.Hubs;
+
+public class MonitoringHub : Hub
+{
+    private static readonly Dictionary<string, UserConnection> _userConnections = new();
+
+    public override async Task OnConnectedAsync()
+    {
+        var userId = Context.UserIdentifier;
+        var farmId = Context.User?.FindFirst("farmId")?.Value;
+        var role = Context.User?.FindFirst("role")?.Value;
+        
+        if (!string.IsNullOrEmpty(userId))
+        {
+            _userConnections[userId] = new UserConnection
+            {
+                ConnectionId = Context.ConnectionId,
+                FarmId = farmId,
+                Role = role,
+                ConnectedAt = DateTime.UtcNow
+            };
+        }
+
+        if (!string.IsNullOrEmpty(farmId))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"farm-{farmId}");
+        }
+
+        await base.OnConnectedAsync();
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        var userId = Context.UserIdentifier;
+        
+        if (!string.IsNullOrEmpty(userId))
+        {
+            _userConnections.Remove(userId);
+        }
+
+        await base.OnDisconnectedAsync(exception);
+    }
+
+    public async Task JoinFieldGroup(int fieldId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"field-{fieldId}");
+    }
+
+    public async Task LeaveFieldGroup(int fieldId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"field-{fieldId}");
+    }
+
+    public async Task JoinCropCycleGroup(int cropCycleId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"cropcycle-{cropCycleId}");
+    }
+
+    public async Task AcknowledgeAlert(int alertId)
+    {
+        var userId = Context.UserIdentifier;
+        await Clients.Group($"farm-{GetFarmId()}").SendAsync("AlertAcknowledged", 
+            new { AlertId = alertId, AcknowledgedBy = userId, AcknowledgedAt = DateTime.UtcNow });
+    }
+
+    private string GetFarmId()
+    {
+        return Context.User?.FindFirst("farmId")?.Value ?? "0";
+    }
+
+    public async Task BroadcastSensorReading(object reading)
+    {
+        var farmId = GetFarmId();
+        await Clients.Group($"farm-{farmId}").SendAsync("ReceiveSensorReading", reading);
+    }
+
+    public async Task BroadcastNewAlert(object alert)
+    {
+        var farmId = GetFarmId();
+        await Clients.Group($"farm-{farmId}").SendAsync("NewAlert", alert);
+    }
+
+    public async Task BroadcastAlertResolved(int alertId)
+    {
+        var farmId = GetFarmId();
+        await Clients.Group($"farm-{farmId}").SendAsync("AlertResolved", 
+            new { AlertId = alertId, ResolvedAt = DateTime.UtcNow });
+    }
+
+    public async Task<int> GetConnectedUsersCount()
+    {
+        return await Task.FromResult(_userConnections.Count);
+    }
+
+    public async Task<object> GetConnectionStatus()
+    {
+        var userId = Context.UserIdentifier;
+        var isConnected = _userConnections.ContainsKey(userId ?? "");
+        
+        // FIX: Use proper null handling
+        UserConnection? connection = null;
+        if (isConnected && userId != null)
+        {
+            _userConnections.TryGetValue(userId, out connection);
+        }
+        
+        return await Task.FromResult(new
+        {
+            IsConnected = isConnected,
+            ConnectionId = Context.ConnectionId,
+            ConnectedAt = connection?.ConnectedAt
+        });
+    }
+}
+
+public class UserConnection
+{
+    public string ConnectionId { get; set; } = string.Empty;
+    public string? FarmId { get; set; }
+    public string? Role { get; set; }
+    public DateTime ConnectedAt { get; set; }
+}
+
+// AgriculturePlatform.API/Hubs/SensorHub.cs
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Authorization;
+
+namespace AgriculturePlatform.API.Hubs;
+
+[Authorize]
+public class SensorHub : Hub
+{
+    private static readonly Dictionary<string, string> _userConnections = new();
+    
+    public override async Task OnConnectedAsync()
+    {
+        var userId = Context.UserIdentifier;
+        var farmId = Context.User?.FindFirst("farmId")?.Value;
+        
+        if (!string.IsNullOrEmpty(farmId))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"farm-{farmId}");
+        }
+        
+        await base.OnConnectedAsync();
+    }
+    
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        var userId = Context.UserIdentifier;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            _userConnections.Remove(userId);
+        }
+        
+        await base.OnDisconnectedAsync(exception);
+    }
+    
+    public async Task JoinFieldGroup(int fieldId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"field-{fieldId}");
+    }
+    
+    public async Task LeaveFieldGroup(int fieldId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"field-{fieldId}");
+    }
+    
+    public async Task JoinFarmGroup(int farmId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"farm-{farmId}");
+    }
+}
+
+// API/Services/AlertNotificationService.cs
+using Microsoft.AspNetCore.SignalR;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.API.Hubs;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+
+namespace AgriculturePlatform.API.Services;
+
+public class AlertNotificationService : IAlertNotificationService
+{
+    private readonly IHubContext<MonitoringHub> _hubContext;
+    private readonly AgriculturePlatform.Application.Services.AlertNotificationService _appNotificationService;
+
+    public AlertNotificationService(
+        IHubContext<MonitoringHub> hubContext,
+        AgriculturePlatform.Application.Services.AlertNotificationService appNotificationService)
+    {
+        _hubContext = hubContext;
+        _appNotificationService = appNotificationService;
+    }
+
+    public async Task NotifyNewAlertAsync(int farmId, object alertData)
+    {
+        await _hubContext.Clients.Group($"farm-{farmId}").SendAsync("NewAlert", alertData);
+        await _appNotificationService.NotifyNewAlertAsync(farmId, alertData);
+    }
+
+    public async Task NotifyAlertResolvedAsync(int farmId, object resolutionData)
+    {
+        await _hubContext.Clients.Group($"farm-{farmId}").SendAsync("AlertResolved", resolutionData);
+        await _appNotificationService.NotifyAlertResolvedAsync(farmId, resolutionData);
+    }
+
+    public async Task NotifySensorReadingAsync(int farmId, object readingData)
+    {
+        await _hubContext.Clients.Group($"farm-{farmId}").SendAsync("ReceiveSensorReading", readingData);
+        await _appNotificationService.NotifySensorReadingAsync(farmId, readingData);
+    }
+
+    public async Task SendAlertNotificationsAsync(Alert alert, int farmId)
+    {
+        // SignalR notification for real-time updates
+        await _hubContext.Clients.Group($"farm-{farmId}").SendAsync("NewAlert", new
+        {
+            alert.Id,
+            alert.AlertType,
+            alert.Severity,
+            alert.Message,
+            alert.FieldId,
+            alert.CreatedAt
+        });
+
+        // Email notifications
+        await _appNotificationService.SendAlertNotificationsAsync(alert, farmId);
+    }
+
+    public async Task SendTestAlertEmailAsync(string recipientEmail, string recipientName)
+    {
+        // For SignalR, just send a test notification
+        await _hubContext.Clients.All.SendAsync("TestNotification", new
+        {
+            Message = $"Test alert sent to {recipientEmail}",
+            Recipient = recipientName,
+            Timestamp = DateTime.UtcNow
+        });
+
+        // Email notification
+        await _appNotificationService.SendTestAlertEmailAsync(recipientEmail, recipientName);
+    }
+}
+
+// AgriculturePlatform.API/Controllers/AdminAlertsController.cs
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using AgriculturePlatform.Application.DTOs.Alert;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.API.Filters;
+
+namespace AgriculturePlatform.API.Controllers;
+
+[ApiController]
+[Route("api/admin/farms/{farmId}/alerts")]
+[Authorize]
+[AuthorizeFarm]
+public class AdminAlertsController : ControllerBase
+{
+    private readonly IAlertService _alertService;
+
+    public AdminAlertsController(IAlertService alertService)
+    {
+        _alertService = alertService;
+    }
+
+    private int GetCurrentFarmId() => int.Parse(User.FindFirst("farmId")?.Value ?? "0");
+    private int GetCurrentAdminId() => int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+    // GET: api/admin/farms/{farmId}/alerts
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] AlertFilterDto filter)
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _alertService.GetAllAlertsAsync(filter, farmId);
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/alerts/dashboard
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboard()
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _alertService.GetDashboardAlertsAsync(farmId);
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/alerts/{id}
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _alertService.GetAlertByIdAsync(id, farmId);
+        
+        if (!result.Success)
+            return NotFound(result);
+            
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/alerts/critical
+    [HttpGet("critical")]
+    public async Task<IActionResult> GetCriticalAlerts()
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _alertService.GetCriticalAlertsAsync(farmId);
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/alerts/statistics
+    [HttpGet("statistics")]
+    public async Task<IActionResult> GetStatistics([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _alertService.GetAlertStatisticsAsync(farmId, fromDate, toDate);
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/alerts/unresolved-count
+    [HttpGet("unresolved-count")]
+    public async Task<IActionResult> GetUnresolvedCount()
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _alertService.GetUnresolvedCountAsync(farmId);
+        return Ok(result);
+    }
+
+    // PUT: api/admin/farms/{farmId}/alerts/{id}/resolve
+    [HttpPut("{id}/resolve")]
+    public async Task<IActionResult> ResolveAlert(int id, [FromBody] ResolveAlertDto dto)
+    {
+        var farmId = GetCurrentFarmId();
+        var adminId = GetCurrentAdminId();
+        var result = await _alertService.ResolveAlertAsync(id, dto, farmId, adminId);
+        
+        if (!result.Success)
+            return BadRequest(result);
+            
+        return Ok(result);
+    }
+}
+
+// AgriculturePlatform.API/Controllers/AdminSensorController.cs
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims; 
+using AgriculturePlatform.Application.DTOs.Sensor;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.API.Filters;
+
+namespace AgriculturePlatform.API.Controllers;
+
+[ApiController]
+[Route("api/admin/farms/{farmId}/sensors")]
+[Authorize]
+[AuthorizeFarm]
+public class AdminSensorController : ControllerBase
+{
+    private readonly ISensorReadingService _sensorService;
+    private readonly IAlertService _alertService;
+
+    public AdminSensorController(ISensorReadingService sensorService, IAlertService alertService)
+    {
+        _sensorService = sensorService;
+        _alertService = alertService;
+    }
+
+    private int GetCurrentFarmId() => int.Parse(User.FindFirst("farmId")?.Value ?? "0");
+    private int GetCurrentAdminId() => int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+    // GET: api/admin/farms/{farmId}/sensors
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] SensorReadingFilterDto filter)
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _sensorService.GetAllReadingsAsync(filter, farmId);
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/sensors/latest
+    [HttpGet("latest")]
+    public async Task<IActionResult> GetLatestPerField()
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _sensorService.GetLatestReadingsPerFieldAsync(farmId);
+        return Ok(result);
+    }
+
+// GET: api/admin/farms/{farmId}/sensors/field/{fieldId}/history
+// AgriculturePlatform.API/Controllers/AdminSensorController.cs
+
+[HttpGet("field/{fieldId}/history")]
+public async Task<IActionResult> GetFieldHistory(
+    int fieldId, 
+    [FromQuery] DateTime? fromDate = null, 
+    [FromQuery] DateTime? toDate = null)
+{
+    var farmId = GetCurrentFarmId();
+    
+    // Default to last 30 days if not specified
+    var endDate = toDate?.ToUniversalTime() ?? DateTime.UtcNow;
+    var startDate = fromDate?.ToUniversalTime() ?? endDate.AddDays(-30);
+    
+    var result = await _sensorService.GetReadingsByDateRangeAsync(fieldId, farmId, startDate, endDate);
+    return Ok(result);
+}
+
+
+    // GET: api/admin/farms/{farmId}/sensors/threshold-violations
+    [HttpGet("threshold-violations")]
+    public async Task<IActionResult> GetThresholdViolations([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _sensorService.GetThresholdViolationsAsync(farmId, fromDate, toDate);
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/sensors/statistics
+    [HttpGet("statistics")]
+    public async Task<IActionResult> GetStatistics(
+        [FromQuery] string groupBy = "day",
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null)
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _sensorService.GetAverageReadingsAsync(farmId, groupBy, fromDate, toDate);
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/sensors/export
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportToExcel(
+        [FromQuery] int? fieldId = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null)
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _sensorService.ExportToExcelAsync(farmId, fieldId, fromDate, toDate);
+        
+        if (!result.Success)
+            return BadRequest(result);
+            
+        return File(result.Data!, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+            $"sensor_readings_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+    }
+
+    
+}
+
+// AgriculturePlatform.API/Filters/AuthorizeFarmAttribute.cs
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+
+namespace AgriculturePlatform.API.Filters;
+
+/// <summary>
+/// Authorization filter that ensures users can only access resources belonging to their own farm.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public class AuthorizeFarmAttribute : Attribute, IAuthorizationFilter
+{
+    private readonly string _farmIdParamName;
+
+    public AuthorizeFarmAttribute(string farmIdParamName = "farmId")
+    {
+        _farmIdParamName = farmIdParamName;
+    }
+
+    public void OnAuthorization(AuthorizationFilterContext context)
+    {
+        // Check if user is authenticated
+        if (!context.HttpContext.User.Identity?.IsAuthenticated ?? true)
+        {
+            context.Result = new UnauthorizedResult();
+            return;
+        }
+
+        // Get farm ID from JWT token
+        var userFarmId = context.HttpContext.User.FindFirst("farmId")?.Value;
+        
+        if (string.IsNullOrEmpty(userFarmId))
+        {
+            context.Result = new UnauthorizedObjectResult(new { message = "Farm information not found" });
+            return;
+        }
+
+        // Get farm ID from route data
+        var routeFarmId = context.RouteData.Values[_farmIdParamName]?.ToString();
+        
+        // Get farm ID from query string
+        var queryFarmId = context.HttpContext.Request.Query[_farmIdParamName].ToString();
+        
+        var requestFarmId = routeFarmId ?? queryFarmId;
+
+        // If farm ID is specified in request, verify ownership
+        if (!string.IsNullOrEmpty(requestFarmId) && requestFarmId != userFarmId)
+        {
+            context.Result = new ForbidResult();
+            return;
+        }
+    }
+}
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using FluentValidation;
+using AutoMapper;
+using AgriculturePlatform.Infrastructure.Context;
+using AgriculturePlatform.Infrastructure.FileStorage;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Application.Services;
+using AgriculturePlatform.Infrastructure.Repositories;
+using AgriculturePlatform.Application.Validators;
+using AgriculturePlatform.Application.Validators.Harvest; 
+using AgriculturePlatform.Application.Validators.QualityCheck;
+using Microsoft.OpenApi.Models;
+using AgriculturePlatform.API.BackgroundServices;
+using AgriculturePlatform.Application.Mappings;
+using AgriculturePlatform.API.Hubs;
+using AgriculturePlatform.API.Services;
+using AgriculturePlatform.API.Configuration;
+using AgriculturePlatform.Infrastructure.Services;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
+
+builder.Services.Configure<FileStorageSettings>(
+    builder.Configuration.GetSection("FileStorage"));
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
+
+// Add Swagger
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "Farm Management Platform API", 
+        Version = "v1",
+        Description = "API for managing farms, crops, workers, and yields"
+    });
+    
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// Add DbContext
+builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
+// ✅ FIX: SINGLE CORS POLICY - Only define this ONCE
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:4200",
+                "https://localhost:4200",
+                "http://localhost:5000"
+            )
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
+
+// JWT Configuration 
+var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "your-super-secret-key-minimum-32-characters-long";
+var jwtIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "AgriculturePlatform";
+var jwtAudience = builder.Configuration["JwtSettings:Audience"] ?? "AgriculturePlatformClients";
+var accessTokenExpiryMinutes = int.Parse(builder.Configuration["JwtSettings:AccessTokenExpiryMinutes"] ?? "15");
+var refreshTokenExpiryDays = int.Parse(builder.Configuration["JwtSettings:RefreshTokenExpiryDays"] ?? "7");
+
+// Register JWT Service with new parameters
+builder.Services.AddSingleton<IJwtService>(provider =>
+    new JwtService(jwtSecretKey, jwtIssuer, jwtAudience, accessTokenExpiryMinutes, refreshTokenExpiryDays));
+
+// Add AuditLog Service
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+
+// SignalR
+builder.Services.AddSignalR();
+
+// Background Services
+builder.Services.AddHostedService<IoTSimulatorBackgroundService>();
+builder.Services.AddHostedService<ScheduledReportBackgroundService>();
+
+// Add AutoMapper
+var mapperConfig = new MapperConfiguration(cfg =>
+{
+    cfg.AddProfile<FieldMappingProfile>();
+    cfg.AddProfile<CropCycleMappingProfile>();
+    cfg.AddProfile<WorkerMappingProfile>();
+    cfg.AddProfile<WorkerProfileMappingProfile>();
+    cfg.AddProfile<WorkerFieldAssignmentMappingProfile>();
+    cfg.AddProfile<WorkerFieldMappingProfile>();
+    cfg.AddProfile<WeatherMappingProfile>();
+    cfg.AddProfile<TaskMappingProfile>();
+    cfg.AddProfile<WorkerTaskMappingProfile>();
+    cfg.AddProfile<SensorMappingProfile>();
+    cfg.AddProfile<AlertMappingProfile>();
+    cfg.AddProfile<ObservationMappingProfile>();
+    cfg.AddProfile<HarvestMappingProfile>();
+    cfg.AddProfile<QualityCheckMappingProfile>();
+    cfg.AddProfile<YieldReportMappingProfile>();
+});
+
+var mapper = mapperConfig.CreateMapper();
+builder.Services.AddSingleton<IMapper>(mapper);
+
+builder.Services.AddValidatorsFromAssembly(typeof(CreateFieldValidator).Assembly);
+
+// Add Excel service
+builder.Services.AddScoped<IExcelService, ExcelService>();
+
+// Register Repositories
+builder.Services.AddScoped<IFarmRepository, FarmRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IFieldRepository, FieldRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<ICropCycleRepository, CropCycleRepository>();
+builder.Services.AddScoped<IWorkerRepository, WorkerRepository>();
+builder.Services.AddScoped<IWorkerFieldAssignmentRepository, WorkerFieldAssignmentRepository>();
+builder.Services.AddScoped<IWeatherRepository, WeatherRepository>();
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddScoped<ISensorReadingRepository, SensorReadingRepository>();
+builder.Services.AddScoped<IAlertRepository, AlertRepository>();
+builder.Services.AddScoped<IAlertThresholdRepository, AlertThresholdRepository>();
+builder.Services.AddScoped<IObservationRepository, ObservationRepository>();
+builder.Services.AddScoped<IHarvestRepository, HarvestRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IQualityCheckRepository, QualityCheckRepository>();
+builder.Services.AddScoped<IYieldReportRepository, YieldReportRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IWeatherAlertRepository, WeatherAlertRepository>();
+
+// Register Services
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IFieldService, FieldService>();
+builder.Services.AddScoped<ICropCycleService, CropCycleService>();
+builder.Services.AddScoped<IWorkerService, WorkerService>();
+builder.Services.AddScoped<IWorkerAuthService, WorkerAuthService>();
+builder.Services.AddScoped<IWorkerProfileService, WorkerProfileService>();
+builder.Services.AddScoped<IWorkerFieldAssignmentService, WorkerFieldAssignmentService>();
+builder.Services.AddScoped<IWorkerFieldService, WorkerFieldService>();
+builder.Services.AddScoped<IWeatherService, WeatherService>();
+builder.Services.AddSingleton<IWeatherApiService, WeatherApiService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IExcelTaskService, ExcelTaskService>();
+builder.Services.AddScoped<IWorkerTaskService, WorkerTaskService>();
+builder.Services.AddScoped<ISensorReadingService, SensorReadingService>();
+builder.Services.AddScoped<IAlertService, AlertService>();
+builder.Services.AddScoped<IIoTSimulatorService, IoTSimulatorService>();
+builder.Services.AddScoped<AgriculturePlatform.Application.Services.AlertNotificationService>();
+builder.Services.AddScoped<IAlertNotificationService, AgriculturePlatform.API.Services.AlertNotificationService>();
+builder.Services.AddScoped<IObservationService, ObservationService>();
+builder.Services.AddScoped<IHarvestService, HarvestService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IQualityCheckService, QualityCheckService>();
+builder.Services.AddScoped<IYieldReportService, YieldReportService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+builder.Services.AddScoped<ObservationStatisticsFormatter>();
+
+// Background Service
+builder.Services.AddHostedService<WeatherUpdateBackgroundService>();
+
+// Add JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey))
+        };
+        
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("Token validated successfully");
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                Console.WriteLine($"Challenge: {context.Error}, {context.ErrorDescription}");
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+
+// ✅ FIX: Configure pipeline in the CORRECT ORDER
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Farm Management API v1");
+    c.RoutePrefix = "swagger";
+});
+
+// ✅ CORS must be BEFORE Authentication and Authorization
+app.UseCors("AllowAll");
+
+// ✅ Authentication and Authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+// ✅ Map Hubs
+app.MapHub<MonitoringHub>("/monitoringHub");
+app.MapHub<SensorHub>("/sensorHub");
+app.MapHub<WeatherHub>("/weatherHub");
+
+app.MapControllers();
+
+
+
+// Create database
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.EnsureCreated();
+}
+
+app.Run();
+

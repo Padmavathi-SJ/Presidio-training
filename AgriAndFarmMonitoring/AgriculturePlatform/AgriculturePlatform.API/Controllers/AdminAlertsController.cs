@@ -1,7 +1,7 @@
-// AgriculturePlatform.API/Controllers/AdminAlertController.cs
+// AgriculturePlatform.API/Controllers/AdminAlertsController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims; 
+using System.Security.Claims;
 using AgriculturePlatform.Application.DTOs.Alert;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.API.Filters;
@@ -12,11 +12,11 @@ namespace AgriculturePlatform.API.Controllers;
 [Route("api/admin/farms/{farmId}/alerts")]
 [Authorize]
 [AuthorizeFarm]
-public class AdminAlertController : ControllerBase
+public class AdminAlertsController : ControllerBase
 {
     private readonly IAlertService _alertService;
 
-    public AdminAlertController(IAlertService alertService)
+    public AdminAlertsController(IAlertService alertService)
     {
         _alertService = alertService;
     }
@@ -33,22 +33,52 @@ public class AdminAlertController : ControllerBase
         return Ok(result);
     }
 
-    // GET: api/admin/farms/{farmId}/alerts/unresolved
-    [HttpGet("unresolved")]
-    public async Task<IActionResult> GetUnresolved([FromQuery] AlertFilterDto filter)
+    // GET: api/admin/farms/{farmId}/alerts/dashboard
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboard()
     {
-        filter.IsResolved = false;
         var farmId = GetCurrentFarmId();
-        var result = await _alertService.GetAllAlertsAsync(filter, farmId);
+        var result = await _alertService.GetDashboardAlertsAsync(farmId);
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/alerts/{id}
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _alertService.GetAlertByIdAsync(id, farmId);
+        
+        if (!result.Success)
+            return NotFound(result);
+            
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/alerts/critical
+    [HttpGet("critical")]
+    public async Task<IActionResult> GetCriticalAlerts()
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _alertService.GetCriticalAlertsAsync(farmId);
         return Ok(result);
     }
 
     // GET: api/admin/farms/{farmId}/alerts/statistics
     [HttpGet("statistics")]
-    public async Task<IActionResult> GetStatistics([FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
+    public async Task<IActionResult> GetStatistics([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
     {
         var farmId = GetCurrentFarmId();
         var result = await _alertService.GetAlertStatisticsAsync(farmId, fromDate, toDate);
+        return Ok(result);
+    }
+
+    // GET: api/admin/farms/{farmId}/alerts/unresolved-count
+    [HttpGet("unresolved-count")]
+    public async Task<IActionResult> GetUnresolvedCount()
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _alertService.GetUnresolvedCountAsync(farmId);
         return Ok(result);
     }
 
@@ -61,7 +91,7 @@ public class AdminAlertController : ControllerBase
         var result = await _alertService.ResolveAlertAsync(id, dto, farmId, adminId);
         
         if (!result.Success)
-            return NotFound(result);
+            return BadRequest(result);
             
         return Ok(result);
     }

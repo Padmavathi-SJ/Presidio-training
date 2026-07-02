@@ -1,0 +1,388 @@
+<!-- src/app/features/admin/sensors/alerts/alerts.component.html -->
+<div class="p-4 sm:p-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Alerts Management</h1>
+      <p class="text-sm text-gray-500">Monitor and manage all sensor alerts across your farm</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button 
+        mat-stroked-button 
+        (click)="triggerReload()"
+        [disabled]="isLoading()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Dashboard Stats Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
+    <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500">Total</span>
+        <mat-icon class="text-gray-400 text-sm">notifications</mat-icon>
+      </div>
+      <span class="text-xl font-bold text-gray-800">{{ dashboardStats()?.totalAlerts || 0 }}</span>
+    </div>
+
+    <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500">Unresolved</span>
+        <mat-icon class="text-yellow-600 text-sm">pending</mat-icon>
+      </div>
+      <span class="text-xl font-bold text-yellow-600">{{ dashboardStats()?.unresolvedAlerts || 0 }}</span>
+    </div>
+
+    <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500">Resolved</span>
+        <mat-icon class="text-green-600 text-sm">check_circle</mat-icon>
+      </div>
+      <span class="text-xl font-bold text-green-600">{{ dashboardStats()?.resolvedAlerts || 0 }}</span>
+    </div>
+
+    <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500">Critical</span>
+        <mat-icon class="text-red-600 text-sm">error</mat-icon>
+      </div>
+      <span class="text-xl font-bold text-red-600">{{ dashboardStats()?.criticalAlerts || 0 }}</span>
+    </div>
+
+    <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500">High</span>
+        <mat-icon class="text-orange-600 text-sm">warning</mat-icon>
+      </div>
+      <span class="text-xl font-bold text-orange-600">{{ dashboardStats()?.highAlerts || 0 }}</span>
+    </div>
+
+    <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500">Medium/Low</span>
+        <mat-icon class="text-blue-600 text-sm">info</mat-icon>
+      </div>
+      <span class="text-xl font-bold text-gray-800">
+        {{ (dashboardStats()?.mediumAlerts || 0) + (dashboardStats()?.lowAlerts || 0) }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <mat-card class="mb-4 p-4 shadow-sm border border-gray-100 rounded-xl">
+    <form [formGroup]="filterForm">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- Field Filter -->
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">Field</mat-label>
+            <mat-select formControlName="fieldId" class="text-sm">
+              <mat-option [value]="null">All Fields</mat-option>
+              @for (field of fields; track field.id) {
+                <mat-option [value]="field.id">{{ field.fieldName }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Severity Filter -->
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">Severity</mat-label>
+            <mat-select formControlName="severity" class="text-sm">
+              <mat-option [value]="null">All Severities</mat-option>
+              @for (severity of severityOptions; track severity) {
+                <mat-option [value]="severity">{{ severity }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Alert Type Filter -->
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">Alert Type</mat-label>
+            <mat-select formControlName="alertType" class="text-sm">
+              <mat-option [value]="null">All Types</mat-option>
+              @for (type of alertTypeOptions; track type) {
+                <mat-option [value]="type">{{ getAlertTypeLabel(type) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Status Filter -->
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">Status</mat-label>
+            <mat-select formControlName="isResolved" class="text-sm">
+              <mat-option [value]="null">All Status</mat-option>
+              <mat-option [value]="false">Unresolved</mat-option>
+              <mat-option [value]="true">Resolved</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- From Date -->
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">From Date</mat-label>
+            <input matInput formControlName="fromDate" [matDatepicker]="fromPicker" class="text-sm">
+            <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+            <mat-datepicker #fromPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- To Date -->
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">To Date</mat-label>
+            <input matInput formControlName="toDate" [matDatepicker]="toPicker" class="text-sm">
+            <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+            <mat-datepicker #toPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- Search -->
+        <div class="lg:col-span-2">
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">Search</mat-label>
+            <input matInput formControlName="search" placeholder="Search by message or type..." class="text-sm">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="flex justify-end mt-2">
+        <button 
+          mat-button 
+          (click)="resetFilters()" 
+          class="!text-gray-600"
+        >
+          <mat-icon>clear</mat-icon>
+          Reset Filters
+        </button>
+      </div>
+    </form>
+  </mat-card>
+
+  <!-- Bulk Actions -->
+  @if (hasSelected()) {
+    <div class="bg-primary-50 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-3 border border-primary-100">
+      <span class="text-sm text-gray-700 font-medium">
+        <span class="bg-primary-600 text-white px-2 py-0.5 rounded-full text-xs mr-2">{{ selectedCount() }}</span>
+        alert(s) selected
+      </span>
+      <div class="flex-1"></div>
+      <div class="flex flex-wrap gap-2">
+        <button 
+          mat-raised-button 
+          color="primary"
+          (click)="bulkResolve()"
+          class="!bg-green-600 !text-white text-sm"
+          [disabled]="isLoading()"
+        >
+          <mat-icon>check_circle</mat-icon>
+          Resolve Selected
+        </button>
+        <button 
+          mat-button 
+          (click)="clearSelection()"
+          class="text-sm text-gray-500"
+          [disabled]="isLoading()"
+        >
+          Clear Selection
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-12">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+
+  <!-- Table View -->
+  @if (!isLoading()) {
+    <mat-card class="shadow-sm border border-gray-100 rounded-xl overflow-hidden">
+      <div class="relative overflow-x-auto">
+        <table mat-table [dataSource]="alerts()" matSort (matSortChange)="onSortChange($event)" class="w-full">
+          
+          <!-- Select Column -->
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef class="w-10">
+              <mat-checkbox 
+                [checked]="allSelected()"
+                [indeterminate]="isIndeterminate()"
+                (change)="toggleAllSelection()"
+              ></mat-checkbox>
+            </th>
+            <td mat-cell *matCellDef="let alert">
+              <mat-checkbox 
+                [checked]="isSelected(alert.id)"
+                (change)="toggleSelection(alert.id)"
+              ></mat-checkbox>
+            </td>
+          </ng-container>
+
+          <!-- Severity Column -->
+          <ng-container matColumnDef="severity">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
+              Severity
+            </th>
+            <td mat-cell *matCellDef="let alert">
+              <span class="text-xs px-2 py-1 rounded-full font-medium {{ getSeverityColor(alert.severity) }}">
+                <mat-icon class="text-sm align-middle">{{ getSeverityIcon(alert.severity) }}</mat-icon>
+                {{ alert.severity }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Alert Type Column -->
+          <ng-container matColumnDef="alertType">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
+              Type
+            </th>
+            <td mat-cell *matCellDef="let alert" class="text-sm text-gray-700">
+              {{ getAlertTypeLabel(alert.alertType) }}
+            </td>
+          </ng-container>
+
+          <!-- Field Column -->
+          <ng-container matColumnDef="fieldName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
+              Field
+            </th>
+            <td mat-cell *matCellDef="let alert" class="text-sm text-gray-700">
+              {{ alert.fieldName }}
+            </td>
+          </ng-container>
+
+          <!-- Message Column -->
+          <ng-container matColumnDef="message">
+            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold text-gray-700 text-sm">
+              Message
+            </th>
+            <td mat-cell *matCellDef="let alert" class="text-sm text-gray-600 truncate max-w-[200px]">
+              {{ alert.message || 'No message' }}
+            </td>
+          </ng-container>
+
+          <!-- Sensor Value Column -->
+          <ng-container matColumnDef="sensorValue">
+            <th mat-header-cell *matHeaderCellDef class="text-center font-semibold text-gray-700 text-sm">
+              Value
+            </th>
+            <td mat-cell *matCellDef="let alert" class="text-center text-sm font-medium tabular-nums">
+              @if (alert.sensorValue !== null) {
+                <span class="px-2 py-1 rounded-full text-xs {{ getSeverityColor(alert.severity) }}">
+                  {{ alert.sensorValue }}
+                  @if (alert.thresholdValue !== null) {
+                    <span class="text-gray-400 text-xs">/ {{ alert.thresholdValue }}</span>
+                  }
+                </span>
+              } @else {
+                <span class="text-gray-400">N/A</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Created At Column -->
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
+              Created
+            </th>
+            <td mat-cell *matCellDef="let alert" class="text-sm text-gray-600">
+              {{ formatDate(alert.createdAt) }}
+            </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="text-center font-semibold text-gray-700 text-sm">
+              Status
+            </th>
+            <td mat-cell *matCellDef="let alert" class="text-center">
+              @if (alert.isResolved) {
+                <span class="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
+                  <mat-icon class="text-sm">check_circle</mat-icon> Resolved
+                </span>
+              } @else {
+                <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">
+                  <mat-icon class="text-sm">pending</mat-icon> Pending
+                </span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="text-right font-semibold text-gray-700 text-sm w-32">Actions</th>
+            <td mat-cell *matCellDef="let alert" class="text-right whitespace-nowrap">
+              <button 
+                mat-icon-button 
+                matTooltip="View Details"
+                (click)="viewAlert(alert)"
+                class="!text-blue-600 hover:!bg-blue-50"
+                [disabled]="isLoading()"
+              >
+                <mat-icon class="text-sm">visibility</mat-icon>
+              </button>
+              @if (!alert.isResolved) {
+                <button 
+                  mat-icon-button 
+                  matTooltip="Resolve Alert"
+                  (click)="resolveAlert(alert)"
+                  class="!text-green-600 hover:!bg-green-50"
+                  [disabled]="isResolving() === alert.id || isLoading()"
+                >
+                  @if (isResolving() === alert.id) {
+                    <mat-spinner diameter="20" class="!inline-block"></mat-spinner>
+                  } @else {
+                    <mat-icon class="text-sm">check_circle</mat-icon>
+                  }
+                </button>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+              class="hover:bg-gray-50 transition-colors cursor-pointer"
+              [class]="getSeverityClass(row.severity)"
+              (click)="viewAlert(row)">
+          </tr>
+        </table>
+
+        <!-- Empty State -->
+        @if (isEmpty()) {
+          <div class="text-center py-12">
+            <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+              <mat-icon class="text-3xl text-gray-300">notifications_off</mat-icon>
+            </div>
+            <p class="text-gray-500 text-base font-medium">No alerts found</p>
+            <p class="text-gray-400 text-sm mt-1">Try adjusting your filters</p>
+          </div>
+        }
+      </div>
+
+      <!-- Paginator -->
+      @if (totalCount() > 0) {
+        <mat-paginator 
+          [length]="totalCount()"
+          [pageSize]="pageSize()"
+          [pageIndex]="pageIndex()"
+          [pageSizeOptions]="[10, 20, 50, 100, 200]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons
+          class="border-t border-gray-200 text-sm"
+        ></mat-paginator>
+      }
+    </mat-card>
+  }
+</div>

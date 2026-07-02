@@ -129,9 +129,12 @@ public class AlertService : IAlertService
         var cropCycle = await _cropCycleRepository.GetByIdAsync(cropCycleId, farmId);
         if (cropCycle == null) return null;
         
-        var threshold = await _alertThresholdRepository.GetThresholdsAsync(
-            farmId, cropCycle.CropType?.ToString(), cropCycle.GrowthStage?.ToString(), sensorType);
-        
+       var threshold = await _alertThresholdRepository.GetThresholdsAsync(
+        farmId, 
+        cropCycle.CropType?.ToString() ?? "UNKNOWN", 
+        cropCycle.GrowthStage?.ToString() ?? "UNKNOWN", 
+        sensorType);
+
         if (threshold == null) return null;
         
         AlertSeverityEnum? severity = null;
@@ -180,32 +183,35 @@ public class AlertService : IAlertService
         return null;
     }
 
-    private AlertSeverityEnum GetSeverityForDeviation(decimal deviation, decimal threshold)
-    {
-        var deviationPercentage = (deviation / threshold) * 100;
-        
-        if (deviationPercentage >= 30)
-            return AlertSeverityEnum.CRITICAL;
-        else if (deviationPercentage >= 15)
-            return AlertSeverityEnum.HIGH;
-        else if (deviationPercentage >= 5)
-            return AlertSeverityEnum.MEDIUM;
-        else
-            return AlertSeverityEnum.LOW;
-    }
+   private AlertSeverityEnum GetSeverityForDeviation(decimal deviation, decimal threshold)
+{
+    var deviationPercentage = (deviation / threshold) * 100;
+    
+    if (deviationPercentage >= 30)
+        return AlertSeverityEnum.CRITICAL;
+    else if (deviationPercentage >= 15)
+        return AlertSeverityEnum.HIGH;
+    else if (deviationPercentage >= 5)
+        return AlertSeverityEnum.MEDIUM;
+    else
+        return AlertSeverityEnum.LOW;
+}
 
-    private AlertTypeEnum GetAlertType(string sensorType, decimal value, AlertThreshold threshold)
+   private AlertTypeEnum GetAlertType(string sensorType, decimal value, AlertThreshold threshold)
+{
+    return sensorType switch
     {
-        return sensorType switch
-        {
-            "SOIL_MOISTURE" when value < threshold.MinValue => AlertTypeEnum.DROUGHT_STRESS,
-            "SOIL_MOISTURE" when value > threshold.MaxValue => AlertTypeEnum.WATERLOGGED,
-            "AIR_TEMP" when value > threshold.MaxValue => AlertTypeEnum.HEAT_STRESS,
-            "AIR_TEMP" when value < threshold.MinValue => AlertTypeEnum.COLD_STRESS,
-            "SOIL_PH" when value < threshold.MinValue || value > threshold.MaxValue => AlertTypeEnum.SOIL_PH_ALERT,
-            _ => AlertTypeEnum.IRRIGATION_NEEDED
-        };
-    }
+        "SOIL_MOISTURE" when value < threshold.MinValue => AlertTypeEnum.DROUGHT_STRESS,
+        "SOIL_MOISTURE" when value > threshold.MaxValue => AlertTypeEnum.WATERLOGGED,
+        "AIR_TEMP" when value > threshold.MaxValue => AlertTypeEnum.HEAT_STRESS,
+        "AIR_TEMP" when value < threshold.MinValue => AlertTypeEnum.COLD_STRESS,
+        "SOIL_PH" when value < threshold.MinValue || value > threshold.MaxValue => AlertTypeEnum.SOIL_PH_ALERT,
+        "NPK_NITROGEN" when value < threshold.MinValue => AlertTypeEnum.NUTRIENT_DEFICIENCY,
+        "NPK_PHOSPHORUS" when value < threshold.MinValue => AlertTypeEnum.NUTRIENT_DEFICIENCY,
+        "NPK_POTASSIUM" when value < threshold.MinValue => AlertTypeEnum.NUTRIENT_DEFICIENCY,
+        _ => AlertTypeEnum.IRRIGATION_NEEDED
+    };
+}
 
     private string GenerateAlertMessage(AlertTypeEnum alertType, string sensorType, decimal value, AlertThreshold threshold)
     {
@@ -225,4 +231,51 @@ public class AlertService : IAlertService
         // TODO: Implement email sending logic here
         await Task.CompletedTask;
     }
+
+    // AgriculturePlatform.Application/Services/AlertService.cs
+// Add this method to the AlertService class:
+
+public async Task<ApiResponse<AlertDashboardDto>> GetDashboardAlertsAsync(int farmId)
+{
+    // Get all alerts for the farm
+    var alerts = await _alertRepository.GetPagedAsync(
+        farmId, null, null, null, null, null, null, null,
+        new PaginationParams { Page = 1, PageSize = 1000 });
+    
+    var dashboard = new AlertDashboardDto
+    {
+        TotalAlerts = alerts.Items.Count,
+        ResolvedAlerts = alerts.Items.Count(a => a.IsResolved),
+        UnresolvedAlerts = alerts.Items.Count(a => !a.IsResolved),
+        CriticalAlerts = alerts.Items.Count(a => a.Severity == AlertSeverityEnum.CRITICAL && !a.IsResolved),
+        HighAlerts = alerts.Items.Count(a => a.Severity == AlertSeverityEnum.HIGH && !a.IsResolved),
+        MediumAlerts = alerts.Items.Count(a => a.Severity == AlertSeverityEnum.MEDIUM && !a.IsResolved),
+        LowAlerts = alerts.Items.Count(a => a.Severity == AlertSeverityEnum.LOW && !a.IsResolved),
+        AlertsByField = alerts.Items
+            .Where(a => a.Field != null)
+            .GroupBy(a => a.Field!.FieldName)
+            .ToDictionary(g => g.Key, g => g.Count()),
+        AlertsByType = alerts.Items
+            .GroupBy(a => a.AlertType.ToString())
+            .ToDictionary(g => g.Key, g => g.Count()),
+        RecentAlerts = alerts.Items
+            .Where(a => !a.IsResolved)
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(10)
+            .Select(a => new RecentAlertDto
+            {
+                Id = a.Id,
+                FieldName = a.Field?.FieldName ?? "Unknown Field",
+                AlertType = a.AlertType.ToString(),
+                Severity = a.Severity.ToString(),
+                Message = a.Message ?? "No message",
+                CreatedAt = a.CreatedAt,
+                IsResolved = a.IsResolved
+            })
+            .ToList()
+    };
+    
+    return ApiResponse<AlertDashboardDto>.Ok(dashboard);
+}
+
 }

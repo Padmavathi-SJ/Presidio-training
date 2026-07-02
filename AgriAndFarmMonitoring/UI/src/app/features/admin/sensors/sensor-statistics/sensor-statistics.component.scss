@@ -1,0 +1,68 @@
+// src/app/features/admin/sensors/sensor-statistics/sensor-statistics.component.scss
+.sensor-statistics {
+  // Chart containers
+  .h-56 {
+    min-height: 224px;
+  }
+
+  // Tabular numbers
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Table styles
+  table {
+    width: 100%;
+    
+    thead th {
+      white-space: nowrap;
+    }
+    
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+  }
+
+  // Stats cards
+  .bg-white {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  // Snackbar styles
+  ::ng-deep {
+    .success-snackbar {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .error-snackbar {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .warning-snackbar {
+      background: #fef3c7;
+      color: #92400e;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .grid-cols-1.lg\:grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .grid-cols-2.sm\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .h-56 {
+    min-height: 180px;
+  }
+}

@@ -4,6 +4,7 @@ using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Application.DTOs.Sensor;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Enums;
 
 namespace AgriculturePlatform.Application.Services;
 
@@ -23,7 +24,8 @@ public class SensorReadingService : ISensorReadingService
         _mapper = mapper;
     }
 
-    public async Task<ApiResponse<PagedResult<SensorReadingDto>>> GetAllReadingsAsync(SensorReadingFilterDto filter, int farmId)
+    public async Task<ApiResponse<PagedResult<SensorReadingDto>>> GetAllReadingsAsync(
+        SensorReadingFilterDto filter, int farmId)
     {
         var paginationParams = new PaginationParams
         {
@@ -33,9 +35,24 @@ public class SensorReadingService : ISensorReadingService
             IsDescending = filter.IsDescending
         };
 
+        // ✅ Parse enum at service level and pass as SensorTypeEnum?
+        SensorTypeEnum? parsedSensorType = null;
+        if (!string.IsNullOrWhiteSpace(filter.SensorType))
+        {
+            if (Enum.TryParse<SensorTypeEnum>(filter.SensorType, true, out var parsed))
+            {
+                parsedSensorType = parsed;
+            }
+        }
+
         var pagedResult = await _sensorRepository.GetPagedAsync(
-            farmId, filter.FieldId, filter.CropCycleId, filter.SensorType,
-            filter.FromDate, filter.ToDate, paginationParams);
+            farmId, 
+            filter.FieldId, 
+            filter.CropCycleId, 
+            parsedSensorType,  // ✅ Pass the enum, not string
+            filter.FromDate, 
+            filter.ToDate, 
+            paginationParams);
 
         var dtos = _mapper.Map<List<SensorReadingDto>>(pagedResult.Items);
         
@@ -57,19 +74,19 @@ public class SensorReadingService : ISensorReadingService
         return ApiResponse<IEnumerable<SensorReadingDto>>.Ok(dtos);
     }
 
-public async Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetReadingsByDateRangeAsync(
-    int fieldId, int farmId, DateTime fromDate, DateTime toDate)
-{
-    // Ensure dates are UTC
-    if (fromDate.Kind != DateTimeKind.Utc)
-        fromDate = DateTime.SpecifyKind(fromDate, DateTimeKind.Utc);
-    if (toDate.Kind != DateTimeKind.Utc)
-        toDate = DateTime.SpecifyKind(toDate, DateTimeKind.Utc);
-    
-    var readings = await _sensorRepository.GetByFieldAndDateRangeAsync(fieldId, farmId, fromDate, toDate);
-    var dtos = _mapper.Map<IEnumerable<SensorReadingDto>>(readings);
-    return ApiResponse<IEnumerable<SensorReadingDto>>.Ok(dtos);
-}
+    public async Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetReadingsByDateRangeAsync(
+        int fieldId, int farmId, DateTime fromDate, DateTime toDate)
+    {
+        // Ensure dates are UTC
+        if (fromDate.Kind != DateTimeKind.Utc)
+            fromDate = DateTime.SpecifyKind(fromDate, DateTimeKind.Utc);
+        if (toDate.Kind != DateTimeKind.Utc)
+            toDate = DateTime.SpecifyKind(toDate, DateTimeKind.Utc);
+        
+        var readings = await _sensorRepository.GetByFieldAndDateRangeAsync(fieldId, farmId, fromDate, toDate);
+        var dtos = _mapper.Map<IEnumerable<SensorReadingDto>>(readings);
+        return ApiResponse<IEnumerable<SensorReadingDto>>.Ok(dtos);
+    }
 
     public async Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetThresholdViolationsAsync(
         int farmId, DateTime? fromDate, DateTime? toDate)

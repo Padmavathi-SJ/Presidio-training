@@ -1,0 +1,278 @@
+<!-- src/app/features/admin/sensors/sensor-dashboard/sensor-dashboard.component.html -->
+<div class="p-4 sm:p-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Sensor Dashboard</h1>
+      <p class="text-sm text-gray-500">Monitor real-time sensor data across all fields</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <!-- ✅ Field Selector with formGroup -->
+      <form [formGroup]="filterForm" class="flex flex-wrap gap-2">
+        <mat-form-field appearance="outline" class="!w-48">
+          <mat-label>Filter by Field</mat-label>
+          <mat-select formControlName="fieldId">
+            <mat-option [value]="null">All Fields</mat-option>
+            @for (field of fields; track field.id) {
+              <mat-option [value]="field.id">{{ field.fieldName }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </form>
+
+      <!-- Refresh Button -->
+      <button 
+        mat-raised-button 
+        color="primary"
+        (click)="refreshData()"
+        [disabled]="isRefreshing()"
+        class="!bg-primary-600 !text-white"
+      >
+        @if (isRefreshing()) {
+          <mat-spinner diameter="20" class="!inline-block mr-2"></mat-spinner>
+        } @else {
+          <mat-icon>sync</mat-icon>
+        }
+        Refresh
+      </button>
+
+      <!-- View All Readings -->
+      <button 
+        mat-stroked-button 
+        color="primary"
+        (click)="viewAllReadings()"
+        class="!border-primary-600 !text-primary-600"
+      >
+        <mat-icon>list</mat-icon>
+        All Readings
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="card card-hover bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Active Sensors</span>
+        <mat-icon class="text-primary-600 text-sm">sensors</mat-icon>
+      </div>
+      <div class="mt-1 flex items-end justify-between">
+        <span class="text-2xl font-bold text-gray-800">{{ latestReadings().length }}</span>
+        <span class="text-xs text-gray-400">across all fields</span>
+      </div>
+    </div>
+
+    <div 
+      class="card card-hover bg-white rounded-xl p-4 shadow-sm border border-gray-100 cursor-pointer"
+      (click)="viewAllAlerts()"
+    >
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Unresolved Alerts</span>
+        <mat-icon class="text-red-600 text-sm">notifications_active</mat-icon>
+      </div>
+      <div class="mt-1 flex items-end justify-between">
+        <span class="text-2xl font-bold" [class.text-red-600]="hasAlerts()">
+          {{ alertDashboard()?.unresolvedAlerts || 0 }}
+        </span>
+        @if (criticalAlerts() > 0) {
+          <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+            {{ criticalAlerts() }} critical
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="card card-hover bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Alerts</span>
+        <mat-icon class="text-secondary-600 text-sm">warning</mat-icon>
+      </div>
+      <div class="mt-1 flex items-end justify-between">
+        <span class="text-2xl font-bold text-gray-800">{{ alertDashboard()?.totalAlerts || 0 }}</span>
+        <span class="text-xs text-gray-400">{{ alertDashboard()?.resolvedAlerts || 0 }} resolved</span>
+      </div>
+    </div>
+
+    <div class="card card-hover bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Alert Severity</span>
+        <mat-icon class="text-gray-600 text-sm">analytics</mat-icon>
+      </div>
+      <div class="mt-1 flex items-center gap-2 flex-wrap">
+        @if (alertDashboard()?.criticalAlerts) {
+          <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+            C: {{ alertDashboard()?.criticalAlerts }}
+          </span>
+        }
+        @if (alertDashboard()?.highAlerts) {
+          <span class="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+            H: {{ alertDashboard()?.highAlerts }}
+          </span>
+        }
+        @if (alertDashboard()?.mediumAlerts) {
+          <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+            M: {{ alertDashboard()?.mediumAlerts }}
+          </span>
+        }
+        @if (alertDashboard()?.lowAlerts) {
+          <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+            L: {{ alertDashboard()?.lowAlerts }}
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <mat-card class="rounded-xl shadow-sm border border-gray-100">
+      <mat-card-header class="!pb-2">
+        <mat-card-title class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <mat-icon class="text-primary-600 text-sm">thermostat</mat-icon>
+          Temperature by Field
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="h-48">
+          <canvas 
+            baseChart 
+            [data]="temperatureChartData" 
+            [options]="temperatureChartOptions"
+            [type]="temperatureChartType">
+          </canvas>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="rounded-xl shadow-sm border border-gray-100">
+      <mat-card-header class="!pb-2">
+        <mat-card-title class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <mat-icon class="text-secondary-600 text-sm">water_drop</mat-icon>
+          Humidity by Field
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="h-48">
+          <canvas 
+            baseChart 
+            [data]="humidityChartData" 
+            [options]="humidityChartOptions"
+            [type]="humidityChartType">
+          </canvas>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Latest Readings -->
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-gray-800">Latest Sensor Readings</h2>
+    <button 
+      mat-button 
+      color="primary"
+      (click)="viewAllReadings()"
+      class="!text-primary-600"
+    >
+      View All <mat-icon>arrow_forward</mat-icon>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-12">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+
+  <!-- Readings Grid -->
+  @if (!isLoading()) {
+    @if (hasReadings()) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        @for (reading of latestReadings(); track reading.fieldId + reading.sensorType) {
+          <div 
+            class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
+            (click)="viewFieldDetails(reading.fieldId)"
+          >
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-700 truncate">{{ reading.fieldName }}</span>
+              <mat-icon class="text-gray-400 text-sm">{{ getSensorTypeIcon(reading.sensorType) }}</mat-icon>
+            </div>
+            <div class="flex items-end justify-between">
+              <div>
+                <span class="text-xs text-gray-500">{{ getSensorTypeLabel(reading.sensorType) }}</span>
+                <div class="text-2xl font-bold {{ getStatusColor(reading.value, reading.sensorType) }}">
+                  {{ reading.value !== null ? reading.value : '--' }}
+                  <span class="text-sm font-normal text-gray-400">{{ getSensorTypeUnit(reading.sensorType) }}</span>
+                </div>
+              </div>
+              @if (reading.isThresholdViolation) {
+                <span class="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
+                  Violation
+                </span>
+              }
+            </div>
+            <div class="mt-2 text-xs text-gray-400">
+              {{ formatDate(reading.recordedAt) }}
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="text-center py-12 bg-white rounded-xl border border-gray-100">
+        <mat-icon class="text-4xl text-gray-300 mb-2">sensors_off</mat-icon>
+        <p class="text-gray-500">No sensor readings available</p>
+        <p class="text-sm text-gray-400 mt-1">Sensor data will appear here once available</p>
+      </div>
+    }
+  }
+
+  <!-- Recent Alerts Section -->
+  @if (alertDashboard()?.recentAlerts?.length) {
+    <div class="mt-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">Recent Alerts</h2>
+        <button 
+          mat-button 
+          color="primary"
+          (click)="viewAllAlerts()"
+          class="!text-primary-600"
+        >
+          View All <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </div>
+      <div class="space-y-2">
+        @for (alert of alertDashboard()?.recentAlerts?.slice(0, 5); track alert.id) {
+          <div 
+            class="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-sm transition-shadow cursor-pointer flex items-center justify-between"
+            [class]="getSeverityColor(alert.severity)"
+            (click)="viewAllAlerts()"
+          >
+            <div class="flex items-center gap-3 flex-1 min-w-0">
+              <div class="w-2 h-2 rounded-full flex-shrink-0" 
+                   [class.bg-red-500]="alert.severity === 'CRITICAL'"
+                   [class.bg-orange-400]="alert.severity === 'HIGH'"
+                   [class.bg-yellow-400]="alert.severity === 'MEDIUM'"
+                   [class.bg-green-400]="alert.severity === 'LOW'">
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium text-gray-800 truncate">{{ alert.alertType }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full {{ getSeverityColor(alert.severity) }}">
+                    {{ alert.severity }}
+                  </span>
+                </div>
+                <p class="text-sm text-gray-600 truncate">{{ alert.message }}</p>
+                <span class="text-xs text-gray-400">{{ alert.fieldName }} • {{ formatDate(alert.createdAt) }}</span>
+              </div>
+            </div>
+            @if (!alert.isResolved) {
+              <span class="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 flex-shrink-0 ml-2">
+                Pending
+              </span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

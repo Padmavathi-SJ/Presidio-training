@@ -1,0 +1,297 @@
+<!-- src/app/features/admin/sensors/sensor-readings/sensor-readings.component.html -->
+<div class="p-4 sm:p-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Sensor Readings</h1>
+      <p class="text-sm text-gray-500">View and manage all sensor readings across your farm</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <!-- Export -->
+      <button 
+        mat-stroked-button 
+        (click)="exportData()"
+        [disabled]="!hasReadings() || isLoading() || isExporting()"
+        class="!border-primary-600 !text-primary-600"
+      >
+        @if (isExporting()) {
+          <mat-spinner diameter="20" class="!inline-block mr-2"></mat-spinner>
+        } @else {
+          <mat-icon>download</mat-icon>
+        }
+        Export Excel
+      </button>
+
+      <!-- Refresh -->
+      <button 
+        mat-stroked-button 
+        (click)="triggerReload()"
+        [disabled]="isLoading()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+<!-- src/app/features/admin/sensors/sensor-readings/sensor-readings.component.html -->
+<!-- The formGroup is already there, but make sure the form is properly structured -->
+
+<!-- Filter Bar -->
+<mat-card class="mb-4 p-4 shadow-sm border border-gray-100 rounded-xl">
+  <form [formGroup]="filterForm">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <!-- Field Filter -->
+      <div>
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+          <mat-label class="text-gray-600 text-sm">Field</mat-label>
+          <mat-select formControlName="fieldId" class="text-sm">
+            <mat-option [value]="null">All Fields</mat-option>
+            @for (field of fields; track field.id) {
+              <mat-option [value]="field.id">{{ field.fieldName }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Sensor Type Filter -->
+      <div>
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+          <mat-label class="text-gray-600 text-sm">Sensor Type</mat-label>
+          <mat-select formControlName="sensorType" class="text-sm">
+            <mat-option [value]="null">All Types</mat-option>
+            @for (type of sensorTypes; track type) {
+              <mat-option [value]="type">{{ getSensorTypeLabel(type) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- From Date -->
+      <div>
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+          <mat-label class="text-gray-600 text-sm">From Date</mat-label>
+          <input matInput formControlName="fromDate" [matDatepicker]="fromPicker" class="text-sm">
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <!-- To Date -->
+      <div>
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+          <mat-label class="text-gray-600 text-sm">To Date</mat-label>
+          <input matInput formControlName="toDate" [matDatepicker]="toPicker" class="text-sm">
+          <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <!-- Latest Only -->
+      <div class="flex items-center">
+        <mat-checkbox formControlName="latestOnly">Latest Only</mat-checkbox>
+      </div>
+    </div>
+
+    <div class="flex justify-between items-center mt-2">
+      <button 
+        mat-button 
+        (click)="resetFilters()" 
+        class="!text-gray-600"
+      >
+        <mat-icon>clear</mat-icon>
+        Reset Filters
+      </button>
+    </div>
+  </form>
+</mat-card>
+
+  <!-- Bulk Actions -->
+  @if (hasSelected()) {
+    <div class="bg-primary-50 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-3 border border-primary-100">
+      <span class="text-sm text-gray-700 font-medium">
+        <span class="bg-primary-600 text-white px-2 py-0.5 rounded-full text-xs mr-2">{{ selectedCount() }}</span>
+        reading(s) selected
+      </span>
+      <div class="flex-1"></div>
+      <div class="flex flex-wrap gap-2">
+        <button 
+          mat-stroked-button 
+          color="warn"
+          (click)="bulkDelete()"
+          class="text-sm"
+          [disabled]="isLoading()"
+        >
+          <mat-icon>delete</mat-icon>
+          Delete Selected
+        </button>
+        <button 
+          mat-button 
+          (click)="clearSelection()"
+          class="text-sm text-gray-500"
+          [disabled]="isLoading()"
+        >
+          Clear Selection
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-12">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+
+  <!-- Table View -->
+  @if (!isLoading()) {
+    <mat-card class="shadow-sm border border-gray-100 rounded-xl overflow-hidden">
+      <div class="relative overflow-x-auto">
+        <table mat-table [dataSource]="readings()" matSort (matSortChange)="onSortChange($event)" class="w-full">
+          
+          <!-- Select Column -->
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef class="w-10">
+              <mat-checkbox 
+                [checked]="allSelected()"
+                [indeterminate]="isIndeterminate()"
+                (change)="toggleAllSelection()"
+              ></mat-checkbox>
+            </th>
+            <td mat-cell *matCellDef="let reading">
+              <mat-checkbox 
+                [checked]="isSelected(reading.id)"
+                (change)="toggleSelection(reading.id)"
+              ></mat-checkbox>
+            </td>
+          </ng-container>
+
+          <!-- Field Column -->
+          <ng-container matColumnDef="fieldName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
+              Field
+            </th>
+            <td mat-cell *matCellDef="let reading" 
+                class="text-sm text-gray-700 cursor-pointer hover:text-primary-600"
+                (click)="viewFieldDetails(reading.fieldId)">
+              <span class="flex items-center gap-1">
+                <mat-icon class="text-sm">agriculture</mat-icon>
+                {{ reading.fieldName }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Sensor Type Column -->
+          <ng-container matColumnDef="sensorType">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
+              Sensor Type
+            </th>
+            <td mat-cell *matCellDef="let reading" class="text-sm text-gray-700">
+              <span class="flex items-center gap-1">
+                <mat-icon class="text-sm">{{ getSensorTypeIcon(reading.sensorType) }}</mat-icon>
+                {{ getSensorTypeLabel(reading.sensorType) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Value Column -->
+          <ng-container matColumnDef="value">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center font-semibold text-gray-700 text-sm">
+              Value
+            </th>
+            <td mat-cell *matCellDef="let reading" class="text-center text-sm font-medium tabular-nums">
+              @if (reading.value !== null) {
+                <span class="{{ getStatusColor(reading.value, reading.sensorType) }} px-2 py-1 rounded-full text-xs">
+                  {{ reading.value }} {{ getSensorTypeUnit(reading.sensorType) }}
+                </span>
+              } @else {
+                <span class="text-gray-400">N/A</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Unit Column -->
+          <ng-container matColumnDef="unit">
+            <th mat-header-cell *matHeaderCellDef class="text-center font-semibold text-gray-700 text-sm">
+              Unit
+            </th>
+            <td mat-cell *matCellDef="let reading" class="text-center text-sm text-gray-600">
+              {{ reading.unit || getSensorTypeUnit(reading.sensorType) }}
+            </td>
+          </ng-container>
+
+          <!-- Recorded At Column -->
+          <ng-container matColumnDef="recordedAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
+              Recorded At
+            </th>
+            <td mat-cell *matCellDef="let reading" class="text-sm text-gray-600">
+              {{ formatDate(reading.recordedAt) }}
+            </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="text-center font-semibold text-gray-700 text-sm">
+              Status
+            </th>
+            <td mat-cell *matCellDef="let reading" class="text-center">
+              <span class="text-xs px-2 py-1 rounded-full font-medium {{ getStatusColor(reading.value, reading.sensorType) }}">
+                {{ getStatusLabel(reading.value, reading.sensorType) }}
+              </span>
+              @if (reading.isThresholdViolation) {
+                <mat-icon class="text-red-500 text-sm align-middle" matTooltip="Threshold Violation">warning</mat-icon>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="text-right font-semibold text-gray-700 text-sm w-24">Actions</th>
+            <td mat-cell *matCellDef="let reading" class="text-right whitespace-nowrap">
+              <button 
+                mat-icon-button 
+                matTooltip="View Field"
+                (click)="viewFieldDetails(reading.fieldId)"
+                class="!text-primary-600 hover:!bg-primary-50"
+                [disabled]="isLoading()"
+              >
+                <mat-icon class="text-sm">visibility</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+              class="hover:bg-gray-50 transition-colors">
+          </tr>
+        </table>
+
+        <!-- Empty State -->
+        @if (isEmpty()) {
+          <div class="text-center py-12">
+            <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+              <mat-icon class="text-3xl text-gray-300">sensors_off</mat-icon>
+            </div>
+            <p class="text-gray-500 text-base font-medium">No sensor readings found</p>
+            <p class="text-gray-400 text-sm mt-1">Try adjusting your filters or wait for new readings</p>
+          </div>
+        }
+      </div>
+
+      <!-- Paginator -->
+      @if (totalCount() > 0) {
+        <mat-paginator 
+          [length]="totalCount()"
+          [pageSize]="pageSize()"
+          [pageIndex]="pageIndex()"
+          [pageSizeOptions]="[10, 20, 50, 100, 200]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons
+          class="border-t border-gray-200 text-sm"
+        ></mat-paginator>
+      }
+    </mat-card>
+  }
+</div>

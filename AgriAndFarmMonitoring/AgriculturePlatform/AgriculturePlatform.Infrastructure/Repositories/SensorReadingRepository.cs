@@ -38,53 +38,66 @@ public class SensorReadingRepository : ISensorReadingRepository
         return reading;
     }
 
-    public async Task<PagedResult<SensorReading>> GetPagedAsync(
-        int farmId, int? fieldId, int? cropCycleId, string? sensorType,
-        DateTime? fromDate, DateTime? toDate, PaginationParams paginationParams)
+// AgriculturePlatform.Infrastructure/Repositories/SensorReadingRepository.cs
+
+// AgriculturePlatform.Infrastructure/Repositories/SensorReadingRepository.cs
+// Update implementation
+
+// AgriculturePlatform.Infrastructure/Repositories/SensorReadingRepository.cs
+// Update the GetPagedAsync method signature
+
+public async Task<PagedResult<SensorReading>> GetPagedAsync(
+    int farmId, 
+    int? fieldId, 
+    int? cropCycleId, 
+    SensorTypeEnum? sensorType,  // ✅ Changed to SensorTypeEnum?
+    DateTime? fromDate, 
+    DateTime? toDate, 
+    PaginationParams paginationParams)
+{
+    var query = _context.SensorReadings
+        .Include(s => s.Field)
+        .Include(s => s.CropCycle)
+        .Where(s => s.FarmId == farmId);
+
+    if (fieldId.HasValue)
+        query = query.Where(s => s.FieldId == fieldId.Value);
+    if (cropCycleId.HasValue)
+        query = query.Where(s => s.CropCycleId == cropCycleId.Value);
+    if (sensorType.HasValue)
+        query = query.Where(s => s.SensorType == sensorType.Value);
+    if (fromDate.HasValue)
+        query = query.Where(s => s.RecordedAt >= fromDate.Value);
+    if (toDate.HasValue)
+        query = query.Where(s => s.RecordedAt <= toDate.Value);
+
+    var totalCount = await query.CountAsync();
+
+    var items = await query
+        .OrderByDescending(s => s.RecordedAt)
+        .Skip((paginationParams.Page - 1) * paginationParams.PageSize)
+        .Take(paginationParams.PageSize)
+        .ToListAsync();
+
+    return new PagedResult<SensorReading>
     {
-        var query = _context.SensorReadings
-            .Include(s => s.Field)
-            .Include(s => s.CropCycle)
-            .Where(s => s.FarmId == farmId);
+        Items = items,
+        TotalCount = totalCount,
+        Page = paginationParams.Page,
+        PageSize = paginationParams.PageSize
+    };
+}
 
-        if (fieldId.HasValue)
-            query = query.Where(s => s.FieldId == fieldId.Value);
-        if (cropCycleId.HasValue)
-            query = query.Where(s => s.CropCycleId == cropCycleId.Value);
-        if (!string.IsNullOrWhiteSpace(sensorType))
-            query = query.Where(s => s.SensorType.ToString() == sensorType);
-        if (fromDate.HasValue)
-            query = query.Where(s => s.RecordedAt >= fromDate.Value);
-        if (toDate.HasValue)
-            query = query.Where(s => s.RecordedAt <= toDate.Value);
 
-        var totalCount = await query.CountAsync();
-
-        var items = await query
-            .OrderByDescending(s => s.RecordedAt)
-            .Skip((paginationParams.Page - 1) * paginationParams.PageSize)
-            .Take(paginationParams.PageSize)
-            .ToListAsync();
-
-        return new PagedResult<SensorReading>
-        {
-            Items = items,
-            TotalCount = totalCount,
-            Page = paginationParams.Page,
-            PageSize = paginationParams.PageSize
-        };
-    }
-
-    public async Task<IEnumerable<SensorReading>> GetLatestPerFieldAsync(int farmId)
-    {
-        return await _context.SensorReadings
-            .Include(s => s.Field)
-            .Where(s => s.FarmId == farmId)
-            .GroupBy(s => new { s.FieldId, s.SensorType })
-            .Select(g => g.OrderByDescending(s => s.RecordedAt).FirstOrDefault())
-            .ToListAsync();
-    }
-
+public async Task<IEnumerable<SensorReading>> GetLatestPerFieldAsync(int farmId)
+{
+    return await _context.SensorReadings
+        .Include(s => s.Field)
+        .Where(s => s.FarmId == farmId)
+        .GroupBy(s => new { s.FieldId, s.SensorType })
+        .Select(g => g.OrderByDescending(s => s.RecordedAt).FirstOrDefault())
+        .ToListAsync();
+}
 // AgriculturePlatform.Infrastructure/Repositories/SensorReadingRepository.cs
 
 public async Task<IEnumerable<SensorReading>> GetByFieldAndDateRangeAsync(

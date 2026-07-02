@@ -1,4 +1,4 @@
-// AgriculturePlatform.Tests/Services/SensorReadingServiceTests.cs
+// AgriculturePlatform.Tests/Services/Sensor/SensorReadingServiceTests.cs
 using FluentAssertions;
 using Moq;
 using AgriculturePlatform.Application.Common;
@@ -34,7 +34,11 @@ public class SensorReadingServiceTests
     public async Task GetAllReadingsAsync_WithFilters_ReturnsPagedResult()
     {
         // Arrange
-        var filter = new SensorReadingFilterDto { Page = 1, PageSize = 10 };
+        var filter = new SensorReadingFilterDto { 
+            Page = 1, 
+            PageSize = 10,
+            SensorType = "SOIL_MOISTURE"  // ✅ Add sensor type as string
+        };
         int farmId = 1;
         
         var readings = new List<SensorReading>
@@ -51,9 +55,15 @@ public class SensorReadingServiceTests
             PageSize = 10
         };
         
+        // ✅ Fix: Pass SensorTypeEnum? instead of string
         _sensorRepositoryMock.Setup(r => r.GetPagedAsync(
-            farmId, filter.FieldId, filter.CropCycleId, filter.SensorType,
-            filter.FromDate, filter.ToDate, It.IsAny<PaginationParams>()))
+            farmId, 
+            filter.FieldId, 
+            filter.CropCycleId, 
+            It.IsAny<SensorTypeEnum?>(),  // ✅ Use It.IsAny for enum
+            filter.FromDate, 
+            filter.ToDate, 
+            It.IsAny<PaginationParams>()))
             .ReturnsAsync(pagedResult);
 
         // Act
@@ -64,6 +74,95 @@ public class SensorReadingServiceTests
         result.Success.Should().BeTrue();
         result.Data.Items.Should().HaveCount(2);
         result.Data.TotalCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task GetAllReadingsAsync_WithSensorTypeFilter_ReturnsPagedResult()
+    {
+        // Arrange
+        var filter = new SensorReadingFilterDto { 
+            Page = 1, 
+            PageSize = 10,
+            SensorType = "SOIL_MOISTURE"
+        };
+        int farmId = 1;
+        
+        var readings = new List<SensorReading>
+        {
+            new SensorReading { Id = 1, Value = 25.5m, SensorType = SensorTypeEnum.SOIL_MOISTURE }
+        };
+        
+        var pagedResult = new PagedResult<SensorReading>
+        {
+            Items = readings,
+            TotalCount = 1,
+            Page = 1,
+            PageSize = 10
+        };
+        
+        _sensorRepositoryMock.Setup(r => r.GetPagedAsync(
+            farmId, 
+            filter.FieldId, 
+            filter.CropCycleId, 
+            SensorTypeEnum.SOIL_MOISTURE,  // ✅ Pass specific enum value
+            filter.FromDate, 
+            filter.ToDate, 
+            It.IsAny<PaginationParams>()))
+            .ReturnsAsync(pagedResult);
+
+        // Act
+        var result = await _sensorService.GetAllReadingsAsync(filter, farmId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Data.Items.Should().HaveCount(1);
+        result.Data.Items.First().SensorType.Should().Be("SOIL_MOISTURE");
+    }
+
+    [Fact]
+    public async Task GetAllReadingsAsync_WithInvalidSensorType_ReturnsAllReadings()
+    {
+        // Arrange
+        var filter = new SensorReadingFilterDto { 
+            Page = 1, 
+            PageSize = 10,
+            SensorType = "INVALID_SENSOR"  // Invalid sensor type
+        };
+        int farmId = 1;
+        
+        var readings = new List<SensorReading>
+        {
+            new SensorReading { Id = 1, Value = 25.5m, SensorType = SensorTypeEnum.SOIL_MOISTURE },
+            new SensorReading { Id = 2, Value = 30.2m, SensorType = SensorTypeEnum.SOIL_TEMP }
+        };
+        
+        var pagedResult = new PagedResult<SensorReading>
+        {
+            Items = readings,
+            TotalCount = 2,
+            Page = 1,
+            PageSize = 10
+        };
+        
+        // ✅ When invalid sensor type is provided, null should be passed
+        _sensorRepositoryMock.Setup(r => r.GetPagedAsync(
+            farmId, 
+            filter.FieldId, 
+            filter.CropCycleId, 
+            null,  // ✅ Null because invalid sensor type
+            filter.FromDate, 
+            filter.ToDate, 
+            It.IsAny<PaginationParams>()))
+            .ReturnsAsync(pagedResult);
+
+        // Act
+        var result = await _sensorService.GetAllReadingsAsync(filter, farmId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Data.Items.Should().HaveCount(2);
     }
 
     [Fact]

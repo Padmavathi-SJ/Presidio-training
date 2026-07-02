@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "dgSpecHash": "2IC7ckN4B+4=",
+  "success": true,
+  "projectFilePath": "/Users/padmavathisj/Documents/Presidio-Training/01-07-2026/BlobVaultApi/BlobVaultApi/BlobVaultApi.csproj",
+  "expectedPackageFiles": [
+    "/Users/padmavathisj/.nuget/packages/azure.core/1.55.0/azure.core.1.55.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/azure.extensions.aspnetcore.configuration.secrets/1.5.1/azure.extensions.aspnetcore.configuration.secrets.1.5.1.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/azure.identity/1.21.0/azure.identity.1.21.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/azure.security.keyvault.secrets/4.10.0/azure.security.keyvault.secrets.4.10.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/azure.storage.blobs/12.29.1/azure.storage.blobs.12.29.1.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/azure.storage.common/12.28.0/azure.storage.common.12.28.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.aspnetcore.openapi/10.0.7/microsoft.aspnetcore.openapi.10.0.7.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.bcl.asyncinterfaces/10.0.3/microsoft.bcl.asyncinterfaces.10.0.3.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.identity.client/4.83.1/microsoft.identity.client.4.83.1.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.identity.client.extensions.msal/4.83.1/microsoft.identity.client.extensions.msal.4.83.1.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.identitymodel.abstractions/8.14.0/microsoft.identitymodel.abstractions.8.14.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/swashbuckle.aspnetcore/10.2.3/swashbuckle.aspnetcore.10.2.3.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/swashbuckle.aspnetcore.swagger/10.2.3/swashbuckle.aspnetcore.swagger.10.2.3.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/system.clientmodel/1.11.0/system.clientmodel.1.11.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/system.io.hashing/10.0.3/system.io.hashing.10.0.3.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/system.memory.data/10.0.3/system.memory.data.10.0.3.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/system.security.cryptography.protecteddata/4.5.0/system.security.cryptography.protecteddata.4.5.0.nupkg.sha512"
+  ],
+  "logs": []
+}
