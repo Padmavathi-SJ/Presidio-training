@@ -1,1 +1,130 @@
-<p>fields works!</p>
+<!-- src/app/features/worker/fields/fields.component.html -->
+<div class="p-4 sm:p-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">My Fields</h1>
+      <p class="text-sm text-gray-500">View and manage fields assigned to you</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <!-- Refresh Button -->
+      <button 
+        mat-stroked-button 
+        (click)="refresh()"
+        [disabled]="isRefreshing() || isLoading()"
+        class="!border-primary-600 !text-primary-600"
+      >
+        @if (isRefreshing()) {
+          <mat-spinner diameter="20" class="!inline-block mr-2"></mat-spinner>
+        } @else {
+          <mat-icon>refresh</mat-icon>
+        }
+        Refresh
+      </button>
+
+      <!-- Stats Badge -->
+      <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-200">
+        <mat-icon class="text-gray-500 text-sm">crop</mat-icon>
+        <span class="text-sm font-medium text-gray-700">{{ totalCount() }} fields</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-16">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+
+  <!-- Fields Grid -->
+  @if (!isLoading()) {
+    @if (hasFields()) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        @for (field of getPaginatedFields(); track field.fieldId) {
+          <div 
+            class="card card-hover bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer"
+            (click)="viewFieldDetails(field.fieldId)"
+            matRipple
+          >
+            <!-- Field Header -->
+            <div class="p-4 border-b border-gray-100">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 min-w-0">
+                  <mat-icon class="text-primary-600 text-sm flex-shrink-0">agriculture</mat-icon>
+                  <span class="text-sm font-semibold text-gray-800 truncate">{{ field.fieldName }}</span>
+                </div>
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ getStatusColor(field.status) }}">
+                  <mat-icon class="text-xs align-middle">{{ getStatusIcon(field.status) }}</mat-icon>
+                  {{ field.status || 'Unknown' }}
+                </span>
+              </div>
+              @if (field.location) {
+                <div class="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                  <mat-icon class="text-xs">location_on</mat-icon>
+                  <span class="truncate">{{ field.location }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Field Details -->
+            <div class="p-4 space-y-2">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500">Area</span>
+                <span class="font-medium text-gray-800">{{ formatArea(field.areaHectares) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500">Soil Type</span>
+                <span class="font-medium text-gray-800">{{ getSoilTypeLabel(field.soilType) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500">Assigned</span>
+                <span class="font-medium text-gray-800">{{ formatDate(field.assignedDate) }}</span>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <div class="flex items-center gap-1 text-xs text-gray-500">
+                <mat-icon class="text-xs">grass</mat-icon>
+                <span>{{ getCropCountLabel(field.activeCropCount || 0) }}</span>
+              </div>
+              <button 
+                mat-button 
+                color="primary"
+                class="!text-primary-600 !text-xs !min-w-0 !px-2"
+                (click)="$event.stopPropagation(); viewFieldDetails(field.fieldId)"
+              >
+                View Details <mat-icon class="text-xs">arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Paginator -->
+      @if (totalCount() > pageSize()) {
+        <mat-paginator 
+          [length]="totalCount()"
+          [pageSize]="pageSize()"
+          [pageIndex]="pageIndex()"
+          [pageSizeOptions]="[6, 9, 12, 18]"
+          (page)="onPageChange($event)"
+          class="mt-4"
+        ></mat-paginator>
+      }
+    } @else {
+      <!-- Empty State -->
+      <div class="text-center py-16 bg-white rounded-xl border border-gray-100">
+        <div class="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <mat-icon class="text-4xl text-gray-300">crop</mat-icon>
+        </div>
+        <h3 class="text-lg font-medium text-gray-800">No Fields Assigned</h3>
+        <p class="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+          You haven't been assigned to any fields yet. 
+          Contact your farm administrator for field assignments.
+        </p>
+      </div>
+    }
+  }
+</div>
