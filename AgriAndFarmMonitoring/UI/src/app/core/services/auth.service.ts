@@ -1,4 +1,4 @@
-// src/app/core/services/auth.service.ts
+// src/app/core/services/auth.service.ts (UPDATED)
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -10,7 +10,8 @@ import {
   AuthResponse, 
   RegisterRequest, 
   RefreshTokenRequest,
-  ChangePasswordRequest
+  ChangePasswordRequest,
+  UnifiedLoginResponse
 } from '../models/auth.model';
 import { User } from '../models/user.model';
 import { TokenService } from './token.service';
@@ -33,7 +34,8 @@ export class AuthService {
     this.loadUserFromStorage();
   }
 
-  login(credentials: LoginRequest): Observable<AuthResponse> {
+  // ✅ UPDATED: Unified login with role detection
+  login(credentials: LoginRequest): Observable<UnifiedLoginResponse> {
     if (this.isLoggingIn) {
       return throwError(() => new Error('Login already in progress'));
     }
@@ -41,12 +43,14 @@ export class AuthService {
     this.isLoggingIn = true;
     this.clearUser();
     
-    return this.http.post<AuthResponse>(`${this.API_URL}/auth/login`, credentials)
+    return this.http.post<UnifiedLoginResponse>(`${this.API_URL}/auth/login`, credentials)
       .pipe(
-        tap((response: AuthResponse) => {
+        tap((response: UnifiedLoginResponse) => {
           if (response.success && response.data) {
-            console.log('✅ Login API success, storing user data');
-            const user = this.mapToUser(response.data);
+            console.log(`✅ Login successful as ${response.userType}`);
+            
+            // Map response to User
+            const user = this.mapToUser(response.data, response.userType);
             this.setUser(user);
           }
         }),
@@ -63,20 +67,19 @@ export class AuthService {
   }
 
   // ✅ Get redirect URL based on user role
-getRedirectUrl(user: User | null): string {
-  if (!user) return '/auth/login';
-  
-  // ✅ Normalize role for comparison
-  const role = (user.role || user.userType || '').toLowerCase();
-  
-  if (role === 'admin') {
-    return '/admin/dashboard';
-  } else if (role === 'worker') {
-    return '/worker/dashboard';
+  getRedirectUrl(user: User | null): string {
+    if (!user) return '/auth/login';
+    
+    const role = (user.role || user.userType || '').toLowerCase();
+    
+    if (role === 'admin') {
+      return '/admin/dashboard';
+    } else if (role === 'worker') {
+      return '/worker/dashboard';
+    }
+    
+    return '/auth/login';
   }
-  
-  return '/auth/login';
-}
 
   // ✅ Redirect user based on role
   redirectBasedOnRole(user: User | null): void {
@@ -85,6 +88,7 @@ getRedirectUrl(user: User | null): string {
     this.router.navigate([redirectUrl]);
   }
 
+  // ✅ Register - Admin only
   register(registrationData: RegisterRequest): Observable<AuthResponse> {
     this.clearUser();
     
@@ -92,7 +96,7 @@ getRedirectUrl(user: User | null): string {
       .pipe(
         tap((response: AuthResponse) => {
           if (response.success && response.data) {
-            const user = this.mapToUser(response.data);
+            const user = this.mapToUser(response.data, 'Admin');
             this.setUser(user);
           }
         }),
@@ -133,7 +137,7 @@ getRedirectUrl(user: User | null): string {
     const refreshToken = this.tokenService.getRefreshToken();
     
     if (refreshToken && revokeToken !== false) {
-      return this.http.post(`${this.API_URL}/auth/revoke-token`, { refreshToken })
+      return this.http.post(`${this.API_URL}/auth/logout`, { refreshToken })
         .pipe(
           finalize(() => {
             this.forceLogout();
@@ -188,18 +192,17 @@ getRedirectUrl(user: User | null): string {
     return !!token && !!user && !this.tokenService.isTokenExpired() && !this.isLoggingIn;
   }
 
-isAdmin(): boolean {
-  const user = this.currentUserSubject.value;
-  const role = (user?.role || user?.userType || '').toLowerCase();
-  return role === 'admin';
-}
+  isAdmin(): boolean {
+    const user = this.currentUserSubject.value;
+    const role = (user?.role || user?.userType || '').toLowerCase();
+    return role === 'admin';
+  }
 
-isWorker(): boolean {
-  const user = this.currentUserSubject.value;
-  const role = (user?.role || user?.userType || '').toLowerCase();
-  return role === 'worker';
-}
-
+  isWorker(): boolean {
+    const user = this.currentUserSubject.value;
+    const role = (user?.role || user?.userType || '').toLowerCase();
+    return role === 'worker';
+  }
 
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
@@ -214,8 +217,7 @@ isWorker(): boolean {
   }
 
   private setUser(user: User): void {
-    console.log('✅ Setting user data');
-    console.log('📝 User Role:', user.role || user.userType);
+    console.log(`✅ Setting user data - Role: ${user.role}`);
     this.tokenService.setTokens(user.accessToken, user.refreshToken);
     this.tokenService.setUser(user);
     this.currentUserSubject.next(user);
@@ -239,7 +241,7 @@ isWorker(): boolean {
     const token = this.tokenService.getAccessToken();
     
     if (user && token && !this.tokenService.isTokenExpired()) {
-      console.log('📂 Loading user from storage');
+      console.log(`📂 Loading user from storage - Role: ${user.role}`);
       this.currentUserSubject.next(user);
     } else {
       console.log('🗑️ No valid user in storage, clearing');
@@ -247,13 +249,11 @@ isWorker(): boolean {
     }
   }
 
-  private mapToUser(data: any): User {
-    // Get role from either role or userType field
-    const role = data.role || data.userType || 'Unknown';
-    
+  private mapToUser(data: any, userType?: string): User {
+    const role = userType || data.role || data.userType || 'Unknown';
     const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
 
-     console.log(`📝 Mapping user with role: ${normalizedRole}`);
+    console.log(`📝 Mapping user with role: ${normalizedRole}`);
   
     return {
       id: data.id,
@@ -261,8 +261,8 @@ isWorker(): boolean {
       email: data.email,
       farmId: data.farmId,
       farmName: data.farmName,
-      role: role,
-      userType: data.userType || role,
+      role: normalizedRole,
+      userType: data.userType || normalizedRole,
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
       accessTokenExpiresAt: new Date(data.accessTokenExpiresAt),

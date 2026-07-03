@@ -36,32 +36,26 @@ export class LoginComponent implements OnInit, OnDestroy {
   returnUrl = '/admin/dashboard';
 
   ngOnInit(): void {
-    // ✅ Check if already logged in
     if (this.authService.isLoggedIn()) {
       const user = this.authService.getCurrentUser();
       if (user) {
-        console.log('✅ Already logged in, redirecting based on role');
         this.authService.redirectBasedOnRole(user);
         return;
       }
     }
 
-    // ✅ Get return URL from query params
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '';
     
-    // ✅ If no returnUrl, use role-based default
     if (!this.returnUrl) {
       const user = this.authService.getCurrentUser();
       this.returnUrl = this.authService.getRedirectUrl(user);
     }
 
-    // ✅ Check for logout parameter
     const logoutParam = this.route.snapshot.queryParams['logout'];
     if (logoutParam) {
       console.log('ℹ️ User was logged out');
     }
 
-    // ✅ Pre-fill email if provided
     const emailParam = this.route.snapshot.queryParams['email'];
     if (emailParam) {
       this.loginForm.patchValue({ email: emailParam });
@@ -86,15 +80,11 @@ export class LoginComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response.success) {
-            console.log('✅ Login successful');
+            console.log(`✅ Login successful as ${response.userType}`);
             
-            // ✅ Get the user
             const user = this.authService.getCurrentUser();
             
             if (user) {
-              console.log(`✅ User role: ${user.role || user.userType}`);
-              
-              // ✅ Redirect based on role
               this.authService.redirectBasedOnRole(user);
             } else {
               console.error('❌ User data missing after login');

@@ -20,13 +20,13 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: 
   const authService = inject(AuthService);
   const tokenService = inject(TokenService);
 
-  // ✅ Skip auth and public endpoints
+  // ✅ Skip auth and public endpoints (including worker auth)
   const publicEndpoints = [
     '/auth/login',
     '/auth/register',
     '/auth/refresh-token',
     '/auth/validate',
-    '/worker/auth/login',  // ✅ Added worker auth endpoints
+    '/worker/auth/login',  // ✅ Worker login endpoint
     '/worker/auth/refresh-token',
     '/worker/auth/validate'
   ];
@@ -37,16 +37,13 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: 
     return next(req);
   }
 
-  // ✅ Get token from service
+  // Get token from service
   const accessToken = tokenService.getAccessToken();
   
-  // ✅ Log for debugging (only in development)
+  // Log for debugging (only in development)
   if (!environment.production) {
     console.log('🔑 Interceptor - Request:', req.url);
     console.log('🔑 Interceptor - Token exists:', !!accessToken);
-    if (accessToken) {
-      console.log('🔑 Interceptor - Token:', accessToken.substring(0, 30) + '...');
-    }
   }
 
   let authReq = req;
@@ -59,7 +56,9 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       console.error('❌ HTTP Error:', error.status, error.message);
-      if (error.status === 401 && !req.url.includes('/auth/refresh-token') && !req.url.includes('/worker/auth/refresh-token')) {
+      if (error.status === 401 && 
+          !req.url.includes('/auth/refresh-token') && 
+          !req.url.includes('/worker/auth/refresh-token')) {
         return handle401Error(authReq, next, authService, tokenService);
       }
       return throwError(() => error);

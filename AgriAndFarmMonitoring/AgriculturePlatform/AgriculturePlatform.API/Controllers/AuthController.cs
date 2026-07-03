@@ -1,8 +1,10 @@
+// AgriculturePlatform.API/Controllers/AuthController.cs (UPDATED)
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using AgriculturePlatform.Application.DTOs.Admin;
+using AgriculturePlatform.Application.DTOs.Worker;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Application.Exceptions;
 
@@ -13,11 +15,16 @@ namespace AgriculturePlatform.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAdminService _adminService;
+    private readonly IWorkerAuthService _workerAuthService;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAdminService adminService, ILogger<AuthController> logger)
+    public AuthController(
+        IAdminService adminService,
+        IWorkerAuthService workerAuthService,
+        ILogger<AuthController> logger)
     {
         _adminService = adminService;
+        _workerAuthService = workerAuthService;
         _logger = logger;
     }
 
@@ -29,6 +36,168 @@ public class AuthController : ControllerBase
         return ip ?? "127.0.0.1";
     }
 
+    // =============================================
+    // UNIFIED LOGIN - Handles both Admin and Worker
+    // =============================================
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] UnifiedLoginDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var ipAddress = GetIpAddress();
+            object result;
+            string userType;
+
+            // ✅ Try admin login first
+            try
+            {
+                var adminResult = await _adminService.LoginAsync(
+                    new LoginDto { Email = dto.Email, Password = dto.Password }, 
+                    ipAddress);
+                
+                result = adminResult;
+                userType = "Admin";
+                _logger.LogInformation("Admin logged in: {Email} from IP {Ip}", dto.Email, ipAddress);
+            }
+            catch (UnauthorizedException)
+            {
+                // ✅ If admin login fails, try worker login
+                try
+                {
+                    var workerResult = await _workerAuthService.LoginAsync(
+                        new WorkerLoginDto { Email = dto.Email, Password = dto.Password }, 
+                        ipAddress);
+                    
+                    result = workerResult;
+                    userType = "Worker";
+                    _logger.LogInformation("Worker logged in: {Email} from IP {Ip}", dto.Email, ipAddress);
+                }
+                catch (UnauthorizedException)
+                {
+                    // Both failed
+                    _logger.LogWarning("Login failed for {Email}: Invalid credentials", dto.Email);
+                    return Unauthorized(new { 
+                        success = false, 
+                        message = "Invalid email or password",
+                        userType = "Unknown" 
+                    });
+                }
+            }
+
+            return Ok(new { 
+                success = true, 
+                data = result,
+                userType = userType
+            });
+        }
+        catch (BadRequestException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during login for {Email}", dto.Email);
+            return StatusCode(500, new { success = false, message = "An error occurred during login" });
+        }
+    }
+
+    // =============================================
+    // UNIFIED REFRESH TOKEN
+    // =============================================
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var ipAddress = GetIpAddress();
+            
+            // Try to get user type from expired token
+            var userType = GetUserTypeFromToken(dto.AccessToken);
+            object result;
+
+            if (userType == "Worker")
+            {
+                result = await _workerAuthService.RefreshTokenAsync(dto, ipAddress);
+            }
+            else
+            {
+                result = await _adminService.RefreshTokenAsync(dto, ipAddress);
+            }
+
+            _logger.LogInformation("Token refreshed for {UserType} from IP {Ip}", userType, ipAddress);
+            return Ok(new { success = true, data = result });
+        }
+        catch (UnauthorizedException ex)
+        {
+            _logger.LogWarning("Refresh token failed: {Message}", ex.Message);
+            return Unauthorized(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during token refresh");
+            return StatusCode(500, new { success = false, message = "An error occurred" });
+        }
+    }
+
+    // =============================================
+    // UNIFIED LOGOUT
+    // =============================================
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout([FromBody] RevokeTokenDto? dto)
+    {
+        try
+        {
+            var ipAddress = GetIpAddress();
+            
+            // Determine user type from token
+            var userType = GetUserTypeFromToken();
+            
+            if (userType == "Worker")
+            {
+                var workerId = int.Parse(User.FindFirst("workerId")?.Value ?? "0");
+                await _workerAuthService.RevokeAllUserTokensAsync(workerId, ipAddress);
+            }
+            else
+            {
+                var adminId = int.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? "0");
+                await _adminService.RevokeAllUserTokensAsync(adminId, ipAddress);
+            }
+
+            _logger.LogInformation("User logged out from IP {Ip}", ipAddress);
+            return Ok(new { success = true, message = "Logged out successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during logout");
+            return Ok(new { success = true, message = "Logged out successfully" });
+        }
+    }
+
+    // =============================================
+    // UNIFIED TOKEN VALIDATION
+    // =============================================
+    [HttpGet("validate")]
+    [Authorize]
+    public IActionResult ValidateToken()
+    {
+        var userType = GetUserTypeFromToken();
+        return Ok(new { 
+            success = true, 
+            message = "Token is valid",
+            userType = userType
+        });
+    }
+
+    // =============================================
+    // ADMIN-ONLY REGISTRATION (No change)
+    // =============================================
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
@@ -43,7 +212,6 @@ public class AuthController : ControllerBase
         }
         catch (BadRequestException ex)
         {
-            _logger.LogWarning("Registration failed: {Message}", ex.Message);
             return BadRequest(new { success = false, message = ex.Message });
         }
         catch (Exception ex)
@@ -53,196 +221,78 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto dto)
-    {
-        try
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var ipAddress = GetIpAddress();
-            var result = await _adminService.LoginAsync(dto, ipAddress);
-            _logger.LogInformation("User logged in: {Email} from IP {Ip}", dto.Email, ipAddress);
-            return Ok(new { success = true, data = result });
-        }
-        catch (UnauthorizedException ex)
-        {
-            _logger.LogWarning("Login failed for {Email}: {Message}", dto.Email, ex.Message);
-            return Unauthorized(new { success = false, message = ex.Message });
-        }
-        catch (BadRequestException ex)
-        {
-            _logger.LogWarning("Login validation failed: {Message}", ex.Message);
-            return BadRequest(new { success = false, message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error during login for {Email}", dto.Email);
-            return StatusCode(500, new { success = false, message = "An error occurred during login" });
-        }
-    }
-
-    [HttpPost("refresh-token")]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto dto)
-    {
-        try
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var ipAddress = GetIpAddress();
-            var result = await _adminService.RefreshTokenAsync(dto, ipAddress);
-            _logger.LogInformation("Token refreshed for user from IP {Ip}", ipAddress);
-            return Ok(new { success = true, data = result });
-        }
-        catch (UnauthorizedException ex)
-        {
-            _logger.LogWarning("Refresh token failed: {Message}", ex.Message);
-            return Unauthorized(new { success = false, message = ex.Message });
-        }
-        catch (BadRequestException ex)
-        {
-            _logger.LogWarning("Refresh token validation failed: {Message}", ex.Message);
-            return BadRequest(new { success = false, message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error during token refresh");
-            return StatusCode(500, new { success = false, message = "An error occurred during token refresh" });
-        }
-    }
-
-    [HttpPost("revoke-token")]
+    // =============================================
+    // CHANGE PASSWORD (For Admin only)
+    // =============================================
+    [HttpPost("change-password")]
     [Authorize]
-    public async Task<IActionResult> RevokeToken([FromBody] RevokeTokenDto? dto)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
     {
         try
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            
+            var adminId = GetCurrentAdminId();
             var ipAddress = GetIpAddress();
             
-            // If no token provided, revoke current user's all tokens
-            if (string.IsNullOrWhiteSpace(dto?.RefreshToken))
+            var result = await _adminService.ChangePasswordAsync(adminId, dto, ipAddress);
+            
+            if (result)
             {
-                var adminIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? 
-                                   User.FindFirst("sub")?.Value ?? "0";
-                var adminId = int.Parse(adminIdClaim);
-                var result = await _adminService.RevokeAllUserTokensAsync(adminId, ipAddress);
-                if (result)
-                {
-                    _logger.LogInformation("All tokens revoked for user {AdminId} from IP {Ip}", adminId, ipAddress);
-                    return Ok(new { success = true, message = "All tokens revoked successfully" });
-                }
-                return BadRequest(new { success = false, message = "Failed to revoke tokens" });
+                _logger.LogInformation("Password changed successfully for admin {AdminId}", adminId);
+                return Ok(new { success = true, message = "Password changed successfully" });
             }
-
-            // Revoke specific token
-            var revokeResult = await _adminService.RevokeTokenAsync(dto, ipAddress);
-            if (revokeResult)
-            {
-                _logger.LogInformation("Token revoked from IP {Ip}", ipAddress);
-                return Ok(new { success = true, message = "Token revoked successfully" });
-            }
-
-            return BadRequest(new { success = false, message = "Token not found or already revoked" });
+            
+            return BadRequest(new { success = false, message = "Failed to change password" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error revoking token");
+            _logger.LogError(ex, "Error during password change");
             return StatusCode(500, new { success = false, message = "An error occurred" });
         }
     }
 
-    [HttpPost("logout")]
-    [Authorize]
-    public async Task<IActionResult> Logout([FromBody] RevokeTokenDto? dto)
+    // =============================================
+    // HELPER METHODS
+    // =============================================
+    private string GetUserTypeFromToken()
+    {
+        return User.FindFirst("userType")?.Value ?? 
+               User.FindFirst("role")?.Value ?? 
+               "Admin";
+    }
+
+    private string GetUserTypeFromToken(string token)
     {
         try
         {
-            var ipAddress = GetIpAddress();
-            
-            if (!string.IsNullOrWhiteSpace(dto?.RefreshToken))
-            {
-                await _adminService.RevokeTokenAsync(dto, ipAddress);
-            }
-            else
-            {
-                var adminIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? 
-                                   User.FindFirst("sub")?.Value ?? "0";
-                var adminId = int.Parse(adminIdClaim);
-                await _adminService.RevokeAllUserTokensAsync(adminId, ipAddress);
-            }
-            
-            _logger.LogInformation("User logged out from IP {Ip}", ipAddress);
-            return Ok(new { success = true, message = "Logged out successfully" });
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+            var userType = jwtToken.Claims.FirstOrDefault(c => c.Type == "userType")?.Value;
+            return userType ?? "Admin";
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Error during logout");
-            return Ok(new { success = true, message = "Logged out successfully" });
+            return "Admin";
         }
     }
 
-    [HttpGet("validate")]
-    [Authorize]
-    public IActionResult ValidateToken()
+    private int GetCurrentAdminId()
     {
-        return Ok(new { success = true, message = "Token is valid" });
-    }
-
-
-
-[HttpPost("change-password")]
-[Authorize]
-public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
-{
-    try
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        var adminIdClaim = User.FindFirst("adminId")?.Value ?? 
+                           User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+                           User.FindFirst("sub")?.Value;
         
-        var adminId = GetCurrentAdminId();
-        var ipAddress = GetIpAddress();
-        
-        var result = await _adminService.ChangePasswordAsync(adminId, dto, ipAddress);
-        
-        if (result)
-        {
-            _logger.LogInformation("Password changed successfully for admin {AdminId} from IP {Ip}", adminId, ipAddress);
-            return Ok(new { success = true, message = "Password changed successfully. Please login again with your new password." });
-        }
-        
-        return BadRequest(new { success = false, message = "Failed to change password" });
-    }
-    catch (UnauthorizedException ex)
-    {
-        _logger.LogWarning("Password change failed: {Message}", ex.Message);
-        return Unauthorized(new { success = false, message = ex.Message });
-    }
-    catch (BadRequestException ex)
-    {
-        _logger.LogWarning("Password change validation failed: {Message}", ex.Message);
-        return BadRequest(new { success = false, message = ex.Message });
-    }
-    catch (NotFoundException ex)
-    {
-        _logger.LogWarning("Admin not found: {Message}", ex.Message);
-        return NotFound(new { success = false, message = ex.Message });
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Unexpected error during password change");
-        return StatusCode(500, new { success = false, message = "An error occurred while changing password" });
+        return int.TryParse(adminIdClaim, out var adminId) ? adminId : 0;
     }
 }
 
-private int GetCurrentAdminId()
+// =============================================
+// UNIFIED LOGIN DTO
+// =============================================
+public class UnifiedLoginDto
 {
-    var adminIdClaim = User.FindFirst("adminId")?.Value ?? 
-                       User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
-                       User.FindFirst("sub")?.Value;
-    
-    return int.TryParse(adminIdClaim, out var adminId) ? adminId : 0;
-}
-
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
 }

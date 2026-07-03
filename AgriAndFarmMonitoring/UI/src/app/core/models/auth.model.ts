@@ -1,8 +1,29 @@
+// src/app/core/models/auth.model.ts
 export interface LoginRequest {
   email: string;
   password: string;
 }
 
+export interface UnifiedLoginResponse {
+  success: boolean;
+  data: {
+    id: number;
+    name: string;
+    email: string;
+    accessToken: string;
+    refreshToken: string;
+    farmId: number;
+    farmName: string;
+    role: string;
+    userType?: string;
+    accessTokenExpiresAt: string;
+    refreshTokenExpiresAt: string;
+  };
+  userType: 'Admin' | 'Worker';
+  errors?: string[];
+}
+
+// ✅ Keep existing AuthResponse for backward compatibility
 export interface AuthResponse {
   success: boolean;
   data: {
@@ -13,13 +34,15 @@ export interface AuthResponse {
     refreshToken: string;
     farmId: number;
     farmName: string;
-    role: string;  
-    userType?: string; 
+    role: string;
+    userType?: string;
     accessTokenExpiresAt: string;
     refreshTokenExpiresAt: string;
   };
   errors?: string[];
 }
+
+// ... rest of the interfaces remain the same
 
 export interface RegisterRequest {
   farmName: string;
