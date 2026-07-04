@@ -17,11 +17,7 @@ export const WORKER_ROUTES: Routes = [
         loadComponent: () => import('./fields/fields.component')
           .then(c => c.FieldsComponent)
       },
-      {
-        path: 'crop-cycles',
-        loadComponent: () => import('./crop-cycles/crop-cycles')
-          .then(c => c.CropCycles)
-      },
+ 
       {
         path: 'observations',
         loadComponent: () => import('./observations/observations.component')

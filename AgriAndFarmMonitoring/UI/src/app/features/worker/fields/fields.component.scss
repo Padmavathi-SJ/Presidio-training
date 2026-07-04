@@ -1,13 +1,11 @@
 // src/app/features/worker/fields/fields.component.scss
 .worker-fields {
   // Card hover effect
-  .card-hover {
+  .bg-white {
     transition: all 0.2s ease;
     
     &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(45, 106, 79, 0.12);
-      border-color: #81c784;
+      box-shadow: 0 8px 30px rgba(45, 106, 79, 0.08);
     }
   }
 
@@ -33,9 +31,50 @@
     color: #374151;
   }
 
-  // Grid layout
-  .grid {
-    gap: 1rem;
+  // Progress bar customization
+  .mat-mdc-progress-bar {
+    border-radius: 9999px;
+    
+    .mat-mdc-progress-bar-fill {
+      background-color: #2d6a4f;
+    }
+  }
+
+  // Animation for expansion
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  // Scrollbar for crop cycles
+  .max-h-\[400px\] {
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    
+    &::-webkit-scrollbar-thumb:hover {
+      background: #a1a1a1;
+    }
   }
 
   // Snackbar styles
@@ -54,7 +93,15 @@
 
 // Responsive adjustments
 @media (max-width: 640px) {
-  .grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-3 {
+  .grid-cols-1.lg\:grid-cols-2 {
     grid-template-columns: 1fr;
+  }
+  
+  .grid-cols-2.sm\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: 1fr 1fr;
   }
 }

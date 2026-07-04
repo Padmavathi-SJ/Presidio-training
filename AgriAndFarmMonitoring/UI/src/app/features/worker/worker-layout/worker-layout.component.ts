@@ -41,7 +41,6 @@ export class WorkerLayoutComponent implements OnInit {
   navItems = [
     { label: 'Dashboard', icon: 'dashboard', route: '/worker/dashboard' },
     { label: 'Fields', icon: 'crop', route: '/worker/fields' },
-    { label: 'Crop Cycles', icon: 'grass', route: '/worker/crop-cycles' },
     { label: 'Observations', icon: 'visibility', route: '/worker/observations' },
     { label: 'Tasks', icon: 'assignment', route: '/worker/tasks' },
     { label: 'Weather', icon: 'cloud', route: '/worker/weather' },

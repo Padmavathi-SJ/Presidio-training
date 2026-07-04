@@ -49,6 +49,17 @@ export const FIELD_STATUS_COLORS: Record<string, string> = {
   'RETIRED': 'bg-gray-100 text-gray-700 border-gray-400'
 };
 
+// Growth Stage Colors
+export const GROWTH_STAGE_COLORS: Record<string, string> = {
+  'GERMINATION': 'bg-purple-100 text-purple-700 border-purple-400',
+  'SEEDLING': 'bg-blue-100 text-blue-700 border-blue-400',
+  'VEGETATIVE': 'bg-green-100 text-green-700 border-green-400',
+  'FLOWERING': 'bg-pink-100 text-pink-700 border-pink-400',
+  'FRUITING': 'bg-orange-100 text-orange-700 border-orange-400',
+  'MATURITY': 'bg-yellow-100 text-yellow-700 border-yellow-400',
+  'HARVESTED': 'bg-gray-100 text-gray-700 border-gray-400'
+};
+
 // Growth Stage Progress
 export const GROWTH_STAGE_PROGRESS: Record<string, number> = {
   'GERMINATION': 10,
@@ -60,12 +71,29 @@ export const GROWTH_STAGE_PROGRESS: Record<string, number> = {
   'HARVESTED': 100
 };
 
-export const GROWTH_STAGE_COLORS: Record<string, string> = {
-  'GERMINATION': 'bg-purple-100 text-purple-700',
-  'SEEDLING': 'bg-blue-100 text-blue-700',
-  'VEGETATIVE': 'bg-green-100 text-green-700',
-  'FLOWERING': 'bg-pink-100 text-pink-700',
-  'FRUITING': 'bg-orange-100 text-orange-700',
-  'MATURITY': 'bg-yellow-100 text-yellow-700',
-  'HARVESTED': 'bg-gray-100 text-gray-700'
+// Growth Stage Labels
+export const GROWTH_STAGE_LABELS: Record<string, string> = {
+  'GERMINATION': 'Germination',
+  'SEEDLING': 'Seedling',
+  'VEGETATIVE': 'Vegetative',
+  'FLOWERING': 'Flowering',
+  'FRUITING': 'Fruiting',
+  'MATURITY': 'Maturity',
+  'HARVESTED': 'Harvested'
+};
+
+// Crop Type Icons
+export const CROP_TYPE_ICONS: Record<string, string> = {
+  'WHEAT': 'grass',
+  'MAIZE': 'grass',
+  'RICE': 'grass',
+  'BARLEY': 'grass',
+  'SOYBEAN': 'grass',
+  'COTTON': 'grass',
+  'HAZELNUT': 'grass',
+  'POTATO': 'grass',
+  'TOMATO': 'grass',
+  'ONION': 'grass',
+  'GRAPE': 'grass',
+  'APPLE': 'grass'
 };

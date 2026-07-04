@@ -1,7 +1,7 @@
 // src/app/features/worker/fields/fields.component.ts
 import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { finalize, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
@@ -14,15 +14,23 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatGridListModule } from '@angular/material/grid-list';
-import { MatBadgeModule } from '@angular/material/badge';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatRippleModule } from '@angular/material/core';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 // App Imports
 import { AuthService } from '../../../core/services/auth.service';
 import { WorkerFieldService } from '../services/worker-field.service';
-import { WorkerFieldList } from '../models/worker-field.model';
+import { 
+  WorkerFieldList,
+  WorkerCropCycle,
+  FIELD_STATUS_COLORS,
+  GROWTH_STAGE_COLORS,
+  GROWTH_STAGE_PROGRESS,
+  GROWTH_STAGE_LABELS,
+  CROP_TYPE_ICONS
+} from '../models/worker-field.model';
 
 @Component({
   selector: 'app-worker-fields',
@@ -38,10 +46,10 @@ import { WorkerFieldList } from '../models/worker-field.model';
     MatTooltipModule,
     MatChipsModule,
     MatDividerModule,
-    MatGridListModule,
-    MatBadgeModule,
+    MatProgressBarModule,
     MatRippleModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatExpansionModule
   ],
   templateUrl: './fields.component.html',
   styleUrls: ['./fields.component.scss']
@@ -49,20 +57,23 @@ import { WorkerFieldList } from '../models/worker-field.model';
 export class FieldsComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private workerFieldService = inject(WorkerFieldService);
-  private router = inject(Router);
   private snackBar = inject(MatSnackBar);
 
   // State Signals
   isLoading = signal(false);
   isRefreshing = signal(false);
   fields = signal<WorkerFieldList[]>([]);
+  expandedFieldId = signal<number | null>(null);
+  expandedFieldCropCycles = signal<WorkerCropCycle[]>([]);
+  isLoadingCropCycles = signal<number | null>(null);
   totalCount = signal(0);
-  pageSize = signal(9);
+  pageSize = signal(6);
   pageIndex = signal(0);
 
   // Computed Signals
   hasFields = computed(() => this.fields().length > 0);
   isEmpty = computed(() => !this.isLoading() && this.fields().length === 0);
+  isExpanded = computed(() => this.expandedFieldId() !== null);
 
   private destroy$ = new Subject<void>();
 
@@ -102,26 +113,47 @@ export class FieldsComponent implements OnInit, OnDestroy {
     setTimeout(() => this.isRefreshing.set(false), 500);
   }
 
-  viewFieldDetails(fieldId: number): void {
-    this.router.navigate(['/worker/fields', fieldId]);
+  // Toggle field expansion to show crop cycles
+  toggleField(field: WorkerFieldList): void {
+    if (this.expandedFieldId() === field.fieldId) {
+      // Collapse if already expanded
+      this.expandedFieldId.set(null);
+      this.expandedFieldCropCycles.set([]);
+    } else {
+      // Expand and load crop cycles
+      this.expandedFieldId.set(field.fieldId);
+      this.loadCropCycles(field.fieldId);
+    }
+  }
+
+  loadCropCycles(fieldId: number): void {
+    this.isLoadingCropCycles.set(fieldId);
+    this.workerFieldService.getAssignedFieldDetail(fieldId)
+      .pipe(finalize(() => this.isLoadingCropCycles.set(null)))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.expandedFieldCropCycles.set(response.data.cropCycles || []);
+          } else {
+            this.expandedFieldCropCycles.set([]);
+            this.showError('Failed to load crop cycles');
+          }
+        },
+        error: (error) => {
+          console.error('Error loading crop cycles:', error);
+          this.expandedFieldCropCycles.set([]);
+          this.showError('Failed to load crop cycles');
+        }
+      });
   }
 
   getStatusColor(status: string | null): string {
     if (!status) return 'bg-gray-100 text-gray-700';
-    
-    const colors: Record<string, string> = {
-      'ACTIVE': 'bg-green-100 text-green-700 border-green-400',
-      'FALLOW': 'bg-yellow-100 text-yellow-700 border-yellow-400',
-      'PREPARING': 'bg-blue-100 text-blue-700 border-blue-400',
-      'MAINTENANCE': 'bg-orange-100 text-orange-700 border-orange-400',
-      'RETIRED': 'bg-gray-100 text-gray-700 border-gray-400'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-700';
+    return FIELD_STATUS_COLORS[status] || 'bg-gray-100 text-gray-700';
   }
 
   getStatusIcon(status: string | null): string {
     if (!status) return 'help';
-    
     const icons: Record<string, string> = {
       'ACTIVE': 'check_circle',
       'FALLOW': 'pause_circle',
@@ -134,7 +166,6 @@ export class FieldsComponent implements OnInit, OnDestroy {
 
   getSoilTypeLabel(soilType: string | null): string {
     if (!soilType) return 'Unknown';
-    
     const labels: Record<string, string> = {
       'CLAY': 'Clay',
       'SANDY': 'Sandy',
@@ -144,6 +175,40 @@ export class FieldsComponent implements OnInit, OnDestroy {
       'CHALKY': 'Chalky'
     };
     return labels[soilType] || soilType;
+  }
+
+  getGrowthStageColor(stage: string | null): string {
+    if (!stage) return 'bg-gray-100 text-gray-700';
+    return GROWTH_STAGE_COLORS[stage] || 'bg-gray-100 text-gray-700';
+  }
+
+  getGrowthStageLabel(stage: string | null): string {
+    if (!stage) return 'Unknown';
+    return GROWTH_STAGE_LABELS[stage] || stage;
+  }
+
+  getGrowthProgress(stage: string | null): number {
+    if (!stage) return 0;
+    return GROWTH_STAGE_PROGRESS[stage] || 0;
+  }
+
+  getCropTypeIcon(cropType: string | null): string {
+    if (!cropType) return 'grass';
+    return CROP_TYPE_ICONS[cropType] || 'grass';
+  }
+
+  getDaysSincePlanting(cycle: WorkerCropCycle): string {
+    const days = cycle.daysSincePlanting || 0;
+    if (days === 0) return 'Planted today';
+    if (days < 0) return 'Not planted yet';
+    return `${days} day${days > 1 ? 's' : ''} since planting`;
+  }
+
+  getDaysToHarvest(cycle: WorkerCropCycle): string {
+    const days = cycle.daysToHarvest || 0;
+    if (days === 0) return 'Ready to harvest!';
+    if (days < 0) return 'Harvest overdue!';
+    return `${days} day${days > 1 ? 's' : ''} remaining`;
   }
 
   formatArea(area: number | null): string {
@@ -166,31 +231,22 @@ export class FieldsComponent implements OnInit, OnDestroy {
     return `${count} active crops`;
   }
 
+  onPageChange(event: PageEvent): void {
+    this.pageSize.set(event.pageSize);
+    this.pageIndex.set(event.pageIndex);
+  }
+
+  getPaginatedFields(): WorkerFieldList[] {
+    const start = this.pageIndex() * this.pageSize();
+    const end = start + this.pageSize();
+    return this.fields().slice(start, end);
+  }
+
   private showError(message: string): void {
     this.snackBar.open(message, 'Close', {
       duration: 5000,
       panelClass: ['error-snackbar']
     });
-  }
-
-  private showSuccess(message: string): void {
-    this.snackBar.open(message, 'Close', {
-      duration: 3000,
-      panelClass: ['success-snackbar']
-    });
-  }
-
-  onPageChange(event: PageEvent): void {
-    this.pageSize.set(event.pageSize);
-    this.pageIndex.set(event.pageIndex);
-    // Since we load all fields at once, just update the displayed items
-  }
-
-  // Get paginated fields
-  getPaginatedFields(): WorkerFieldList[] {
-    const start = this.pageIndex() * this.pageSize();
-    const end = start + this.pageSize();
-    return this.fields().slice(start, end);
   }
 
   ngOnDestroy(): void {
