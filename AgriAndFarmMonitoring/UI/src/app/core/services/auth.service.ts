@@ -265,8 +265,8 @@ export class AuthService {
       userType: data.userType || normalizedRole,
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
-      accessTokenExpiresAt: new Date(data.accessTokenExpiresAt),
-      refreshTokenExpiresAt: new Date(data.refreshTokenExpiresAt)
+      accessTokenExpiresAt: new Date(data.accessTokenExpiresAt + (data.accessTokenExpiresAt.endsWith('Z') ? '' : 'Z')),
+      refreshTokenExpiresAt: new Date(data.refreshTokenExpiresAt + (data.refreshTokenExpiresAt.endsWith('Z') ? '' : 'Z'))
     };
   }
 

@@ -26,7 +26,7 @@ export const WORKER_ROUTES: Routes = [
       {
         path: 'tasks',
         loadComponent: () => import('./tasks/tasks.component')
-          .then(c => c.Tasks)
+          .then(c => c.TasksComponent)
       },
       {
         path: 'weather',
