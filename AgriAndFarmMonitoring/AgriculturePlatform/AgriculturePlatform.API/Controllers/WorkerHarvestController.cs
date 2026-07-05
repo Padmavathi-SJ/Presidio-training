@@ -18,15 +18,18 @@ public class WorkerHarvestController : ControllerBase
     private readonly IHarvestService _harvestService;
     private readonly IWorkerFieldAssignmentRepository _assignmentRepository;
     private readonly IWorkerRepository _workerRepository;
+    private readonly IFileStorageService _fileStorageService;
 
     public WorkerHarvestController(
         IHarvestService harvestService,
         IWorkerFieldAssignmentRepository assignmentRepository,
-        IWorkerRepository workerRepository)
+        IWorkerRepository workerRepository,
+        IFileStorageService fileStorageService)
     {
         _harvestService = harvestService;
         _assignmentRepository = assignmentRepository;
         _workerRepository = workerRepository;
+        _fileStorageService = fileStorageService;
     }
 
     private int GetCurrentFarmId() => int.Parse(User.FindFirst("farmId")?.Value ?? "0");
@@ -136,5 +139,40 @@ public class WorkerHarvestController : ControllerBase
         var hasPending = await _harvestService.HasPendingApprovalsAsync(workerId, farmId);
         
         return Ok(new { HasPendingApprovals = hasPending });
+    }
+
+    // POST: api/worker/harvests/upload
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file uploaded." });
+
+        var extension = Path.GetExtension(file.FileName).ToLower();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowedExtensions.Contains(extension))
+            return BadRequest(new { message = "Invalid file type. Only JPG, PNG and WEBP are allowed." });
+
+        if (file.Length > 10 * 1024 * 1024)
+            return BadRequest(new { message = "File size exceeds limit (10MB)." });
+
+        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        var fileBytes = ms.ToArray();
+
+        var relativePath = await _fileStorageService.SaveFileAsync(fileBytes, uniqueFileName, "harvests");
+        var fullUrl = _fileStorageService.GetDownloadUrl(relativePath);
+
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                fileName = relativePath,
+                url = fullUrl
+            }
+        });
     }
 }

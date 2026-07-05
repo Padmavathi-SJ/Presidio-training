@@ -234,10 +234,11 @@ public class WorkerTaskService : IWorkerTaskService
     {
         var validTransitions = new Dictionary<string, List<string>>
         {
-            { "PENDING", new List<string> { "IN_PROGRESS", "CANCELLED" } },
+            { "PENDING", new List<string> { "IN_PROGRESS", "COMPLETED", "CANCELLED" } },
             { "IN_PROGRESS", new List<string> { "COMPLETED", "PENDING", "CANCELLED" } },
-            { "COMPLETED", new List<string>() }, // Cannot change from COMPLETED
-            { "CANCELLED", new List<string>() }  // Cannot change from CANCELLED
+            { "COMPLETED", new List<string> { "IN_PROGRESS", "PENDING" } }, 
+            { "CANCELLED", new List<string> { "PENDING" } },
+            { "OVERDUE", new List<string> { "IN_PROGRESS", "COMPLETED", "CANCELLED", "PENDING" } }
         };
 
         if (!validTransitions.ContainsKey(oldStatus))

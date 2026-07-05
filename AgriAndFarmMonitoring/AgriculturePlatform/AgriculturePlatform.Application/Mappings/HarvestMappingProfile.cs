@@ -3,6 +3,9 @@ using AutoMapper;
 using AgriculturePlatform.Application.DTOs.Harvest;
 using AgriculturePlatform.Domain.Entities.YieldReports;
 using AgriculturePlatform.Domain.Enums;
+using AgriculturePlatform.Application.Interfaces;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace AgriculturePlatform.Application.Mappings;
 
@@ -19,7 +22,9 @@ public class HarvestMappingProfile : Profile
             .ForMember(dest => dest.ApproverName, opt => opt.MapFrom(src => src.Approver != null ? src.Approver.Name : string.Empty))
             .ForMember(dest => dest.QualityGrade, opt => opt.MapFrom(src => src.QualityGrade.HasValue ? src.QualityGrade.ToString() : string.Empty))
             .ForMember(dest => dest.HarvestMethod, opt => opt.MapFrom(src => src.HarvestMethod.HasValue ? src.HarvestMethod.ToString() : string.Empty))
-            .ForMember(dest => dest.TotalValue, opt => opt.MapFrom(src => src.TotalValue));
+            .ForMember(dest => dest.TotalValue, opt => opt.MapFrom(src => src.TotalValue))
+            .ForMember(dest => dest.ImagePath, opt => opt.MapFrom<HarvestImagePathResolver>())
+            .ForMember(dest => dest.AdditionalImagePaths, opt => opt.MapFrom<HarvestAdditionalImagePathsResolver>());
 
         CreateMap<CreateHarvestDto, Harvest>()
             .ForMember(dest => dest.QualityGrade, opt => opt.Ignore())
@@ -42,5 +47,59 @@ public class HarvestMappingProfile : Profile
             .ForMember(dest => dest.QualityGrade, opt => opt.Ignore())
             .ForMember(dest => dest.HarvestMethod, opt => opt.Ignore())
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+    }
+}
+
+public class HarvestImagePathResolver : IValueResolver<Harvest, HarvestDto, string?>
+{
+    private readonly IFileStorageService? _fileStorageService;
+
+    public HarvestImagePathResolver()
+    {
+        _fileStorageService = null;
+    }
+
+    public HarvestImagePathResolver(IFileStorageService fileStorageService)
+    {
+        _fileStorageService = fileStorageService;
+    }
+
+    public string? Resolve(Harvest source, HarvestDto destination, string? destMember, ResolutionContext context)
+    {
+        if (string.IsNullOrEmpty(source.ImagePath))
+            return null;
+
+        if (_fileStorageService == null)
+            return source.ImagePath;
+
+        return _fileStorageService.GetDownloadUrl(source.ImagePath);
+    }
+}
+
+public class HarvestAdditionalImagePathsResolver : IValueResolver<Harvest, HarvestDto, List<string>>
+{
+    private readonly IFileStorageService? _fileStorageService;
+
+    public HarvestAdditionalImagePathsResolver()
+    {
+        _fileStorageService = null;
+    }
+
+    public HarvestAdditionalImagePathsResolver(IFileStorageService fileStorageService)
+    {
+        _fileStorageService = fileStorageService;
+    }
+
+    public List<string> Resolve(Harvest source, HarvestDto destination, List<string> destMember, ResolutionContext context)
+    {
+        if (source.AdditionalImagePaths == null || source.AdditionalImagePaths.Count == 0)
+            return new List<string>();
+
+        if (_fileStorageService == null)
+            return source.AdditionalImagePaths;
+
+        return source.AdditionalImagePaths
+            .Select(path => _fileStorageService.GetDownloadUrl(path))
+            .ToList();
     }
 }

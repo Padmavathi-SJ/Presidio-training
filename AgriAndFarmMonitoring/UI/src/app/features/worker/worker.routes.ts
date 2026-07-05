@@ -21,7 +21,7 @@ export const WORKER_ROUTES: Routes = [
       {
         path: 'observations',
         loadComponent: () => import('./observations/observations.component')
-          .then(c => c.Observations)
+          .then(c => c.ObservationsComponent)
       },
       {
         path: 'tasks',

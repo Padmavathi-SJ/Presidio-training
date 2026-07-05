@@ -34,6 +34,13 @@ public class Harvest : BaseEntity
     public decimal? TotalValue => QuantityKg * PricePerKg;
     public string? BatchNumber { get; set; }
     
+    // Image attachments
+    public string? ImagePath { get; set; }
+    public string? ThumbnailPath { get; set; }
+    public string? ImageCaption { get; set; }
+    public List<string> AdditionalImagePaths { get; set; } = new List<string>();
+    public string? ImageMetadata { get; set; }
+    
     // Navigation properties
     public virtual Farm? Farm { get; set; }
     public virtual Admin? Admin { get; set; }

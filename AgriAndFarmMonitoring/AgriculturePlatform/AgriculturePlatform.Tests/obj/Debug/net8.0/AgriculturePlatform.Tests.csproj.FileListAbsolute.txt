@@ -146,3 +146,10 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.pdb
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.genruntimeconfig.cache
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/ref/AgriculturePlatform.Tests.dll
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/Azure.Core.dll
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/Azure.Storage.Blobs.dll
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/Azure.Storage.Common.dll
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/Microsoft.Bcl.AsyncInterfaces.dll
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/System.ClientModel.dll
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/System.IO.Hashing.dll
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/System.Memory.Data.dll

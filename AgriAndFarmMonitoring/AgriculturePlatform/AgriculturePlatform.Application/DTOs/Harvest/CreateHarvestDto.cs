@@ -12,4 +12,11 @@ public class CreateHarvestDto
     public string? Notes { get; set; }
     public decimal? PricePerKg { get; set; }
     public string? BatchNumber { get; set; }
+    
+    // Image fields
+    public string? ImagePath { get; set; }
+    public string? ThumbnailPath { get; set; }
+    public string? ImageCaption { get; set; }
+    public System.Collections.Generic.List<string>? AdditionalImagePaths { get; set; }
+    public string? ImageMetadata { get; set; }
 }

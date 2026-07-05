@@ -44,7 +44,12 @@ export class WorkerTaskService {
       .set('pageSize', (filter.pageSize || 10).toString())
       .set('isDescending', (filter.isDescending ?? true).toString()); // usually history is descending
 
+    if (filter.status) params = params.set('status', filter.status);
+    if (filter.priority) params = params.set('priority', filter.priority);
     if (filter.taskName) params = params.set('taskName', filter.taskName);
+    if (filter.dueDateFrom) params = params.set('dueDateFrom', filter.dueDateFrom);
+    if (filter.dueDateTo) params = params.set('dueDateTo', filter.dueDateTo);
+    if (filter.isOverdue !== undefined && filter.isOverdue !== null) params = params.set('isOverdue', filter.isOverdue.toString());
     if (filter.sortBy) params = params.set('sortBy', filter.sortBy);
 
     return this.http.get<ApiResponse<PagedResult<WorkerTaskDto>>>(`${this.API_URL}/worker/tasks/history`, { params });

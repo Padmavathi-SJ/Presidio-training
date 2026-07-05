@@ -7,7 +7,6 @@ public class ObservationFilterDto
     public int? CropCycleId { get; set; }
     public int? WorkerId { get; set; }
     public string? CropHealth { get; set; }
-    public bool? PestDetected { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
     public bool? IncludeDeleted { get; set; } = false;

@@ -331,6 +331,20 @@ modelBuilder.Entity<Observation>(entity =>
     entity.Property(e => e.ValidatedAt)
           .HasColumnType("timestamp with time zone")
           .HasComment("When the observation was validated");
+          
+    // NEW: Image fields
+    entity.Property(e => e.ImagePath).HasMaxLength(500);
+    entity.Property(e => e.ThumbnailPath).HasMaxLength(500);
+    entity.Property(e => e.ImageCaption).HasMaxLength(500);
+    entity.Property(e => e.AdditionalImagePaths)
+          .HasColumnType("jsonb")
+          .HasConversion(
+              v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
+              v => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(v, (System.Text.Json.JsonSerializerOptions)null)
+          );
+    entity.Property(e => e.ImageMetadata).HasColumnType("jsonb");
+    entity.Property(e => e.IsImageVerified).HasDefaultValue(false);
+    entity.Property(e => e.ImageVerificationNotes).HasMaxLength(1000);
     
     // Relationships
     entity.HasOne(e => e.Farm)
@@ -573,6 +587,18 @@ modelBuilder.Entity<Harvest>(entity =>
     
     // Computed property - ignore for database
     entity.Ignore(e => e.TotalValue);
+
+    // Image properties configuration
+    entity.Property(e => e.ImagePath).HasMaxLength(500);
+    entity.Property(e => e.ThumbnailPath).HasMaxLength(500);
+    entity.Property(e => e.ImageCaption).HasMaxLength(500);
+    entity.Property(e => e.AdditionalImagePaths)
+          .HasColumnType("jsonb")
+          .HasConversion(
+              v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
+              v => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(v, (System.Text.Json.JsonSerializerOptions)null)
+          );
+    entity.Property(e => e.ImageMetadata).HasColumnType("jsonb");
     
     // Relationships
     entity.HasOne(e => e.Farm)

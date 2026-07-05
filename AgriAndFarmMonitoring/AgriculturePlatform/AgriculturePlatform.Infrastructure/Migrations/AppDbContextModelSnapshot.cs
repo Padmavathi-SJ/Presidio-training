@@ -738,6 +738,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AdditionalImagePaths")
+                        .HasColumnType("jsonb");
+
                     b.Property<int>("AdminId")
                         .HasColumnType("integer");
 
@@ -779,8 +782,28 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasColumnType("character varying(50)")
                         .HasComment("outlier, inconsistent_data, missing_info, duplicate");
 
+                    b.Property<string>("ImageCaption")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ImageMetadata")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ImageVerificationNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
+
+                    b.Property<bool>("IsImageVerified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
@@ -789,12 +812,13 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime>("ObservationDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("PestDetected")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("PestType")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ThumbnailPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1372,6 +1396,10 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AdditionalImagePaths")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<int>("AdminId")
                         .HasColumnType("integer");
 
@@ -1433,6 +1461,17 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<int?>("HarvestedBy")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ImageCaption")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ImageMetadata")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -1458,6 +1497,10 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Property<int?>("SubmittedBy")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ThumbnailPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

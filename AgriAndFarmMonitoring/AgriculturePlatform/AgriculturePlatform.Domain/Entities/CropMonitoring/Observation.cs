@@ -1,11 +1,14 @@
 // Domain/Entities/CropMonitoring/Observation.cs
+using AgriculturePlatform.Domain.Common;
 using AgriculturePlatform.Domain.Enums;
 using AgriculturePlatform.Domain.Entities.AdminEntities;
 using AgriculturePlatform.Domain.Entities.WorkerManagement;
-using AgriculturePlatform.Domain.Common;
 
 namespace AgriculturePlatform.Domain.Entities.CropMonitoring;
 
+/// <summary>
+/// Represents a field observation made by a worker or admin
+/// </summary>
 public class Observation : BaseEntity
 {
     public int FarmId { get; set; }
@@ -13,9 +16,9 @@ public class Observation : BaseEntity
     public int FieldId { get; set; }
     public int? CropCycleId { get; set; }
     public int? WorkerId { get; set; }
+    
     public DateTime ObservationDate { get; set; } = DateTime.UtcNow;
     public CropHealthEnum? CropHealth { get; set; }
-    public bool PestDetected { get; set; } = false;
     public string? PestType { get; set; }
     public string? Notes { get; set; }
     
@@ -26,6 +29,25 @@ public class Observation : BaseEntity
     public int? ValidatedBy { get; set; }         // Admin ID who validated
     public DateTime? ValidatedAt { get; set; }    // When validation occurred
     public string? FlagReason { get; set; }       // outlier, inconsistent_data, missing_info, duplicate
+    
+    // ===== NEW IMAGE FIELDS =====
+    public string? ImagePath { get; set; }          // Primary/first image (backwards compatibility + primary view)
+    public string? ThumbnailPath { get; set; }      // Smaller version for list views
+    public string? ImageCaption { get; set; }       // Description specific to the image
+    
+    // If multiple images are needed, store as JSON array in DB (EF Core ValueConversion or JSON column)
+    public List<string>? AdditionalImagePaths { get; set; } = new List<string>();
+    
+    // Technical metadata (JSON string mapping to a dictionary or class)
+    public string? ImageMetadata { get; set; }      // Camera, GPS coords when taken, timestamp, etc.
+    
+    // Flag for admin to verify the image itself
+    public bool IsImageVerified { get; set; } = false;
+    public string? ImageVerificationNotes { get; set; }
+    
+    // Computed properties - NOT mapped to database
+    public bool HasImages => !string.IsNullOrEmpty(ImagePath) || (AdditionalImagePaths != null && AdditionalImagePaths.Any());
+    public int ImageCount => (string.IsNullOrEmpty(ImagePath) ? 0 : 1) + (AdditionalImagePaths?.Count ?? 0);
     
     // Navigation properties
     public virtual Farm? Farm { get; set; }

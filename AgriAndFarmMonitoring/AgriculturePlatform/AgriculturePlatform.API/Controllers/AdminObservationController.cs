@@ -17,13 +17,17 @@ namespace AgriculturePlatform.API.Controllers;
 public class AdminObservationController : ControllerBase
 {
     private readonly IObservationService _observationService;
-     private readonly ObservationStatisticsFormatter _statisticsFormatter;
+    private readonly ObservationStatisticsFormatter _statisticsFormatter;
+    private readonly IFileStorageService _fileStorageService;
 
-    public AdminObservationController(IObservationService observationService,
-     ObservationStatisticsFormatter statisticsFormatter)
+    public AdminObservationController(
+        IObservationService observationService,
+        ObservationStatisticsFormatter statisticsFormatter,
+        IFileStorageService fileStorageService)
     {
         _observationService = observationService;
         _statisticsFormatter = statisticsFormatter;
+        _fileStorageService = fileStorageService;
     }
 
     private int GetCurrentFarmId() => int.Parse(User.FindFirst("farmId")?.Value ?? "0");
@@ -245,14 +249,14 @@ public async Task<IActionResult> GetValidationSummary()
     // Get invalid observations
     var invalidCount = await GetCountByValidationStatus(farmId, "invalid");
     
-    return Ok(new
+    return Ok(ApiResponse<object>.Ok(new
     {
         Total = allObservations.Data?.TotalCount ?? 0,
         Pending = pendingResult.Data?.TotalCount ?? 0,
         Questioned = questionedResult.Data?.TotalCount ?? 0,
         Verified = verifiedCount,
         Invalid = invalidCount
-    });
+    }));
 }
 
 // Helper method to get count by validation status
@@ -266,5 +270,46 @@ private async Task<int> GetCountByValidationStatus(int farmId, string validation
     var result = await _observationService.GetAllObservationsAsync(filter, farmId);
     return result.Data?.TotalCount ?? 0;
 }
+
+    // POST: api/admin/farms/{farmId}/observations/upload
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "No file uploaded." });
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLower();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowedExtensions.Contains(extension))
+        {
+            return BadRequest(new { message = "Invalid file type. Only JPG, PNG and WEBP are allowed." });
+        }
+
+        if (file.Length > 10 * 1024 * 1024)
+        {
+            return BadRequest(new { message = "File size exceeds limit (10MB)." });
+        }
+
+        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        var fileBytes = ms.ToArray();
+
+        var relativePath = await _fileStorageService.SaveFileAsync(fileBytes, uniqueFileName, "observations");
+        var fullUrl = _fileStorageService.GetDownloadUrl(relativePath);
+
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                fileName = relativePath,
+                url = fullUrl
+            }
+        });
+    }
 
 }

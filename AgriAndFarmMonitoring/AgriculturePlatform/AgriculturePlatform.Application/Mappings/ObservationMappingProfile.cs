@@ -3,6 +3,9 @@ using AutoMapper;
 using AgriculturePlatform.Application.DTOs.Observation;
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
 using AgriculturePlatform.Domain.Enums;
+using AgriculturePlatform.Application.Interfaces;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace AgriculturePlatform.Application.Mappings;
 
@@ -18,7 +21,8 @@ public class ObservationMappingProfile : Profile
             .ForMember(dest => dest.CropType, opt => opt.MapFrom(src => src.CropCycle != null && src.CropCycle.CropType != null ? src.CropCycle.CropType.ToString() : string.Empty))
             .ForMember(dest => dest.WorkerName, opt => opt.MapFrom(src => src.Worker != null ? src.Worker.Name : string.Empty))
             .ForMember(dest => dest.ValidatorName, opt => opt.MapFrom(src => src.Validator != null ? src.Validator.Name : string.Empty))
-            .ForMember(dest => dest.ImageUrls, opt => opt.Ignore());
+            .ForMember(dest => dest.ImagePath, opt => opt.MapFrom<ObservationImagePathResolver>())
+            .ForMember(dest => dest.AdditionalImagePaths, opt => opt.MapFrom<ObservationAdditionalImagePathsResolver>());
 
         CreateMap<CreateObservationDto, Observation>()
             .ForMember(dest => dest.CropHealth, opt => opt.Ignore())
@@ -39,8 +43,9 @@ public class ObservationMappingProfile : Profile
             .ForMember(dest => dest.Farm, opt => opt.Ignore())
             .ForMember(dest => dest.Admin, opt => opt.Ignore())
             .ForMember(dest => dest.Validator, opt => opt.Ignore())
-            // NEW: Set default validation status
-            .ForMember(dest => dest.ValidationStatus, opt => opt.MapFrom(src => "pending"));
+            // Set default validation status
+            .ForMember(dest => dest.ValidationStatus, opt => opt.MapFrom(src => "pending"))
+            .ForMember(dest => dest.IsImageVerified, opt => opt.MapFrom(src => false));
 
         CreateMap<UpdateObservationDto, Observation>()
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
@@ -57,5 +62,59 @@ public class ObservationMappingProfile : Profile
             CropHealthEnum.CRITICAL => "Critical",
             _ => health.ToString()
         };
+    }
+}
+
+public class ObservationImagePathResolver : IValueResolver<Observation, ObservationDto, string?>
+{
+    private readonly IFileStorageService? _fileStorageService;
+
+    public ObservationImagePathResolver()
+    {
+        _fileStorageService = null;
+    }
+
+    public ObservationImagePathResolver(IFileStorageService fileStorageService)
+    {
+        _fileStorageService = fileStorageService;
+    }
+
+    public string? Resolve(Observation source, ObservationDto destination, string? destMember, ResolutionContext context)
+    {
+        if (string.IsNullOrEmpty(source.ImagePath))
+            return null;
+
+        if (_fileStorageService == null)
+            return source.ImagePath;
+
+        return _fileStorageService.GetDownloadUrl(source.ImagePath);
+    }
+}
+
+public class ObservationAdditionalImagePathsResolver : IValueResolver<Observation, ObservationDto, List<string>?>
+{
+    private readonly IFileStorageService? _fileStorageService;
+
+    public ObservationAdditionalImagePathsResolver()
+    {
+        _fileStorageService = null;
+    }
+
+    public ObservationAdditionalImagePathsResolver(IFileStorageService fileStorageService)
+    {
+        _fileStorageService = fileStorageService;
+    }
+
+    public List<string>? Resolve(Observation source, ObservationDto destination, List<string>? destMember, ResolutionContext context)
+    {
+        if (source.AdditionalImagePaths == null)
+            return null;
+
+        if (_fileStorageService == null)
+            return source.AdditionalImagePaths;
+
+        return source.AdditionalImagePaths
+            .Select(path => _fileStorageService.GetDownloadUrl(path))
+            .ToList();
     }
 }

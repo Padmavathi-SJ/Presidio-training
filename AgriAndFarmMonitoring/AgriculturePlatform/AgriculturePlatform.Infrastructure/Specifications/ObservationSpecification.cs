@@ -12,7 +12,6 @@ public class ObservationSpecification : BaseSpecification<Observation>
         int? cropCycleId,
         int? workerId,
         string? cropHealth,
-        bool? pestDetected,
         DateTime? fromDate,
         DateTime? toDate,
         string? validationStatus,  // NEW
@@ -52,12 +51,6 @@ public class ObservationSpecification : BaseSpecification<Observation>
             AddCriteria(o => o.CropHealth == parsedHealth);
         }
         
-        // Filter by pest detection
-        if (pestDetected.HasValue)
-        {
-            AddCriteria(o => o.PestDetected == pestDetected.Value);
-        }
-        
         // Filter by date range
         if (fromDate.HasValue)
         {
@@ -68,7 +61,7 @@ public class ObservationSpecification : BaseSpecification<Observation>
             AddCriteria(o => o.ObservationDate <= toDate.Value);
         }
         
-        // NEW: Filter by validation status
+        // Filter by validation status
         if (!string.IsNullOrWhiteSpace(validationStatus))
         {
             AddCriteria(o => o.ValidationStatus == validationStatus);
@@ -79,6 +72,6 @@ public class ObservationSpecification : BaseSpecification<Observation>
         AddInclude(o => o.CropCycle);
         AddInclude(o => o.Worker);
         AddInclude(o => o.Farm);
-        AddInclude(o => o.Validator);  // NEW: Include validator
+        AddInclude(o => o.Validator);
     }
 }

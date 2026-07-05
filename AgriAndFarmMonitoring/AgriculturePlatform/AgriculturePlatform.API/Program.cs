@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -136,8 +136,7 @@ var mapperConfig = new MapperConfiguration(cfg =>
     cfg.AddProfile<YieldReportMappingProfile>();
 });
 
-var mapper = mapperConfig.CreateMapper();
-builder.Services.AddSingleton<IMapper>(mapper);
+builder.Services.AddSingleton<IMapper>(sp => new Mapper(mapperConfig, sp.GetService));
 
 builder.Services.AddValidatorsFromAssembly(typeof(CreateFieldValidator).Assembly);
 
@@ -189,8 +188,20 @@ builder.Services.AddScoped<IHarvestService, HarvestService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IQualityCheckService, QualityCheckService>();
 builder.Services.AddScoped<IYieldReportService, YieldReportService>();
-builder.Services.AddScoped<IFileStorageService, FileStorageService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+        var storageProvider = builder.Configuration["FileStorage:Provider"] ?? "Local";
+        if (storageProvider == "AzureBlob")
+        {
+            builder.Services.AddTransient<IFileStorageService, AgriculturePlatform.Infrastructure.FileStorage.AzureBlobStorageService>();
+        }
+        else
+        {
+            builder.Services.AddTransient<IFileStorageService, AgriculturePlatform.Infrastructure.FileStorage.LocalFileStorageService>();
+        }
+        builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationImagePathResolver>();
+        builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationAdditionalImagePathsResolver>();
+        builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.HarvestImagePathResolver>();
+        builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.HarvestAdditionalImagePathsResolver>();
+        builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<ObservationStatisticsFormatter>();
 
@@ -239,6 +250,7 @@ var app = builder.Build();
 
 // ✅ CORS must be BEFORE Authentication and Authorization
 app.UseCors("AllowAll");
+app.UseStaticFiles();
 
 // ✅ FIX: Configure pipeline in the CORRECT ORDER
 app.UseSwagger();

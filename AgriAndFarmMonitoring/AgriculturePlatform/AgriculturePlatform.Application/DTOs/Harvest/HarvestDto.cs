@@ -39,6 +39,13 @@ public class HarvestDto
     public DateTime? UpdatedAt { get; set; }
     public int? CreatedBy { get; set; }
     
+    // Image attachment properties
+    public string? ImagePath { get; set; }
+    public string? ThumbnailPath { get; set; }
+    public string? ImageCaption { get; set; }
+    public List<string> AdditionalImagePaths { get; set; } = new List<string>();
+    public string? ImageMetadata { get; set; }
+    
     // Computed properties
     public string StatusBadgeColor => ApprovalStatus switch
     {

@@ -49,7 +49,6 @@ public class ObservationServiceTests
         {
             FieldId = 1,
             CropHealth = "GOOD",
-            PestDetected = false,
             Notes = "Crop looking healthy",
             ObservationDate = DateTime.UtcNow
         };

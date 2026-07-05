@@ -64,7 +64,13 @@ public class HarvestService : IHarvestService
             BatchNumber = dto.BatchNumber,
             ApprovalStatus = "PENDING",
             CreatedBy = workerId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            // Image fields
+            ImagePath = dto.ImagePath,
+            ThumbnailPath = dto.ThumbnailPath,
+            ImageCaption = dto.ImageCaption,
+            AdditionalImagePaths = dto.AdditionalImagePaths ?? new List<string>(),
+            ImageMetadata = dto.ImageMetadata
         };
 
         if (!string.IsNullOrWhiteSpace(dto.QualityGrade))
@@ -110,6 +116,17 @@ public class HarvestService : IHarvestService
             harvest.PricePerKg = dto.PricePerKg;
         if (!string.IsNullOrWhiteSpace(dto.BatchNumber))
             harvest.BatchNumber = dto.BatchNumber;
+        // Image fields
+        if (dto.ImagePath != null)
+            harvest.ImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : dto.ImagePath;
+        if (dto.ThumbnailPath != null)
+            harvest.ThumbnailPath = string.IsNullOrWhiteSpace(dto.ThumbnailPath) ? null : dto.ThumbnailPath;
+        if (dto.ImageCaption != null)
+            harvest.ImageCaption = string.IsNullOrWhiteSpace(dto.ImageCaption) ? null : dto.ImageCaption;
+        if (dto.AdditionalImagePaths != null)
+            harvest.AdditionalImagePaths = dto.AdditionalImagePaths;
+        if (dto.ImageMetadata != null)
+            harvest.ImageMetadata = string.IsNullOrWhiteSpace(dto.ImageMetadata) ? null : dto.ImageMetadata;
 
         harvest.UpdatedAt = DateTime.UtcNow;
         harvest.UpdatedBy = workerId;
@@ -206,6 +223,17 @@ public class HarvestService : IHarvestService
             harvest.PricePerKg = dto.PricePerKg;
         if (!string.IsNullOrWhiteSpace(dto.BatchNumber))
             harvest.BatchNumber = dto.BatchNumber;
+        // Image fields
+        if (dto.ImagePath != null)
+            harvest.ImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : dto.ImagePath;
+        if (dto.ThumbnailPath != null)
+            harvest.ThumbnailPath = string.IsNullOrWhiteSpace(dto.ThumbnailPath) ? null : dto.ThumbnailPath;
+        if (dto.ImageCaption != null)
+            harvest.ImageCaption = string.IsNullOrWhiteSpace(dto.ImageCaption) ? null : dto.ImageCaption;
+        if (dto.AdditionalImagePaths != null)
+            harvest.AdditionalImagePaths = dto.AdditionalImagePaths;
+        if (dto.ImageMetadata != null)
+            harvest.ImageMetadata = string.IsNullOrWhiteSpace(dto.ImageMetadata) ? null : dto.ImageMetadata;
 
         harvest.UpdatedAt = DateTime.UtcNow;
         harvest.UpdatedBy = adminId;

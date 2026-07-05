@@ -1,1 +1,612 @@
-<p>observations works!</p>
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-outline-variant pb-4">
+    <div>
+      <h1 class="text-headline-md font-bold text-surface-on m-0">Observation Audit Center</h1>
+      <p class="text-body-sm text-surface-on-variant mt-1">Review, validate, and manage worker crop health observations</p>
+    </div>
+  </div>
+
+  <!-- KPI Summary Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
+      <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant">Total Records</span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-surface-on">{{ summary.total }}</span>
+      </div>
+    </div>
+    
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-warning">
+      <span class="text-xs font-semibold uppercase tracking-wider text-warning">Pending Audit</span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-warning">{{ summary.pending }}</span>
+      </div>
+    </div>
+
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-accent">
+      <span class="text-xs font-semibold uppercase tracking-wider text-orange-500">Questioned</span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-orange-500">{{ summary.questioned }}</span>
+      </div>
+    </div>
+
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-success">
+      <span class="text-xs font-semibold uppercase tracking-wider text-success">Verified</span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-success">{{ summary.verified }}</span>
+      </div>
+    </div>
+
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-error">
+      <span class="text-xs font-semibold uppercase tracking-wider text-error">Invalid</span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-error">{{ summary.invalid }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Tab Control Panel -->
+  <div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+    <!-- Status Filter Tabs -->
+    <div class="border-b border-outline-variant bg-surface flex overflow-x-auto">
+      <button class="px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+              [class.border-primary]="selectedTabIndex === 0"
+              [class.text-primary]="selectedTabIndex === 0"
+              [class.border-transparent]="selectedTabIndex !== 0"
+              [class.text-surface-on-variant]="selectedTabIndex !== 0"
+              (click)="onTabChange(0)">
+        Pending Audit
+      </button>
+      <button class="px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+              [class.border-primary]="selectedTabIndex === 1"
+              [class.text-primary]="selectedTabIndex === 1"
+              [class.border-transparent]="selectedTabIndex !== 1"
+              [class.text-surface-on-variant]="selectedTabIndex !== 1"
+              (click)="onTabChange(1)">
+        Questioned/Flagged
+      </button>
+      <button class="px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+              [class.border-primary]="selectedTabIndex === 2"
+              [class.text-primary]="selectedTabIndex === 2"
+              [class.border-transparent]="selectedTabIndex !== 2"
+              [class.text-surface-on-variant]="selectedTabIndex !== 2"
+              (click)="onTabChange(2)">
+        Verified
+      </button>
+      <button class="px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+              [class.border-primary]="selectedTabIndex === 3"
+              [class.text-primary]="selectedTabIndex === 3"
+              [class.border-transparent]="selectedTabIndex !== 3"
+              [class.text-surface-on-variant]="selectedTabIndex !== 3"
+              (click)="onTabChange(3)">
+        Invalid
+      </button>
+    </div>
+
+    <!-- Active Filters Form -->
+    <form [formGroup]="filterForm" class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-surface/50">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Field</mat-label>
+        <mat-select formControlName="fieldId">
+          <mat-option value="">All Fields</mat-option>
+          <mat-option *ngFor="let field of fields" [value]="field.id">
+            {{ field.fieldName }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Crop Cycle</mat-label>
+        <mat-select formControlName="cropCycleId">
+          <mat-option value="">All Cycles</mat-option>
+          <mat-option *ngFor="let cycle of filteredCropCycles" [value]="cycle.id">
+            {{ cycle.cropType }} ({{ cycle.plantingDate | date:'shortDate' }})
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Recorded By</mat-label>
+        <mat-select formControlName="workerId">
+          <mat-option value="">All Workers</mat-option>
+          <mat-option *ngFor="let worker of workers" [value]="worker.id">
+            {{ worker.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Crop Health</mat-label>
+        <mat-select formControlName="cropHealth">
+          <mat-option value="">All Health Statuses</mat-option>
+          <mat-option value="EXCELLENT">Excellent</mat-option>
+          <mat-option value="GOOD">Good</mat-option>
+          <mat-option value="AVERAGE">Average</mat-option>
+          <mat-option value="POOR">Poor</mat-option>
+          <mat-option value="CRITICAL">Critical</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>From Date</mat-label>
+        <input matInput [matDatepicker]="fromPicker" formControlName="fromDate">
+        <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+        <mat-datepicker #fromPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>To Date</mat-label>
+        <input matInput [matDatepicker]="toPicker" formControlName="toDate">
+        <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+        <mat-datepicker #toPicker></mat-datepicker>
+      </mat-form-field>
+    </form>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading && observations.data.length === 0" class="flex justify-center py-12">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && observations.data.length === 0" 
+       class="bg-surface-low border border-outline-variant rounded-xl p-12 text-center shadow-sm">
+    <mat-icon class="text-5xl h-12 w-12 text-surface-on-variant mb-3">info</mat-icon>
+    <h3 class="text-lg font-bold text-surface-on">No observations found</h3>
+    <p class="text-sm text-surface-on-variant mt-1">Try adjusting your filters or tab criteria.</p>
+  </div>
+
+  <!-- Observations Table -->
+  <div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden" 
+       *ngIf="observations.data.length > 0">
+    <div class="overflow-x-auto">
+      <table mat-table [dataSource]="observations" matSort (matSortChange)="onSortChange($event)" class="w-full">
+        <!-- Date Column -->
+        <ng-container matColumnDef="observationDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
+          <td mat-cell *matCellDef="let obs">
+            <span class="font-medium text-surface-on">{{ obs.observationDate | date:'mediumDate' }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Field Column -->
+        <ng-container matColumnDef="fieldName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Field / Crop</th>
+          <td mat-cell *matCellDef="let obs">
+            <div class="flex flex-col">
+              <span class="font-semibold text-surface-on">{{ obs.fieldName }}</span>
+              <span class="text-xs text-primary mt-0.5" *ngIf="obs.cropType">{{ obs.cropType }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Worker Column -->
+        <ng-container matColumnDef="workerName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Recorded By</th>
+          <td mat-cell *matCellDef="let obs">
+            <span class="text-surface-on">{{ obs.workerName || 'N/A' }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Crop Health Column -->
+        <ng-container matColumnDef="cropHealth">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Health Status</th>
+          <td mat-cell *matCellDef="let obs">
+            <div class="flex items-center gap-1.5">
+              <span class="inline-block w-2.5 h-2.5 rounded-full"
+                    [ngClass]="{
+                      'bg-green-500': obs.cropHealth === 'EXCELLENT',
+                      'bg-emerald-400': obs.cropHealth === 'GOOD',
+                      'bg-amber-400': obs.cropHealth === 'AVERAGE',
+                      'bg-orange-500': obs.cropHealth === 'POOR',
+                      'bg-red-600': obs.cropHealth === 'CRITICAL'
+                    }"></span>
+              <span class="text-sm font-medium text-surface-on">{{ obs.cropHealth | titlecase }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Pest Detected Column -->
+        <ng-container matColumnDef="pestDetected">
+          <th mat-header-cell *matHeaderCellDef>Pest/Disease</th>
+          <td mat-cell *matCellDef="let obs">
+            <div class="flex items-center gap-1 text-error" *ngIf="obs.pestType">
+              <mat-icon class="text-base h-4 w-4">bug_report</mat-icon>
+              <span class="text-sm font-medium">{{ obs.pestType }}</span>
+            </div>
+            <span class="text-sm text-surface-on-variant" *ngIf="!obs.pestType">None</span>
+          </td>
+        </ng-container>
+
+        <!-- Images Column -->
+        <ng-container matColumnDef="images">
+          <th mat-header-cell *matHeaderCellDef>Photos</th>
+          <td mat-cell *matCellDef="let obs">
+            <div class="flex items-center gap-1.5" *ngIf="obs.imagePath">
+              <img [src]="obs.imagePath" alt="Preview" class="w-8 h-8 rounded object-cover border border-outline" />
+              <span class="text-xs text-surface-on-variant" *ngIf="obs.additionalImagePaths?.length">
+                +{{ obs.additionalImagePaths.length }}
+              </span>
+            </div>
+            <span class="text-sm text-surface-on-variant" *ngIf="!obs.imagePath">No Photos</span>
+          </td>
+        </ng-container>
+
+        <!-- Validation Status Column -->
+        <ng-container matColumnDef="validationStatus">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Validation</th>
+          <td mat-cell *matCellDef="let obs">
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider border"
+                  [ngClass]="{
+                    'bg-green-50 text-green-700 border-green-200': obs.validationStatus === 'verified',
+                    'bg-yellow-50 text-yellow-700 border-yellow-200': obs.validationStatus === 'pending',
+                    'bg-orange-50 text-orange-700 border-orange-200': obs.validationStatus === 'questioned',
+                    'bg-red-50 text-red-700 border-red-200': obs.validationStatus === 'invalid'
+                  }">
+              {{ obs.validationStatus }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="text-right">Actions</th>
+          <td mat-cell *matCellDef="let obs" class="text-right">
+            <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu" xPosition="before">
+              <button mat-menu-item (click)="viewDetails(obs)">
+                <mat-icon>visibility</mat-icon>
+                <span>View Details</span>
+              </button>
+              <button mat-menu-item (click)="openValidateDialog(obs)">
+                <mat-icon>check_circle</mat-icon>
+                <span>Validate / Audit</span>
+              </button>
+              <button mat-menu-item (click)="openEditDialog(obs)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit Record</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item class="text-error" (click)="deleteObservation(obs)">
+                <mat-icon class="text-error">delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+            (click)="viewDetails(row)" 
+            class="hover:bg-surface-low/80 cursor-pointer transition-colors duration-150"></tr>
+      </table>
+    </div>
+    
+    <mat-paginator [length]="totalObservations"
+                   [pageSize]="pageSize"
+                   [pageSizeOptions]="[5, 10, 25, 50]"
+                   (page)="onPageChange($event)"
+                   showFirstLastButtons>
+    </mat-paginator>
+  </div>
+</div>
+
+<!-- ============================================== -->
+<!-- DIALOG TEMPLATES -->
+<!-- ============================================== -->
+
+<!-- 1. Audit / Validation Dialog -->
+<ng-template #validationDialog>
+  <h2 mat-dialog-title class="font-bold text-xl flex items-center gap-2">
+    <mat-icon class="text-primary">fact_check</mat-icon>
+    Audit Observation
+  </h2>
+  
+  <mat-dialog-content>
+    <form [formGroup]="validationForm" class="flex flex-col gap-4 py-2">
+      <div class="bg-surface-low border border-outline-variant p-3 rounded-lg flex flex-col gap-1 text-sm mb-2">
+        <div class="flex justify-between">
+          <span class="text-surface-on-variant font-medium">Recorded Date:</span>
+          <span class="font-semibold text-surface-on">{{ selectedObservation?.observationDate | date:'mediumDate' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-surface-on-variant font-medium">Field:</span>
+          <span class="font-semibold text-surface-on">{{ selectedObservation?.fieldName }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-surface-on-variant font-medium">Worker:</span>
+          <span class="font-semibold text-surface-on">{{ selectedObservation?.workerName || 'N/A' }}</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-semibold text-surface-on">Audit Status</label>
+        <mat-radio-group formControlName="validationStatus" class="flex flex-col gap-2 bg-surface-low border border-outline-variant p-3 rounded-lg">
+          <mat-radio-button value="verified" color="primary">
+            <div class="flex flex-col ml-1">
+              <span class="font-bold text-success text-sm uppercase">Verify & Approve</span>
+              <span class="text-xs text-surface-on-variant">Observation is accurate and confirmed.</span>
+            </div>
+          </mat-radio-button>
+          
+          <mat-radio-button value="questioned" color="primary" class="mt-2">
+            <div class="flex flex-col ml-1">
+              <span class="font-bold text-orange-500 text-sm uppercase">Flag as Questioned</span>
+              <span class="text-xs text-surface-on-variant">Flag with questions for the worker to respond.</span>
+            </div>
+          </mat-radio-button>
+
+          <mat-radio-button value="invalid" color="primary" class="mt-2">
+            <div class="flex flex-col ml-1">
+              <span class="font-bold text-error text-sm uppercase">Mark as Invalid</span>
+              <span class="text-xs text-surface-on-variant">Reject the record due to incorrect data.</span>
+            </div>
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <!-- Flag Reason (Mandatory if questioned/invalid) -->
+      <mat-form-field appearance="outline" *ngIf="validationForm.get('validationStatus')?.value === 'questioned' || validationForm.get('validationStatus')?.value === 'invalid'" class="w-full">
+        <mat-label>Reason for Flagging / Rejection</mat-label>
+        <mat-select formControlName="flagReason">
+          <mat-option value="INCORRECT_HEALTH_STATUS">Incorrect health status mapping</mat-option>
+          <mat-option value="PEST_TYPE_MISMATCH">Pest/disease type does not match image</mat-option>
+          <mat-option value="BLURRY_PHOTOS">Images are too blurry or unclear</mat-option>
+          <mat-option value="INSUFFICIENT_INFORMATION">Insufficient or ambiguous description</mat-option>
+          <mat-option value="WRONG_FIELD">Wrong field assignment selected</mat-option>
+          <mat-option value="OTHER">Other / Custom reason</mat-option>
+        </mat-select>
+        <mat-error>Flag reason is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Auditor Review Notes</mat-label>
+        <textarea matInput formControlName="adminNotes" rows="3" placeholder="Provide notes or clarification request details..."></textarea>
+      </mat-form-field>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="gap-2">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="submitValidation()" [disabled]="validationForm.invalid || isLoading">
+      Submit Decision
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- 2. Edit Observation Dialog -->
+<ng-template #editDialog>
+  <h2 mat-dialog-title class="font-bold text-xl flex items-center gap-2">
+    <mat-icon class="text-primary">edit</mat-icon>
+    Edit Observation Record
+  </h2>
+  
+  <mat-dialog-content>
+    <form [formGroup]="observationForm" class="flex flex-col gap-4 py-2 dialog-form">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Field</mat-label>
+        <mat-select formControlName="fieldId" required>
+          <mat-option *ngFor="let field of fields" [value]="field.id">
+            {{ field.fieldName }}
+          </mat-option>
+        </mat-select>
+        <mat-error>Field is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Crop Cycle</mat-label>
+        <mat-select formControlName="cropCycleId">
+          <mat-option value="">Select Crop Cycle</mat-option>
+          <mat-option *ngFor="let cycle of editFilteredCropCycles" [value]="cycle.id">
+            {{ cycle.cropType }} ({{ cycle.plantingDate | date:'shortDate' }}) - {{ cycle.status }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Observation Date</mat-label>
+        <input matInput [matDatepicker]="editObsDatePicker" formControlName="observationDate" required>
+        <mat-datepicker-toggle matIconSuffix [for]="editObsDatePicker"></mat-datepicker-toggle>
+        <mat-datepicker #editObsDatePicker></mat-datepicker>
+        <mat-error>Date is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Crop Health</mat-label>
+        <mat-select formControlName="cropHealth">
+          <mat-option value="EXCELLENT">Excellent</mat-option>
+          <mat-option value="GOOD">Good</mat-option>
+          <mat-option value="AVERAGE">Average</mat-option>
+          <mat-option value="POOR">Poor</mat-option>
+          <mat-option value="CRITICAL">Critical</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Pest/Disease Type (if any)</mat-label>
+        <input matInput formControlName="pestType" placeholder="e.g. Aphids, Mildew">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Notes</mat-label>
+        <textarea matInput formControlName="notes" rows="3"></textarea>
+      </mat-form-field>
+
+      <!-- Photos Section -->
+      <div class="bg-surface p-4 rounded-xl border border-outline-variant flex flex-col gap-4">
+        <h3 class="text-sm font-bold text-surface-on m-0">Attached Photos Management</h3>
+        
+        <!-- Main Photo -->
+        <div>
+          <label class="block text-xs font-semibold text-surface-on-variant mb-1">Main Photo</label>
+          <div class="flex items-center gap-2 mb-2">
+            <input type="file" (change)="onFileSelected($event)" accept="image/*" class="text-xs" [disabled]="isMainUploading" />
+            <mat-spinner diameter="16" *ngIf="isMainUploading"></mat-spinner>
+          </div>
+          <div class="border border-outline-variant rounded-lg p-2 bg-surface-low flex items-center justify-between gap-3 mt-1" *ngIf="mainPhotoPreviewUrl">
+            <div class="flex items-center gap-2 overflow-hidden">
+              <img [src]="mainPhotoPreviewUrl" alt="Main" class="w-10 h-10 object-cover rounded border border-outline" />
+              <span class="text-xs truncate text-surface-on-variant">{{ getRelativePathFromUrl(mainPhotoPreviewUrl) }}</span>
+            </div>
+            <button type="button" mat-icon-button class="h-6 w-6 flex items-center justify-center text-error" (click)="removeMainPhoto()">
+              <mat-icon class="text-sm">close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Reference Photos -->
+        <div>
+          <label class="block text-xs font-semibold text-surface-on-variant mb-1">Reference Photos</label>
+          <div class="flex items-center gap-2 mb-2">
+            <input type="file" multiple (change)="onMultipleFilesSelected($event)" accept="image/*" class="text-xs" [disabled]="isRefsUploading" />
+            <mat-spinner diameter="16" *ngIf="isRefsUploading"></mat-spinner>
+          </div>
+          <div class="flex flex-col gap-1.5 mt-1" *ngIf="referencePhotoPreviews.length">
+            <div class="flex items-center justify-between gap-3 text-sm bg-surface-low p-2 rounded border border-outline-variant" *ngFor="let ref of referencePhotoPreviews; let i = index">
+              <div class="flex items-center gap-2 overflow-hidden">
+                <img [src]="ref.url" alt="Ref" class="w-10 h-10 object-cover rounded border border-outline" />
+                <span class="text-xs truncate text-surface-on-variant">{{ ref.fileName }}</span>
+              </div>
+              <button type="button" mat-icon-button class="h-6 w-6 flex items-center justify-center text-error" (click)="removeReferencePhoto(i)">
+                <mat-icon class="text-sm">close</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Image Caption</mat-label>
+          <input matInput formControlName="imageCaption" placeholder="Brief description of the image">
+        </mat-form-field>
+      </div>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="gap-2">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="saveObservation()" [disabled]="observationForm.invalid || isMainUploading || isRefsUploading || isLoading">
+      Save Changes
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- 3. View Details Dialog -->
+<ng-template #viewDetailsDialog>
+  <div class="p-6 relative max-w-full overflow-hidden dialog-container">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b pb-4 mb-4 border-outline-variant">
+      <div>
+        <h2 class="text-headline-sm font-bold m-0 text-surface-on">Observation Audit Details</h2>
+        <p class="text-body-sm text-surface-on-variant mt-1">Recorded on {{ selectedObservation?.observationDate | date:'mediumDate' }} by {{ selectedObservation?.workerName || 'N/A' }}</p>
+      </div>
+      <!-- Status Badge -->
+      <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border"
+            [ngClass]="{
+              'bg-green-50 text-green-700 border-green-200': selectedObservation?.validationStatus === 'verified',
+              'bg-yellow-50 text-yellow-700 border-yellow-200': selectedObservation?.validationStatus === 'pending',
+              'bg-orange-50 text-orange-700 border-orange-200': selectedObservation?.validationStatus === 'questioned',
+              'bg-red-50 text-red-700 border-red-200': selectedObservation?.validationStatus === 'invalid'
+            }">
+        {{ selectedObservation?.validationStatus }}
+      </span>
+    </div>
+
+    <!-- Details Grid -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-surface-low p-3 rounded-lg border border-outline-variant">
+        <span class="text-xs text-surface-on-variant uppercase font-semibold block mb-1">Field</span>
+        <span class="text-body-md font-medium text-surface-on">{{ selectedObservation?.fieldName || 'N/A' }}</span>
+        <span class="text-xs text-primary block mt-0.5" *ngIf="selectedObservation?.cropType">({{ selectedObservation?.cropType }})</span>
+      </div>
+
+      <div class="bg-surface-low p-3 rounded-lg border border-outline-variant">
+        <span class="text-xs text-surface-on-variant uppercase font-semibold block mb-1">Crop Health</span>
+        <div class="flex items-center gap-1.5">
+          <span class="inline-block w-2.5 h-2.5 rounded-full"
+                [ngClass]="{
+                  'bg-green-500': selectedObservation?.cropHealth === 'EXCELLENT',
+                  'bg-emerald-400': selectedObservation?.cropHealth === 'GOOD',
+                  'bg-amber-400': selectedObservation?.cropHealth === 'AVERAGE',
+                  'bg-orange-500': selectedObservation?.cropHealth === 'POOR',
+                  'bg-red-600': selectedObservation?.cropHealth === 'CRITICAL'
+                }"></span>
+          <span class="text-body-md font-medium text-surface-on">{{ selectedObservation?.cropHealth | titlecase }}</span>
+        </div>
+      </div>
+
+      <div class="bg-surface-low p-3 rounded-lg border border-outline-variant col-span-2" *ngIf="selectedObservation?.pestType">
+        <span class="text-xs text-surface-on-variant uppercase font-semibold block mb-1">Pest / Disease Detected</span>
+        <div class="flex items-center gap-2 text-error">
+          <mat-icon class="text-base h-4 w-4">bug_report</mat-icon>
+          <span class="text-body-md font-semibold">{{ selectedObservation?.pestType }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes Card -->
+    <div class="bg-surface-low p-4 rounded-lg border border-outline-variant mb-6" *ngIf="selectedObservation?.notes">
+      <span class="text-xs text-surface-on-variant uppercase font-semibold block mb-2">Worker Notes</span>
+      <p class="text-body-md m-0 text-surface-on whitespace-pre-wrap leading-relaxed">{{ selectedObservation?.notes }}</p>
+    </div>
+
+    <!-- Admin Review Section (If Questioned/Verified/Invalid) -->
+    <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 p-4 rounded-lg mb-6"
+         *ngIf="selectedObservation?.adminNotes || selectedObservation?.flagReason">
+      <div class="flex justify-between items-center mb-1">
+        <span class="text-xs text-amber-850 dark:text-amber-300 uppercase font-bold block">Audit Review Details</span>
+        <span class="text-xs font-bold text-error uppercase" *ngIf="selectedObservation?.flagReason">Reason: {{ selectedObservation?.flagReason?.replace('_', ' ') }}</span>
+      </div>
+      <p class="text-body-md m-0 text-amber-950 dark:text-amber-100 whitespace-pre-wrap" *ngIf="selectedObservation?.adminNotes">{{ selectedObservation?.adminNotes }}</p>
+      
+      <!-- Worker Response if exists -->
+      <div class="mt-3 pt-3 border-t border-amber-200/50 dark:border-amber-900/50" *ngIf="selectedObservation?.workerResponse">
+        <span class="text-xs text-primary uppercase font-bold block mb-1">Worker Response</span>
+        <p class="text-body-md m-0 text-surface-on whitespace-pre-wrap font-medium">{{ selectedObservation?.workerResponse }}</p>
+      </div>
+    </div>
+
+    <!-- Photo Gallery -->
+    <div class="mb-6" *ngIf="selectedObservation?.imagePath || selectedObservation?.additionalImagePaths?.length">
+      <h3 class="text-body-md font-bold text-surface-on mb-3 flex items-center gap-2">
+        <mat-icon>collections</mat-icon>
+        Attached Photos
+      </h3>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Main Photo -->
+        <div class="border border-outline-variant rounded-lg overflow-hidden bg-surface-low p-2 flex flex-col justify-between" *ngIf="selectedObservation?.imagePath">
+          <div>
+            <span class="text-xs font-semibold text-primary block mb-1.5">Main Photo</span>
+            <a [href]="selectedObservation?.imagePath" target="_blank" class="relative aspect-video bg-surface-dim rounded-md overflow-hidden border border-outline block">
+              <img [src]="selectedObservation?.imagePath" alt="Main" class="w-full h-full object-cover hover:scale-105 transition-transform duration-200" />
+            </a>
+          </div>
+          <span class="text-xs text-surface-on-variant block mt-1.5 text-center italic" *ngIf="selectedObservation?.imageCaption">
+            "{{ selectedObservation?.imageCaption }}"
+          </span>
+        </div>
+
+        <!-- Reference Photos -->
+        <div class="border border-outline-variant rounded-lg overflow-hidden bg-surface-low p-2 flex flex-col" *ngFor="let ref of selectedObservation?.additionalImagePaths; let idx = index">
+          <span class="text-xs font-semibold text-surface-on-variant block mb-1.5">Reference Photo {{ idx + 1 }}</span>
+          <a [href]="ref" target="_blank" class="relative aspect-video bg-surface-dim rounded-md overflow-hidden border border-outline block flex-1">
+            <img [src]="ref" alt="Reference" class="w-full h-full object-cover hover:scale-105 transition-transform duration-200" />
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-2 mt-6">
+      <button mat-button mat-dialog-close>Close</button>
+      <button mat-raised-button color="accent" (click)="openValidateDialog(selectedObservation!)">
+        Audit & Validate
+      </button>
+      <button mat-raised-button color="primary" (click)="openEditDialog(selectedObservation!)">
+        Edit Record
+      </button>
+    </div>
+  </div>
+</ng-template>

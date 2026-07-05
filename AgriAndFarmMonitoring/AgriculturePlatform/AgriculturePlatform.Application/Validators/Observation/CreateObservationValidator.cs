@@ -21,16 +21,15 @@ public class CreateObservationValidator : AbstractValidator<CreateObservationDto
             .When(x => !string.IsNullOrWhiteSpace(x.CropHealth));
 
         RuleFor(x => x.PestType)
-            .NotEmpty().WithMessage("Pest type is required when pest is detected")
             .MaximumLength(100).WithMessage("Pest type cannot exceed 100 characters")
-            .When(x => x.PestDetected);
+            .When(x => !string.IsNullOrWhiteSpace(x.PestType));
 
         RuleFor(x => x.Notes)
             .MaximumLength(1000).WithMessage("Notes cannot exceed 1000 characters");
 
-        RuleFor(x => x.ImageUrls)
+        RuleFor(x => x.AdditionalImagePaths)
             .Must(images => images == null || images.Count <= 10)
-            .WithMessage("Maximum 10 images allowed per observation");
+            .WithMessage("Maximum 10 additional images allowed per observation");
     }
 
     private bool BeValidCropHealth(string? cropHealth)

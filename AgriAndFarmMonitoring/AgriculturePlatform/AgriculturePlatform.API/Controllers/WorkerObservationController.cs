@@ -16,16 +16,19 @@ public class WorkerObservationController : ControllerBase
 {
     private readonly IObservationService _observationService;
     private readonly IWorkerFieldAssignmentRepository _assignmentRepository;
-    private readonly IWorkerRepository _workerRepository;  // ← ADD THIS
+    private readonly IWorkerRepository _workerRepository;
+    private readonly IFileStorageService _fileStorageService;
 
     public WorkerObservationController(
         IObservationService observationService,
         IWorkerFieldAssignmentRepository assignmentRepository,
-        IWorkerRepository workerRepository)  // ← Add to constructor
+        IWorkerRepository workerRepository,
+        IFileStorageService fileStorageService)
     {
         _observationService = observationService;
         _assignmentRepository = assignmentRepository;
-        _workerRepository = workerRepository;  // ← Initialize
+        _workerRepository = workerRepository;
+        _fileStorageService = fileStorageService;
     }
 
     private int GetCurrentFarmId() => int.Parse(User.FindFirst("farmId")?.Value ?? "0");
@@ -116,5 +119,61 @@ public class WorkerObservationController : ControllerBase
             return BadRequest(result);
             
         return Ok(result);
+    }
+
+    // POST: api/worker/observations/{id}/respond
+    [HttpPost("{id}/respond")]
+    public async Task<IActionResult> RespondToAdmin(int id, [FromBody] ObservationWorkerResponseDto dto)
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        
+        var result = await _observationService.RespondToAdminAsync(id, dto, farmId, workerId);
+        
+        if (!result.Success)
+            return BadRequest(result);
+            
+        return Ok(result);
+    }
+
+    // POST: api/worker/observations/upload
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "No file uploaded." });
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLower();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowedExtensions.Contains(extension))
+        {
+            return BadRequest(new { message = "Invalid file type. Only JPG, PNG and WEBP are allowed." });
+        }
+
+        if (file.Length > 10 * 1024 * 1024)
+        {
+            return BadRequest(new { message = "File size exceeds limit (10MB)." });
+        }
+
+        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        var fileBytes = ms.ToArray();
+
+        var relativePath = await _fileStorageService.SaveFileAsync(fileBytes, uniqueFileName, "observations");
+        var fullUrl = _fileStorageService.GetDownloadUrl(relativePath);
+
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                fileName = relativePath,
+                url = fullUrl
+            }
+        });
     }
 }

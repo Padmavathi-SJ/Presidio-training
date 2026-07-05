@@ -18,12 +18,15 @@ public class UpdateObservationValidator : AbstractValidator<UpdateObservationDto
             .When(x => !string.IsNullOrWhiteSpace(x.CropHealth));
 
         RuleFor(x => x.PestType)
-            .NotEmpty().WithMessage("Pest type is required when pest is detected")
             .MaximumLength(100).WithMessage("Pest type cannot exceed 100 characters")
-            .When(x => x.PestDetected.HasValue && x.PestDetected.Value);
+            .When(x => !string.IsNullOrWhiteSpace(x.PestType));
 
         RuleFor(x => x.Notes)
             .MaximumLength(1000).WithMessage("Notes cannot exceed 1000 characters");
+
+        RuleFor(x => x.AdditionalImagePaths)
+            .Must(images => images == null || images.Count <= 10)
+            .WithMessage("Maximum 10 additional images allowed per observation");
 
         RuleFor(x => x)
             .Must(AtLeastOneFieldProvided)
@@ -40,9 +43,11 @@ public class UpdateObservationValidator : AbstractValidator<UpdateObservationDto
     {
         return dto.ObservationDate.HasValue ||
                !string.IsNullOrWhiteSpace(dto.CropHealth) ||
-               dto.PestDetected.HasValue ||
                !string.IsNullOrWhiteSpace(dto.PestType) ||
                !string.IsNullOrWhiteSpace(dto.Notes) ||
-               dto.ImageUrls != null;
+               !string.IsNullOrWhiteSpace(dto.ImagePath) ||
+               !string.IsNullOrWhiteSpace(dto.ThumbnailPath) ||
+               dto.AdditionalImagePaths != null ||
+               !string.IsNullOrWhiteSpace(dto.ImageMetadata);
     }
 }

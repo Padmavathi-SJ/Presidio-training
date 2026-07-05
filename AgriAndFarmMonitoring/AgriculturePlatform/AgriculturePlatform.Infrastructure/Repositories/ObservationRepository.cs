@@ -60,20 +60,20 @@ public class ObservationRepository : IObservationRepository
     }
 
     public async Task<PagedResult<Observation>> GetPagedAsync(
-        int farmId,
-        int? fieldId,
-        int? cropCycleId,
-        int? workerId,
-        string? cropHealth,
-        bool? pestDetected,
-        DateTime? fromDate,
-        DateTime? toDate,
+        int farmId, 
+        int? fieldId, 
+        int? cropCycleId, 
+        int? workerId, 
+        string? cropHealth, 
+        DateTime? fromDate, 
+        DateTime? toDate, 
         string? validationStatus,
-        bool includeDeleted,
+        bool includeDeleted, 
         PaginationParams paginationParams)
     {
         var specification = new ObservationSpecification(
-            farmId, fieldId, cropCycleId, workerId, cropHealth, pestDetected, fromDate, toDate, validationStatus, includeDeleted);
+            farmId, fieldId, cropCycleId, workerId, cropHealth, 
+            fromDate, toDate, validationStatus, includeDeleted);
 
         var query = _context.Observations
             .Include(o => o.Field)
@@ -84,9 +84,19 @@ public class ObservationRepository : IObservationRepository
 
         if (!string.IsNullOrWhiteSpace(paginationParams.SortBy))
         {
-            query = paginationParams.IsDescending
-                ? query.OrderByDescending(o => EF.Property<object>(o, paginationParams.SortBy))
-                : query.OrderBy(o => EF.Property<object>(o, paginationParams.SortBy));
+            var isDescending = paginationParams.IsDescending;
+            query = paginationParams.SortBy switch
+            {
+                "observationDate" => isDescending ? query.OrderByDescending(o => o.ObservationDate) : query.OrderBy(o => o.ObservationDate),
+                "cropHealth" => isDescending ? query.OrderByDescending(o => o.CropHealth) : query.OrderBy(o => o.CropHealth),
+                "validationStatus" => isDescending ? query.OrderByDescending(o => o.ValidationStatus) : query.OrderBy(o => o.ValidationStatus),
+                "createdAt" => isDescending ? query.OrderByDescending(o => o.CreatedAt) : query.OrderBy(o => o.CreatedAt),
+                "fieldName" => isDescending ? query.OrderByDescending(o => o.Field.FieldName) : query.OrderBy(o => o.Field.FieldName),
+                "workerName" => isDescending ? query.OrderByDescending(o => o.Worker.Name) : query.OrderBy(o => o.Worker.Name),
+                _ => isDescending 
+                    ? query.OrderByDescending(o => EF.Property<object>(o, char.ToUpper(paginationParams.SortBy[0]) + paginationParams.SortBy.Substring(1)))
+                    : query.OrderBy(o => EF.Property<object>(o, char.ToUpper(paginationParams.SortBy[0]) + paginationParams.SortBy.Substring(1)))
+            };
         }
         else
         {
@@ -149,13 +159,6 @@ public class ObservationRepository : IObservationRepository
             .ToListAsync();
     }
 
-// AgriculturePlatform.Infrastructure/Repositories/ObservationRepository.cs
-
-// AgriculturePlatform.Infrastructure/Repositories/ObservationRepository.cs
-// Update the method to return ObservationStatisticsDto
-
-// AgriculturePlatform.Infrastructure/Repositories/ObservationRepository.cs
-
 public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate)
 {
     var query = _context.Observations
@@ -173,11 +176,11 @@ public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int 
 
     // Standardize pest types - convert to Title Case and group
     var pestTypeDist = observations
-        .Where(o => o.PestDetected && !string.IsNullOrWhiteSpace(o.PestType))
+        .Where(o => !string.IsNullOrWhiteSpace(o.PestType))
         .GroupBy(o => StandardizePestType(o.PestType!))
         .ToDictionary(g => g.Key, g => g.Count());
 
-    // Standardize crop health values - FIXED to match your enum
+    // Standardize crop health values
     var cropHealthDist = observations
         .Where(o => o.CropHealth.HasValue)
         .GroupBy(o => FormatCropHealth(o.CropHealth!.Value))
@@ -198,8 +201,8 @@ public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int 
     return new ObservationStatisticsDto
     {
         TotalObservations = observations.Count,
-        ObservationsWithPest = observations.Count(o => o.PestDetected),
-        ObservationsWithoutPest = observations.Count(o => !o.PestDetected),
+        ObservationsWithPest = observations.Count(o => !string.IsNullOrWhiteSpace(o.PestType)),
+        ObservationsWithoutPest = observations.Count(o => string.IsNullOrWhiteSpace(o.PestType)),
         PestTypeDistribution = pestTypeDist,
         CropHealthDistribution = cropHealthDist,
         ObservationsByField = observationsByField,
@@ -212,7 +215,7 @@ public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int 
             {
                 Date = g.Key,
                 TotalCount = g.Count(),
-                PestCount = g.Count(o => o.PestDetected)
+                PestCount = g.Count(o => !string.IsNullOrWhiteSpace(o.PestType))
             })
             .OrderBy(t => t.Date)
             .ToList()
@@ -250,13 +253,10 @@ private string FormatCropHealth(CropHealthEnum health)
         CropHealthEnum.CRITICAL => "Critical",
         _ => health.ToString()
     };
-} 
-
-
-public async Task<Dictionary<string, int>> GetPestTypeDistributionAsync(int farmId)
+}    public async Task<Dictionary<string, int>> GetPestTypeDistributionAsync(int farmId)
     {
         var observations = await _context.Observations
-            .Where(o => o.FarmId == farmId && o.PestDetected && !string.IsNullOrWhiteSpace(o.PestType) && !o.IsDeleted)
+            .Where(o => o.FarmId == farmId && !string.IsNullOrWhiteSpace(o.PestType) && !o.IsDeleted)
             .ToListAsync();
 
         return observations

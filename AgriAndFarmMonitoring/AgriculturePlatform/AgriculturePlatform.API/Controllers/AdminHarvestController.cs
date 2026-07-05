@@ -16,10 +16,12 @@ namespace AgriculturePlatform.API.Controllers;
 public class AdminHarvestController : ControllerBase
 {
     private readonly IHarvestService _harvestService;
+    private readonly IFileStorageService _fileStorageService;
 
-    public AdminHarvestController(IHarvestService harvestService)
+    public AdminHarvestController(IHarvestService harvestService, IFileStorageService fileStorageService)
     {
         _harvestService = harvestService;
+        _fileStorageService = fileStorageService;
     }
 
     private int GetCurrentFarmId() => int.Parse(User.FindFirst("farmId")?.Value ?? "0");
@@ -147,5 +149,40 @@ public class AdminHarvestController : ControllerBase
         var farmId = GetCurrentFarmId();
         var result = await _harvestService.GetYearOverYearComparisonAsync(farmId, currentYear, previousYear);
         return Ok(result);
+    }
+
+    // POST: api/admin/farms/{farmId}/harvests/upload
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file uploaded." });
+
+        var extension = Path.GetExtension(file.FileName).ToLower();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowedExtensions.Contains(extension))
+            return BadRequest(new { message = "Invalid file type. Only JPG, PNG and WEBP are allowed." });
+
+        if (file.Length > 10 * 1024 * 1024)
+            return BadRequest(new { message = "File size exceeds limit (10MB)." });
+
+        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        var fileBytes = ms.ToArray();
+
+        var relativePath = await _fileStorageService.SaveFileAsync(fileBytes, uniqueFileName, "harvests");
+        var fullUrl = _fileStorageService.GetDownloadUrl(relativePath);
+
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                fileName = relativePath,
+                url = fullUrl
+            }
+        });
     }
 }

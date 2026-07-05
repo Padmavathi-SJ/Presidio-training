@@ -61,20 +61,25 @@ public async Task<ApiResponse<ObservationDto>> CreateObservationAsync(CreateObse
     var observation = new Observation
     {
         FarmId = farmId,
-        AdminId = adminId,  // ← Now set from the worker's AdminId
+        WorkerId = workerId,
         FieldId = dto.FieldId,
         CropCycleId = dto.CropCycleId,
-        WorkerId = workerId,
         ObservationDate = dto.ObservationDate.ToUniversalTime(),
-        CropHealth = !string.IsNullOrWhiteSpace(dto.CropHealth) 
-            ? Enum.Parse<CropHealthEnum>(dto.CropHealth, true) 
-            : null,
-        PestDetected = dto.PestDetected,
         PestType = dto.PestType,
         Notes = dto.Notes,
-        CreatedBy = workerId,
-        CreatedAt = DateTime.UtcNow
+        // Images
+        ImagePath = dto.ImagePath,
+        ThumbnailPath = dto.ThumbnailPath,
+        ImageCaption = dto.ImageCaption,
+        AdditionalImagePaths = dto.AdditionalImagePaths,
+        ImageMetadata = dto.ImageMetadata
     };
+    observation.AdminId = adminId;
+    observation.CropHealth = !string.IsNullOrWhiteSpace(dto.CropHealth) 
+        ? Enum.Parse<CropHealthEnum>(dto.CropHealth, true) 
+        : null;
+    observation.CreatedBy = workerId;
+    observation.CreatedAt = DateTime.UtcNow;
 
     var created = await _observationRepository.CreateAsync(observation);
     
@@ -108,23 +113,50 @@ public async Task<ApiResponse<ObservationDto>> CreateObservationAsync(CreateObse
 
         var oldObservation = _mapper.Map<Observation>(observation);
 
+        // Update Field association if provided
+        if (dto.FieldId.HasValue)
+        {
+            var field = await _fieldRepository.GetByIdAsync(dto.FieldId.Value, farmId);
+            if (field == null)
+                return ApiResponse<ObservationDto>.Fail($"Field with ID {dto.FieldId.Value} not found");
+            observation.FieldId = dto.FieldId.Value;
+        }
+
+        // Update Crop Cycle association if provided
+        if (dto.CropCycleId.HasValue)
+        {
+            var cropCycle = await _cropCycleRepository.GetByIdAsync(dto.CropCycleId.Value, farmId);
+            if (cropCycle == null)
+                return ApiResponse<ObservationDto>.Fail($"Crop cycle with ID {dto.CropCycleId.Value} not found");
+            observation.CropCycleId = dto.CropCycleId;
+        }
+        else
+        {
+            observation.CropCycleId = null;
+        }
+
         if (dto.ObservationDate.HasValue)
             observation.ObservationDate = dto.ObservationDate.Value.ToUniversalTime();
-        if (!string.IsNullOrWhiteSpace(dto.CropHealth))
-            observation.CropHealth = Enum.Parse<CropHealthEnum>(dto.CropHealth, true);
-        if (dto.PestDetected.HasValue)
-            observation.PestDetected = dto.PestDetected.Value;
-        if (!string.IsNullOrWhiteSpace(dto.PestType))
-            observation.PestType = dto.PestType;
-        if (!string.IsNullOrWhiteSpace(dto.Notes))
-            observation.Notes = dto.Notes;
+
+        observation.CropHealth = !string.IsNullOrWhiteSpace(dto.CropHealth)
+            ? Enum.Parse<CropHealthEnum>(dto.CropHealth, true)
+            : null;
+
+        observation.PestType = dto.PestType;
+        observation.Notes = dto.Notes;
+
+        // Update image fields
+        observation.ImagePath = dto.ImagePath;
+        observation.ThumbnailPath = dto.ThumbnailPath;
+        observation.ImageCaption = dto.ImageCaption;
+        observation.AdditionalImagePaths = dto.AdditionalImagePaths;
+        observation.ImageMetadata = dto.ImageMetadata;
 
         observation.UpdatedAt = DateTime.UtcNow;
         observation.UpdatedBy = workerId;
 
         await _observationRepository.UpdateAsync(observation);
         
-        // FIXED: LogUpdateAsync with correct parameters (7 parameters + 2 optional)
         await _auditLogService.LogUpdateAsync(
             farmId,           // farmId
             null,             // adminId (null for worker)
@@ -135,7 +167,14 @@ public async Task<ApiResponse<ObservationDto>> CreateObservationAsync(CreateObse
             null,             // ipAddress (optional)
             null);            // userAgent (optional)
 
+        // Resolve Field Name dynamically
+        var updatedField = await _fieldRepository.GetByIdAsync(observation.FieldId, farmId);
         var result = _mapper.Map<ObservationDto>(observation);
+        if (updatedField != null)
+        {
+            result.FieldName = updatedField.FieldName;
+        }
+
         return ApiResponse<ObservationDto>.Ok(result, "Observation updated successfully");
     }
 
@@ -182,23 +221,50 @@ public async Task<ApiResponse<ObservationDto>> CreateObservationAsync(CreateObse
 
         var oldObservation = _mapper.Map<Observation>(observation);
 
+        // Update Field association if provided
+        if (dto.FieldId.HasValue)
+        {
+            var field = await _fieldRepository.GetByIdAsync(dto.FieldId.Value, farmId);
+            if (field == null)
+                return ApiResponse<ObservationDto>.Fail($"Field with ID {dto.FieldId.Value} not found");
+            observation.FieldId = dto.FieldId.Value;
+        }
+
+        // Update Crop Cycle association if provided
+        if (dto.CropCycleId.HasValue)
+        {
+            var cropCycle = await _cropCycleRepository.GetByIdAsync(dto.CropCycleId.Value, farmId);
+            if (cropCycle == null)
+                return ApiResponse<ObservationDto>.Fail($"Crop cycle with ID {dto.CropCycleId.Value} not found");
+            observation.CropCycleId = dto.CropCycleId;
+        }
+        else
+        {
+            observation.CropCycleId = null;
+        }
+
         if (dto.ObservationDate.HasValue)
             observation.ObservationDate = dto.ObservationDate.Value.ToUniversalTime();
-        if (!string.IsNullOrWhiteSpace(dto.CropHealth))
-            observation.CropHealth = Enum.Parse<CropHealthEnum>(dto.CropHealth, true);
-        if (dto.PestDetected.HasValue)
-            observation.PestDetected = dto.PestDetected.Value;
-        if (!string.IsNullOrWhiteSpace(dto.PestType))
-            observation.PestType = dto.PestType;
-        if (!string.IsNullOrWhiteSpace(dto.Notes))
-            observation.Notes = dto.Notes;
+
+        observation.CropHealth = !string.IsNullOrWhiteSpace(dto.CropHealth)
+            ? Enum.Parse<CropHealthEnum>(dto.CropHealth, true)
+            : null;
+
+        observation.PestType = dto.PestType;
+        observation.Notes = dto.Notes;
+
+        // Update image fields
+        observation.ImagePath = dto.ImagePath;
+        observation.ThumbnailPath = dto.ThumbnailPath;
+        observation.ImageCaption = dto.ImageCaption;
+        observation.AdditionalImagePaths = dto.AdditionalImagePaths;
+        observation.ImageMetadata = dto.ImageMetadata;
 
         observation.UpdatedAt = DateTime.UtcNow;
         observation.UpdatedBy = adminId;
 
         await _observationRepository.UpdateAsync(observation);
         
-        // FIXED: LogUpdateAsync with correct parameters
         await _auditLogService.LogUpdateAsync(
             farmId,           // farmId
             adminId,          // adminId
@@ -209,7 +275,14 @@ public async Task<ApiResponse<ObservationDto>> CreateObservationAsync(CreateObse
             null,             // ipAddress (optional)
             null);            // userAgent (optional)
 
+        // Resolve Field Name dynamically
+        var updatedField = await _fieldRepository.GetByIdAsync(observation.FieldId, farmId);
         var result = _mapper.Map<ObservationDto>(observation);
+        if (updatedField != null)
+        {
+            result.FieldName = updatedField.FieldName;
+        }
+
         return ApiResponse<ObservationDto>.Ok(result, "Observation updated successfully");
     }
 
@@ -252,9 +325,8 @@ public async Task<ApiResponse<ObservationDto>> CreateObservationAsync(CreateObse
             filter.CropCycleId,
             filter.WorkerId,
             filter.CropHealth,
-            filter.PestDetected,
-            filter.FromDate,
-            filter.ToDate,
+            filter.FromDate?.ToUniversalTime(),
+            filter.ToDate?.ToUniversalTime(),
             filter.ValidationStatus,
             filter.IncludeDeleted ?? false,
             paginationParams);

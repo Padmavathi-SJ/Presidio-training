@@ -14,10 +14,8 @@ public class ObservationDto
     public string? WorkerName { get; set; }
     public DateTime ObservationDate { get; set; }
     public string? CropHealth { get; set; }
-    public bool PestDetected { get; set; }
     public string? PestType { get; set; }
     public string? Notes { get; set; }
-    public List<string>? ImageUrls { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     
@@ -30,7 +28,20 @@ public class ObservationDto
     public DateTime? ValidatedAt { get; set; }
     public string? FlagReason { get; set; }
     
+    // ===== NEW IMAGE FIELDS =====
+    public string? ImagePath { get; set; }
+    public string? ThumbnailPath { get; set; }
+    public string? ImageCaption { get; set; }
+    public List<string>? AdditionalImagePaths { get; set; } = new List<string>();
+    public string? ImageMetadata { get; set; }
+    public bool IsImageVerified { get; set; }
+    public string? ImageVerificationNotes { get; set; }
+    
     // Computed properties for UI
+    public bool PestDetected => !string.IsNullOrEmpty(PestType);
+    public bool HasImages => !string.IsNullOrEmpty(ImagePath) || (AdditionalImagePaths != null && AdditionalImagePaths.Any());
+    public int ImageCount => (string.IsNullOrEmpty(ImagePath) ? 0 : 1) + (AdditionalImagePaths?.Count ?? 0);
+    
     public bool IsPending => ValidationStatus == "pending";
     public bool IsVerified => ValidationStatus == "verified";
     public bool IsQuestioned => ValidationStatus == "questioned";

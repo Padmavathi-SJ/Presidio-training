@@ -2,7 +2,6 @@ using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Application.DTOs.Observation;
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
 
-
 // Application/Interfaces/IObservationRepository.cs
 namespace AgriculturePlatform.Application.Interfaces;
 
@@ -22,7 +21,6 @@ public interface IObservationRepository
         int? cropCycleId,
         int? workerId,
         string? cropHealth,
-        bool? pestDetected,
         DateTime? fromDate,
         DateTime? toDate,
         string? validationStatus,  // NEW
@@ -46,5 +44,5 @@ public interface IObservationRepository
     Task<bool> IsOwnerAsync(int observationId, int workerId, int farmId);
 
     // NEW: Count by validation status
-Task<int> CountByValidationStatusAsync(int farmId, string validationStatus);
+    Task<int> CountByValidationStatusAsync(int farmId, string validationStatus);
 }
