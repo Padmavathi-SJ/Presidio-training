@@ -31,13 +31,57 @@ public class HarvestRepository : IHarvestRepository
             .FirstOrDefaultAsync(h => h.Id == id && h.FarmId == farmId && !h.IsDeleted);
     }
 
-    public async Task<Harvest> CreateAsync(Harvest harvest)
+// Infrastructure/Repositories/HarvestRepository.cs
+
+public async Task<Harvest> CreateAsync(Harvest harvest)
+{
+    // ✅ Clean image paths before saving
+    harvest.ImagePath = CleanPath(harvest.ImagePath);
+    harvest.ThumbnailPath = CleanPath(harvest.ThumbnailPath);
+    if (harvest.AdditionalImagePaths?.Any() == true)
     {
-        harvest.CreatedAt = DateTime.UtcNow;
-        await _context.Harvests.AddAsync(harvest);
-        await _context.SaveChangesAsync();
-        return harvest;
+        harvest.AdditionalImagePaths = harvest.AdditionalImagePaths
+            .Select(CleanPath)
+            .Where(p => !string.IsNullOrEmpty(p))
+            .ToList();
     }
+    
+    harvest.CreatedAt = DateTime.UtcNow;
+    await _context.Harvests.AddAsync(harvest);
+    await _context.SaveChangesAsync();
+    return harvest;
+}
+
+private string? CleanPath(string? path)
+{
+    if (string.IsNullOrEmpty(path))
+        return null;
+    
+    // ✅ Remove full URL prefix if present
+    if (path.StartsWith("http://") || path.StartsWith("https://"))
+    {
+        try
+        {
+            var uri = new Uri(path);
+            path = uri.AbsolutePath.TrimStart('/');
+        }
+        catch
+        {
+            // If URI parsing fails, try to clean manually
+            var parts = path.Split(new[] { "uploads/" }, StringSplitOptions.None);
+            if (parts.Length > 1)
+            {
+                path = parts[parts.Length - 1];
+            }
+        }
+    }
+    
+    // Remove "uploads/" prefix if present
+    path = path.Replace("uploads/", "");
+    path = path.TrimStart('/');
+    
+    return string.IsNullOrEmpty(path) ? null : path;
+}
 
     public async Task UpdateAsync(Harvest harvest)
     {

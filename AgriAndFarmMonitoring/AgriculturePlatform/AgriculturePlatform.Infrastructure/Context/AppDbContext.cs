@@ -546,6 +546,11 @@ modelBuilder.Entity<Observation>(entity =>
 // =============================================
 // HARVEST CONFIGURATION - UPDATED WITH ALL FIELDS
 // =============================================
+// Infrastructure/Context/AppDbContext.cs - Fix the Harvest configuration
+
+// =============================================
+// HARVEST CONFIGURATION - FIXED
+// =============================================
 modelBuilder.Entity<Harvest>(entity =>
 {
     entity.HasKey(e => e.Id);
@@ -588,16 +593,20 @@ modelBuilder.Entity<Harvest>(entity =>
     // Computed property - ignore for database
     entity.Ignore(e => e.TotalValue);
 
-    // Image properties configuration
+    // ✅ FIXED: Image properties with simple conversion
     entity.Property(e => e.ImagePath).HasMaxLength(500);
     entity.Property(e => e.ThumbnailPath).HasMaxLength(500);
     entity.Property(e => e.ImageCaption).HasMaxLength(500);
+    
+    // ✅ FIXED: Use simple expression without statement body
     entity.Property(e => e.AdditionalImagePaths)
-          .HasColumnType("jsonb")
-          .HasConversion(
-              v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
-              v => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(v, (System.Text.Json.JsonSerializerOptions)null)
-          );
+        .HasColumnType("jsonb")
+        .IsRequired(false)
+        .HasConversion(
+            v => v == null || !v.Any() ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+            v => string.IsNullOrEmpty(v) ? new List<string>() : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null) ?? new List<string>()
+        );
+    
     entity.Property(e => e.ImageMetadata).HasColumnType("jsonb");
     
     // Relationships
@@ -650,7 +659,6 @@ modelBuilder.Entity<Harvest>(entity =>
     entity.HasIndex(e => e.BatchNumber)
           .HasDatabaseName("IX_Harvests_BatchNumber");
 });
-
 
 // =============================================
 // QUALITY CHECK CONFIGURATION

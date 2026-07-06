@@ -11,7 +11,6 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/AgriculturePlatform.Infrastructure.AssemblyInfoInputs.cache
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/AgriculturePlatform.Infrastructure.AssemblyInfo.cs
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/AgriculturePlatform.Infrastructure.csproj.CoreCompileInputs.cache
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/AgriculturePlatform.Infrastructure.sourcelink.json
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/Agricult.81856920.Up2Date
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/AgriculturePlatform.Infrastructure.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/refint/AgriculturePlatform.Infrastructure.dll

@@ -1,0 +1,162 @@
+<!-- src/app/features/worker/harvests/components/harvest-form/harvest-form.component.html -->
+<div class="bg-white rounded-xl max-w-[620px] w-full">
+  <!-- Header -->
+  <div class="flex justify-between items-center px-6 py-4 border-b border-outline-variant">
+    <div class="flex items-center gap-3">
+      <mat-icon class="text-primary text-2xl w-6 h-6">agriculture</mat-icon>
+      <h2 class="text-xl font-semibold m-0 text-on-surface">{{ editingId ? 'Edit Harvest Record' : 'Log New Harvest' }}</h2>
+    </div>
+    <button mat-icon-button (click)="closeDialog()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <form [formGroup]="harvestForm" class="flex flex-col">
+    <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">
+      <!-- Field + Crop Cycle -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Field *</mat-label>
+          <mat-select formControlName="fieldId" (selectionChange)="onFieldSelected($event.value)">
+            <mat-option *ngFor="let f of fields" [value]="f.fieldId || f.id">{{ f.fieldName }}</mat-option>
+          </mat-select>
+          <mat-error>Field is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Crop Cycle *</mat-label>
+          <mat-select formControlName="cropCycleId">
+            <mat-option *ngFor="let c of cropCycles" [value]="c.id">
+              {{ c.cropType }} ({{ c.plantingDate || c.startDate | date:'MMM yyyy' }})
+            </mat-option>
+          </mat-select>
+          <mat-error>Crop cycle is required</mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Date + Quantity -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Harvest Date *</mat-label>
+          <input matInput type="date" formControlName="harvestDate">
+          <mat-error>Date is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Quantity (kg) *</mat-label>
+          <input matInput type="number" formControlName="quantityKg" placeholder="0.0" min="0.1" step="0.1">
+          <mat-error>Enter a valid quantity</mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Quality + Method -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Quality Grade</mat-label>
+          <mat-select formControlName="qualityGrade">
+            <mat-option value="">Select grade</mat-option>
+            <mat-option *ngFor="let g of qualityGrades" [value]="g">{{ formatQualityGrade(g) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Harvest Method</mat-label>
+          <mat-select formControlName="harvestMethod">
+            <mat-option value="">Select method</mat-option>
+            <mat-option *ngFor="let m of harvestMethods" [value]="m">{{ formatHarvestMethod(m) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Price + Batch -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Price per kg</mat-label>
+          <input matInput type="number" formControlName="pricePerKg" placeholder="0.00" min="0" step="0.01">
+          <span matPrefix class="text-on-surface">$</span>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Batch Number</mat-label>
+          <input matInput formControlName="batchNumber" placeholder="e.g. BATCH-001">
+        </mat-form-field>
+      </div>
+
+      <!-- Notes -->
+      <mat-form-field appearance="outline" class="w-full mt-2">
+        <mat-label>Notes</mat-label>
+        <textarea matInput formControlName="notes" rows="3" placeholder="Any additional notes about this harvest..."></textarea>
+      </mat-form-field>
+
+      <!-- Image Section -->
+      <div class="flex items-center gap-2 pt-4 pb-3 border-b border-outline-variant mt-2">
+        <mat-icon class="text-primary">photo_camera</mat-icon>
+        <span class="font-semibold text-on-surface">Photo Documentation</span>
+      </div>
+
+      <!-- Main Photo -->
+      <div class="mt-3">
+        <label class="font-medium text-sm text-on-surface block mb-2">Main Harvest Photo</label>
+        
+        <div class="relative inline-block rounded-lg border border-outline-variant overflow-hidden" *ngIf="mainPhotoPreviewUrl">
+          <img [src]="mainPhotoPreviewUrl" class="max-h-[200px] w-full object-contain" alt="Main harvest photo" />
+          <button mat-icon-button class="absolute top-1 right-1 bg-black/60 text-white hover:bg-black/80 w-8 h-8" matTooltip="Remove photo" (click)="removeMainPhoto()">
+            <mat-icon class="text-sm w-4 h-4">close</mat-icon>
+          </button>
+        </div>
+        
+        <div class="border-2 border-dashed border-outline-variant rounded-lg p-5 text-center hover:border-primary transition-colors" *ngIf="!mainPhotoPreviewUrl && !isSubmitting">
+          <label class="cursor-pointer flex flex-col items-center gap-2">
+            <mat-icon class="text-4xl w-9 h-9 text-outline">cloud_upload</mat-icon>
+            <span class="text-sm text-on-surface-variant">Choose main photo</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)" hidden>
+          </label>
+        </div>
+      </div>
+
+      <!-- Reference Photos -->
+      <div class="mt-4">
+        <label class="font-medium text-sm text-on-surface block mb-2">Additional Reference Photos</label>
+        
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3" *ngIf="referencePhotoPreviews.length > 0">
+          <div class="relative rounded-lg border border-outline-variant overflow-hidden aspect-square" *ngFor="let rp of referencePhotoPreviews; let i = index">
+            <img [src]="rp.url" class="w-full h-full object-cover" alt="Reference photo" />
+            <button mat-icon-button class="absolute top-1 right-1 bg-black/60 text-white hover:bg-black/80 w-6 h-6" (click)="removeReferencePhoto(i)">
+              <mat-icon class="text-xs w-3 h-3">close</mat-icon>
+            </button>
+          </div>
+        </div>
+        
+        <div class="border-2 border-dashed border-outline-variant rounded-lg p-4 text-center hover:border-primary transition-colors">
+          <label class="cursor-pointer flex flex-col items-center gap-2">
+            <mat-icon class="text-3xl w-8 h-8 text-outline">add_photo_alternate</mat-icon>
+            <span class="text-sm text-on-surface-variant">Add more photos (multi-select)</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="onMultipleFilesSelected($event)" hidden>
+          </label>
+        </div>
+      </div>
+
+      <!-- Image Caption -->
+      <mat-form-field appearance="outline" class="w-full mt-3">
+        <mat-label>Photo Caption</mat-label>
+        <input matInput formControlName="imageCaption" placeholder="Describe the harvest scene...">
+      </mat-form-field>
+    </div>
+
+    <!-- Progress Bar -->
+    <div *ngIf="isSubmitting" class="px-6 py-3 bg-surface border-t border-outline-variant">
+      <mat-progress-bar mode="determinate" [value]="uploadProgress" class="rounded-full"></mat-progress-bar>
+      <span class="block mt-1.5 text-sm text-on-surface-variant text-center">{{ uploadStatus }}</span>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-2 px-6 py-4 border-t border-outline-variant">
+      <button mat-button (click)="closeDialog()" [disabled]="isSubmitting">Cancel</button>
+      <button mat-raised-button color="primary" (click)="save()" [disabled]="harvestForm.invalid || isSubmitting" class="min-w-[120px]">
+        <mat-spinner diameter="20" *ngIf="isSubmitting"></mat-spinner>
+        <span *ngIf="!isSubmitting">{{ editingId ? 'Update Harvest' : 'Submit Harvest' }}</span>
+        <span *ngIf="isSubmitting">Saving...</span>
+      </button>
+    </div>
+  </form>
+</div>

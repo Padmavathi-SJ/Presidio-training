@@ -67,19 +67,24 @@ export interface CreateHarvestDto {
   imageMetadata?: string;
 }
 
+// src/app/features/worker/models/worker-harvest.model.ts
+
 export interface UpdateHarvestDto {
+  // ✅ Add missing fields that can be updated
+  fieldId?: number;        // ✅ Added
+  cropCycleId?: number;    // ✅ Added
   harvestDate?: string;
   quantityKg?: number;
-  qualityGrade?: string;
-  harvestMethod?: string;
-  notes?: string;
-  pricePerKg?: number;
-  batchNumber?: string;
-  imagePath?: string;
-  thumbnailPath?: string;
-  imageCaption?: string;
-  additionalImagePaths?: string[];
-  imageMetadata?: string;
+  qualityGrade?: string | null;
+  harvestMethod?: string | null;
+  notes?: string | null;
+  pricePerKg?: number | null;
+  batchNumber?: string | null;
+  imagePath?: string | null;  // ✅ Changed to allow null
+  thumbnailPath?: string | null;
+  imageCaption?: string | null;
+  additionalImagePaths?: string[] | null;  // ✅ Changed to allow null
+  imageMetadata?: string | null;
 }
 
 export interface HarvestWorkerResponseDto {

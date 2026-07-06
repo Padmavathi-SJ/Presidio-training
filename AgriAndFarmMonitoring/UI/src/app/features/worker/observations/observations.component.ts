@@ -12,8 +12,9 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { finalize, forkJoin } from 'rxjs';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { debounceTime, distinctUntilChanged, finalize, forkJoin } from 'rxjs';
 
 import { MaterialModule } from '../../../shared/material.module';
 import { WorkerObservationService } from '../services/worker-observation.service';
@@ -44,6 +45,8 @@ import {
     MatCheckboxModule,
     MatTabsModule,
     MatIconModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     DatePipe
   ],
   templateUrl: './observations.component.html',
@@ -85,13 +88,16 @@ export class ObservationsComponent implements OnInit {
 
   selectedObservation: ObservationDto | null = null;
 
-  // Photo uploading states
-  isMainUploading = false;
-  isRefsUploading = false;
-
-  // Photo preview URLs (stored as absolute URLs returned from server)
+  // ✅ Store selected files in memory, NOT uploaded to server yet
+  selectedMainFile: File | null = null;
+  selectedReferenceFiles: File[] = [];
+  
+  // ✅ Local preview URLs for display (blob URLs)
   mainPhotoPreviewUrl: string | null = null;
-  referencePhotoPreviews: { fileName: string, url: string }[] = [];
+  referencePhotoPreviews: { file: File | null; url: string }[] = [];
+
+  // Upload states
+  isSaving = false;
 
   constructor() {
     this.filterForm = this.fb.group({
@@ -123,6 +129,10 @@ export class ObservationsComponent implements OnInit {
       });
   }
 
+  // =============================================
+  // TAB AND FILTER METHODS
+  // =============================================
+
   onTabChange(index: number): void {
     this.selectedTabIndex = index;
     const statuses = ['pending', 'questioned', 'verified', 'invalid'];
@@ -131,6 +141,22 @@ export class ObservationsComponent implements OnInit {
 
   onFieldSelected(fieldId: number): void {
     this.cropCycles = [];
+    if (this.observationForm) {
+      this.observationForm.patchValue({ cropCycleId: '' }, { emitEvent: false });
+    }
+    if (fieldId) {
+      this.fieldService.getAssignedFieldDetail(fieldId).subscribe({
+        next: (res: any) => {
+          if (res.success && res.data && res.data.cropCycles) {
+            this.cropCycles = res.data.cropCycles;
+          }
+        },
+        error: (err: any) => console.error('Failed to load crop cycles', err)
+      });
+    }
+  }
+
+  onFilterFieldSelected(fieldId: number): void {
     this.filterForm.patchValue({ cropCycleId: '' }, { emitEvent: false });
     if (fieldId) {
       this.fieldService.getAssignedFieldDetail(fieldId).subscribe({
@@ -144,49 +170,23 @@ export class ObservationsComponent implements OnInit {
     }
   }
 
-  private getRelativePathFromUrl(url: string | null | undefined): string | null {
-    if (!url) return null;
-    if (!url.startsWith('http://') && !url.startsWith('https://')) return url;
-    
-    try {
-      const parsedUrl = new URL(url);
-      const path = parsedUrl.pathname;
-      if (path.includes('/uploads/')) {
-        return path.substring(path.indexOf('/uploads/') + 9);
-      }
-      const segments = path.split('/').filter(s => s);
-      if (segments.length >= 2) {
-        return segments.slice(1).join('/');
-      }
-      return path;
-    } catch (e) {
-      return url;
-    }
-  }
+  // =============================================
+  // ✅ FIXED: Store files in memory, don't upload yet
+  // =============================================
 
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
     if (file) {
-      this.isMainUploading = true;
+      // ✅ Store file in memory
+      this.selectedMainFile = file;
+      
+      // ✅ Create local blob URL for preview
+      this.mainPhotoPreviewUrl = URL.createObjectURL(file);
+      
+      // ✅ Update form with temporary file name (will be replaced after upload)
+      this.observationForm.patchValue({ imagePath: file.name });
+      
       this.cdr.detectChanges();
-
-      this.observationService.uploadImage(file).pipe(
-        finalize(() => {
-          this.isMainUploading = false;
-          this.cdr.detectChanges();
-        })
-      ).subscribe({
-        next: (res) => {
-          if (res.success && res.data) {
-            this.ngZone.run(() => {
-              this.observationForm.patchValue({ imagePath: res.data.fileName });
-              this.mainPhotoPreviewUrl = res.data.url;
-              this.cdr.detectChanges();
-            });
-          }
-        },
-        error: (err) => this.showError('Failed to upload main photo')
-      });
       event.target.value = '';
     }
   }
@@ -194,56 +194,280 @@ export class ObservationsComponent implements OnInit {
   onMultipleFilesSelected(event: any): void {
     const files: FileList = event.target.files;
     if (files && files.length > 0) {
-      const uploadObservables = Array.from(files).map(file => this.observationService.uploadImage(file));
-      this.isRefsUploading = true;
+      // ✅ Store files in memory
+      const newFiles = Array.from(files);
+      this.selectedReferenceFiles = [...this.selectedReferenceFiles, ...newFiles];
+      
+      // ✅ Create blob URLs for previews
+      const newPreviews = newFiles.map(file => ({
+        file: file,
+        url: URL.createObjectURL(file)
+      }));
+      
+      this.referencePhotoPreviews = [...this.referencePhotoPreviews, ...newPreviews];
+      
+      // ✅ Update form with temporary file names
+      const currentFiles = this.observationForm.get('additionalImagePaths')?.value || [];
+      const updatedFiles = [...currentFiles, ...newFiles.map(f => f.name)];
+      this.observationForm.patchValue({ additionalImagePaths: updatedFiles });
+      
       this.cdr.detectChanges();
-
-      forkJoin(uploadObservables).pipe(
-        finalize(() => {
-          this.isRefsUploading = false;
-          this.cdr.detectChanges();
-        })
-      ).subscribe({
-        next: (responses) => {
-          const newFiles = responses.map(r => ({
-            fileName: r.data.fileName,
-            url: r.data.url
-          }));
-
-          this.ngZone.run(() => {
-            this.referencePhotoPreviews = [...this.referencePhotoPreviews, ...newFiles];
-            const currentFiles = this.observationForm.get('additionalImagePaths')?.value || [];
-            const updatedFiles = [...currentFiles, ...newFiles.map(nf => nf.fileName)];
-            const uniqueFiles = Array.from(new Set(updatedFiles));
-            
-            this.observationForm.patchValue({ additionalImagePaths: uniqueFiles });
-            this.cdr.detectChanges();
-          });
-        },
-        error: (err) => this.showError('Failed to upload reference photos')
-      });
       event.target.value = '';
     }
   }
 
   removeReferencePhoto(index: number): void {
-    const currentFiles: string[] = this.observationForm.get('additionalImagePaths')?.value || [];
-    const removedFileName = currentFiles[index];
-    currentFiles.splice(index, 1);
+    const removedPreview = this.referencePhotoPreviews[index];
+    if (removedPreview) {
+      // ✅ Revoke blob URL to free memory
+      URL.revokeObjectURL(removedPreview.url);
+    }
     
-    this.ngZone.run(() => {
-      this.observationForm.patchValue({ additionalImagePaths: [...currentFiles] });
-      this.referencePhotoPreviews = this.referencePhotoPreviews.filter(p => p.fileName !== removedFileName);
-      this.cdr.detectChanges();
-    });
+    // Remove from arrays
+    this.referencePhotoPreviews.splice(index, 1);
+    this.selectedReferenceFiles.splice(index, 1);
+    
+    // Update form
+    const currentFiles: string[] = this.observationForm.get('additionalImagePaths')?.value || [];
+    currentFiles.splice(index, 1);
+    this.observationForm.patchValue({ additionalImagePaths: [...currentFiles] });
+    
+    this.cdr.detectChanges();
   }
 
   removeMainPhoto(): void {
-    this.ngZone.run(() => {
-      this.observationForm.patchValue({ imagePath: null });
-      this.mainPhotoPreviewUrl = null;
-      this.cdr.detectChanges();
+    if (this.mainPhotoPreviewUrl) {
+      // ✅ Revoke blob URL to free memory
+      URL.revokeObjectURL(this.mainPhotoPreviewUrl);
+    }
+    
+    this.selectedMainFile = null;
+    this.mainPhotoPreviewUrl = null;
+    this.observationForm.patchValue({ imagePath: null });
+    
+    this.cdr.detectChanges();
+  }
+
+  private cleanupPreviews(): void {
+    // ✅ Revoke all blob URLs to free memory
+    if (this.mainPhotoPreviewUrl) {
+      URL.revokeObjectURL(this.mainPhotoPreviewUrl);
+    }
+    this.referencePhotoPreviews.forEach(p => URL.revokeObjectURL(p.url));
+    
+    this.selectedMainFile = null;
+    this.selectedReferenceFiles = [];
+    this.mainPhotoPreviewUrl = null;
+    this.referencePhotoPreviews = [];
+  }
+
+  private isValidImageFile(file: File): boolean {
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    return validTypes.includes(file.type);
+  }
+
+  // =============================================
+  // ✅ FIXED: Upload images ONLY on form submission
+  // =============================================
+
+  saveObservation(): void {
+    if (this.observationForm.invalid) return;
+
+    this.isSaving = true;
+    this.cdr.detectChanges();
+
+    const val = { ...this.observationForm.value };
+    
+    // Clean up empty strings
+    if (val.cropCycleId === '') val.cropCycleId = null;
+    if (val.cropHealth === '') val.cropHealth = null;
+    if (val.pestType === '') val.pestType = null;
+    if (val.notes === '') val.notes = null;
+    if (val.imagePath === '') val.imagePath = null;
+    if (val.imageCaption === '') val.imageCaption = null;
+    if (val.additionalImagePaths && val.additionalImagePaths.length === 0) {
+      val.additionalImagePaths = null;
+    }
+    
+    const dto: any = {
+      ...val,
+      observationDate: new Date(val.observationDate).toISOString()
+    };
+
+    // ✅ Determine if we need to upload images
+    const hasMainImage = this.selectedMainFile !== null;
+    const hasRefImages = this.selectedReferenceFiles.length > 0;
+
+    if (this.editingId) {
+      // ✅ For edit: First update the observation
+      this.observationService.updateObservation(this.editingId, dto).subscribe({
+        next: (res) => {
+          if (res.success) {
+            // ✅ If there are new images, upload them
+            if (hasMainImage || hasRefImages) {
+              this.uploadImagesAndUpdate(res.data.id);
+            } else {
+              this.handleSaveSuccess('Observation updated successfully');
+            }
+          } else {
+            this.handleSaveError(res.errors?.join(', ') || 'Failed to update observation');
+          }
+        },
+        error: (err) => this.handleSaveError(err)
+      });
+    } else {
+      // ✅ For create: First create the observation
+      this.observationService.createObservation(dto).subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            // ✅ Upload images after successful creation
+            if (hasMainImage || hasRefImages) {
+              this.uploadImagesAndUpdate(res.data.id);
+            } else {
+              this.handleSaveSuccess('Observation created successfully');
+            }
+          } else {
+            this.handleSaveError(res.errors?.join(', ') || 'Failed to create observation');
+          }
+        },
+        error: (err) => this.handleSaveError(err)
+      });
+    }
+  }
+
+  // ✅ Upload images after observation is created/updated
+  private uploadImagesAndUpdate(observationId: number): void {
+    const uploadObservables: any[] = [];
+
+    // Upload main image
+    if (this.selectedMainFile) {
+      uploadObservables.push(this.observationService.uploadImage(this.selectedMainFile));
+    }
+
+    // Upload reference images
+    for (const file of this.selectedReferenceFiles) {
+      uploadObservables.push(this.observationService.uploadImage(file));
+    }
+
+    if (uploadObservables.length === 0) {
+      this.handleSaveSuccess('Saved successfully');
+      return;
+    }
+
+    // ✅ Upload all images in parallel
+    forkJoin(uploadObservables).pipe(
+      finalize(() => {
+        this.isSaving = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (responses: any[]) => {
+        // ✅ Update observation with image paths
+        const imagePaths = responses.map(r => r.data.fileName);
+        const mainImagePath = this.selectedMainFile ? imagePaths[0] : null;
+        const refImagePaths = this.selectedReferenceFiles.length > 0 
+          ? imagePaths.slice(this.selectedMainFile ? 1 : 0) 
+          : [];
+
+        // ✅ Update the observation with image paths
+        const updateDto: any = {};
+        if (mainImagePath) {
+          updateDto.imagePath = mainImagePath;
+        }
+        if (refImagePaths.length > 0) {
+          updateDto.additionalImagePaths = refImagePaths;
+        }
+
+        if (Object.keys(updateDto).length > 0) {
+          this.observationService.updateObservation(observationId, updateDto).subscribe({
+            next: () => {
+              this.handleSaveSuccess('Observation saved with images');
+            },
+            error: (err) => {
+              console.error('Failed to update observation with images:', err);
+              this.handleSaveSuccess('Observation saved but images may not be attached');
+            }
+          });
+        } else {
+          this.handleSaveSuccess('Observation saved successfully');
+        }
+      },
+      error: (err) => {
+        console.error('Failed to upload images:', err);
+        this.handleSaveSuccess('Observation saved but images failed to upload');
+      }
     });
+  }
+
+  private handleSaveSuccess(message: string): void {
+    // ✅ Clean up blob URLs
+    this.cleanupPreviews();
+    
+    this.isSaving = false;
+    this.snackBar.open(message, 'Close', { duration: 3000 });
+    this.dialog.closeAll();
+    this.loadObservations();
+    this.cdr.detectChanges();
+  }
+
+  private handleSaveError(err: any): void {
+    this.isSaving = false;
+    this.cdr.detectChanges();
+    const message = err?.error?.message || err?.message || 'Failed to save observation';
+    this.showError(message);
+  }
+
+  // =============================================
+  // DIALOG METHODS
+  // =============================================
+
+  openCreateDialog(): void {
+    this.editingId = null;
+    this.cleanupPreviews();
+    this.observationForm.reset({ observationDate: new Date() });
+    this.cropCycles = [];
+    this.dialog.open(this.observationDialogTemplate, { width: '600px' });
+  }
+
+  openEditDialog(obs: ObservationDto): void {
+    if (!obs.isPending && !obs.isQuestioned) {
+      this.showError('You can only edit pending or questioned observations.');
+      return;
+    }
+    
+    // Fetch crop cycles for this field
+    this.onFieldSelected(obs.fieldId);
+    
+    this.editingId = obs.id;
+    this.cleanupPreviews();
+
+    this.observationForm.patchValue({
+      fieldId: obs.fieldId,
+      cropCycleId: obs.cropCycleId,
+      observationDate: obs.observationDate,
+      cropHealth: obs.cropHealth,
+      pestType: obs.pestType,
+      notes: obs.notes,
+      imagePath: obs.imagePath,
+      additionalImagePaths: obs.additionalImagePaths || [],
+      imageCaption: obs.imageCaption
+    });
+
+    // ✅ For existing images, use server URLs directly (not blob URLs)
+    this.mainPhotoPreviewUrl = obs.imagePath || null;
+    this.referencePhotoPreviews = (obs.additionalImagePaths || []).map(url => ({
+      file: null,
+      url: url
+    }));
+
+    this.dialog.open(this.observationDialogTemplate, { width: '600px' });
+  }
+
+  openEditDialogFromDetails(obs: ObservationDto): void {
+    this.dialog.closeAll();
+    setTimeout(() => {
+      this.openEditDialog(obs);
+    }, 150);
   }
 
   viewObservationDetails(obs: ObservationDto): void {
@@ -255,61 +479,59 @@ export class ObservationsComponent implements OnInit {
     this.dialog.closeAll();
   }
 
-  openEditDialogFromDetails(obs: ObservationDto): void {
+  closeDialog(): void {
+    this.cleanupPreviews();
     this.dialog.closeAll();
-    setTimeout(() => {
-      this.openEditDialog(obs);
-    }, 150);
   }
 
-  getStatusBadgeClass(status: string | undefined): string {
-    switch (status?.toLowerCase()) {
-      case 'verified':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900';
-      case 'questioned':
-        return 'bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300 border border-amber-200 dark:border-amber-900';
-      case 'invalid':
-        return 'bg-rose-100 text-rose-800 dark:bg-rose-950/30 dark:text-rose-300 border border-rose-200 dark:border-rose-900';
-      default:
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-950/30 dark:text-slate-300 border border-slate-200 dark:border-slate-800';
+  // =============================================
+  // RESPOND TO ADMIN
+  // =============================================
+
+  openRespondDialog(obs: ObservationDto): void {
+    this.editingId = obs.id;
+    this.responseForm.reset();
+    this.dialog.open(this.respondDialogTemplate, { width: '500px' });
+  }
+
+  sendResponse(): void {
+    if (this.responseForm.invalid || !this.editingId) return;
+
+    const dto: ObservationWorkerResponseDto = this.responseForm.value;
+    
+    this.observationService.respondToAdmin(this.editingId, dto).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.snackBar.open('Response sent successfully', 'Close', { duration: 3000 });
+          this.dialog.closeAll();
+          this.loadObservations();
+        }
+      },
+      error: (err) => this.showError(err.error?.message || 'Failed to send response')
+    });
+  }
+
+  // =============================================
+  // CRUD OPERATIONS
+  // =============================================
+
+  deleteObservation(id: number): void {
+    if (confirm('Are you sure you want to delete this observation?')) {
+      this.observationService.deleteObservation(id).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.snackBar.open('Observation deleted successfully', 'Close', { duration: 3000 });
+            this.loadObservations();
+          }
+        },
+        error: (err) => this.showError(err.error?.message || 'Failed to delete observation')
+      });
     }
   }
 
-  getHealthColorClass(health: string | undefined): string {
-    switch (health?.toUpperCase()) {
-      case 'EXCELLENT':
-        return 'text-emerald-500';
-      case 'GOOD':
-        return 'text-teal-500';
-      case 'AVERAGE':
-        return 'text-amber-500';
-      case 'POOR':
-        return 'text-orange-500';
-      case 'CRITICAL':
-        return 'text-rose-500';
-      default:
-        return 'text-slate-400';
-    }
-  }
-
-  initForms() {
-    this.observationForm = this.fb.group({
-      fieldId: ['', Validators.required],
-      cropCycleId: [''],
-      observationDate: [new Date(), Validators.required],
-      cropHealth: [''],
-      pestType: [''],
-      notes: [''],
-      imagePath: [''],
-      additionalImagePaths: [[]],
-      imageCaption: ['']
-    });
-
-    this.responseForm = this.fb.group({
-      responseNotes: ['', Validators.required],
-      additionalImagePath: ['']
-    });
-  }
+  // =============================================
+  // DATA LOADING METHODS
+  // =============================================
 
   loadFields(): void {
     this.fieldService.getMyAssignedFields().subscribe({
@@ -374,135 +596,69 @@ export class ObservationsComponent implements OnInit {
     this.loadObservations();
   }
 
-  openCreateDialog(): void {
-    this.editingId = null;
-    this.mainPhotoPreviewUrl = null;
-    this.referencePhotoPreviews = [];
-    this.observationForm.reset({ observationDate: new Date() });
-    this.dialog.open(this.observationDialogTemplate, { width: '600px' });
-  }
+  // =============================================
+  // FORM INITIALIZATION
+  // =============================================
 
-  openEditDialog(obs: ObservationDto): void {
-    if (!obs.isPending && !obs.isQuestioned) {
-      this.showError('You can only edit pending or questioned observations.');
-      return;
-    }
-    
-    // Fetch crop cycles for this field so the dropdown populates
-    this.onFieldSelected(obs.fieldId);
-    
-    this.editingId = obs.id;
-    
-    const relativeImagePath = this.getRelativePathFromUrl(obs.imagePath);
-    const relativeRefs = (obs.additionalImagePaths || []).map(path => this.getRelativePathFromUrl(path) || '');
-
-    this.observationForm.patchValue({
-      fieldId: obs.fieldId,
-      cropCycleId: obs.cropCycleId,
-      observationDate: obs.observationDate,
-      cropHealth: obs.cropHealth,
-      pestType: obs.pestType,
-      notes: obs.notes,
-      imagePath: relativeImagePath,
-      additionalImagePaths: relativeRefs,
-      imageCaption: obs.imageCaption
+  initForms() {
+    this.observationForm = this.fb.group({
+      fieldId: ['', Validators.required],
+      cropCycleId: [''],
+      observationDate: [new Date(), Validators.required],
+      cropHealth: [''],
+      pestType: [''],
+      notes: [''],
+      imagePath: [''],
+      additionalImagePaths: [[]],
+      imageCaption: ['']
     });
 
-    this.mainPhotoPreviewUrl = obs.imagePath || null;
-    this.referencePhotoPreviews = (obs.additionalImagePaths || []).map((url, i) => ({
-      fileName: relativeRefs[i],
-      url: url
-    }));
-
-    this.dialog.open(this.observationDialogTemplate, { width: '600px' });
-  }
-
-  saveObservation(): void {
-    if (this.observationForm.invalid) return;
-
-    const val = { ...this.observationForm.value };
-    
-    // Clean up empty strings to null for the backend
-    if (val.cropCycleId === '') val.cropCycleId = null;
-    if (val.cropHealth === '') val.cropHealth = null;
-    if (val.pestType === '') val.pestType = null;
-    if (val.notes === '') val.notes = null;
-    if (val.imagePath === '') val.imagePath = null;
-    if (val.imageCaption === '') val.imageCaption = null;
-    if (val.additionalImagePaths && val.additionalImagePaths.length === 0) {
-      val.additionalImagePaths = null;
-    }
-    
-    if (this.editingId) {
-      const dto: UpdateObservationDto = {
-        ...val,
-        observationDate: new Date(val.observationDate).toISOString()
-      };
-      
-      this.observationService.updateObservation(this.editingId, dto).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.snackBar.open('Observation updated successfully', 'Close', { duration: 3000 });
-            this.dialog.closeAll();
-            this.loadObservations();
-          }
-        },
-        error: (err) => this.showError(err.error?.message || 'Failed to update observation')
-      });
-    } else {
-      const dto: CreateObservationDto = {
-        ...val,
-        observationDate: new Date(val.observationDate).toISOString()
-      };
-      
-      this.observationService.createObservation(dto).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.snackBar.open('Observation created successfully', 'Close', { duration: 3000 });
-            this.dialog.closeAll();
-            this.loadObservations();
-          }
-        },
-        error: (err) => this.showError(err.error?.message || 'Failed to create observation')
-      });
-    }
-  }
-
-  deleteObservation(id: number): void {
-    if (confirm('Are you sure you want to delete this observation?')) {
-      this.observationService.deleteObservation(id).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.snackBar.open('Observation deleted successfully', 'Close', { duration: 3000 });
-            this.loadObservations();
-          }
-        },
-        error: (err) => this.showError(err.error?.message || 'Failed to delete observation')
-      });
-    }
-  }
-
-  openRespondDialog(obs: ObservationDto): void {
-    this.editingId = obs.id;
-    this.responseForm.reset();
-    this.dialog.open(this.respondDialogTemplate, { width: '500px' });
-  }
-
-  sendResponse(): void {
-    if (this.responseForm.invalid || !this.editingId) return;
-
-    const dto: ObservationWorkerResponseDto = this.responseForm.value;
-    
-    this.observationService.respondToAdmin(this.editingId, dto).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.snackBar.open('Response sent successfully', 'Close', { duration: 3000 });
-          this.dialog.closeAll();
-          this.loadObservations();
-        }
-      },
-      error: (err) => this.showError(err.error?.message || 'Failed to send response')
+    this.responseForm = this.fb.group({
+      responseNotes: ['', Validators.required],
+      additionalImagePath: ['']
     });
+  }
+
+  // =============================================
+  // HELPER METHODS FOR TEMPLATE
+  // =============================================
+
+  canEdit(obs: ObservationDto): boolean {
+    return obs.isPending || obs.isQuestioned;
+  }
+
+  canRespond(obs: ObservationDto): boolean {
+    return obs.isQuestioned;
+  }
+
+  getStatusBadgeClass(status: string | undefined): string {
+    switch (status?.toLowerCase()) {
+      case 'verified':
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900';
+      case 'questioned':
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300 border border-amber-200 dark:border-amber-900';
+      case 'invalid':
+        return 'bg-rose-100 text-rose-800 dark:bg-rose-950/30 dark:text-rose-300 border border-rose-200 dark:border-rose-900';
+      default:
+        return 'bg-slate-100 text-slate-800 dark:bg-slate-950/30 dark:text-slate-300 border border-slate-200 dark:border-slate-800';
+    }
+  }
+
+  getHealthColorClass(health: string | undefined): string {
+    switch (health?.toUpperCase()) {
+      case 'EXCELLENT':
+        return 'text-emerald-500';
+      case 'GOOD':
+        return 'text-teal-500';
+      case 'AVERAGE':
+        return 'text-amber-500';
+      case 'POOR':
+        return 'text-orange-500';
+      case 'CRITICAL':
+        return 'text-rose-500';
+      default:
+        return 'text-slate-400';
+    }
   }
 
   getStatusColor(status: string): string {
@@ -510,9 +666,13 @@ export class ObservationsComponent implements OnInit {
       case 'verified': return 'primary';
       case 'questioned': return 'accent';
       case 'invalid': return 'warn';
-      default: return 'default'; // pending
+      default: return 'default';
     }
   }
+
+  // =============================================
+  // UTILITY METHODS
+  // =============================================
 
   private showError(message: string): void {
     this.snackBar.open(message, 'Close', { 

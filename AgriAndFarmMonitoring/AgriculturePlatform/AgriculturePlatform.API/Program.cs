@@ -199,8 +199,6 @@ builder.Services.AddScoped<IYieldReportService, YieldReportService>();
         }
         builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationImagePathResolver>();
         builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationAdditionalImagePathsResolver>();
-        builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.HarvestImagePathResolver>();
-        builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.HarvestAdditionalImagePathsResolver>();
         builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<ObservationStatisticsFormatter>();
@@ -251,6 +249,14 @@ var app = builder.Build();
 // ✅ CORS must be BEFORE Authentication and Authorization
 app.UseCors("AllowAll");
 app.UseStaticFiles();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(app.Environment.WebRootPath, "uploads")),
+    RequestPath = "/uploads"
+});
+
 
 // ✅ FIX: Configure pipeline in the CORRECT ORDER
 app.UseSwagger();

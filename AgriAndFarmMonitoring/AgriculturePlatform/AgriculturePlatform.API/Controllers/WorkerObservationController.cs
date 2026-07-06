@@ -137,34 +137,37 @@ public class WorkerObservationController : ControllerBase
     }
 
     // POST: api/worker/observations/upload
-    [HttpPost("upload")]
-    public async Task<IActionResult> UploadImage(IFormFile file)
+// API/Controllers/WorkerObservationController.cs - Update upload endpoint
+
+// API/Controllers/WorkerObservationController.cs - Optimized Upload Endpoint
+
+[HttpPost("upload")]
+[RequestSizeLimit(10 * 1024 * 1024)] // 10MB
+public async Task<IActionResult> UploadImage(IFormFile file)
+{
+    try
     {
         if (file == null || file.Length == 0)
-        {
             return BadRequest(new { message = "No file uploaded." });
-        }
 
         var extension = Path.GetExtension(file.FileName).ToLower();
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
         if (!allowedExtensions.Contains(extension))
-        {
             return BadRequest(new { message = "Invalid file type. Only JPG, PNG and WEBP are allowed." });
-        }
 
         if (file.Length > 10 * 1024 * 1024)
-        {
             return BadRequest(new { message = "File size exceeds limit (10MB)." });
-        }
 
-        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+        var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
+        var subDirectory = $"observations/{DateTime.UtcNow:yyyy/MM/dd}";
 
-        using var ms = new MemoryStream();
-        await file.CopyToAsync(ms);
-        var fileBytes = ms.ToArray();
+        // ✅ Optimize: Read file directly from stream without copying to MemoryStream first
+        using var stream = file.OpenReadStream();
+        var fileBytes = new byte[file.Length];
+        await stream.ReadAsync(fileBytes, 0, (int)file.Length);
 
-        var relativePath = await _fileStorageService.SaveFileAsync(fileBytes, uniqueFileName, "observations");
-        var fullUrl = _fileStorageService.GetDownloadUrl(relativePath);
+        var relativePath = await _fileStorageService.SaveFileAsync(fileBytes, uniqueFileName, subDirectory);
+        var publicUrl = _fileStorageService.GetPublicUrl(relativePath);
 
         return Ok(new
         {
@@ -172,8 +175,14 @@ public class WorkerObservationController : ControllerBase
             data = new
             {
                 fileName = relativePath,
-                url = fullUrl
+                url = publicUrl
             }
         });
     }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { success = false, message = $"Upload failed: {ex.Message}" });
+    }
+}
+
 }

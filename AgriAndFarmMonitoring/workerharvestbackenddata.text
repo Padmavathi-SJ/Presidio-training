@@ -1,0 +1,5087 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Text.Json;
+using System.Security.Claims; 
+using Microsoft.AspNetCore.Http;
+using AgriculturePlatform.Domain.Entities.AdminEntities;
+using AgriculturePlatform.Domain.Entities.CropMonitoring;
+using AgriculturePlatform.Domain.Entities.WorkerManagement;
+using AgriculturePlatform.Domain.Entities.YieldReports;
+using AgriculturePlatform.Domain.Common;
+
+
+namespace AgriculturePlatform.Infrastructure.Context;
+
+public class AppDbContext : DbContext
+{
+      private readonly IHttpContextAccessor? _httpContextAccessor;
+          public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {
+    }
+
+     public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor) 
+        : base(options)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
+    
+    // Admin DbSets
+    public DbSet<Farm> Farms { get; set; }
+    public DbSet<Admin> Admins { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    
+    // Crop Monitoring DbSets
+    public DbSet<Field> Fields { get; set; }
+    public DbSet<CropCycle> CropCycles { get; set; }
+    public DbSet<SensorReading> SensorReadings { get; set; }
+    public DbSet<Alert> Alerts { get; set; }
+    public DbSet<AlertThreshold> AlertThresholds { get; set; }  // ADD THIS
+    public DbSet<Observation> Observations { get; set; }
+    public DbSet<WeatherData> WeatherData { get; set; }
+    public DbSet<WeatherAlert> WeatherAlerts { get; set; }
+    
+    // Worker Management DbSets
+    public DbSet<Worker> Workers { get; set; }
+    public DbSet<WorkerTask> Tasks { get; set; }
+    public DbSet<WorkerFieldAssignment> WorkerFieldAssignments { get; set; }
+    
+    // Yield Reports DbSets
+    public DbSet<Harvest> Harvests { get; set; }
+    public DbSet<QualityCheck> QualityChecks { get; set; }
+    public DbSet<YieldReport> YieldReports { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        
+        // =============================================
+        // FARM CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Farm>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.FarmName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Email).HasMaxLength(100);
+            entity.Property(e => e.Phone).HasMaxLength(20);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.State).HasMaxLength(100);
+            entity.Property(e => e.Country).HasMaxLength(100);
+            entity.Property(e => e.PostalCode).HasMaxLength(20);
+            
+            entity.HasMany(e => e.Admins)
+                  .WithOne(a => a.Farm)
+                  .HasForeignKey(a => a.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        // =============================================
+        // ADMIN CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Admin>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Phone).HasMaxLength(20);
+            entity.Property(e => e.PasswordResetToken).HasMaxLength(255);
+            
+            entity.HasOne(e => e.Creator)
+                  .WithMany(e => e.CreatedAdmins)
+                  .HasForeignKey(e => e.CreatedBy)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasIndex(e => e.FarmId);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+ // =============================================
+        // REFRESH TOKEN
+        // =============================================
+      
+modelBuilder.Entity<RefreshToken>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    entity.HasIndex(e => e.Token).IsUnique();
+    entity.Property(e => e.Token).IsRequired().HasMaxLength(500);
+    entity.Property(e => e.JwtId).IsRequired().HasMaxLength(100);
+    entity.Property(e => e.ExpiryDate).HasColumnType("timestamp with time zone");
+    entity.Property(e => e.CreatedByIp).HasMaxLength(45);
+    entity.Property(e => e.RevokedByIp).HasMaxLength(45);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Cascade);
+          
+    entity.HasOne(e => e.Worker)
+          .WithMany()
+          .HasForeignKey(e => e.WorkerId)
+          .OnDelete(DeleteBehavior.Cascade);
+          
+    entity.HasIndex(e => new { e.AdminId, e.IsRevoked });
+    entity.HasIndex(e => new { e.WorkerId, e.IsRevoked });
+    entity.HasIndex(e => e.ExpiryDate);
+});    
+
+
+        // =============================================
+        // FIELD CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Field>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FieldName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Location).HasMaxLength(200);
+            entity.Property(e => e.AreaHectares).HasPrecision(10, 2);
+            entity.Property(e => e.SoilType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.Latitude).HasPrecision(10, 8);
+            entity.Property(e => e.Longitude).HasPrecision(11, 8);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.Fields)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.Fields)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.Status });
+            entity.HasIndex(e => e.AdminId);
+            entity.HasIndex(e => e.FieldName);
+        });
+        
+        // =============================================
+        // CROP CYCLE CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<CropCycle>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CropType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.GrowthStage).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.CropCycles)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.CropCycles)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.Status });
+            entity.HasIndex(e => e.FieldId);
+            entity.HasIndex(e => e.PlantingDate);
+        });
+        
+        // =============================================
+        // SENSOR READING CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<SensorReading>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SensorType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Value).HasPrecision(10, 2);
+            entity.Property(e => e.Unit).HasMaxLength(20);
+            entity.Property(e => e.RecordedAt).HasColumnType("timestamp with time zone");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.SensorReadings)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.SensorReadings)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany(f => f.SensorReadings)
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.CropCycle)
+                  .WithMany(c => c.SensorReadings)
+                  .HasForeignKey(e => e.CropCycleId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            // Relationship with Alerts
+            entity.HasMany(e => e.Alerts)
+                  .WithOne()
+                  .HasForeignKey("SensorReadingId")
+                  .OnDelete(DeleteBehavior.SetNull);
+                  
+            entity.HasIndex(e => new { e.FieldId, e.RecordedAt });
+            entity.HasIndex(e => new { e.FarmId, e.RecordedAt });
+            entity.HasIndex(e => e.SensorType);
+        });
+        
+        // =============================================
+        // ALERT CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Alert>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AlertType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Severity).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.Message).HasMaxLength(1000);
+            entity.Property(e => e.SensorValue).HasPrecision(10, 2);
+            entity.Property(e => e.ThresholdValue).HasPrecision(10, 2);
+            entity.Property(e => e.ResolvedAt).HasColumnType("timestamp with time zone");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.Alerts)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.Alerts)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany(f => f.Alerts)
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.CropCycle)
+                  .WithMany(c => c.Alerts)
+                  .HasForeignKey(e => e.CropCycleId)
+                  .OnDelete(DeleteBehavior.SetNull);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.IsResolved });
+            entity.HasIndex(e => new { e.FieldId, e.IsResolved });
+            entity.HasIndex(e => e.Severity);
+            entity.HasIndex(e => e.AlertType);
+        });
+        
+        // =============================================
+        // ALERT THRESHOLD CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<AlertThreshold>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CropType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.GrowthStage).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.SensorType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.MinValue).HasPrecision(10, 2);
+            entity.Property(e => e.MaxValue).HasPrecision(10, 2);
+            entity.Property(e => e.Severity).HasMaxLength(20);
+            entity.Property(e => e.NotificationEmails).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany()
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany()
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.CropType, e.GrowthStage, e.SensorType })
+                  .IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
+        
+  // =============================================
+// OBSERVATION CONFIGURATION - UPDATED WITH VALIDATION FIELDS
+// =============================================
+modelBuilder.Entity<Observation>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    // Basic properties
+    entity.Property(e => e.CropHealth)
+          .HasConversion<string>()
+          .HasMaxLength(20);
+    entity.Property(e => e.PestType)
+          .HasMaxLength(100);
+    entity.Property(e => e.Notes)
+          .HasMaxLength(1000);
+    entity.Property(e => e.ObservationDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    
+    // NEW: Validation and comments fields
+    entity.Property(e => e.ValidationStatus)
+          .IsRequired()
+          .HasMaxLength(20)
+          .HasDefaultValue("pending")
+          .HasComment("pending, verified, questioned, invalid");
+    entity.Property(e => e.AdminNotes)
+          .HasMaxLength(1000)
+          .HasComment("Admin's questions or comments on the observation");
+    entity.Property(e => e.WorkerResponse)
+          .HasMaxLength(1000)
+          .HasComment("Worker's response to admin questions");
+    entity.Property(e => e.FlagReason)
+          .HasMaxLength(50)
+          .HasComment("outlier, inconsistent_data, missing_info, duplicate");
+    entity.Property(e => e.ValidatedAt)
+          .HasColumnType("timestamp with time zone")
+          .HasComment("When the observation was validated");
+          
+    // NEW: Image fields
+    entity.Property(e => e.ImagePath).HasMaxLength(500);
+    entity.Property(e => e.ThumbnailPath).HasMaxLength(500);
+    entity.Property(e => e.ImageCaption).HasMaxLength(500);
+    entity.Property(e => e.AdditionalImagePaths)
+          .HasColumnType("jsonb")
+          .HasConversion(
+              v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
+              v => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(v, (System.Text.Json.JsonSerializerOptions)null)
+          );
+    entity.Property(e => e.ImageMetadata).HasColumnType("jsonb");
+    entity.Property(e => e.IsImageVerified).HasDefaultValue(false);
+    entity.Property(e => e.ImageVerificationNotes).HasMaxLength(1000);
+    
+    // Relationships
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.Observations)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()  // Admin doesn't have an Observations collection
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.Field)
+          .WithMany(f => f.Observations)
+          .HasForeignKey(e => e.FieldId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.CropCycle)
+          .WithMany(cc => cc.Observations)
+          .HasForeignKey(e => e.CropCycleId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Worker)
+          .WithMany(w => w.Observations)
+          .HasForeignKey(e => e.WorkerId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    // NEW: Validator relationship
+    entity.HasOne(e => e.Validator)
+          .WithMany()  // Admin doesn't have a ValidatedObservations collection
+          .HasForeignKey(e => e.ValidatedBy)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    // Indexes for performance
+    entity.HasIndex(e => new { e.FieldId, e.ObservationDate })
+          .HasDatabaseName("IX_Observations_Field_Date");
+    entity.HasIndex(e => e.WorkerId)
+          .HasDatabaseName("IX_Observations_WorkerId");
+    entity.HasIndex(e => e.ValidationStatus)
+          .HasDatabaseName("IX_Observations_ValidationStatus");
+    entity.HasIndex(e => new { e.FarmId, e.ValidationStatus })
+          .HasDatabaseName("IX_Observations_Farm_ValidationStatus");
+    entity.HasIndex(e => e.ValidatedBy)
+          .HasDatabaseName("IX_Observations_ValidatedBy");
+    entity.HasIndex(e => e.ObservationDate)
+          .HasDatabaseName("IX_Observations_Date");
+}); 
+
+        // =============================================
+        // WEATHER DATA CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<WeatherData>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Temperature).HasPrecision(5, 2);
+            entity.Property(e => e.Humidity).HasPrecision(5, 2);
+            entity.Property(e => e.RainfallMm).HasPrecision(6, 2);
+            entity.Property(e => e.WindSpeed).HasPrecision(5, 2);
+            entity.Property(e => e.Condition).HasConversion<string>().HasMaxLength(20);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.WeatherData)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.FieldId, e.RecordedAt });
+        });
+        
+        // =============================================
+        // WEATHER ALERT CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<WeatherAlert>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AlertType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Severity).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Message).HasMaxLength(1000);
+            entity.Property(e => e.Temperature).HasPrecision(5, 2);
+            entity.Property(e => e.WindSpeed).HasPrecision(5, 2);
+            entity.Property(e => e.RainfallMm).HasPrecision(6, 2);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany()
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany()
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany()
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Acknowledger)
+                  .WithMany()
+                  .HasForeignKey(e => e.AcknowledgedBy)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.FieldId });
+            entity.HasIndex(e => e.AlertType);
+            entity.HasIndex(e => e.Severity);
+            entity.HasIndex(e => e.AlertTime);
+            entity.HasIndex(e => e.IsAcknowledged);
+            entity.HasIndex(e => e.ExpiresAt);
+        });
+        
+        // =============================================
+        // WORKER CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Worker>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.PasswordHash).HasMaxLength(255); 
+            entity.Property(e => e.Phone).HasMaxLength(20);
+            entity.Property(e => e.Role).HasMaxLength(50);
+            entity.Property(e => e.LastLoginAt).HasColumnType("timestamp with time zone");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.Workers)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.Workers)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.Role });
+            entity.HasIndex(e => e.IsActive);
+        });
+        
+        // =============================================
+        // WORKER TASK CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<WorkerTask>(entity =>
+        {
+            entity.ToTable("Tasks");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TaskName).HasConversion<string>().HasMaxLength(100);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.Priority).HasConversion<string>().HasMaxLength(20);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.Tasks)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany(a => a.Tasks)
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.WorkerId, e.Status });
+            entity.HasIndex(e => new { e.FarmId, e.Status });
+            entity.HasIndex(e => new { e.Status, e.DueDate });
+        });
+        
+        // =============================================
+        // WORKER FIELD ASSIGNMENT CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<WorkerFieldAssignment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany()
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Admin)
+                  .WithMany()
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasOne(e => e.Worker)
+                  .WithMany()
+                  .HasForeignKey(e => e.WorkerId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany()
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.WorkerId, e.FieldId });
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.AssignedDate);
+        });
+        
+// =============================================
+// HARVEST CONFIGURATION - UPDATED WITH ALL FIELDS
+// =============================================
+modelBuilder.Entity<Harvest>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    // Basic properties
+    entity.Property(e => e.QuantityKg)
+          .HasPrecision(12, 2)
+          .IsRequired();
+    entity.Property(e => e.QualityGrade)
+          .HasConversion<string>()
+          .HasMaxLength(10);
+    entity.Property(e => e.HarvestMethod)
+          .HasConversion<string>()
+          .HasMaxLength(20);
+    entity.Property(e => e.HarvestDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    
+    // Approval Workflow properties
+    entity.Property(e => e.ApprovalStatus)
+          .HasMaxLength(20)
+          .HasDefaultValue("PENDING");
+    entity.Property(e => e.RejectionReason)
+          .HasMaxLength(500);
+    entity.Property(e => e.AdminNotes)
+          .HasMaxLength(1000);
+    entity.Property(e => e.WorkerResponse)
+          .HasMaxLength(1000);
+    entity.Property(e => e.ApprovedAt)
+          .HasColumnType("timestamp with time zone");
+    
+    // Financial and tracking properties
+    entity.Property(e => e.PricePerKg)
+          .HasPrecision(10, 2);
+    entity.Property(e => e.BatchNumber)
+          .HasMaxLength(50);
+    entity.Property(e => e.Notes)
+          .HasMaxLength(1000);
+    
+    // Computed property - ignore for database
+    entity.Ignore(e => e.TotalValue);
+
+    // Image properties configuration
+    entity.Property(e => e.ImagePath).HasMaxLength(500);
+    entity.Property(e => e.ThumbnailPath).HasMaxLength(500);
+    entity.Property(e => e.ImageCaption).HasMaxLength(500);
+    entity.Property(e => e.AdditionalImagePaths)
+          .HasColumnType("jsonb")
+          .HasConversion(
+              v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
+              v => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(v, (System.Text.Json.JsonSerializerOptions)null)
+          );
+    entity.Property(e => e.ImageMetadata).HasColumnType("jsonb");
+    
+    // Relationships
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.Harvests)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.Field)
+          .WithMany()
+          .HasForeignKey(e => e.FieldId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.CropCycle)
+          .WithMany(cc => cc.Harvests)
+          .HasForeignKey(e => e.CropCycleId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.Harvester)
+          .WithMany(w => w.Harvests)
+          .HasForeignKey(e => e.HarvestedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Submitter)
+          .WithMany()
+          .HasForeignKey(e => e.SubmittedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Approver)
+          .WithMany()
+          .HasForeignKey(e => e.ApprovedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    // Indexes for performance
+    entity.HasIndex(e => new { e.FarmId, e.HarvestDate })
+          .HasDatabaseName("IX_Harvests_Farm_Date");
+    entity.HasIndex(e => e.CropCycleId)
+          .HasDatabaseName("IX_Harvests_CropCycleId");
+    entity.HasIndex(e => e.ApprovalStatus)
+          .HasDatabaseName("IX_Harvests_ApprovalStatus");
+    entity.HasIndex(e => e.SubmittedBy)
+          .HasDatabaseName("IX_Harvests_SubmittedBy");
+    entity.HasIndex(e => e.HarvestedBy)
+          .HasDatabaseName("IX_Harvests_HarvestedBy");
+    entity.HasIndex(e => e.BatchNumber)
+          .HasDatabaseName("IX_Harvests_BatchNumber");
+});
+
+
+// =============================================
+// QUALITY CHECK CONFIGURATION
+// =============================================
+modelBuilder.Entity<QualityCheck>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    entity.Property(e => e.MoisturePct).HasPrecision(5, 2);
+    entity.Property(e => e.DefectPct).HasPrecision(5, 2);
+    entity.Property(e => e.FinalGrade).HasConversion<string>().HasMaxLength(10);
+    entity.Property(e => e.ApprovalStatus).HasMaxLength(20).HasDefaultValue("PENDING");
+    entity.Property(e => e.RejectionReason).HasMaxLength(500);
+    entity.Property(e => e.AdminNotes).HasMaxLength(1000);
+    entity.Property(e => e.WorkerResponse).HasMaxLength(1000);
+    entity.Property(e => e.CheckDate).HasColumnType("timestamp with time zone");
+    entity.Property(e => e.ApprovedAt).HasColumnType("timestamp with time zone");
+    
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.QualityChecks)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Harvest)
+          .WithMany(h => h.QualityChecks)
+          .HasForeignKey(e => e.HarvestId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Checker)
+          .WithMany(w => w.QualityChecks)
+          .HasForeignKey(e => e.CheckedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Approver)
+          .WithMany()
+          .HasForeignKey(e => e.ApprovedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasIndex(e => e.HarvestId);
+    entity.HasIndex(e => e.CheckedBy);
+    entity.HasIndex(e => e.ApprovalStatus);
+    entity.HasIndex(e => e.CheckDate);
+});
+
+
+// =============================================
+// YIELD REPORT CONFIGURATION - CORRECTED
+// =============================================
+modelBuilder.Entity<YieldReport>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    // Basic properties
+    entity.Property(e => e.ReportName)
+          .IsRequired()
+          .HasMaxLength(200);
+    entity.Property(e => e.ReportType)
+          .HasMaxLength(20);
+    entity.Property(e => e.StartDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    entity.Property(e => e.EndDate)
+          .HasColumnType("timestamp with time zone")
+          .IsRequired();
+    
+    // Yield statistics
+    entity.Property(e => e.TotalYieldKg)
+          .HasPrecision(12, 2);
+    entity.Property(e => e.AverageYieldPerHectare)  // ✅ Use correct property name
+          .HasPrecision(10, 2);
+    entity.Property(e => e.TotalHarvests);
+    entity.Property(e => e.AveragePricePerKg)
+          .HasPrecision(10, 2);
+    entity.Property(e => e.TotalValue)
+          .HasPrecision(12, 2);
+    
+    // Quality statistics
+    entity.Property(e => e.AverageQualityGrade)  // ✅ Use correct property name
+          .HasMaxLength(10);
+    entity.Property(e => e.PassRate)
+          .HasPrecision(5, 2);
+    entity.Property(e => e.RejectionRate)
+          .HasPrecision(5, 2);
+    
+    // JSON fields
+    entity.Property(e => e.FieldBreakdownJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.CropTypeBreakdownJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.MonthlyTrendJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.QualityDistributionJson)
+          .HasColumnType("jsonb");
+    
+    // Export tracking
+    entity.Property(e => e.FilePath)
+          .HasMaxLength(500);
+    entity.Property(e => e.FileFormat)
+          .HasMaxLength(20);
+    entity.Property(e => e.ExportedAt)
+          .HasColumnType("timestamp with time zone");
+       
+    // Scheduling
+    entity.Property(e => e.ScheduleCron)
+          .HasMaxLength(100);
+    entity.Property(e => e.LastGeneratedAt)
+          .HasColumnType("timestamp with time zone");
+    entity.Property(e => e.NextScheduledRun)
+          .HasColumnType("timestamp with time zone");
+    
+    // Relationships
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.YieldReports)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    entity.HasOne(e => e.Admin)
+          .WithMany()
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(e => e.CropCycle)
+          .WithMany(cc => cc.YieldReports)
+          .HasForeignKey(e => e.CropCycleId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Field)
+          .WithMany()
+          .HasForeignKey(e => e.FieldId)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    entity.HasOne(e => e.Exporter)
+          .WithMany()
+          .HasForeignKey(e => e.ExportedBy)
+          .OnDelete(DeleteBehavior.SetNull);
+    
+    // Indexes for performance
+    entity.HasIndex(e => new { e.FarmId, e.StartDate, e.EndDate })
+          .HasDatabaseName("IX_YieldReports_Farm_DateRange");
+    entity.HasIndex(e => e.CropCycleId)
+          .HasDatabaseName("IX_YieldReports_CropCycleId");
+    entity.HasIndex(e => e.FieldId)
+          .HasDatabaseName("IX_YieldReports_FieldId");
+    entity.HasIndex(e => e.ReportType)
+          .HasDatabaseName("IX_YieldReports_ReportType");
+    entity.HasIndex(e => e.IsScheduled)
+          .HasDatabaseName("IX_YieldReports_IsScheduled");
+    entity.HasIndex(e => e.NextScheduledRun)
+          .HasDatabaseName("IX_YieldReports_NextScheduledRun");
+    entity.HasIndex(e => e.CreatedAt)
+          .HasDatabaseName("IX_YieldReports_CreatedAt");
+});
+
+        // =============================================
+        // AUDIT LOG CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Action).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.EntityType).HasMaxLength(50);
+            entity.Property(e => e.IpAddress).HasMaxLength(45);
+            entity.Property(e => e.OldValue).HasColumnType("jsonb");
+            entity.Property(e => e.NewValue).HasColumnType("jsonb");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.AuditLogs)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.SetNull);
+                  
+            entity.HasIndex(e => new { e.FarmId, e.CreatedAt });
+            entity.HasIndex(e => new { e.EntityType, e.EntityId });
+            entity.HasIndex(e => e.Action);
+        });
+        
+        // =============================================
+        // NOTIFICATION CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Type).HasMaxLength(50);
+            entity.Property(e => e.Metadata).HasColumnType("jsonb");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany(f => f.Notifications)
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.WorkerId, e.IsRead });
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.AdminId);
+        });
+    }
+    
+ // AgriculturePlatform.Infrastructure/Context/AppDbContext.cs
+
+private JsonDocument? SerializeToJsonDocument(object? obj)
+{
+    if (obj == null) return null;
+    
+    var options = new JsonSerializerOptions
+    {
+        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+        WriteIndented = false,
+        // ✅ Add this to convert enums to strings
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
+    
+    var json = JsonSerializer.Serialize(obj, options);
+    return JsonDocument.Parse(json);
+}   
+    
+   
+
+    // =============================================
+    // GLOBAL AUDIT LOGGING - SaveChangesAsync
+    // =============================================
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Modified || e.State == EntityState.Added || e.State == EntityState.Deleted);
+        
+        var auditLogs = new List<AuditLog>();
+        var now = DateTime.UtcNow;
+        
+        // Get current user info from HttpContext
+        var userInfo = GetCurrentUserInfo();
+        var adminId = userInfo.adminId;
+        var workerId = userInfo.workerId;
+        var farmId = userInfo.farmId;
+        var ipAddress = userInfo.ipAddress;
+        var userAgent = userInfo.userAgent;
+        
+        // JSON options with enum converter
+        var jsonOptions = new JsonSerializerOptions
+        {
+            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+            WriteIndented = false,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        };
+        
+        foreach (var entityEntry in entries)
+        {
+            // Skip AuditLog entity itself
+            if (entityEntry.Entity is AuditLog)
+                continue;
+            
+            // Skip SensorReadings
+            if (entityEntry.Entity is SensorReading)
+                continue;
+            
+            // Skip WeatherData
+            if (entityEntry.Entity is WeatherData)
+                continue;
+            
+            var entityType = entityEntry.Entity.GetType().Name;
+            var entityId = GetEntityId(entityEntry.Entity);
+            var entityFarmId = farmId ?? GetFarmIdFromEntity(entityEntry.Entity);
+            
+            // Handle DateTime conversions to UTC
+            ConvertDateTimesToUtc(entityEntry);
+            
+            switch (entityEntry.State)
+            {
+                case EntityState.Added:
+                    // Set audit fields
+                    HandleAuditFields(entityEntry, adminId, workerId, now);
+                    
+                    // Serialize entity with enum converter
+                    var addedJson = JsonSerializer.Serialize(entityEntry.Entity, jsonOptions);
+                    
+                    auditLogs.Add(new AuditLog
+                    {
+                        FarmId = entityFarmId,
+                        AdminId = adminId,
+                        WorkerId = workerId,
+                        Action = "CREATE",
+                        EntityType = entityType,
+                        EntityId = entityId,
+                        OldValue = null,
+                        NewValue = JsonDocument.Parse(addedJson),
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        CreatedAt = now
+                    });
+                    break;
+                    
+                case EntityState.Modified:
+                    // Get changed properties
+                    var changedProperties = entityEntry.Properties
+                        .Where(p => p.IsModified && !AreValuesEqual(p.OriginalValue, p.CurrentValue))
+                        .ToList();
+                    
+                    if (changedProperties.Any())
+                    {
+                        // Set audit fields
+                        HandleAuditFields(entityEntry, adminId, workerId, now);
+                        
+                        // Get OLD state
+                        var oldDict = GetEntityState(entityEntry.Entity, useOriginalValues: true);
+                        var oldJson = JsonSerializer.Serialize(oldDict, jsonOptions);
+                        
+                        // Get NEW state
+                        var newDict = GetEntityState(entityEntry.Entity, useOriginalValues: false);
+                        var newJson = JsonSerializer.Serialize(newDict, jsonOptions);
+                        
+                        auditLogs.Add(new AuditLog
+                        {
+                            FarmId = entityFarmId,
+                            AdminId = adminId,
+                            WorkerId = workerId,
+                            Action = "UPDATE",
+                            EntityType = entityType,
+                            EntityId = entityId,
+                            OldValue = JsonDocument.Parse(oldJson),
+                            NewValue = JsonDocument.Parse(newJson),
+                            IpAddress = ipAddress,
+                            UserAgent = userAgent,
+                            CreatedAt = now
+                        });
+                    }
+                    break;
+                    
+                case EntityState.Deleted:
+                    var deletedDict = GetEntityState(entityEntry.Entity, useOriginalValues: true);
+                    var deletedJson = JsonSerializer.Serialize(deletedDict, jsonOptions);
+                    
+                    auditLogs.Add(new AuditLog
+                    {
+                        FarmId = entityFarmId,
+                        AdminId = adminId,
+                        WorkerId = workerId,
+                        Action = "DELETE",
+                        EntityType = entityType,
+                        EntityId = entityId,
+                        OldValue = JsonDocument.Parse(deletedJson),
+                        NewValue = null,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        CreatedAt = now
+                    });
+                    break;
+            }
+        }
+        
+        // Add all audit logs
+        if (auditLogs.Any())
+        {
+            await AuditLogs.AddRangeAsync(auditLogs, cancellationToken);
+        }
+        
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    // =============================================
+    // HELPER METHODS
+    // =============================================
+private Dictionary<string, object?> GetEntityState(object entity, bool useOriginalValues = false)
+{
+    var state = new Dictionary<string, object?>();
+    var entry = Entry(entity);
+
+    foreach (var property in entity.GetType().GetProperties())
+    {
+        try
+        {
+            // Skip navigation properties
+            if (property.PropertyType.IsClass &&
+                property.PropertyType != typeof(string) &&
+                property.PropertyType.Namespace?.StartsWith("AgriculturePlatform.Domain.Entities") == true)
+            {
+                continue;
+            }
+
+            object? value;
+
+            if (useOriginalValues)
+            {
+                var propertyEntry = entry.Properties
+                    .FirstOrDefault(p => p.Metadata.Name == property.Name);
+
+                value = propertyEntry?.OriginalValue;
+            }
+            else
+            {
+                value = property.GetValue(entity);
+            }
+
+            if (value == null)
+            {
+                state[property.Name] = null;
+                continue;
+            }
+
+            // Convert enums to string
+            var propertyType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+
+            if (propertyType.IsEnum)
+            {
+                state[property.Name] = value.ToString();
+                continue;
+            }
+
+            // Format DateTime
+            if (value is DateTime dt)
+            {
+                state[property.Name] = dt.ToUniversalTime()
+                    .ToString("yyyy-MM-dd HH:mm:ss.fffZ");
+                continue;
+            }
+
+            state[property.Name] = value;
+        }
+        catch
+        {
+            // Ignore inaccessible properties
+        }
+    }
+
+    return state;
+}
+
+    private (int? adminId, int? workerId, int? farmId, string ipAddress, string? userAgent) GetCurrentUserInfo()
+    {
+        var httpContext = _httpContextAccessor?.HttpContext;
+        if (httpContext == null)
+            return (null, null, null, "127.0.0.1", null);
+        
+        // Get Admin ID (from token)
+        var adminIdClaim = httpContext.User.FindFirst("adminId")?.Value ?? 
+                          httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        int? adminId = null;
+        if (!string.IsNullOrEmpty(adminIdClaim) && int.TryParse(adminIdClaim, out var aId))
+        {
+            var userType = httpContext.User.FindFirst("userType")?.Value;
+            if (userType == "Admin")
+                adminId = aId;
+        }
+        
+        // Get Worker ID (from token)
+        var workerIdClaim = httpContext.User.FindFirst("workerId")?.Value;
+        int? workerId = null;
+        if (!string.IsNullOrEmpty(workerIdClaim) && int.TryParse(workerIdClaim, out var wId))
+        {
+            var userType = httpContext.User.FindFirst("userType")?.Value;
+            if (userType == "Worker")
+                workerId = wId;
+        }
+        
+        // Get Farm ID (from token)
+        var farmIdClaim = httpContext.User.FindFirst("farmId")?.Value;
+        int? farmId = null;
+        if (!string.IsNullOrEmpty(farmIdClaim) && int.TryParse(farmIdClaim, out var fId))
+            farmId = fId;
+        
+        // Get IP Address
+        var ip = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (string.IsNullOrEmpty(ip))
+            ip = httpContext.Connection.RemoteIpAddress?.ToString();
+        var ipAddress = ip ?? "127.0.0.1";
+        
+        // Get User Agent
+        var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
+        if (string.IsNullOrEmpty(userAgent))
+            userAgent = null;
+        
+        return (adminId, workerId, farmId, ipAddress, userAgent);
+    }
+
+    private void ConvertDateTimesToUtc(EntityEntry entityEntry)
+    {
+        var properties = entityEntry.Entity.GetType().GetProperties()
+            .Where(p => p.PropertyType == typeof(DateTime) || p.PropertyType == typeof(DateTime?));
+        
+        foreach (var property in properties)
+        {
+            var currentValue = property.GetValue(entityEntry.Entity);
+            if (currentValue != null)
+            {
+                var dateTime = (DateTime)currentValue;
+                if (dateTime.Kind != DateTimeKind.Utc)
+                {
+                    var utcValue = DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+                    property.SetValue(entityEntry.Entity, utcValue);
+                }
+            }
+        }
+    }
+
+    private void HandleAuditFields(EntityEntry entityEntry, int? adminId, int? workerId, DateTime now)
+    {
+        if (entityEntry.Entity is BaseEntity baseEntity)
+        {
+            if (entityEntry.State == EntityState.Added)
+            {
+                baseEntity.CreatedAt = now;
+                baseEntity.CreatedBy = adminId ?? workerId;
+            }
+            else if (entityEntry.State == EntityState.Modified)
+            {
+                baseEntity.UpdatedAt = now;
+                baseEntity.UpdatedBy = adminId ?? workerId;
+            }
+        }
+    }
+
+    private int? GetEntityId(object entity)
+    {
+        var idProperty = entity.GetType().GetProperty("Id");
+        if (idProperty == null) return null;
+        
+        var value = idProperty.GetValue(entity);
+        if (value == null) return null;
+        
+        return value switch
+        {
+            int intValue => intValue,
+            long longValue => (int)longValue,
+            short shortValue => (int)shortValue,
+            _ => null
+        };
+    }
+
+    private int? GetFarmIdFromEntity(object entity)
+    {
+        var farmIdProp = entity.GetType().GetProperty("FarmId");
+        if (farmIdProp != null)
+        {
+            var value = farmIdProp.GetValue(entity);
+            return value as int?;
+        }
+        return null;
+    }
+
+    private bool AreValuesEqual(object? original, object? current)
+    {
+        if (original == null && current == null) return true;
+        if (original == null || current == null) return false;
+        return original.Equals(current);
+    }
+
+
+}
+
+
+namespace AgriculturePlatform.Domain.Enums;
+
+// Quality grades
+public enum QualityGradeEnum
+{
+    A_PLUS,   // Premium quality (best price)
+    A,        // Excellent quality
+    B,        // Good quality
+    C,        // Average quality
+    D,        // Poor quality
+    REJECTED  // Not suitable for sale
+}
+
+// Report types
+public enum ReportTypeEnum
+{
+    DAILY,
+    WEEKLY,
+    MONTHLY,
+    QUARTERLY,
+    SEASONAL,
+    YEARLY
+}
+
+// Harvest method
+public enum HarvestMethodEnum
+{
+    MANUAL,          // Hand-picked
+    MECHANICAL,      // Machine harvested
+    SEMI_MECHANICAL,
+    COMBINE          // Combined harvester
+}
+
+// Application/DTOs/Harvest/HarvestDto.cs
+namespace AgriculturePlatform.Application.DTOs.Harvest;
+
+public class HarvestDto
+{
+    public int Id { get; set; }
+    public int FarmId { get; set; }
+    public string FarmName { get; set; } = string.Empty;
+    public int FieldId { get; set; }
+    public string FieldName { get; set; } = string.Empty;
+    public int CropCycleId { get; set; }
+    public string CropType { get; set; } = string.Empty;
+    public int? HarvestedBy { get; set; }
+    public string? HarvesterName { get; set; }
+    public int? SubmittedBy { get; set; }
+    public string? SubmitterName { get; set; }
+    public DateTime HarvestDate { get; set; }
+    public decimal QuantityKg { get; set; }
+    public string? QualityGrade { get; set; }
+    public string? HarvestMethod { get; set; }
+    
+    // Approval fields
+    public string ApprovalStatus { get; set; } = "PENDING";
+    public int? ApprovedBy { get; set; }
+    public string? ApproverName { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? RejectionReason { get; set; }
+    public string? AdminNotes { get; set; }
+    public string? WorkerResponse { get; set; }
+    
+    // Financial fields
+    public decimal? PricePerKg { get; set; }
+    public decimal? TotalValue { get; set; }
+    public string? BatchNumber { get; set; }
+    public string? Notes { get; set; }
+    
+    // Audit fields
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public int? CreatedBy { get; set; }
+    
+    // Image attachment properties
+    public string? ImagePath { get; set; }
+    public string? ThumbnailPath { get; set; }
+    public string? ImageCaption { get; set; }
+    public List<string> AdditionalImagePaths { get; set; } = new List<string>();
+    public string? ImageMetadata { get; set; }
+    
+    // Computed properties
+    public string StatusBadgeColor => ApprovalStatus switch
+    {
+        "APPROVED" => "green",
+        "PENDING" => "yellow",
+        "REJECTED" => "red",
+        "REQUEST_CHANGES" => "orange",
+        _ => "gray"
+    };
+    
+    public string FormattedQuantity => $"{QuantityKg:N0} kg";
+    public string FormattedTotalValue => TotalValue.HasValue ? $"${TotalValue:N2}" : "N/A";
+}
+
+// Application/DTOs/Harvest/CreateHarvestDto.cs
+namespace AgriculturePlatform.Application.DTOs.Harvest;
+
+public class CreateHarvestDto
+{
+    public int FieldId { get; set; }
+    public int CropCycleId { get; set; }
+    public DateTime HarvestDate { get; set; }
+    public decimal QuantityKg { get; set; }
+    public string? QualityGrade { get; set; }
+    public string? HarvestMethod { get; set; }
+    public string? Notes { get; set; }
+    public decimal? PricePerKg { get; set; }
+    public string? BatchNumber { get; set; }
+    
+    // Image fields
+    public string? ImagePath { get; set; }
+    public string? ThumbnailPath { get; set; }
+    public string? ImageCaption { get; set; }
+    public System.Collections.Generic.List<string>? AdditionalImagePaths { get; set; }
+    public string? ImageMetadata { get; set; }
+}
+
+// Application/DTOs/Harvest/HarvestApprovalDto.cs
+namespace AgriculturePlatform.Application.DTOs.Harvest;
+
+public class HarvestApprovalDto
+{
+    public int HarvestId { get; set; }
+    public string ApprovalStatus { get; set; } = "APPROVED"; // APPROVED, REJECTED, REQUEST_CHANGES
+    public string? RejectionReason { get; set; }
+    public string? AdminNotes { get; set; }
+}
+
+public class HarvestWorkerResponseDto
+{
+    public int HarvestId { get; set; }
+    public string WorkerResponse { get; set; } = string.Empty;
+}
+
+// Application/DTOs/Harvest/HarvestFilterDto.cs
+namespace AgriculturePlatform.Application.DTOs.Harvest;
+
+public class HarvestFilterDto
+{
+    public int? FieldId { get; set; }
+    public int? CropCycleId { get; set; }
+    public int? WorkerId { get; set; }
+    public string? ApprovalStatus { get; set; }
+    public string? QualityGrade { get; set; }
+    public DateTime? FromDate { get; set; }
+    public DateTime? ToDate { get; set; }
+    public bool? IncludeDeleted { get; set; } = false;
+    public int? Page { get; set; } = 1;
+    public int? PageSize { get; set; } = 20;
+    public string? SortBy { get; set; } = "HarvestDate";
+    public bool IsDescending { get; set; } = true;
+}
+
+// Application/DTOs/Harvest/UpdateHarvestDto.cs
+namespace AgriculturePlatform.Application.DTOs.Harvest;
+
+public class UpdateHarvestDto
+{
+    public DateTime? HarvestDate { get; set; }
+    public decimal? QuantityKg { get; set; }
+    public string? QualityGrade { get; set; }
+    public string? HarvestMethod { get; set; }
+    public string? Notes { get; set; }
+    public decimal? PricePerKg { get; set; }
+    public string? BatchNumber { get; set; }
+    
+    // Image fields
+    public string? ImagePath { get; set; }
+    public string? ThumbnailPath { get; set; }
+    public string? ImageCaption { get; set; }
+    public System.Collections.Generic.List<string>? AdditionalImagePaths { get; set; }
+    public string? ImageMetadata { get; set; }
+}
+
+// Application/DTOs/Harvest/YieldStatisticsDto.cs
+namespace AgriculturePlatform.Application.DTOs.Harvest;
+
+public class YieldStatisticsDto
+{
+    public decimal TotalYieldKg { get; set; }
+    public decimal AverageYieldPerHectare { get; set; }
+    public int TotalHarvests { get; set; }
+    public Dictionary<string, decimal> YieldByField { get; set; } = new();
+    public Dictionary<string, decimal> YieldByCropType { get; set; } = new();
+    public List<MonthlyYieldDto> MonthlyTrend { get; set; } = new();
+    public Dictionary<string, int> QualityDistribution { get; set; } = new();
+    public Dictionary<string, int> HarvestMethodDistribution { get; set; } = new();
+    public decimal TotalValue { get; set; }
+    public decimal AveragePricePerKg { get; set; }
+    
+    // Previous season comparison
+    public decimal PreviousSeasonYield { get; set; }
+    public decimal YieldGrowthPercentage { get; set; }
+}
+
+public class MonthlyYieldDto
+{
+    public string Month { get; set; } = string.Empty;
+    public int Year { get; set; }
+    public decimal YieldKg { get; set; }
+    public int HarvestCount { get; set; }
+    public decimal AveragePrice { get; set; }
+}
+
+// Application/Mappings/HarvestMappingProfile.cs
+using AutoMapper;
+using AgriculturePlatform.Application.DTOs.Harvest;
+using AgriculturePlatform.Domain.Entities.YieldReports;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Application.Mappings;
+
+public class HarvestMappingProfile : Profile
+{
+    public HarvestMappingProfile()
+    {
+        CreateMap<Harvest, HarvestDto>()
+            .ForMember(dest => dest.FarmName, opt => opt.MapFrom(src => src.Farm != null ? src.Farm.FarmName : string.Empty))
+            .ForMember(dest => dest.FieldName, opt => opt.MapFrom(src => src.Field != null ? src.Field.FieldName : string.Empty))
+            .ForMember(dest => dest.CropType, opt => opt.MapFrom(src => src.CropCycle != null && src.CropCycle.CropType != null ? src.CropCycle.CropType.ToString() : string.Empty))
+            .ForMember(dest => dest.HarvesterName, opt => opt.MapFrom(src => src.Harvester != null ? src.Harvester.Name : string.Empty))
+            .ForMember(dest => dest.SubmitterName, opt => opt.MapFrom(src => src.Submitter != null ? src.Submitter.Name : string.Empty))
+            .ForMember(dest => dest.ApproverName, opt => opt.MapFrom(src => src.Approver != null ? src.Approver.Name : string.Empty))
+            .ForMember(dest => dest.QualityGrade, opt => opt.MapFrom(src => src.QualityGrade.HasValue ? src.QualityGrade.ToString() : string.Empty))
+            .ForMember(dest => dest.HarvestMethod, opt => opt.MapFrom(src => src.HarvestMethod.HasValue ? src.HarvestMethod.ToString() : string.Empty))
+            .ForMember(dest => dest.TotalValue, opt => opt.MapFrom(src => src.TotalValue))
+            // ✅ SIMPLE MAPPING - Pass through the relative paths
+            .ForMember(dest => dest.ImagePath, opt => opt.MapFrom(src => src.ImagePath))
+            .ForMember(dest => dest.ThumbnailPath, opt => opt.MapFrom(src => src.ThumbnailPath))
+            .ForMember(dest => dest.AdditionalImagePaths, opt => opt.MapFrom(src => src.AdditionalImagePaths ?? new List<string>()));
+
+        CreateMap<CreateHarvestDto, Harvest>()
+            .ForMember(dest => dest.QualityGrade, opt => opt.Ignore())
+            .ForMember(dest => dest.HarvestMethod, opt => opt.Ignore())
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.FarmId, opt => opt.Ignore())
+            .ForMember(dest => dest.AdminId, opt => opt.Ignore())
+            .ForMember(dest => dest.ApprovalStatus, opt => opt.MapFrom(src => "PENDING"))
+            .ForMember(dest => dest.SubmittedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.HarvestedBy, opt => opt.Ignore());
+
+        CreateMap<UpdateHarvestDto, Harvest>()
+            .ForMember(dest => dest.QualityGrade, opt => opt.Ignore())
+            .ForMember(dest => dest.HarvestMethod, opt => opt.Ignore())
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+    }
+}
+
+// Application/Validators/Harvest/CreateHarvestValidator.cs
+using FluentValidation;
+using AgriculturePlatform.Application.DTOs.Harvest;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Application.Validators.Harvest;
+
+public class CreateHarvestValidator : AbstractValidator<CreateHarvestDto>
+{
+    public CreateHarvestValidator()
+    {
+        RuleFor(x => x.FieldId)
+            .GreaterThan(0).WithMessage("Field ID is required");
+
+        RuleFor(x => x.CropCycleId)
+            .GreaterThan(0).WithMessage("Crop cycle ID is required");
+
+        RuleFor(x => x.HarvestDate)
+            .NotEmpty().WithMessage("Harvest date is required")
+            .LessThanOrEqualTo(DateTime.UtcNow).WithMessage("Harvest date cannot be in the future");
+
+        RuleFor(x => x.QuantityKg)
+            .GreaterThan(0).WithMessage("Quantity must be greater than 0")
+            .LessThan(1000000).WithMessage("Quantity cannot exceed 1,000,000 kg");
+
+        RuleFor(x => x.QualityGrade)
+            .Must(BeValidQualityGrade).WithMessage($"Invalid quality grade. Valid values: {string.Join(", ", Enum.GetNames<QualityGradeEnum>())}")
+            .When(x => !string.IsNullOrWhiteSpace(x.QualityGrade));
+
+        RuleFor(x => x.HarvestMethod)
+            .Must(BeValidHarvestMethod).WithMessage($"Invalid harvest method. Valid values: {string.Join(", ", Enum.GetNames<HarvestMethodEnum>())}")
+            .When(x => !string.IsNullOrWhiteSpace(x.HarvestMethod));
+
+        RuleFor(x => x.PricePerKg)
+            .GreaterThanOrEqualTo(0).WithMessage("Price per kg cannot be negative")
+            .LessThan(10000).WithMessage("Price per kg cannot exceed 10,000")
+            .When(x => x.PricePerKg.HasValue);
+
+        RuleFor(x => x.BatchNumber)
+            .MaximumLength(50).WithMessage("Batch number cannot exceed 50 characters");
+
+        RuleFor(x => x.Notes)
+            .MaximumLength(1000).WithMessage("Notes cannot exceed 1000 characters");
+    }
+
+    private bool BeValidQualityGrade(string? grade)
+    {
+        if (string.IsNullOrWhiteSpace(grade)) return true;
+        return Enum.TryParse<QualityGradeEnum>(grade, true, out _);
+    }
+
+    private bool BeValidHarvestMethod(string? method)
+    {
+        if (string.IsNullOrWhiteSpace(method)) return true;
+        return Enum.TryParse<HarvestMethodEnum>(method, true, out _);
+    }
+}
+
+// Application/Validators/Harvest/HarvestApprovalValidator.cs
+using FluentValidation;
+using AgriculturePlatform.Application.DTOs.Harvest;
+
+namespace AgriculturePlatform.Application.Validators.Harvest;
+
+public class HarvestApprovalValidator : AbstractValidator<HarvestApprovalDto>
+{
+    public HarvestApprovalValidator()
+    {
+        RuleFor(x => x.ApprovalStatus)
+            .NotEmpty().WithMessage("Approval status is required")
+            .Must(x => x == "APPROVED" || x == "REJECTED" || x == "REQUEST_CHANGES")
+            .WithMessage("Approval status must be APPROVED, REJECTED, or REQUEST_CHANGES");
+
+        RuleFor(x => x.RejectionReason)
+            .NotEmpty().WithMessage("Rejection reason is required when rejecting")
+            .MaximumLength(500).WithMessage("Rejection reason cannot exceed 500 characters")
+            .When(x => x.ApprovalStatus == "REJECTED");
+
+        RuleFor(x => x.AdminNotes)
+            .MaximumLength(1000).WithMessage("Admin notes cannot exceed 1000 characters");
+    }
+}
+
+// Application/Validators/Harvest/UpdateHarvestValidator.cs
+using FluentValidation;
+using AgriculturePlatform.Application.DTOs.Harvest;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Application.Validators.Harvest;
+
+public class UpdateHarvestValidator : AbstractValidator<UpdateHarvestDto>
+{
+    public UpdateHarvestValidator()
+    {
+        RuleFor(x => x.HarvestDate)
+            .LessThanOrEqualTo(DateTime.UtcNow).WithMessage("Harvest date cannot be in the future")
+            .When(x => x.HarvestDate.HasValue);
+
+        RuleFor(x => x.QuantityKg)
+            .GreaterThan(0).WithMessage("Quantity must be greater than 0")
+            .LessThan(1000000).WithMessage("Quantity cannot exceed 1,000,000 kg")
+            .When(x => x.QuantityKg.HasValue);
+
+        RuleFor(x => x.QualityGrade)
+            .Must(BeValidQualityGrade).WithMessage($"Invalid quality grade. Valid values: {string.Join(", ", Enum.GetNames<QualityGradeEnum>())}")
+            .When(x => !string.IsNullOrWhiteSpace(x.QualityGrade));
+
+        RuleFor(x => x.HarvestMethod)
+            .Must(BeValidHarvestMethod).WithMessage($"Invalid harvest method. Valid values: {string.Join(", ", Enum.GetNames<HarvestMethodEnum>())}")
+            .When(x => !string.IsNullOrWhiteSpace(x.HarvestMethod));
+
+        RuleFor(x => x.PricePerKg)
+            .GreaterThanOrEqualTo(0).WithMessage("Price per kg cannot be negative")
+            .When(x => x.PricePerKg.HasValue);
+
+        RuleFor(x => x)
+            .Must(AtLeastOneFieldProvided)
+            .WithMessage("At least one field must be provided for update");
+    }
+
+    private bool BeValidQualityGrade(string? grade)
+    {
+        if (string.IsNullOrWhiteSpace(grade)) return true;
+        return Enum.TryParse<QualityGradeEnum>(grade, true, out _);
+    }
+
+    private bool BeValidHarvestMethod(string? method)
+    {
+        if (string.IsNullOrWhiteSpace(method)) return true;
+        return Enum.TryParse<HarvestMethodEnum>(method, true, out _);
+    }
+
+    private bool AtLeastOneFieldProvided(UpdateHarvestDto dto)
+    {
+        return dto.HarvestDate.HasValue ||
+               dto.QuantityKg.HasValue ||
+               !string.IsNullOrWhiteSpace(dto.QualityGrade) ||
+               !string.IsNullOrWhiteSpace(dto.HarvestMethod) ||
+               !string.IsNullOrWhiteSpace(dto.Notes) ||
+               dto.PricePerKg.HasValue ||
+               !string.IsNullOrWhiteSpace(dto.BatchNumber);
+    }
+}
+
+// Application/Interfaces/IHarvestRepository.cs
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Domain.Entities.YieldReports;
+using AgriculturePlatform.Application.DTOs.Harvest;
+
+namespace AgriculturePlatform.Application.Interfaces;
+
+public interface IHarvestRepository
+{
+    // Basic CRUD
+    Task<Harvest?> GetByIdAsync(int id, int farmId);
+    Task<Harvest> CreateAsync(Harvest harvest);
+    Task UpdateAsync(Harvest harvest);
+    Task SoftDeleteAsync(Harvest harvest, int deletedBy);
+    Task<bool> ExistsAsync(int id, int farmId);
+    
+    // Query methods
+    Task<PagedResult<Harvest>> GetPagedAsync(
+        int farmId,
+        int? fieldId,
+        int? cropCycleId,
+        int? workerId,
+        string? approvalStatus,
+        string? qualityGrade,
+        DateTime? fromDate,
+        DateTime? toDate,
+        bool includeDeleted,
+        PaginationParams paginationParams);
+    
+    Task<IEnumerable<Harvest>> GetByFieldAsync(int fieldId, int farmId);
+    Task<IEnumerable<Harvest>> GetByCropCycleAsync(int cropCycleId, int farmId);
+    Task<IEnumerable<Harvest>> GetByWorkerAsync(int workerId, int farmId);
+    Task<IEnumerable<Harvest>> GetPendingApprovalsAsync(int farmId);
+    Task<IEnumerable<Harvest>> GetByDateRangeAsync(int farmId, DateTime fromDate, DateTime toDate);
+    
+    // Statistics
+    Task<YieldStatisticsDto> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate);
+    Task<Dictionary<string, decimal>> GetYieldByFieldAsync(int farmId, int year);
+    Task<decimal> GetTotalYieldForSeasonAsync(int farmId, int cropCycleId);
+    
+    // Ownership and permissions
+    Task<bool> IsOwnerAsync(int harvestId, int workerId, int farmId);
+    Task<bool> CanWorkerEditAsync(int harvestId, int workerId, int farmId);
+    
+    // Validation
+    Task<bool> HasPendingApprovalAsync(int workerId, int farmId);
+}
+
+// Application/Interfaces/IHarvestService.cs
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Harvest;
+
+namespace AgriculturePlatform.Application.Interfaces;
+
+public interface IHarvestService
+{
+    // Worker Operations
+    Task<ApiResponse<HarvestDto>> CreateHarvestAsync(CreateHarvestDto dto, int farmId, int workerId, int adminId);
+    Task<ApiResponse<HarvestDto>> UpdateOwnHarvestAsync(int id, UpdateHarvestDto dto, int workerId, int farmId);
+    Task<ApiResponse<bool>> DeleteOwnHarvestAsync(int id, int workerId, int farmId);
+    Task<ApiResponse<HarvestDto>> RespondToAdminAsync(int id, HarvestWorkerResponseDto response, int farmId, int workerId);
+    
+    // Admin Operations
+    Task<ApiResponse<HarvestDto>> UpdateHarvestAsync(int id, UpdateHarvestDto dto, int farmId, int adminId);
+    Task<ApiResponse<bool>> DeleteHarvestAsync(int id, int farmId, int adminId);
+    Task<ApiResponse<HarvestDto>> ApproveHarvestAsync(int id, HarvestApprovalDto approval, int farmId, int adminId);
+    Task<ApiResponse<PagedResult<HarvestDto>>> GetAllHarvestsAsync(HarvestFilterDto filter, int farmId);
+    Task<ApiResponse<HarvestDto>> GetHarvestByIdAsync(int id, int farmId);
+    Task<ApiResponse<IEnumerable<HarvestDto>>> GetHarvestsByFieldAsync(int fieldId, int farmId);
+    Task<ApiResponse<IEnumerable<HarvestDto>>> GetHarvestsByCropCycleAsync(int cropCycleId, int farmId);
+    Task<ApiResponse<IEnumerable<HarvestDto>>> GetHarvestsByWorkerAsync(int workerId, int farmId);
+    Task<ApiResponse<PagedResult<HarvestDto>>> GetPendingApprovalsAsync(int farmId, PaginationParams pagination);
+    
+    // Statistics
+    Task<ApiResponse<YieldStatisticsDto>> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate);
+    Task<ApiResponse<YieldStatisticsDto>> GetYearOverYearComparisonAsync(int farmId, int currentYear, int? previousYear);
+    
+    // Validation
+    Task<bool> ValidateHarvestOwnershipAsync(int harvestId, int workerId, int farmId);
+    Task<bool> HasPendingApprovalsAsync(int workerId, int farmId);
+}
+
+using System.Text.Json;
+using AutoMapper; // ✅ Add this using directive
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Harvest;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Domain.Entities.YieldReports;
+using AgriculturePlatform.Domain.Enums;
+using AgriculturePlatform.Application.Extensions;
+
+namespace AgriculturePlatform.Application.Services;
+
+public class HarvestService : IHarvestService
+{
+    private readonly IHarvestRepository _harvestRepository;
+    private readonly IFieldRepository _fieldRepository;
+    private readonly ICropCycleRepository _cropCycleRepository;
+    private readonly IWorkerRepository _workerRepository;
+    private readonly IAuditLogService _auditLogService;
+    private readonly IFileStorageService _fileStorageService;
+    private readonly IMapper _mapper;
+
+    public HarvestService(
+        IHarvestRepository harvestRepository,
+        IFieldRepository fieldRepository,
+        ICropCycleRepository cropCycleRepository,
+        IWorkerRepository workerRepository,
+        IAuditLogService auditLogService,
+        IFileStorageService fileStorageService,
+        IMapper mapper)
+    {
+        _harvestRepository = harvestRepository;
+        _fieldRepository = fieldRepository;
+        _cropCycleRepository = cropCycleRepository;
+        _workerRepository = workerRepository;
+        _auditLogService = auditLogService;
+        _fileStorageService = fileStorageService;
+        _mapper = mapper;
+    }
+
+    // =============================================
+    // WORKER OPERATIONS
+    // =============================================
+
+    public async Task<ApiResponse<HarvestDto>> CreateHarvestAsync(CreateHarvestDto dto, int farmId, int workerId, int adminId)
+    {
+        // Validate field access
+        var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
+        if (field == null)
+            return ApiResponse<HarvestDto>.Fail($"Field with ID {dto.FieldId} not found");
+
+        // Validate crop cycle
+        var cropCycle = await _cropCycleRepository.GetByIdAsync(dto.CropCycleId, farmId);
+        if (cropCycle == null)
+            return ApiResponse<HarvestDto>.Fail($"Crop cycle with ID {dto.CropCycleId} not found");
+
+        // Validate image paths exist in storage
+        if (!string.IsNullOrEmpty(dto.ImagePath))
+        {
+            var imageExists = await _fileStorageService.FileExistsAsync(dto.ImagePath);
+            if (!imageExists)
+                return ApiResponse<HarvestDto>.Fail("Main image file not found. Please re-upload.");
+        }
+
+        if (dto.AdditionalImagePaths?.Any() == true)
+        {
+            foreach (var path in dto.AdditionalImagePaths)
+            {
+                if (!await _fileStorageService.FileExistsAsync(path))
+                    return ApiResponse<HarvestDto>.Fail($"Reference image '{path}' not found. Please re-upload.");
+            }
+        }
+
+        var harvest = new Harvest
+        {
+            FarmId = farmId,
+            AdminId = adminId,
+            FieldId = dto.FieldId,
+            CropCycleId = dto.CropCycleId,
+            HarvestedBy = workerId,
+            SubmittedBy = workerId,
+            HarvestDate = dto.HarvestDate.ToUniversalTime(),
+            QuantityKg = dto.QuantityKg,
+            Notes = dto.Notes,
+            PricePerKg = dto.PricePerKg,
+            BatchNumber = dto.BatchNumber,
+            ApprovalStatus = "PENDING",
+            CreatedBy = workerId,
+            CreatedAt = DateTime.UtcNow,
+            ImagePath = dto.ImagePath,
+            ThumbnailPath = dto.ThumbnailPath,
+            ImageCaption = dto.ImageCaption,
+            AdditionalImagePaths = dto.AdditionalImagePaths ?? new List<string>(),
+            ImageMetadata = dto.ImageMetadata
+        };
+
+        if (!string.IsNullOrWhiteSpace(dto.QualityGrade))
+            harvest.QualityGrade = Enum.Parse<QualityGradeEnum>(dto.QualityGrade, true);
+        
+        if (!string.IsNullOrWhiteSpace(dto.HarvestMethod))
+            harvest.HarvestMethod = Enum.Parse<HarvestMethodEnum>(dto.HarvestMethod, true);
+
+        var created = await _harvestRepository.CreateAsync(harvest);
+        
+        await _auditLogService.LogCreateAsync(farmId, adminId, "Harvest", created.Id, created, null, null);
+
+        var result = _mapper.Map<HarvestDto>(created);
+        result.FieldName = field.FieldName;
+         result.WithPublicUrls(_fileStorageService);
+        
+        return ApiResponse<HarvestDto>.Ok(result, "Harvest submitted for approval");
+    }
+
+    public async Task<ApiResponse<HarvestDto>> UpdateOwnHarvestAsync(int id, UpdateHarvestDto dto, int workerId, int farmId)
+    {
+        if (!await _harvestRepository.CanWorkerEditAsync(id, workerId, farmId))
+        {
+            return ApiResponse<HarvestDto>.Fail("You don't have permission to update this harvest. Only pending or requested changes harvests can be edited.");
+        }
+
+        var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
+        if (harvest == null)
+            return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
+
+        var oldHarvest = _mapper.Map<Harvest>(harvest);
+
+        if (dto.HarvestDate.HasValue)
+            harvest.HarvestDate = dto.HarvestDate.Value.ToUniversalTime();
+        if (dto.QuantityKg.HasValue)
+            harvest.QuantityKg = dto.QuantityKg.Value;
+        if (!string.IsNullOrWhiteSpace(dto.QualityGrade))
+            harvest.QualityGrade = Enum.Parse<QualityGradeEnum>(dto.QualityGrade, true);
+        if (!string.IsNullOrWhiteSpace(dto.HarvestMethod))
+            harvest.HarvestMethod = Enum.Parse<HarvestMethodEnum>(dto.HarvestMethod, true);
+        if (!string.IsNullOrWhiteSpace(dto.Notes))
+            harvest.Notes = dto.Notes;
+        if (dto.PricePerKg.HasValue)
+            harvest.PricePerKg = dto.PricePerKg;
+        if (!string.IsNullOrWhiteSpace(dto.BatchNumber))
+            harvest.BatchNumber = dto.BatchNumber;
+        
+        if (dto.ImagePath != null)
+            harvest.ImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : dto.ImagePath;
+        if (dto.ThumbnailPath != null)
+            harvest.ThumbnailPath = string.IsNullOrWhiteSpace(dto.ThumbnailPath) ? null : dto.ThumbnailPath;
+        if (dto.ImageCaption != null)
+            harvest.ImageCaption = string.IsNullOrWhiteSpace(dto.ImageCaption) ? null : dto.ImageCaption;
+        if (dto.AdditionalImagePaths != null)
+            harvest.AdditionalImagePaths = dto.AdditionalImagePaths;
+        if (dto.ImageMetadata != null)
+            harvest.ImageMetadata = string.IsNullOrWhiteSpace(dto.ImageMetadata) ? null : dto.ImageMetadata;
+
+        harvest.UpdatedAt = DateTime.UtcNow;
+        harvest.UpdatedBy = workerId;
+        
+        if (harvest.ApprovalStatus == "REQUEST_CHANGES")
+        {
+            harvest.ApprovalStatus = "PENDING";
+            harvest.WorkerResponse = null;
+        }
+
+        await _harvestRepository.UpdateAsync(harvest);
+        
+        await _auditLogService.LogUpdateAsync(farmId, null, "Harvest", harvest.Id, oldHarvest, harvest, null, null);
+
+        var result = _mapper.Map<HarvestDto>(harvest);
+        return ApiResponse<HarvestDto>.Ok(result, "Harvest updated successfully");
+    }
+
+    // ✅ Only ONE DeleteOwnHarvestAsync method
+    public async Task<ApiResponse<bool>> DeleteOwnHarvestAsync(int id, int workerId, int farmId)
+    {
+        if (!await _harvestRepository.IsOwnerAsync(id, workerId, farmId))
+        {
+            return ApiResponse<bool>.Fail("You don't have permission to delete this harvest");
+        }
+
+        var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
+        if (harvest == null)
+            return ApiResponse<bool>.Fail($"Harvest with ID {id} not found");
+
+        if (harvest.ApprovalStatus == "APPROVED")
+        {
+            return ApiResponse<bool>.Fail("Cannot delete an approved harvest. Please contact an admin.");
+        }
+
+        await CleanupHarvestImagesAsync(harvest);
+        await _harvestRepository.SoftDeleteAsync(harvest, workerId);
+        
+        await _auditLogService.LogSoftDeleteAsync(farmId, null, "Harvest", harvest.Id, harvest, null, null);
+
+        return ApiResponse<bool>.Ok(true, "Harvest deleted successfully");
+    }
+
+    public async Task<ApiResponse<HarvestDto>> RespondToAdminAsync(int id, HarvestWorkerResponseDto response, int farmId, int workerId)
+    {
+        if (!await _harvestRepository.IsOwnerAsync(id, workerId, farmId))
+        {
+            return ApiResponse<HarvestDto>.Fail("You don't have permission to respond");
+        }
+
+        var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
+        if (harvest == null)
+            return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
+        
+        if (harvest.ApprovalStatus != "REQUEST_CHANGES")
+        {
+            return ApiResponse<HarvestDto>.Fail("Can only respond to harvests that need changes");
+        }
+
+        harvest.WorkerResponse = response.WorkerResponse;
+        harvest.ApprovalStatus = "PENDING";
+        harvest.UpdatedAt = DateTime.UtcNow;
+        harvest.UpdatedBy = workerId;
+        
+        await _harvestRepository.UpdateAsync(harvest);
+
+        var result = _mapper.Map<HarvestDto>(harvest);
+        return ApiResponse<HarvestDto>.Ok(result, "Response submitted");
+    }
+
+    // =============================================
+    // ADMIN OPERATIONS
+    // =============================================
+
+    public async Task<ApiResponse<HarvestDto>> UpdateHarvestAsync(int id, UpdateHarvestDto dto, int farmId, int adminId)
+    {
+        var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
+        if (harvest == null)
+            return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
+
+        var oldHarvest = _mapper.Map<Harvest>(harvest);
+
+        if (dto.HarvestDate.HasValue)
+            harvest.HarvestDate = dto.HarvestDate.Value.ToUniversalTime();
+        if (dto.QuantityKg.HasValue)
+            harvest.QuantityKg = dto.QuantityKg.Value;
+        if (!string.IsNullOrWhiteSpace(dto.QualityGrade))
+            harvest.QualityGrade = Enum.Parse<QualityGradeEnum>(dto.QualityGrade, true);
+        if (!string.IsNullOrWhiteSpace(dto.HarvestMethod))
+            harvest.HarvestMethod = Enum.Parse<HarvestMethodEnum>(dto.HarvestMethod, true);
+        if (!string.IsNullOrWhiteSpace(dto.Notes))
+            harvest.Notes = dto.Notes;
+        if (dto.PricePerKg.HasValue)
+            harvest.PricePerKg = dto.PricePerKg;
+        if (!string.IsNullOrWhiteSpace(dto.BatchNumber))
+            harvest.BatchNumber = dto.BatchNumber;
+        
+        if (dto.ImagePath != null)
+            harvest.ImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : dto.ImagePath;
+        if (dto.ThumbnailPath != null)
+            harvest.ThumbnailPath = string.IsNullOrWhiteSpace(dto.ThumbnailPath) ? null : dto.ThumbnailPath;
+        if (dto.ImageCaption != null)
+            harvest.ImageCaption = string.IsNullOrWhiteSpace(dto.ImageCaption) ? null : dto.ImageCaption;
+        if (dto.AdditionalImagePaths != null)
+            harvest.AdditionalImagePaths = dto.AdditionalImagePaths;
+        if (dto.ImageMetadata != null)
+            harvest.ImageMetadata = string.IsNullOrWhiteSpace(dto.ImageMetadata) ? null : dto.ImageMetadata;
+
+        harvest.UpdatedAt = DateTime.UtcNow;
+        harvest.UpdatedBy = adminId;
+
+        await _harvestRepository.UpdateAsync(harvest);
+        
+        await _auditLogService.LogUpdateAsync(farmId, adminId, "Harvest", harvest.Id, oldHarvest, harvest, null, null);
+
+        var result = _mapper.Map<HarvestDto>(harvest);
+        return ApiResponse<HarvestDto>.Ok(result, "Harvest updated successfully");
+    }
+
+    // ✅ Only ONE DeleteHarvestAsync method
+    public async Task<ApiResponse<bool>> DeleteHarvestAsync(int id, int farmId, int adminId)
+    {
+        var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
+        if (harvest == null)
+            return ApiResponse<bool>.Fail($"Harvest with ID {id} not found");
+
+        await CleanupHarvestImagesAsync(harvest);
+        await _harvestRepository.SoftDeleteAsync(harvest, adminId);
+        
+        await _auditLogService.LogSoftDeleteAsync(farmId, adminId, "Harvest", harvest.Id, harvest, null, null);
+
+        return ApiResponse<bool>.Ok(true, "Harvest deleted successfully");
+    }
+
+    public async Task<ApiResponse<HarvestDto>> ApproveHarvestAsync(int id, HarvestApprovalDto approval, int farmId, int adminId)
+    {
+        var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
+        if (harvest == null)
+            return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
+
+        var oldStatus = harvest.ApprovalStatus;
+        
+        harvest.ApprovalStatus = approval.ApprovalStatus;
+        harvest.ApprovedBy = adminId;
+        harvest.ApprovedAt = DateTime.UtcNow;
+        harvest.AdminNotes = approval.AdminNotes;
+        
+        if (approval.ApprovalStatus == "REJECTED")
+        {
+            harvest.RejectionReason = approval.RejectionReason;
+        }
+        
+        harvest.UpdatedAt = DateTime.UtcNow;
+        harvest.UpdatedBy = adminId;
+        
+        await _harvestRepository.UpdateAsync(harvest);
+        
+        await _auditLogService.LogUpdateAsync(farmId, adminId, "Harvest", harvest.Id, 
+            new { ApprovalStatus = oldStatus }, 
+            new { ApprovalStatus = approval.ApprovalStatus }, null, null);
+
+        var result = _mapper.Map<HarvestDto>(harvest);
+        return ApiResponse<HarvestDto>.Ok(result, $"Harvest {approval.ApprovalStatus.ToLower()}");
+    }
+
+    public async Task<ApiResponse<PagedResult<HarvestDto>>> GetAllHarvestsAsync(HarvestFilterDto filter, int farmId)
+    {
+        var paginationParams = new PaginationParams
+        {
+            Page = filter.Page ?? 1,
+            PageSize = filter.PageSize ?? 20,
+            SortBy = filter.SortBy,
+            IsDescending = filter.IsDescending
+        };
+
+        var pagedResult = await _harvestRepository.GetPagedAsync(
+            farmId,
+            filter.FieldId,
+            filter.CropCycleId,
+            filter.WorkerId,
+            filter.ApprovalStatus,
+            filter.QualityGrade,
+            filter.FromDate,
+            filter.ToDate,
+            filter.IncludeDeleted ?? false,
+            paginationParams);
+
+        var dtos = _mapper.Map<List<HarvestDto>>(pagedResult.Items);
+        
+        var result = new PagedResult<HarvestDto>
+        {
+            Items = dtos,
+            TotalCount = pagedResult.TotalCount,
+            Page = pagedResult.Page,
+            PageSize = pagedResult.PageSize
+        };
+
+        result.WithPublicUrls(_fileStorageService);
+
+        return ApiResponse<PagedResult<HarvestDto>>.Ok(result);
+    }
+
+    public async Task<ApiResponse<HarvestDto>> GetHarvestByIdAsync(int id, int farmId)
+    {
+        var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
+        if (harvest == null)
+            return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
+
+        var result = _mapper.Map<HarvestDto>(harvest);
+        result.WithPublicUrls(_fileStorageService);
+        return ApiResponse<HarvestDto>.Ok(result);
+    }
+
+    public async Task<ApiResponse<IEnumerable<HarvestDto>>> GetHarvestsByFieldAsync(int fieldId, int farmId)
+    {
+        var harvests = await _harvestRepository.GetByFieldAsync(fieldId, farmId);
+        var dtos = _mapper.Map<IEnumerable<HarvestDto>>(harvests);
+         dtos.WithPublicUrls(_fileStorageService);
+        return ApiResponse<IEnumerable<HarvestDto>>.Ok(dtos);
+    }
+
+    public async Task<ApiResponse<IEnumerable<HarvestDto>>> GetHarvestsByCropCycleAsync(int cropCycleId, int farmId)
+    {
+        var harvests = await _harvestRepository.GetByCropCycleAsync(cropCycleId, farmId);
+        var dtos = _mapper.Map<IEnumerable<HarvestDto>>(harvests);
+        dtos.WithPublicUrls(_fileStorageService);
+        return ApiResponse<IEnumerable<HarvestDto>>.Ok(dtos);
+    }
+
+    public async Task<ApiResponse<IEnumerable<HarvestDto>>> GetHarvestsByWorkerAsync(int workerId, int farmId)
+    {
+        var harvests = await _harvestRepository.GetByWorkerAsync(workerId, farmId);
+        var dtos = _mapper.Map<IEnumerable<HarvestDto>>(harvests);
+         dtos.WithPublicUrls(_fileStorageService);
+        return ApiResponse<IEnumerable<HarvestDto>>.Ok(dtos);
+    }
+
+    public async Task<ApiResponse<PagedResult<HarvestDto>>> GetPendingApprovalsAsync(int farmId, PaginationParams pagination)
+    {
+        var harvests = await _harvestRepository.GetPendingApprovalsAsync(farmId);
+        
+        var paged = harvests
+            .Skip((pagination.Page - 1) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .ToList();
+        
+        var dtos = _mapper.Map<List<HarvestDto>>(paged);
+        
+        var result = new PagedResult<HarvestDto>
+        {
+            Items = dtos,
+            TotalCount = harvests.Count(),
+            Page = pagination.Page,
+            PageSize = pagination.PageSize
+        };
+        result.WithPublicUrls(_fileStorageService);
+        
+        return ApiResponse<PagedResult<HarvestDto>>.Ok(result);
+    }
+
+    // =============================================
+    // STATISTICS
+    // =============================================
+
+    public async Task<ApiResponse<YieldStatisticsDto>> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate)
+    {
+        var stats = await _harvestRepository.GetYieldStatisticsAsync(farmId, cropCycleId, fromDate, toDate);
+        return ApiResponse<YieldStatisticsDto>.Ok(stats);
+    }
+
+    public async Task<ApiResponse<YieldStatisticsDto>> GetYearOverYearComparisonAsync(int farmId, int currentYear, int? previousYear)
+    {
+        var prevYear = previousYear ?? currentYear - 1;
+        
+        var currentStats = await _harvestRepository.GetYieldStatisticsAsync(farmId, null, 
+            new DateTime(currentYear, 1, 1), new DateTime(currentYear, 12, 31));
+        
+        var previousStats = await _harvestRepository.GetYieldStatisticsAsync(farmId, null,
+            new DateTime(prevYear, 1, 1), new DateTime(prevYear, 12, 31));
+        
+        currentStats.PreviousSeasonYield = previousStats.TotalYieldKg;
+        currentStats.YieldGrowthPercentage = previousStats.TotalYieldKg > 0 
+            ? Math.Round(((currentStats.TotalYieldKg - previousStats.TotalYieldKg) / previousStats.TotalYieldKg) * 100, 2)
+            : 0;
+        
+        return ApiResponse<YieldStatisticsDto>.Ok(currentStats);
+    }
+
+    // =============================================
+    // VALIDATION
+    // =============================================
+
+    public async Task<bool> ValidateHarvestOwnershipAsync(int harvestId, int workerId, int farmId)
+    {
+        return await _harvestRepository.IsOwnerAsync(harvestId, workerId, farmId);
+    }
+
+    public async Task<bool> HasPendingApprovalsAsync(int workerId, int farmId)
+    {
+        return await _harvestRepository.HasPendingApprovalAsync(workerId, farmId);
+    }
+
+    // =============================================
+    // IMAGE CLEANUP HELPER
+    // =============================================
+
+    private async Task CleanupHarvestImagesAsync(Harvest harvest)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(harvest.ImagePath))
+            {
+                await _fileStorageService.DeleteFileAsync(harvest.ImagePath);
+            }
+
+            if (!string.IsNullOrEmpty(harvest.ThumbnailPath))
+            {
+                await _fileStorageService.DeleteFileAsync(harvest.ThumbnailPath);
+            }
+
+            if (harvest.AdditionalImagePaths?.Any() == true)
+            {
+                foreach (var path in harvest.AdditionalImagePaths)
+                {
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        await _fileStorageService.DeleteFileAsync(path);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cleaning up harvest images: {ex.Message}");
+        }
+    }
+}
+
+// Infrastructure/Repositories/HarvestRepository.cs
+using Microsoft.EntityFrameworkCore;
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Harvest;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Domain.Entities.YieldReports;
+using AgriculturePlatform.Infrastructure.Context;
+using AgriculturePlatform.Infrastructure.Specifications;
+using AgriculturePlatform.Domain.Enums;
+
+namespace AgriculturePlatform.Infrastructure.Repositories;
+
+public class HarvestRepository : IHarvestRepository
+{
+    private readonly AppDbContext _context;
+
+    public HarvestRepository(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<Harvest?> GetByIdAsync(int id, int farmId)
+    {
+        return await _context.Harvests
+            .Include(h => h.Field)
+            .Include(h => h.CropCycle)
+            .Include(h => h.Harvester)
+            .Include(h => h.Submitter)
+            .Include(h => h.Approver)
+            .Include(h => h.QualityChecks)
+            .FirstOrDefaultAsync(h => h.Id == id && h.FarmId == farmId && !h.IsDeleted);
+    }
+
+    public async Task<Harvest> CreateAsync(Harvest harvest)
+    {
+        harvest.CreatedAt = DateTime.UtcNow;
+        await _context.Harvests.AddAsync(harvest);
+        await _context.SaveChangesAsync();
+        return harvest;
+    }
+
+    public async Task UpdateAsync(Harvest harvest)
+    {
+        harvest.UpdatedAt = DateTime.UtcNow;
+        _context.Harvests.Update(harvest);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task SoftDeleteAsync(Harvest harvest, int deletedBy)
+    {
+        harvest.IsDeleted = true;
+        harvest.DeletedAt = DateTime.UtcNow;
+        harvest.DeletedBy = deletedBy;
+        harvest.UpdatedAt = DateTime.UtcNow;
+        _context.Harvests.Update(harvest);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> ExistsAsync(int id, int farmId)
+    {
+        return await _context.Harvests
+            .AnyAsync(h => h.Id == id && h.FarmId == farmId && !h.IsDeleted);
+    }
+
+    public async Task<PagedResult<Harvest>> GetPagedAsync(
+        int farmId,
+        int? fieldId,
+        int? cropCycleId,
+        int? workerId,
+        string? approvalStatus,
+        string? qualityGrade,
+        DateTime? fromDate,
+        DateTime? toDate,
+        bool includeDeleted,
+        PaginationParams paginationParams)
+    {
+        var query = _context.Harvests
+            .Include(h => h.Field)
+            .Include(h => h.CropCycle)
+            .Include(h => h.Harvester)
+            .Include(h => h.Submitter)
+            .Include(h => h.Approver)
+            .Where(h => h.FarmId == farmId);
+
+        if (!includeDeleted)
+            query = query.Where(h => !h.IsDeleted);
+
+        if (fieldId.HasValue)
+            query = query.Where(h => h.FieldId == fieldId.Value);
+        
+        if (cropCycleId.HasValue)
+            query = query.Where(h => h.CropCycleId == cropCycleId.Value);
+        
+        if (workerId.HasValue)
+            query = query.Where(h => h.HarvestedBy == workerId.Value || h.SubmittedBy == workerId.Value);
+        
+        if (!string.IsNullOrWhiteSpace(approvalStatus))
+            query = query.Where(h => h.ApprovalStatus == approvalStatus);
+        
+        if (!string.IsNullOrWhiteSpace(qualityGrade) && Enum.TryParse<QualityGradeEnum>(qualityGrade, true, out var grade))
+            query = query.Where(h => h.QualityGrade == grade);
+        
+        if (fromDate.HasValue)
+            query = query.Where(h => h.HarvestDate >= fromDate.Value);
+        
+        if (toDate.HasValue)
+            query = query.Where(h => h.HarvestDate <= toDate.Value);
+
+        query = paginationParams.IsDescending
+            ? query.OrderByDescending(h => EF.Property<object>(h, paginationParams.SortBy ?? "HarvestDate"))
+            : query.OrderBy(h => EF.Property<object>(h, paginationParams.SortBy ?? "HarvestDate"));
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((paginationParams.Page - 1) * paginationParams.PageSize)
+            .Take(paginationParams.PageSize)
+            .ToListAsync();
+
+        return new PagedResult<Harvest>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = paginationParams.Page,
+            PageSize = paginationParams.PageSize
+        };
+    }
+
+    public async Task<IEnumerable<Harvest>> GetByFieldAsync(int fieldId, int farmId)
+    {
+        return await _context.Harvests
+            .Include(h => h.Harvester)
+            .Include(h => h.Approver)
+            .Where(h => h.FieldId == fieldId && h.FarmId == farmId && !h.IsDeleted)
+            .OrderByDescending(h => h.HarvestDate)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Harvest>> GetByCropCycleAsync(int cropCycleId, int farmId)
+    {
+        return await _context.Harvests
+            .Include(h => h.Harvester)
+            .Where(h => h.CropCycleId == cropCycleId && h.FarmId == farmId && !h.IsDeleted)
+            .OrderByDescending(h => h.HarvestDate)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Harvest>> GetByWorkerAsync(int workerId, int farmId)
+    {
+        return await _context.Harvests
+            .Include(h => h.Field)
+            .Include(h => h.CropCycle)
+            .Include(h => h.Approver)
+            .Where(h => (h.HarvestedBy == workerId || h.SubmittedBy == workerId) && h.FarmId == farmId && !h.IsDeleted)
+            .OrderByDescending(h => h.HarvestDate)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Harvest>> GetPendingApprovalsAsync(int farmId)
+    {
+        return await _context.Harvests
+            .Include(h => h.Field)
+            .Include(h => h.CropCycle)
+            .Include(h => h.Harvester)
+            .Include(h => h.Submitter)
+            .Where(h => h.FarmId == farmId && h.ApprovalStatus == "PENDING" && !h.IsDeleted)
+            .OrderBy(h => h.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Harvest>> GetByDateRangeAsync(int farmId, DateTime fromDate, DateTime toDate)
+    {
+        return await _context.Harvests
+            .Include(h => h.Field)
+            .Include(h => h.CropCycle)
+            .Where(h => h.FarmId == farmId && h.HarvestDate >= fromDate && h.HarvestDate <= toDate && !h.IsDeleted)
+            .OrderBy(h => h.HarvestDate)
+            .ToListAsync();
+    }
+
+    public async Task<YieldStatisticsDto> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate)
+    {
+        var query = _context.Harvests
+            .Include(h => h.Field)
+            .Include(h => h.CropCycle)
+            .Where(h => h.FarmId == farmId && h.ApprovalStatus == "APPROVED" && !h.IsDeleted);
+
+        if (cropCycleId.HasValue)
+            query = query.Where(h => h.CropCycleId == cropCycleId.Value);
+        
+        if (fromDate.HasValue)
+            query = query.Where(h => h.HarvestDate >= fromDate.Value);
+        
+        if (toDate.HasValue)
+            query = query.Where(h => h.HarvestDate <= toDate.Value);
+
+        var harvests = await query.ToListAsync();
+
+        var stats = new YieldStatisticsDto
+        {
+            TotalHarvests = harvests.Count,
+            TotalYieldKg = harvests.Sum(h => h.QuantityKg),
+            YieldByField = harvests.Where(h => h.Field != null)
+                .GroupBy(h => h.Field!.FieldName)
+                .ToDictionary(g => g.Key, g => g.Sum(h => h.QuantityKg)),
+            YieldByCropType = harvests.Where(h => h.CropCycle != null && h.CropCycle.CropType != null)
+                .GroupBy(h => h.CropCycle!.CropType!.ToString())
+                .ToDictionary(g => g.Key, g => g.Sum(h => h.QuantityKg)),
+            QualityDistribution = harvests.Where(h => h.QualityGrade.HasValue)
+                .GroupBy(h => h.QualityGrade!.Value.ToString())
+                .ToDictionary(g => g.Key, g => g.Count()),
+            HarvestMethodDistribution = harvests.Where(h => h.HarvestMethod.HasValue)
+                .GroupBy(h => h.HarvestMethod!.Value.ToString())
+                .ToDictionary(g => g.Key, g => g.Count()),
+            TotalValue = harvests.Sum(h => h.TotalValue ?? 0),
+            AveragePricePerKg = harvests.Where(h => h.PricePerKg.HasValue && h.QuantityKg > 0)
+                .Average(h => h.PricePerKg ?? 0),
+            MonthlyTrend = harvests
+                .GroupBy(h => new { h.HarvestDate.Year, h.HarvestDate.Month })
+                .Select(g => new MonthlyYieldDto
+                {
+                    Year = g.Key.Year,
+                    Month = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM"),
+                    YieldKg = g.Sum(h => h.QuantityKg),
+                    HarvestCount = g.Count(),
+                    AveragePrice = g.Average(h => h.PricePerKg ?? 0)
+                })
+                .OrderBy(m => m.Year)
+                .ThenBy(m => m.Month)
+                .ToList()
+        };
+
+        stats.AverageYieldPerHectare = stats.TotalYieldKg / (harvests.Select(h => h.Field?.AreaHectares).FirstOrDefault() ?? 1);
+
+        return stats;
+    }
+
+    public async Task<Dictionary<string, decimal>> GetYieldByFieldAsync(int farmId, int year)
+    {
+        var harvests = await _context.Harvests
+            .Include(h => h.Field)
+            .Where(h => h.FarmId == farmId && h.HarvestDate.Year == year && h.ApprovalStatus == "APPROVED" && !h.IsDeleted)
+            .ToListAsync();
+
+        return harvests
+            .Where(h => h.Field != null)
+            .GroupBy(h => h.Field!.FieldName)
+            .ToDictionary(g => g.Key, g => g.Sum(h => h.QuantityKg));
+    }
+
+    public async Task<decimal> GetTotalYieldForSeasonAsync(int farmId, int cropCycleId)
+    {
+        return await _context.Harvests
+            .Where(h => h.FarmId == farmId && h.CropCycleId == cropCycleId && h.ApprovalStatus == "APPROVED" && !h.IsDeleted)
+            .SumAsync(h => h.QuantityKg);
+    }
+
+    public async Task<bool> IsOwnerAsync(int harvestId, int workerId, int farmId)
+    {
+        return await _context.Harvests
+            .AnyAsync(h => h.Id == harvestId && h.FarmId == farmId && 
+                          (h.HarvestedBy == workerId || h.SubmittedBy == workerId) && 
+                          !h.IsDeleted);
+    }
+
+    public async Task<bool> CanWorkerEditAsync(int harvestId, int workerId, int farmId)
+    {
+        var harvest = await _context.Harvests
+            .FirstOrDefaultAsync(h => h.Id == harvestId && h.FarmId == farmId && !h.IsDeleted);
+        
+        if (harvest == null) return false;
+        
+        // Worker can edit only if they are the owner AND status is PENDING or REQUEST_CHANGES
+        return (harvest.HarvestedBy == workerId || harvest.SubmittedBy == workerId) &&
+               (harvest.ApprovalStatus == "PENDING" || harvest.ApprovalStatus == "REQUEST_CHANGES");
+    }
+
+    public async Task<bool> HasPendingApprovalAsync(int workerId, int farmId)
+    {
+        return await _context.Harvests
+            .AnyAsync(h => h.FarmId == farmId && 
+                          (h.HarvestedBy == workerId || h.SubmittedBy == workerId) && 
+                          h.ApprovalStatus == "PENDING" && 
+                          !h.IsDeleted);
+    }
+}
+
+// API/Controllers/WorkerHarvestController.cs - Updated Upload Method
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using AgriculturePlatform.Application.Common;
+using AgriculturePlatform.Application.DTOs.Harvest;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.API.Filters;
+
+namespace AgriculturePlatform.API.Controllers;
+
+[ApiController]
+[Route("api/worker/harvests")]
+[Authorize]
+[AuthorizeWorkerFarm]
+public class WorkerHarvestController : ControllerBase
+{
+    private readonly IHarvestService _harvestService;
+    private readonly IWorkerFieldAssignmentRepository _assignmentRepository;
+    private readonly IWorkerRepository _workerRepository;
+    private readonly IFileStorageService _fileStorageService;
+
+    public WorkerHarvestController(
+        IHarvestService harvestService,
+        IWorkerFieldAssignmentRepository assignmentRepository,
+        IWorkerRepository workerRepository,
+        IFileStorageService fileStorageService)
+    {
+        _harvestService = harvestService;
+        _assignmentRepository = assignmentRepository;
+        _workerRepository = workerRepository;
+        _fileStorageService = fileStorageService;
+    }
+
+    private int GetCurrentFarmId() => int.Parse(User.FindFirst("farmId")?.Value ?? "0");
+    private int GetCurrentWorkerId() => int.Parse(User.FindFirst("workerId")?.Value ?? "0");
+
+    private async Task<bool> HasFieldAccess(int fieldId)
+    {
+        return await _assignmentRepository.HasWorkerAccessToFieldAsync(GetCurrentWorkerId(), fieldId, GetCurrentFarmId());
+    }
+
+    // GET: api/worker/harvests/my
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMyHarvests([FromQuery] HarvestFilterDto filter)
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        filter.WorkerId = workerId;
+        var result = await _harvestService.GetAllHarvestsAsync(filter, farmId);
+        return Ok(result);
+    }
+
+    // GET: api/worker/harvests/{id}
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var farmId = GetCurrentFarmId();
+        var result = await _harvestService.GetHarvestByIdAsync(id, farmId);
+        
+        if (!result.Success)
+            return NotFound(result);
+            
+        return Ok(result);
+    }
+
+    // POST: api/worker/harvests
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateHarvestDto dto)
+    {
+        if (!await HasFieldAccess(dto.FieldId))
+            return Forbid();
+
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        
+        var worker = await _workerRepository.GetByIdAsync(workerId, farmId);
+        if (worker == null)
+            return BadRequest(new { message = "Worker not found" });
+        
+        var adminId = worker.AdminId;
+        
+        var result = await _harvestService.CreateHarvestAsync(dto, farmId, workerId, adminId);
+        
+        if (!result.Success)
+            return BadRequest(result);
+            
+        return CreatedAtAction(nameof(GetById), new { id = result.Data?.Id }, result);
+    }
+
+    // PUT: api/worker/harvests/{id}
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateHarvestDto dto)
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        var result = await _harvestService.UpdateOwnHarvestAsync(id, dto, workerId, farmId);
+        
+        if (!result.Success)
+            return BadRequest(result);
+            
+        return Ok(result);
+    }
+
+    // DELETE: api/worker/harvests/{id}
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        var result = await _harvestService.DeleteOwnHarvestAsync(id, workerId, farmId);
+        
+        if (!result.Success)
+            return BadRequest(result);
+            
+        return Ok(result);
+    }
+
+    // POST: api/worker/harvests/{id}/respond
+    [HttpPost("{id}/respond")]
+    public async Task<IActionResult> RespondToAdmin(int id, [FromBody] HarvestWorkerResponseDto response)
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        var result = await _harvestService.RespondToAdminAsync(id, response, farmId, workerId);
+        
+        if (!result.Success)
+            return BadRequest(result);
+            
+        return Ok(result);
+    }
+
+    // GET: api/worker/harvests/pending-count
+    [HttpGet("pending-count")]
+    public async Task<IActionResult> GetPendingCount()
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        var hasPending = await _harvestService.HasPendingApprovalsAsync(workerId, farmId);
+        
+        return Ok(new { HasPendingApprovals = hasPending });
+    }
+
+    // POST: api/worker/harvests/upload - FIXED: Store images and return temp reference
+    [HttpPost("upload")]
+    [RequestSizeLimit(10 * 1024 * 1024)] // 10MB
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file uploaded." });
+
+        var extension = Path.GetExtension(file.FileName).ToLower();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowedExtensions.Contains(extension))
+            return BadRequest(new { message = "Invalid file type. Only JPG, PNG and WEBP are allowed." });
+
+        if (file.Length > 10 * 1024 * 1024)
+            return BadRequest(new { message = "File size exceeds limit (10MB)." });
+
+        // Generate unique filename
+        var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
+        var subDirectory = $"harvests/{DateTime.UtcNow:yyyy/MM/dd}";
+
+        // Save file
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        var fileBytes = ms.ToArray();
+
+        var relativePath = await _fileStorageService.SaveFileAsync(fileBytes, uniqueFileName, subDirectory);
+        
+        // Generate thumbnail for main image (optional)
+        string? thumbnailPath = null;
+        if (IsImageFile(extension))
+        {
+            try
+            {
+                thumbnailPath = await GenerateThumbnailAsync(fileBytes, uniqueFileName, subDirectory);
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail - thumbnail is optional
+                Console.WriteLine($"Thumbnail generation failed: {ex.Message}");
+            }
+        }
+
+        // Return the relative path that will be stored in the harvest entity
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                fileName = relativePath, // This is what gets stored in the database
+                url = _fileStorageService.GetDownloadUrl(relativePath),
+                thumbnailUrl = thumbnailPath != null ? _fileStorageService.GetDownloadUrl(thumbnailPath) : null,
+                size = file.Length,
+                type = extension
+            }
+        });
+    }
+
+    // DELETE: api/worker/harvests/upload/{fileName} - NEW: Delete uploaded temp file
+    [HttpDelete("upload/{fileName}")]
+    public async Task<IActionResult> DeleteUploadedImage(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName))
+            return BadRequest(new { message = "File name is required." });
+
+        var deleted = await _fileStorageService.DeleteFileAsync(fileName);
+        
+        if (!deleted)
+            return NotFound(new { message = "File not found." });
+
+        return Ok(new { success = true, message = "File deleted successfully." });
+    }
+
+    private bool IsImageFile(string extension)
+    {
+        var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        return validExtensions.Contains(extension.ToLower());
+    }
+
+    private async Task<string> GenerateThumbnailAsync(byte[] imageBytes, string fileName, string subDirectory)
+    {
+        // Simple implementation - for production use a proper image library like SixLabors.ImageSharp
+        var thumbnailName = $"thumb_{fileName}";
+        var thumbnailPath = Path.Combine(subDirectory, thumbnailName);
+        
+        // For now, just save a copy as thumbnail (in production, resize the image)
+        await _fileStorageService.SaveFileAsync(imageBytes, thumbnailName, subDirectory);
+        
+        return thumbnailPath;
+    }
+}
+
+// IFileStorageService.cs - Ensure these methods exist
+public interface IFileStorageService
+{
+    Task<string> SaveFileAsync(byte[] fileContent, string fileName, string subDirectory);
+    Task<byte[]> GetFileAsync(string filePath);
+    Task<bool> DeleteFileAsync(string filePath);
+    Task<bool> FileExistsAsync(string filePath);
+    string GetDownloadUrl(string fileName);
+    string GetPublicUrl(string filePath);
+}
+
+// Infrastructure/Services/FileStorageService.cs
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting;
+using AgriculturePlatform.Application.Interfaces;
+
+namespace AgriculturePlatform.Infrastructure.FileStorage;
+
+public class FileStorageService : IFileStorageService
+{
+    private readonly string _reportsPath;
+    private readonly string _baseUrl;
+    private readonly IWebHostEnvironment _environment;
+
+    public FileStorageService(IConfiguration configuration, IWebHostEnvironment environment)
+    {
+        _reportsPath = configuration["FileStorage:ReportsPath"] ?? "Reports/YieldReports";
+        _baseUrl = configuration["FileStorage:BaseUrl"] ?? "http://localhost:5000";
+        _environment = environment;
+    }
+
+    public async Task<string> SaveFileAsync(byte[] fileContent, string fileName, string subDirectory)
+    {
+        var fullDirectoryPath = Path.Combine(_environment.ContentRootPath, _reportsPath, subDirectory);
+        if (!Directory.Exists(fullDirectoryPath))
+        {
+            Directory.CreateDirectory(fullDirectoryPath);
+        }
+
+        var relativePath = Path.Combine(_reportsPath, subDirectory, fileName).Replace("\\", "/");
+        var fullPath = Path.Combine(_environment.ContentRootPath, relativePath);
+        
+        await File.WriteAllBytesAsync(fullPath, fileContent);
+        
+        return relativePath;
+    }
+
+    public async Task<byte[]> GetFileAsync(string filePath)
+    {
+        var fullPath = Path.Combine(_environment.ContentRootPath, filePath);
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"File not found: {filePath}");
+        
+        return await File.ReadAllBytesAsync(fullPath);
+    }
+
+    public Task<bool> DeleteFileAsync(string filePath)
+    {
+        var fullPath = Path.Combine(_environment.ContentRootPath, filePath);
+        if (!File.Exists(fullPath))
+            return Task.FromResult(false);
+        
+        File.Delete(fullPath);
+        return Task.FromResult(true);
+    }
+
+    public string GetDownloadUrl(string fileName)
+    {
+        return $"{_baseUrl}/api/downloads/reports/{fileName}";
+    }
+
+     // ✅ Add FileExistsAsync
+    public Task<bool> FileExistsAsync(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+            return Task.FromResult(false);
+
+        var fullPath = Path.Combine(_environment.ContentRootPath, filePath);
+        return Task.FromResult(File.Exists(fullPath));
+    }
+
+    // ✅ Add GetPublicUrl
+    public string GetPublicUrl(string filePath)
+    {
+        return GetDownloadUrl(filePath);
+    }
+}
+
+using Microsoft.Extensions.Configuration;
+using AgriculturePlatform.Application.Interfaces;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace AgriculturePlatform.Infrastructure.FileStorage;
+
+public class AzureBlobStorageService : IFileStorageService
+{
+    private readonly BlobServiceClient _blobServiceClient;
+    private readonly BlobContainerClient _containerClient;
+
+    public AzureBlobStorageService(IConfiguration configuration)
+    {
+        var connectionString = configuration["FileStorage:AzureBlob:ConnectionString"] ?? "UseDevelopmentStorage=true";
+        var containerName = configuration["FileStorage:AzureBlob:ContainerName"] ?? "observations";
+        _blobServiceClient = new BlobServiceClient(connectionString);
+        _containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
+    }
+
+    public async Task<string> SaveFileAsync(byte[] fileContent, string fileName, string subDirectory)
+    {
+        await _containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+        
+        var blobPath = string.IsNullOrEmpty(subDirectory) ? fileName : $"{subDirectory}/{fileName}";
+        var blobClient = _containerClient.GetBlobClient(blobPath);
+        
+        using (var ms = new MemoryStream(fileContent))
+        {
+            await blobClient.UploadAsync(ms, true);
+        }
+        
+        return blobPath;
+    }
+
+    public async Task<byte[]> GetFileAsync(string filePath)
+    {
+        var blobClient = _containerClient.GetBlobClient(filePath);
+        var downloadInfo = await blobClient.DownloadContentAsync();
+        return downloadInfo.Value.Content.ToArray();
+    }
+
+    public async Task<bool> DeleteFileAsync(string filePath)
+    {
+        var blobClient = _containerClient.GetBlobClient(filePath);
+        return await blobClient.DeleteIfExistsAsync();
+    }
+
+    public string GetDownloadUrl(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+            return string.Empty;
+            
+        var blobClient = _containerClient.GetBlobClient(filePath);
+        return blobClient.Uri.AbsoluteUri;
+    }
+
+    // ✅ Add FileExistsAsync
+    public async Task<bool> FileExistsAsync(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+            return false;
+
+        var blobClient = _containerClient.GetBlobClient(filePath);
+        return await blobClient.ExistsAsync();
+    }
+
+    // ✅ Add GetPublicUrl (same as GetDownloadUrl for Azure)
+    public string GetPublicUrl(string filePath)
+    {
+        return GetDownloadUrl(filePath);
+    }
+
+}
+
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting;
+using AgriculturePlatform.Application.Interfaces;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace AgriculturePlatform.Infrastructure.FileStorage;
+
+public class LocalFileStorageService : IFileStorageService
+{
+    private readonly string _uploadsFolder;
+    private readonly string _baseUrl;
+    private readonly IWebHostEnvironment _environment;
+
+    public LocalFileStorageService(IConfiguration configuration, IWebHostEnvironment environment)
+    {
+        _uploadsFolder = configuration["FileStorage:Local:UploadsFolder"] ?? "wwwroot/uploads";
+        _baseUrl = configuration["FileStorage:BaseUrl"] ?? "http://localhost:5000";
+        _environment = environment;
+    }
+
+    public async Task<string> SaveFileAsync(byte[] fileContent, string fileName, string subDirectory)
+    {
+        var fullDirectoryPath = Path.Combine(_environment.ContentRootPath, _uploadsFolder, subDirectory);
+        if (!Directory.Exists(fullDirectoryPath))
+        {
+            Directory.CreateDirectory(fullDirectoryPath);
+        }
+
+        var relativePath = Path.Combine(subDirectory, fileName).Replace("\\", "/");
+        var fullFilePath = Path.Combine(fullDirectoryPath, fileName);
+
+        await File.WriteAllBytesAsync(fullFilePath, fileContent);
+
+        return relativePath;
+    }
+
+    public async Task<byte[]> GetFileAsync(string filePath)
+    {
+        var fullPath = Path.Combine(_environment.ContentRootPath, _uploadsFolder, filePath);
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"File not found: {filePath}");
+
+        return await File.ReadAllBytesAsync(fullPath);
+    }
+
+    public Task<bool> DeleteFileAsync(string filePath)
+    {
+        var fullPath = Path.Combine(_environment.ContentRootPath, _uploadsFolder, filePath);
+        if (!File.Exists(fullPath))
+            return Task.FromResult(false);
+
+        File.Delete(fullPath);
+        return Task.FromResult(true);
+    }
+
+    public string GetDownloadUrl(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+            return string.Empty;
+
+        var relativeUrlPath = filePath.Replace("\\", "/");
+        return $"{_baseUrl}/uploads/{relativeUrlPath}";
+    }
+
+    // ✅ Add FileExistsAsync
+    public Task<bool> FileExistsAsync(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+            return Task.FromResult(false);
+
+        var fullPath = Path.Combine(_environment.ContentRootPath, _uploadsFolder, filePath);
+        return Task.FromResult(File.Exists(fullPath));
+    }
+
+    // ✅ Add GetPublicUrl
+    public string GetPublicUrl(string filePath)
+    {
+        return GetDownloadUrl(filePath);
+    }
+}
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using FluentValidation;
+using AutoMapper;
+using AgriculturePlatform.Infrastructure.Context;
+using AgriculturePlatform.Infrastructure.FileStorage;
+using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Application.Services;
+using AgriculturePlatform.Infrastructure.Repositories;
+using AgriculturePlatform.Application.Validators;
+using AgriculturePlatform.Application.Validators.Harvest; 
+using AgriculturePlatform.Application.Validators.QualityCheck;
+using Microsoft.OpenApi.Models;
+using AgriculturePlatform.API.BackgroundServices;
+using AgriculturePlatform.Application.Mappings;
+using AgriculturePlatform.API.Hubs;
+using AgriculturePlatform.API.Services;
+using AgriculturePlatform.API.Configuration;
+using AgriculturePlatform.Infrastructure.Services;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
+
+builder.Services.Configure<FileStorageSettings>(
+    builder.Configuration.GetSection("FileStorage"));
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
+
+// Add Swagger
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "Farm Management Platform API", 
+        Version = "v1",
+        Description = "API for managing farms, crops, workers, and yields"
+    });
+    
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// Add DbContext
+builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
+// ✅ FIX: SINGLE CORS POLICY - Only define this ONCE
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:4200",
+                "https://localhost:4200",
+                "http://localhost:5000"
+            )
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
+
+// JWT Configuration 
+var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "your-super-secret-key-minimum-32-characters-long";
+var jwtIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "AgriculturePlatform";
+var jwtAudience = builder.Configuration["JwtSettings:Audience"] ?? "AgriculturePlatformClients";
+var accessTokenExpiryMinutes = int.Parse(builder.Configuration["JwtSettings:AccessTokenExpiryMinutes"] ?? "15");
+var refreshTokenExpiryDays = int.Parse(builder.Configuration["JwtSettings:RefreshTokenExpiryDays"] ?? "7");
+
+// Register JWT Service with new parameters
+builder.Services.AddSingleton<IJwtService>(provider =>
+    new JwtService(jwtSecretKey, jwtIssuer, jwtAudience, accessTokenExpiryMinutes, refreshTokenExpiryDays));
+
+// Add AuditLog Service
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+
+// SignalR
+builder.Services.AddSignalR();
+
+// Background Services
+builder.Services.AddHostedService<IoTSimulatorBackgroundService>();
+builder.Services.AddHostedService<ScheduledReportBackgroundService>();
+
+// Add AutoMapper
+var mapperConfig = new MapperConfiguration(cfg =>
+{
+    cfg.AddProfile<FieldMappingProfile>();
+    cfg.AddProfile<CropCycleMappingProfile>();
+    cfg.AddProfile<WorkerMappingProfile>();
+    cfg.AddProfile<WorkerProfileMappingProfile>();
+    cfg.AddProfile<WorkerFieldAssignmentMappingProfile>();
+    cfg.AddProfile<WorkerFieldMappingProfile>();
+    cfg.AddProfile<WeatherMappingProfile>();
+    cfg.AddProfile<TaskMappingProfile>();
+    cfg.AddProfile<WorkerTaskMappingProfile>();
+    cfg.AddProfile<SensorMappingProfile>();
+    cfg.AddProfile<AlertMappingProfile>();
+    cfg.AddProfile<ObservationMappingProfile>();
+    cfg.AddProfile<HarvestMappingProfile>();
+    cfg.AddProfile<QualityCheckMappingProfile>();
+    cfg.AddProfile<YieldReportMappingProfile>();
+});
+
+builder.Services.AddSingleton<IMapper>(sp => new Mapper(mapperConfig, sp.GetService));
+
+builder.Services.AddValidatorsFromAssembly(typeof(CreateFieldValidator).Assembly);
+
+// Add Excel service
+builder.Services.AddScoped<IExcelService, ExcelService>();
+
+// Register Repositories
+builder.Services.AddScoped<IFarmRepository, FarmRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IFieldRepository, FieldRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<ICropCycleRepository, CropCycleRepository>();
+builder.Services.AddScoped<IWorkerRepository, WorkerRepository>();
+builder.Services.AddScoped<IWorkerFieldAssignmentRepository, WorkerFieldAssignmentRepository>();
+builder.Services.AddScoped<IWeatherRepository, WeatherRepository>();
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddScoped<ISensorReadingRepository, SensorReadingRepository>();
+builder.Services.AddScoped<IAlertRepository, AlertRepository>();
+builder.Services.AddScoped<IAlertThresholdRepository, AlertThresholdRepository>();
+builder.Services.AddScoped<IObservationRepository, ObservationRepository>();
+builder.Services.AddScoped<IHarvestRepository, HarvestRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IQualityCheckRepository, QualityCheckRepository>();
+builder.Services.AddScoped<IYieldReportRepository, YieldReportRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IWeatherAlertRepository, WeatherAlertRepository>();
+
+// Register Services
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IFieldService, FieldService>();
+builder.Services.AddScoped<ICropCycleService, CropCycleService>();
+builder.Services.AddScoped<IWorkerService, WorkerService>();
+builder.Services.AddScoped<IWorkerAuthService, WorkerAuthService>();
+builder.Services.AddScoped<IWorkerProfileService, WorkerProfileService>();
+builder.Services.AddScoped<IWorkerFieldAssignmentService, WorkerFieldAssignmentService>();
+builder.Services.AddScoped<IWorkerFieldService, WorkerFieldService>();
+builder.Services.AddScoped<IWeatherService, WeatherService>();
+builder.Services.AddSingleton<IWeatherApiService, WeatherApiService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IExcelTaskService, ExcelTaskService>();
+builder.Services.AddScoped<IWorkerTaskService, WorkerTaskService>();
+builder.Services.AddScoped<ISensorReadingService, SensorReadingService>();
+builder.Services.AddScoped<IAlertService, AlertService>();
+builder.Services.AddScoped<IIoTSimulatorService, IoTSimulatorService>();
+builder.Services.AddScoped<AgriculturePlatform.Application.Services.AlertNotificationService>();
+builder.Services.AddScoped<IAlertNotificationService, AgriculturePlatform.API.Services.AlertNotificationService>();
+builder.Services.AddScoped<IObservationService, ObservationService>();
+builder.Services.AddScoped<IHarvestService, HarvestService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IQualityCheckService, QualityCheckService>();
+builder.Services.AddScoped<IYieldReportService, YieldReportService>();
+        var storageProvider = builder.Configuration["FileStorage:Provider"] ?? "Local";
+        if (storageProvider == "AzureBlob")
+        {
+            builder.Services.AddTransient<IFileStorageService, AgriculturePlatform.Infrastructure.FileStorage.AzureBlobStorageService>();
+        }
+        else
+        {
+            builder.Services.AddTransient<IFileStorageService, AgriculturePlatform.Infrastructure.FileStorage.LocalFileStorageService>();
+        }
+        builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationImagePathResolver>();
+        builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationAdditionalImagePathsResolver>();
+        builder.Services.AddScoped<IEmailService, EmailService>();
+
+builder.Services.AddScoped<ObservationStatisticsFormatter>();
+
+// Background Service
+builder.Services.AddHostedService<WeatherUpdateBackgroundService>();
+
+// Add JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey))
+        };
+        
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("Token validated successfully");
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                Console.WriteLine($"Challenge: {context.Error}, {context.ErrorDescription}");
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+
+
+// ✅ CORS must be BEFORE Authentication and Authorization
+app.UseCors("AllowAll");
+app.UseStaticFiles();
+
+// ✅ FIX: Configure pipeline in the CORRECT ORDER
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Farm Management API v1");
+    c.RoutePrefix = "swagger";
+});
+
+// ✅ Authentication and Authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+// ✅ Map Hubs
+app.MapHub<MonitoringHub>("/monitoringHub");
+app.MapHub<SensorHub>("/sensorHub");
+app.MapHub<WeatherHub>("/weatherHub");
+
+app.MapControllers();
+
+
+
+// Create database
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.EnsureCreated();
+}
+
+app.Run();
+
+
+// src/app/core/services/auth.service.ts (UPDATED)
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { tap, catchError, map, finalize } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+import { 
+  LoginRequest, 
+  AuthResponse, 
+  RegisterRequest, 
+  RefreshTokenRequest,
+  ChangePasswordRequest,
+  UnifiedLoginResponse
+} from '../models/auth.model';
+import { User } from '../models/user.model';
+import { TokenService } from './token.service';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private tokenService = inject(TokenService);
+
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  public currentUser$ = this.currentUserSubject.asObservable();
+
+  private readonly API_URL = environment.apiUrl;
+  private isLoggingIn = false;
+
+  constructor() {
+    this.loadUserFromStorage();
+  }
+
+  // ✅ UPDATED: Unified login with role detection
+  login(credentials: LoginRequest): Observable<UnifiedLoginResponse> {
+    if (this.isLoggingIn) {
+      return throwError(() => new Error('Login already in progress'));
+    }
+    
+    this.isLoggingIn = true;
+    this.clearUser();
+    
+    return this.http.post<UnifiedLoginResponse>(`${this.API_URL}/auth/login`, credentials)
+      .pipe(
+        tap((response: UnifiedLoginResponse) => {
+          if (response.success && response.data) {
+            console.log(`✅ Login successful as ${response.userType}`);
+            
+            // Map response to User
+            const user = this.mapToUser(response.data, response.userType);
+            this.setUser(user);
+          }
+        }),
+        map((response) => {
+          this.isLoggingIn = false;
+          return response;
+        }),
+        catchError((error) => {
+          this.isLoggingIn = false;
+          this.clearUser();
+          return this.handleError(error);
+        })
+      );
+  }
+
+  // ✅ Get redirect URL based on user role
+  getRedirectUrl(user: User | null): string {
+    if (!user) return '/auth/login';
+    
+    const role = (user.role || user.userType || '').toLowerCase();
+    
+    if (role === 'admin') {
+      return '/admin/dashboard';
+    } else if (role === 'worker') {
+      return '/worker/dashboard';
+    }
+    
+    return '/auth/login';
+  }
+
+  // ✅ Redirect user based on role
+  redirectBasedOnRole(user: User | null): void {
+    const redirectUrl = this.getRedirectUrl(user);
+    console.log(`🔄 Redirecting to: ${redirectUrl}`);
+    this.router.navigate([redirectUrl]);
+  }
+
+  // ✅ Register - Admin only
+  register(registrationData: RegisterRequest): Observable<AuthResponse> {
+    this.clearUser();
+    
+    return this.http.post<AuthResponse>(`${this.API_URL}/auth/register`, registrationData)
+      .pipe(
+        tap((response: AuthResponse) => {
+          if (response.success && response.data) {
+            const user = this.mapToUser(response.data, 'Admin');
+            this.setUser(user);
+          }
+        }),
+        catchError((error) => {
+          this.clearUser();
+          return this.handleError(error);
+        })
+      );
+  }
+
+  refreshToken(): Observable<AuthResponse> {
+    const refreshToken = this.tokenService.getRefreshToken();
+    const accessToken = this.tokenService.getAccessToken();
+
+    if (!refreshToken || !accessToken) {
+      this.forceLogout();
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    const request: RefreshTokenRequest = { accessToken, refreshToken };
+
+    return this.http.post<AuthResponse>(`${this.API_URL}/auth/refresh-token`, request)
+      .pipe(
+        tap((response: AuthResponse) => {
+          if (response.success && response.data) {
+            const user = this.mapToUser(response.data);
+            this.updateUser(user);
+          }
+        }),
+        catchError((error) => {
+          this.forceLogout();
+          return throwError(() => error);
+        })
+      );
+  }
+
+  logout(revokeToken?: boolean): Observable<any> {
+    const refreshToken = this.tokenService.getRefreshToken();
+    
+    if (refreshToken && revokeToken !== false) {
+      return this.http.post(`${this.API_URL}/auth/logout`, { refreshToken })
+        .pipe(
+          finalize(() => {
+            this.forceLogout();
+          }),
+          catchError(() => {
+            this.forceLogout();
+            return throwError(() => new Error('Logout failed'));
+          })
+        );
+    } else {
+      this.forceLogout();
+      return new Observable(subscriber => {
+        subscriber.next({ success: true });
+        subscriber.complete();
+      });
+    }
+  }
+
+  forceLogout(): void {
+    console.log('🔴 Force logout - clearing all data');
+    this.isLoggingIn = false;
+    this.clearUser();
+    this.router.navigate(['/auth/login'], { 
+      queryParams: { t: Date.now() }
+    });
+  }
+
+  validateToken(): Observable<boolean> {
+    return this.http.get(`${this.API_URL}/auth/validate`)
+      .pipe(
+        map(() => true),
+        catchError(() => {
+          this.forceLogout();
+          return throwError(() => false);
+        })
+      );
+  }
+
+  changePassword(request: ChangePasswordRequest): Observable<any> {
+    return this.http.post(`${this.API_URL}/auth/change-password`, request)
+      .pipe(
+        tap(() => {
+          this.forceLogout();
+        }),
+        catchError(this.handleError)
+      );
+  }
+
+  isLoggedIn(): boolean {
+    const token = this.tokenService.getAccessToken();
+    const user = this.currentUserSubject.value;
+    return !!token && !!user && !this.tokenService.isTokenExpired() && !this.isLoggingIn;
+  }
+
+  isAdmin(): boolean {
+    const user = this.currentUserSubject.value;
+    const role = (user?.role || user?.userType || '').toLowerCase();
+    return role === 'admin';
+  }
+
+  isWorker(): boolean {
+    const user = this.currentUserSubject.value;
+    const role = (user?.role || user?.userType || '').toLowerCase();
+    return role === 'worker';
+  }
+
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
+  }
+
+  getFarmId(): number {
+    return this.currentUserSubject.value?.farmId || 0;
+  }
+
+  getAuthToken(): string | null {
+    return this.tokenService.getAccessToken();
+  }
+
+  private setUser(user: User): void {
+    console.log(`✅ Setting user data - Role: ${user.role}`);
+    this.tokenService.setTokens(user.accessToken, user.refreshToken);
+    this.tokenService.setUser(user);
+    this.currentUserSubject.next(user);
+  }
+
+  private updateUser(user: User): void {
+    console.log('🔄 Updating user data');
+    this.tokenService.setTokens(user.accessToken, user.refreshToken);
+    this.tokenService.setUser(user);
+    this.currentUserSubject.next(user);
+  }
+
+  private clearUser(): void {
+    console.log('🗑️ Clearing user data');
+    this.tokenService.clearAll();
+    this.currentUserSubject.next(null);
+  }
+
+  private loadUserFromStorage(): void {
+    const user = this.tokenService.getUser();
+    const token = this.tokenService.getAccessToken();
+    
+    if (user && token && !this.tokenService.isTokenExpired()) {
+      console.log(`📂 Loading user from storage - Role: ${user.role}`);
+      this.currentUserSubject.next(user);
+    } else {
+      console.log('🗑️ No valid user in storage, clearing');
+      this.clearUser();
+    }
+  }
+
+  private mapToUser(data: any, userType?: string): User {
+    const role = userType || data.role || data.userType || 'Unknown';
+    const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+
+    console.log(`📝 Mapping user with role: ${normalizedRole}`);
+  
+    return {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      farmId: data.farmId,
+      farmName: data.farmName,
+      role: normalizedRole,
+      userType: data.userType || normalizedRole,
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      accessTokenExpiresAt: new Date(data.accessTokenExpiresAt + (data.accessTokenExpiresAt.endsWith('Z') ? '' : 'Z')),
+      refreshTokenExpiresAt: new Date(data.refreshTokenExpiresAt + (data.refreshTokenExpiresAt.endsWith('Z') ? '' : 'Z'))
+    };
+  }
+
+  private handleError(error: any): Observable<never> {
+    console.error('❌ Auth error:', error);
+    return throwError(() => error);
+  }
+}
+
+
+// src/app/core/services/token.service.ts
+import { Injectable } from '@angular/core';
+import { User } from '../models/user.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TokenService {
+  private readonly ACCESS_TOKEN_KEY = 'access_token';
+  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
+  private readonly USER_KEY = 'user';
+
+  setTokens(accessToken: string, refreshToken: string): void {
+    console.log('💾 Storing tokens');
+    localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+  }
+
+  getAccessToken(): string | null {
+    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+  }
+
+  setUser(user: User): void {
+    console.log('💾 Storing user data');
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+  }
+
+  getUser(): User | null {
+    const userStr = localStorage.getItem(this.USER_KEY);
+    if (userStr) {
+      try {
+        return JSON.parse(userStr);
+      } catch {
+        console.warn('⚠️ Failed to parse user data');
+        return null;
+      }
+    }
+    return null;
+  }
+
+  clearTokens(): void {
+    console.log('🗑️ Clearing tokens');
+    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+  }
+
+  clearUser(): void {
+    console.log('🗑️ Clearing user data');
+    localStorage.removeItem(this.USER_KEY);
+  }
+
+  clearAll(): void {
+    console.log('🗑️ Clearing all auth data');
+    this.clearTokens();
+    this.clearUser();
+  }
+
+  isTokenExpired(): boolean {
+    const user = this.getUser();
+    if (!user) {
+      return true;
+    }
+    
+    const token = this.getAccessToken();
+    if (!token) {
+      return true;
+    }
+    
+    const expiryDate = user.accessTokenExpiresAt;
+    if (!expiryDate) {
+      return true;
+    }
+    
+    // ✅ Add 30 seconds buffer for safety
+    const bufferMs = 30 * 1000;
+    const expiryTime = new Date(expiryDate).getTime();
+    const currentTime = Date.now();
+    
+    const isExpired = expiryTime - currentTime < bufferMs;
+    if (isExpired) {
+      console.log('⏰ Token is expired or expiring soon');
+    }
+    return isExpired;
+  }
+}
+
+
+// src/app/core/guards/auth.guard.ts
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+import { map, take } from 'rxjs/operators';
+
+export const AuthGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  return authService.currentUser$.pipe(
+    take(1),
+    map(user => {
+      if (user && authService.isLoggedIn()) {
+        return true;
+      }
+      
+      // ✅ Redirect to login with return URL
+      router.navigate(['/auth/login'], { 
+        queryParams: { returnUrl: state.url }
+      });
+      return false;
+    })
+  );
+};
+
+
+// src/app/core/guards/worker.guard.ts
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+import { map, take } from 'rxjs/operators';
+
+export const WorkerGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  return authService.currentUser$.pipe(
+    take(1),
+    map(user => {
+      // ✅ Check both role and userType
+      const userRole = (user?.role || user?.userType || '').toLowerCase();
+      const isWorker = userRole === 'worker';
+      
+      if (user && authService.isLoggedIn() && isWorker) {
+        return true;
+      }
+      
+      // ✅ If logged in but not worker, redirect to unauthorized
+      if (user && authService.isLoggedIn()) {
+        router.navigate(['/unauthorized']);
+        return false;
+      }
+      
+      // ✅ If not logged in, redirect to login with return URL
+      router.navigate(['/auth/login'], {
+        queryParams: { returnUrl: '/worker/dashboard' }
+      });
+      return false;
+    })
+  );
+};
+
+
+// src/app/features/worker/models/worker-harvest.model.ts
+
+export interface HarvestDto {
+  id: number;
+  farmId: number;
+  farmName: string;
+  fieldId: number;
+  fieldName: string;
+  cropCycleId: number;
+  cropType: string;
+  harvestedBy?: number;
+  harvesterName?: string;
+  submittedBy?: number;
+  submitterName?: string;
+  harvestDate: string;
+  quantityKg: number;
+  qualityGrade?: string;
+  harvestMethod?: string;
+
+  // Approval workflow
+  approvalStatus: string;
+  approvedBy?: number;
+  approverName?: string;
+  approvedAt?: string;
+  rejectionReason?: string;
+  adminNotes?: string;
+  workerResponse?: string;
+
+  // Financial
+  pricePerKg?: number;
+  totalValue?: number;
+  batchNumber?: string;
+  notes?: string;
+
+  // Image attachments
+  imagePath?: string;
+  thumbnailPath?: string;
+  imageCaption?: string;
+  additionalImagePaths?: string[];
+  imageMetadata?: string;
+
+  // Audit
+  createdAt: string;
+  updatedAt?: string;
+  createdBy?: number;
+
+  // Computed
+  statusBadgeColor: string;
+  formattedQuantity: string;
+  formattedTotalValue: string;
+}
+
+export interface CreateHarvestDto {
+  fieldId: number;
+  cropCycleId: number;
+  harvestDate: string;
+  quantityKg: number;
+  qualityGrade?: string;
+  harvestMethod?: string;
+  notes?: string;
+  pricePerKg?: number;
+  batchNumber?: string;
+  imagePath?: string;
+  thumbnailPath?: string;
+  imageCaption?: string;
+  additionalImagePaths?: string[];
+  imageMetadata?: string;
+}
+
+export interface UpdateHarvestDto {
+  harvestDate?: string;
+  quantityKg?: number;
+  qualityGrade?: string;
+  harvestMethod?: string;
+  notes?: string;
+  pricePerKg?: number;
+  batchNumber?: string;
+  imagePath?: string;
+  thumbnailPath?: string;
+  imageCaption?: string;
+  additionalImagePaths?: string[];
+  imageMetadata?: string;
+}
+
+export interface HarvestWorkerResponseDto {
+  responseNotes: string;
+}
+
+export interface HarvestFilterDto {
+  workerId?: number;
+  fieldId?: number;
+  cropCycleId?: number;
+  fromDate?: string;
+  toDate?: string;
+  approvalStatus?: string;
+  qualityGrade?: string;
+  harvestMethod?: string;
+  includeDeleted?: boolean;
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  isDescending?: boolean;
+}
+
+
+
+// src/app/features/worker/services/worker-harvest.service.ts
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
+import { ApiResponse, PagedResult } from '../../../features/admin/services/task.service';
+import {
+  HarvestDto,
+  CreateHarvestDto,
+  UpdateHarvestDto,
+  HarvestFilterDto,
+  HarvestWorkerResponseDto
+} from '../models/worker-harvest.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class WorkerHarvestService {
+  private http = inject(HttpClient);
+  private readonly API_URL = environment.apiUrl;
+
+  getMyHarvests(filter: HarvestFilterDto): Observable<ApiResponse<PagedResult<HarvestDto>>> {
+    let params = new HttpParams()
+      .set('page', (filter.page || 1).toString())
+      .set('pageSize', (filter.pageSize || 10).toString())
+      .set('isDescending', (filter.isDescending ?? true).toString());
+
+    if (filter.fieldId) params = params.set('fieldId', filter.fieldId.toString());
+    if (filter.cropCycleId) params = params.set('cropCycleId', filter.cropCycleId.toString());
+    if (filter.fromDate) params = params.set('fromDate', filter.fromDate);
+    if (filter.toDate) params = params.set('toDate', filter.toDate);
+    if (filter.approvalStatus) params = params.set('approvalStatus', filter.approvalStatus);
+    if (filter.qualityGrade) params = params.set('qualityGrade', filter.qualityGrade);
+    if (filter.harvestMethod) params = params.set('harvestMethod', filter.harvestMethod);
+    if (filter.includeDeleted !== undefined) params = params.set('includeDeleted', filter.includeDeleted.toString());
+    if (filter.sortBy) params = params.set('sortBy', filter.sortBy);
+
+    return this.http.get<ApiResponse<PagedResult<HarvestDto>>>(`${this.API_URL}/worker/harvests/my`, { params });
+  }
+
+  getHarvestById(id: number): Observable<ApiResponse<HarvestDto>> {
+    return this.http.get<ApiResponse<HarvestDto>>(`${this.API_URL}/worker/harvests/${id}`);
+  }
+
+  createHarvest(data: CreateHarvestDto): Observable<ApiResponse<HarvestDto>> {
+    return this.http.post<ApiResponse<HarvestDto>>(`${this.API_URL}/worker/harvests`, data);
+  }
+
+  updateHarvest(id: number, data: UpdateHarvestDto): Observable<ApiResponse<HarvestDto>> {
+    return this.http.put<ApiResponse<HarvestDto>>(`${this.API_URL}/worker/harvests/${id}`, data);
+  }
+
+  deleteHarvest(id: number): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.API_URL}/worker/harvests/${id}`);
+  }
+
+  respondToAdmin(id: number, data: HarvestWorkerResponseDto): Observable<ApiResponse<HarvestDto>> {
+    return this.http.post<ApiResponse<HarvestDto>>(`${this.API_URL}/worker/harvests/${id}/respond`, data);
+  }
+
+  uploadImage(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${this.API_URL}/worker/harvests/upload`, formData);
+  }
+
+  // NEW: Delete uploaded temp image
+  deleteUploadedImage(fileName: string): Observable<any> {
+    return this.http.delete<any>(`${this.API_URL}/worker/harvests/upload/${encodeURIComponent(fileName)}`);
+  }
+}
+
+
+// src/app/features/worker/harvests/harvests.component.ts - Updated
+import {
+  Component, OnInit, inject, ViewChild, TemplateRef,
+  ChangeDetectorRef, NgZone, OnDestroy
+} from '@angular/core';
+import { CommonModule, DatePipe, DecimalPipe, CurrencyPipe } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { debounceTime, distinctUntilChanged, finalize, forkJoin, Subject, takeUntil } from 'rxjs';
+
+import { MaterialModule } from '../../../shared/material.module';
+import { WorkerHarvestService } from '../services/worker-harvest.service';
+import { WorkerFieldService } from '../services/worker-field.service';
+import { ImageCompressorService } from '../../../core/services/image-compressor.service';
+import {
+  HarvestDto,
+  HarvestFilterDto,
+  CreateHarvestDto,
+  UpdateHarvestDto,
+  HarvestWorkerResponseDto
+} from '../models/worker-harvest.model';
+
+@Component({
+  selector: 'app-harvests',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MaterialModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatChipsModule,
+    MatMenuModule,
+    MatTooltipModule,
+    MatDialogModule,
+    MatCheckboxModule,
+    MatTabsModule,
+    MatIconModule,
+    DatePipe,
+    DecimalPipe,
+    CurrencyPipe
+  ],
+  templateUrl: './harvests.component.html',
+  styleUrls: ['./harvests.component.scss']
+})
+export class Harvests implements OnInit, OnDestroy {
+  private harvestService = inject(WorkerHarvestService);
+  private fieldService = inject(WorkerFieldService);
+  private fb = inject(FormBuilder);
+  private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
+  private cdr = inject(ChangeDetectorRef);
+  private ngZone = inject(NgZone);
+  private imageCompressor = inject(ImageCompressorService);
+
+  private destroy$ = new Subject<void>();
+
+  harvests = new MatTableDataSource<HarvestDto>([]);
+  fields: any[] = [];
+  cropCycles: any[] = [];
+
+  selectedTabIndex = 0;
+
+  displayedColumns: string[] = [
+    'harvestDate', 'fieldName', 'cropType', 'quantityKg',
+    'qualityGrade', 'images', 'approvalStatus', 'actions'
+  ];
+
+  totalHarvests = 0;
+  pageSize = 10;
+  pageIndex = 0;
+  isLoading = false;
+
+  filterForm!: FormGroup;
+  harvestForm!: FormGroup;
+  responseForm!: FormGroup;
+
+  editingId: number | null = null;
+  selectedHarvest: HarvestDto | null = null;
+
+  // Photo upload states
+  isMainUploading = false;
+  isRefsUploading = false;
+  mainPhotoPreviewUrl: string | null = null;
+  mainPhotoFileName: string | null = null; // Track the stored file name
+  referencePhotoPreviews: { fileName: string; url: string }[] = [];
+  uploadedFileNames: string[] = []; // Track all uploaded files for cleanup
+
+  readonly qualityGrades = ['PREMIUM', 'GRADE_A', 'GRADE_B', 'GRADE_C', 'REJECT'];
+  readonly harvestMethods = ['MANUAL', 'MECHANICAL', 'SEMI_MECHANICAL', 'STRIP_HARVESTING'];
+  readonly approvalStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'REQUEST_CHANGES'];
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild('harvestDialog') harvestDialogTemplate!: TemplateRef<any>;
+  @ViewChild('respondDialog') respondDialogTemplate!: TemplateRef<any>;
+  @ViewChild('viewDetailsDialog') viewDetailsDialogTemplate!: TemplateRef<any>;
+
+  constructor() {
+    this.initForms();
+  }
+
+  ngOnInit(): void {
+    this.loadFields();
+    this.filterForm.patchValue({ approvalStatus: 'PENDING' });
+    this.loadHarvests();
+
+    this.filterForm.valueChanges.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.pageIndex = 0;
+      this.loadHarvests();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  initForms(): void {
+    this.filterForm = this.fb.group({
+      fieldId: [''],
+      cropCycleId: [''],
+      approvalStatus: [''],
+      qualityGrade: [''],
+      harvestMethod: [''],
+      includeDeleted: [false],
+      fromDate: [''],
+      toDate: ['']
+    });
+
+    this.harvestForm = this.fb.group({
+      fieldId: ['', Validators.required],
+      cropCycleId: ['', Validators.required],
+      harvestDate: [new Date(), Validators.required],
+      quantityKg: [null, [Validators.required, Validators.min(0.1)]],
+      qualityGrade: [''],
+      harvestMethod: [''],
+      notes: [''],
+      pricePerKg: [null],
+      batchNumber: [''],
+      imagePath: [''],
+      thumbnailPath: [''],
+      imageCaption: [''],
+      additionalImagePaths: [[]]
+    });
+
+    this.responseForm = this.fb.group({
+      responseNotes: ['', Validators.required]
+    });
+  }
+
+  onTabChange(index: number): void {
+    this.selectedTabIndex = index;
+    const statuses = ['PENDING', 'APPROVED', 'REJECTED', 'REQUEST_CHANGES'];
+    this.filterForm.patchValue({ approvalStatus: statuses[index] });
+  }
+
+  onFieldSelected(fieldId: number): void {
+    this.cropCycles = [];
+    if (this.harvestForm) this.harvestForm.patchValue({ cropCycleId: '' }, { emitEvent: false });
+    if (fieldId) {
+      this.fieldService.getAssignedFieldDetail(fieldId).subscribe({
+        next: (res: any) => {
+          if (res.success && res.data?.cropCycles) {
+            this.cropCycles = res.data.cropCycles;
+          }
+        },
+        error: () => console.error('Failed to load crop cycles')
+      });
+    }
+  }
+
+  onFilterFieldSelected(fieldId: number): void {
+    this.filterForm.patchValue({ cropCycleId: '' }, { emitEvent: false });
+    if (fieldId) {
+      this.fieldService.getAssignedFieldDetail(fieldId).subscribe({
+        next: (res: any) => {
+          if (res.success && res.data?.cropCycles) {
+            this.cropCycles = res.data.cropCycles;
+          }
+        },
+        error: () => {}
+      });
+    }
+  }
+
+  loadFields(): void {
+    this.fieldService.getMyAssignedFields().subscribe({
+      next: (res: any) => {
+        if (res.success && res.data) this.fields = res.data;
+      },
+      error: () => console.error('Failed to load fields')
+    });
+  }
+
+  loadHarvests(): void {
+    this.isLoading = true;
+    const formVal = this.filterForm.value;
+    const filter: HarvestFilterDto = {
+      page: this.pageIndex + 1,
+      pageSize: this.pageSize,
+      ...formVal,
+      fromDate: formVal.fromDate ? new Date(formVal.fromDate).toISOString() : undefined,
+      toDate: formVal.toDate ? new Date(formVal.toDate).toISOString() : undefined
+    };
+
+    (Object.keys(filter) as (keyof HarvestFilterDto)[]).forEach(key => {
+      if (filter[key] === '' || filter[key] === null || filter[key] === undefined) {
+        delete filter[key];
+      }
+    });
+
+    this.harvestService.getMyHarvests(filter)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.harvests.data = res.data.items || [];
+            this.totalHarvests = res.data.totalCount;
+          }
+        },
+        error: () => this.showError('Failed to load harvests.')
+      });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadHarvests();
+  }
+
+  onSortChange(sortState: Sort): void {
+    this.filterForm.patchValue({
+      sortBy: sortState.direction ? sortState.active : 'harvestDate',
+      isDescending: sortState.direction === 'desc'
+    }, { emitEvent: false });
+    this.loadHarvests();
+  }
+
+  // ── Create / Edit Dialog ──────────────────────────────────────
+  openCreateDialog(): void {
+    this.editingId = null;
+    this.resetImageState();
+    this.harvestForm.reset({ harvestDate: new Date() });
+    this.cropCycles = [];
+    this.dialog.open(this.harvestDialogTemplate, { width: '620px', maxHeight: '90vh' });
+  }
+
+  openEditDialog(harvest: HarvestDto): void {
+    if (harvest.approvalStatus !== 'PENDING' && harvest.approvalStatus !== 'REQUEST_CHANGES') {
+      this.showError('Only PENDING or REQUEST_CHANGES harvests can be edited.');
+      return;
+    }
+
+    this.resetImageState(); // Clear any previous temp images
+    this.onFieldSelected(harvest.fieldId);
+    this.editingId = harvest.id;
+
+    // For editing, we use the existing image paths
+    const mainFileName = this.extractFileNameFromUrl(harvest.imagePath);
+    const refFileNames = (harvest.additionalImagePaths || []).map(p => this.extractFileNameFromUrl(p) || '');
+
+    this.harvestForm.patchValue({
+      fieldId: harvest.fieldId,
+      cropCycleId: harvest.cropCycleId,
+      harvestDate: harvest.harvestDate,
+      quantityKg: harvest.quantityKg,
+      qualityGrade: harvest.qualityGrade || '',
+      harvestMethod: harvest.harvestMethod || '',
+      notes: harvest.notes || '',
+      pricePerKg: harvest.pricePerKg || null,
+      batchNumber: harvest.batchNumber || '',
+      imagePath: mainFileName, // Store only the file name/path
+      imageCaption: harvest.imageCaption || '',
+      additionalImagePaths: refFileNames
+    });
+
+    this.mainPhotoPreviewUrl = harvest.imagePath || null;
+    this.mainPhotoFileName = mainFileName;
+    this.referencePhotoPreviews = (harvest.additionalImagePaths || []).map((url) => ({
+      fileName: this.extractFileNameFromUrl(url) || '',
+      url
+    }));
+
+    this.dialog.open(this.harvestDialogTemplate, { width: '620px', maxHeight: '90vh' });
+  }
+
+  private resetImageState(): void {
+    // Clean up any uploaded temp images
+    this.cleanupUploadedImages();
+
+    this.mainPhotoPreviewUrl = null;
+    this.mainPhotoFileName = null;
+    this.referencePhotoPreviews = [];
+    this.uploadedFileNames = [];
+    this.isMainUploading = false;
+    this.isRefsUploading = false;
+  }
+
+  private cleanupUploadedImages(): void {
+    if (this.uploadedFileNames.length > 0) {
+      // Delete temp images from server
+      this.uploadedFileNames.forEach(fileName => {
+        this.harvestService.deleteUploadedImage(fileName).subscribe({
+          error: () => console.error(`Failed to delete temp image: ${fileName}`)
+        });
+      });
+      this.uploadedFileNames = [];
+    }
+  }
+
+  saveHarvest(): void {
+    if (this.harvestForm.invalid) return;
+    const val = { ...this.harvestForm.value };
+
+    // Normalize nulls
+    if (!val.cropCycleId) val.cropCycleId = null;
+    if (!val.qualityGrade) val.qualityGrade = null;
+    if (!val.harvestMethod) val.harvestMethod = null;
+    if (!val.notes) val.notes = null;
+    if (!val.imagePath) val.imagePath = null;
+    if (!val.imageCaption) val.imageCaption = null;
+    if (!val.batchNumber) val.batchNumber = null;
+    if (!val.pricePerKg) val.pricePerKg = null;
+    if (!val.additionalImagePaths?.length) val.additionalImagePaths = null;
+
+    if (this.editingId) {
+      const dto: UpdateHarvestDto = {
+        ...val,
+        harvestDate: new Date(val.harvestDate).toISOString()
+      };
+      this.harvestService.updateHarvest(this.editingId, dto).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.snackBar.open('Harvest updated successfully', 'Close', { duration: 3000 });
+            this.dialog.closeAll();
+            this.loadHarvests();
+            // Images are now saved with the harvest, no cleanup needed
+            this.uploadedFileNames = [];
+          }
+        },
+        error: (err) => {
+          this.showError(err.error?.message || 'Failed to update harvest');
+          // On error, clean up temp images
+          this.cleanupUploadedImages();
+        }
+      });
+    } else {
+      const dto: CreateHarvestDto = {
+        ...val,
+        harvestDate: new Date(val.harvestDate).toISOString()
+      };
+      this.harvestService.createHarvest(dto).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.snackBar.open('Harvest submitted for approval', 'Close', { duration: 3000 });
+            this.dialog.closeAll();
+            this.loadHarvests();
+            // Images are now saved with the harvest, no cleanup needed
+            this.uploadedFileNames = [];
+          }
+        },
+        error: (err) => {
+          this.showError(err.error?.message || 'Failed to create harvest');
+          // On error, clean up temp images
+          this.cleanupUploadedImages();
+        }
+      });
+    }
+  }
+
+  // ── Dialog Close Handler ──────────────────────────────────────
+  closeDialog(): void {
+    // Clean up temp images when dialog is closed without saving
+    this.cleanupUploadedImages();
+    this.dialog.closeAll();
+  }
+
+  deleteHarvest(id: number): void {
+    if (!confirm('Are you sure you want to delete this harvest?')) return;
+    this.harvestService.deleteHarvest(id).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.snackBar.open('Harvest deleted successfully', 'Close', { duration: 3000 });
+          this.loadHarvests();
+        }
+      },
+      error: (err) => this.showError(err.error?.message || 'Failed to delete harvest')
+    });
+  }
+
+  // ── View Details ──────────────────────────────────────────────
+  viewHarvestDetails(harvest: HarvestDto): void {
+    this.selectedHarvest = harvest;
+    this.dialog.open(this.viewDetailsDialogTemplate, { width: '560px', maxHeight: '90vh' });
+  }
+
+  closeDetails(): void {
+    this.dialog.closeAll();
+  }
+
+  openEditFromDetails(harvest: HarvestDto): void {
+    this.dialog.closeAll();
+    setTimeout(() => this.openEditDialog(harvest), 150);
+  }
+
+  // ── Respond to Admin ─────────────────────────────────────────
+  openRespondDialog(harvest: HarvestDto): void {
+    this.editingId = harvest.id;
+    this.responseForm.reset();
+    this.dialog.open(this.respondDialogTemplate, { width: '500px' });
+  }
+
+  sendResponse(): void {
+    if (this.responseForm.invalid || !this.editingId) return;
+    const dto: HarvestWorkerResponseDto = this.responseForm.value;
+    this.harvestService.respondToAdmin(this.editingId, dto).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.snackBar.open('Response sent successfully', 'Close', { duration: 3000 });
+          this.dialog.closeAll();
+          this.loadHarvests();
+        }
+      },
+      error: (err) => this.showError(err.error?.message || 'Failed to send response')
+    });
+  }
+
+  // ── Image upload ──────────────────────────────────────────────
+  async onFileSelected(event: any): Promise<void> {
+    const file: File = event.target.files[0];
+    if (!file) return;
+    this.isMainUploading = true;
+    this.cdr.detectChanges();
+
+    try {
+      const compressedFile = await this.imageCompressor.compressImage(file);
+      this.harvestService.uploadImage(compressedFile).pipe(
+        finalize(() => { this.isMainUploading = false; this.cdr.detectChanges(); })
+      ).subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.ngZone.run(() => {
+              if (this.uploadedFileNames) {
+                this.uploadedFileNames.push(res.data.fileName);
+              }
+              this.harvestForm.patchValue({ imagePath: res.data.fileName });
+              if ((this as any).mainPhotoFileName !== undefined) {
+                 (this as any).mainPhotoFileName = res.data.fileName;
+              }
+              this.mainPhotoPreviewUrl = res.data.url;
+              this.cdr.detectChanges();
+            });
+          }
+        },
+        error: () => this.showError('Failed to upload main photo')
+      });
+    } catch (err) {
+      this.isMainUploading = false;
+      this.cdr.detectChanges();
+      this.showError('Failed to compress image');
+    }
+    event.target.value = '';
+  }
+
+  async onMultipleFilesSelected(event: any): Promise<void> {
+    const files: FileList = event.target.files;
+    if (!files || files.length === 0) return;
+    this.isRefsUploading = true;
+    this.cdr.detectChanges();
+
+    try {
+      const compressedFiles = await Promise.all(
+        Array.from(files).map(file => this.imageCompressor.compressImage(file))
+      );
+
+      const uploads = compressedFiles.map(f => this.harvestService.uploadImage(f));
+
+      forkJoin(uploads).pipe(
+        finalize(() => { this.isRefsUploading = false; this.cdr.detectChanges(); })
+      ).subscribe({
+        next: (responses) => {
+          this.ngZone.run(() => {
+            const newFiles = responses.map(r => {
+              if (r.success && r.data) {
+                if (this.uploadedFileNames) {
+                  this.uploadedFileNames.push(r.data.fileName);
+                }
+              }
+              return { fileName: r.data?.fileName || '', url: r.data?.url || '' };
+            });
+            this.referencePhotoPreviews = [...this.referencePhotoPreviews, ...newFiles];
+            const current: string[] = this.harvestForm.get('additionalImagePaths')?.value || [];
+            const updated = Array.from(new Set([...current, ...newFiles.map(f => f.fileName)]));
+            this.harvestForm.patchValue({ additionalImagePaths: updated });
+            this.cdr.detectChanges();
+          });
+        },
+        error: () => this.showError('Failed to upload reference photos')
+      });
+    } catch (err) {
+      this.isRefsUploading = false;
+      this.cdr.detectChanges();
+      this.showError('Failed to compress images');
+    }
+    event.target.value = '';
+  }
+
+  removeMainPhoto(): void {
+    const fileName = this.harvestForm.get('imagePath')?.value;
+    if (fileName) {
+      // Delete from server
+      this.harvestService.deleteUploadedImage(fileName).subscribe({
+        error: () => console.error('Failed to delete main image')
+      });
+      // Remove from tracked uploads
+      const index = this.uploadedFileNames.indexOf(fileName);
+      if (index > -1) this.uploadedFileNames.splice(index, 1);
+    }
+
+    this.ngZone.run(() => {
+      this.harvestForm.patchValue({ imagePath: null, thumbnailPath: null });
+      this.mainPhotoPreviewUrl = null;
+      this.mainPhotoFileName = null;
+      this.cdr.detectChanges();
+    });
+  }
+
+  removeReferencePhoto(index: number): void {
+    const current: string[] = this.harvestForm.get('additionalImagePaths')?.value || [];
+    const removed = current[index];
+    
+    if (removed) {
+      // Delete from server
+      this.harvestService.deleteUploadedImage(removed).subscribe({
+        error: () => console.error('Failed to delete reference image')
+      });
+      // Remove from tracked uploads
+      const uploadIndex = this.uploadedFileNames.indexOf(removed);
+      if (uploadIndex > -1) this.uploadedFileNames.splice(uploadIndex, 1);
+    }
+
+    current.splice(index, 1);
+    this.ngZone.run(() => {
+      this.harvestForm.patchValue({ additionalImagePaths: [...current] });
+      this.referencePhotoPreviews = this.referencePhotoPreviews.filter(p => p.fileName !== removed);
+      this.cdr.detectChanges();
+    });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  private extractFileNameFromUrl(url: string | null | undefined): string | null {
+    if (!url) return null;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) return url;
+    try {
+      const parsedUrl = new URL(url);
+      const path = parsedUrl.pathname;
+      // Extract the part after /uploads/
+      const uploadsIndex = path.indexOf('/uploads/');
+      if (uploadsIndex > -1) {
+        return path.substring(uploadsIndex + 9);
+      }
+      // Fallback: get last part of path
+      const segments = path.split('/').filter(s => s);
+      return segments.length > 0 ? segments[segments.length - 1] : path;
+    } catch {
+      return url;
+    }
+  }
+
+  getApprovalBadgeClass(status: string): string {
+    switch (status?.toUpperCase()) {
+      case 'APPROVED':
+        return 'badge-approved';
+      case 'REJECTED':
+        return 'badge-rejected';
+      case 'REQUEST_CHANGES':
+        return 'badge-changes';
+      default:
+        return 'badge-pending';
+    }
+  }
+
+  getApprovalIcon(status: string): string {
+    switch (status?.toUpperCase()) {
+      case 'APPROVED': return 'check_circle';
+      case 'REJECTED': return 'cancel';
+      case 'REQUEST_CHANGES': return 'edit_note';
+      default: return 'hourglass_empty';
+    }
+  }
+
+  getQualityClass(grade: string | undefined): string {
+    switch (grade?.toUpperCase()) {
+      case 'PREMIUM': return 'quality-premium';
+      case 'GRADE_A': return 'quality-a';
+      case 'GRADE_B': return 'quality-b';
+      case 'GRADE_C': return 'quality-c';
+      case 'REJECT': return 'quality-reject';
+      default: return 'quality-none';
+    }
+  }
+
+  formatQualityGrade(grade: string | undefined): string {
+    if (!grade) return '—';
+    return grade.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  formatHarvestMethod(method: string | undefined): string {
+    if (!method) return '—';
+    return method.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  canEdit(harvest: HarvestDto): boolean {
+    return harvest.approvalStatus === 'PENDING' || harvest.approvalStatus === 'REQUEST_CHANGES';
+  }
+
+  canDelete(harvest: HarvestDto): boolean {
+    return harvest.approvalStatus === 'PENDING' || harvest.approvalStatus === 'REJECTED';
+  }
+
+  canRespond(harvest: HarvestDto): boolean {
+    return harvest.approvalStatus === 'REQUEST_CHANGES';
+  }
+
+  get pendingCount(): number {
+    return this.harvests.data.filter(h => h.approvalStatus === 'PENDING').length;
+  }
+
+  get approvedCount(): number {
+    return this.harvests.data.filter(h => h.approvalStatus === 'APPROVED').length;
+  }
+
+  get totalQuantityKg(): number {
+    return this.harvests.data
+      .filter(h => h.approvalStatus === 'APPROVED')
+      .reduce((sum, h) => sum + (h.quantityKg || 0), 0);
+  }
+
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+}
+
+
+<div class="harvests-page">
+
+  <!-- ─── Page Header ─────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <mat-icon>agriculture</mat-icon>
+      </div>
+      <div>
+        <h1 class="page-title">Harvest Records</h1>
+        <p class="page-subtitle">Submit and track your harvest reports</p>
+      </div>
+    </div>
+    <button mat-raised-button class="btn-primary" (click)="openCreateDialog()">
+      <mat-icon>add</mat-icon>
+      Log Harvest
+    </button>
+  </div>
+
+  <!-- ─── Summary Cards ───────────────────────────────────── -->
+  <div class="summary-cards">
+    <div class="summary-card card-total">
+      <div class="card-icon"><mat-icon>list_alt</mat-icon></div>
+      <div class="card-body">
+        <span class="card-value">{{ totalHarvests }}</span>
+        <span class="card-label">Total Records</span>
+      </div>
+    </div>
+    <div class="summary-card card-pending">
+      <div class="card-icon"><mat-icon>hourglass_empty</mat-icon></div>
+      <div class="card-body">
+        <span class="card-value">{{ pendingCount }}</span>
+        <span class="card-label">Pending Review</span>
+      </div>
+    </div>
+    <div class="summary-card card-approved">
+      <div class="card-icon"><mat-icon>check_circle</mat-icon></div>
+      <div class="card-body">
+        <span class="card-value">{{ approvedCount }}</span>
+        <span class="card-label">Approved</span>
+      </div>
+    </div>
+    <div class="summary-card card-yield">
+      <div class="card-icon"><mat-icon>scale</mat-icon></div>
+      <div class="card-body">
+        <span class="card-value">{{ totalQuantityKg | number:'1.0-0' }} kg</span>
+        <span class="card-label">Approved Yield</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Filter Panel ─────────────────────────────────────── -->
+  <div class="filter-panel">
+    <form [formGroup]="filterForm" class="filter-grid">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Field</mat-label>
+        <mat-select formControlName="fieldId" (selectionChange)="onFilterFieldSelected($event.value)">
+          <mat-option value="">All Fields</mat-option>
+          <mat-option *ngFor="let f of fields" [value]="f.id">{{ f.fieldName }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Quality Grade</mat-label>
+        <mat-select formControlName="qualityGrade">
+          <mat-option value="">All Grades</mat-option>
+          <mat-option *ngFor="let g of qualityGrades" [value]="g">{{ formatQualityGrade(g) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Harvest Method</mat-label>
+        <mat-select formControlName="harvestMethod">
+          <mat-option value="">All Methods</mat-option>
+          <mat-option *ngFor="let m of harvestMethods" [value]="m">{{ formatHarvestMethod(m) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>From Date</mat-label>
+        <input matInput type="date" formControlName="fromDate">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>To Date</mat-label>
+        <input matInput type="date" formControlName="toDate">
+      </mat-form-field>
+
+      <div class="filter-toggle">
+        <mat-checkbox formControlName="includeDeleted" color="primary">Include Deleted</mat-checkbox>
+      </div>
+    </form>
+  </div>
+
+  <!-- ─── Status Tabs ──────────────────────────────────────── -->
+  <mat-tab-group class="status-tabs" [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">hourglass_empty</mat-icon>
+        Pending
+      </ng-template>
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">check_circle</mat-icon>
+        Approved
+      </ng-template>
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">cancel</mat-icon>
+        Rejected
+      </ng-template>
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">edit_note</mat-icon>
+        Changes Requested
+      </ng-template>
+    </mat-tab>
+  </mat-tab-group>
+
+  <!-- ─── Data Table ──────────────────────────────────────── -->
+  <div class="table-container">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" *ngIf="isLoading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading && harvests.data.length === 0">
+      <mat-icon>agriculture</mat-icon>
+      <h3>No harvests found</h3>
+      <p>No harvest records match your current filters.</p>
+      <button mat-raised-button class="btn-primary" (click)="openCreateDialog()">
+        <mat-icon>add</mat-icon> Log Your First Harvest
+      </button>
+    </div>
+
+    <mat-table
+      [dataSource]="harvests"
+      matSort
+      (matSortChange)="onSortChange($event)"
+      *ngIf="!isLoading && harvests.data.length > 0"
+    >
+      <!-- Harvest Date Column -->
+      <ng-container matColumnDef="harvestDate">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Date</mat-header-cell>
+        <mat-cell *matCellDef="let h">
+          <span class="date-cell">{{ h.harvestDate | date:'dd MMM yyyy' }}</span>
+        </mat-cell>
+      </ng-container>
+
+      <!-- Field Column -->
+      <ng-container matColumnDef="fieldName">
+        <mat-header-cell *matHeaderCellDef>Field</mat-header-cell>
+        <mat-cell *matCellDef="let h">
+          <div class="field-cell">
+            <mat-icon class="cell-icon">crop_square</mat-icon>
+            <span>{{ h.fieldName }}</span>
+          </div>
+        </mat-cell>
+      </ng-container>
+
+      <!-- Crop Type Column -->
+      <ng-container matColumnDef="cropType">
+        <mat-header-cell *matHeaderCellDef>Crop</mat-header-cell>
+        <mat-cell *matCellDef="let h">
+          <span class="crop-chip">{{ h.cropType || '—' }}</span>
+        </mat-cell>
+      </ng-container>
+
+      <!-- Quantity Column -->
+      <ng-container matColumnDef="quantityKg">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Quantity</mat-header-cell>
+        <mat-cell *matCellDef="let h">
+          <div class="quantity-cell">
+            <span class="quantity-value">{{ h.quantityKg | number:'1.1-1' }}</span>
+            <span class="quantity-unit">kg</span>
+          </div>
+        </mat-cell>
+      </ng-container>
+
+      <!-- Quality Column -->
+      <ng-container matColumnDef="qualityGrade">
+        <mat-header-cell *matHeaderCellDef>Quality</mat-header-cell>
+        <mat-cell *matCellDef="let h">
+          <span class="quality-badge" [ngClass]="getQualityClass(h.qualityGrade)">
+            {{ formatQualityGrade(h.qualityGrade) }}
+          </span>
+        </mat-cell>
+      </ng-container>
+
+      <!-- Images Column -->
+      <ng-container matColumnDef="images">
+        <mat-header-cell *matHeaderCellDef>Photos</mat-header-cell>
+        <mat-cell *matCellDef="let h">
+          <div class="image-thumb-container" *ngIf="h.imagePath">
+            <img [src]="h.imagePath" class="thumb-img" [matTooltip]="h.imageCaption || 'Harvest photo'" />
+            <span class="img-count" *ngIf="h.additionalImagePaths?.length">
+              +{{ h.additionalImagePaths.length }}
+            </span>
+          </div>
+          <span class="no-image" *ngIf="!h.imagePath">—</span>
+        </mat-cell>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="approvalStatus">
+        <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
+        <mat-cell *matCellDef="let h">
+          <span class="status-badge" [ngClass]="getApprovalBadgeClass(h.approvalStatus)">
+            <mat-icon class="status-icon">{{ getApprovalIcon(h.approvalStatus) }}</mat-icon>
+            {{ h.approvalStatus | titlecase }}
+          </span>
+        </mat-cell>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+        <mat-cell *matCellDef="let h">
+          <div class="action-group">
+            <button mat-icon-button class="btn-view" matTooltip="View Details" (click)="viewHarvestDetails(h)">
+              <mat-icon>visibility</mat-icon>
+            </button>
+            <button mat-icon-button class="btn-edit" matTooltip="Edit" (click)="openEditDialog(h)"
+              [disabled]="!canEdit(h)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button class="btn-respond" matTooltip="Respond to Admin" (click)="openRespondDialog(h)"
+              [disabled]="!canRespond(h)">
+              <mat-icon>reply</mat-icon>
+            </button>
+            <button mat-icon-button class="btn-delete" matTooltip="Delete" (click)="deleteHarvest(h.id)"
+              [disabled]="!canDelete(h)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns;"
+        class="table-row" [class.row-changes]="row.approvalStatus === 'REQUEST_CHANGES'">
+      </mat-row>
+    </mat-table>
+
+    <mat-paginator
+      *ngIf="harvests.data.length > 0"
+      [length]="totalHarvests"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Create / Edit Harvest Dialog -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<ng-template #harvestDialog>
+  <div class="dialog-container">
+    <div class="dialog-header">
+      <div class="dialog-title-group">
+        <mat-icon class="dialog-icon">agriculture</mat-icon>
+        <h2 class="dialog-title">{{ editingId ? 'Edit Harvest Record' : 'Log New Harvest' }}</h2>
+      </div>
+      <button mat-icon-button (click)="closeDialog()"> <!-- Changed from closeDetails() -->
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <form [formGroup]="harvestForm" class="dialog-form">
+      <mat-dialog-content class="dialog-content">
+
+        <!-- Field + Crop Cycle Row -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Field *</mat-label>
+            <mat-select formControlName="fieldId" (selectionChange)="onFieldSelected($event.value)">
+              <mat-option *ngFor="let f of fields" [value]="f.id">{{ f.fieldName }}</mat-option>
+            </mat-select>
+            <mat-error>Field is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Crop Cycle *</mat-label>
+            <mat-select formControlName="cropCycleId">
+              <mat-option *ngFor="let c of cropCycles" [value]="c.id">
+                {{ c.cropType }} ({{ c.startDate | date:'MMM yyyy' }})
+              </mat-option>
+            </mat-select>
+            <mat-error>Crop cycle is required</mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Date + Quantity Row -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Harvest Date *</mat-label>
+            <input matInput type="date" formControlName="harvestDate">
+            <mat-error>Date is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Quantity (kg) *</mat-label>
+            <input matInput type="number" formControlName="quantityKg" placeholder="0.0" min="0.1" step="0.1">
+            <mat-error>Enter a valid quantity</mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Quality + Method Row -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Quality Grade</mat-label>
+            <mat-select formControlName="qualityGrade">
+              <mat-option value="">Select grade</mat-option>
+              <mat-option *ngFor="let g of qualityGrades" [value]="g">{{ formatQualityGrade(g) }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Harvest Method</mat-label>
+            <mat-select formControlName="harvestMethod">
+              <mat-option value="">Select method</mat-option>
+              <mat-option *ngFor="let m of harvestMethods" [value]="m">{{ formatHarvestMethod(m) }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Price + Batch Row -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Price per kg</mat-label>
+            <input matInput type="number" formControlName="pricePerKg" placeholder="0.00" min="0" step="0.01">
+            <span matPrefix>$&nbsp;</span>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Batch Number</mat-label>
+            <input matInput formControlName="batchNumber" placeholder="e.g. BATCH-001">
+          </mat-form-field>
+        </div>
+
+        <!-- Notes -->
+        <mat-form-field appearance="outline" class="form-field full-width">
+          <mat-label>Notes</mat-label>
+          <textarea matInput formControlName="notes" rows="3" placeholder="Any additional notes about this harvest..."></textarea>
+        </mat-form-field>
+
+        <!-- ── Image Section ── -->
+        <div class="section-divider">
+          <mat-icon>photo_camera</mat-icon>
+          <span>Photo Documentation</span>
+        </div>
+
+        <!-- Main Photo -->
+        <div class="photo-upload-area">
+          <div class="upload-label">Main Harvest Photo</div>
+          <div class="photo-preview" *ngIf="mainPhotoPreviewUrl">
+            <img [src]="mainPhotoPreviewUrl" class="preview-img" alt="Main harvest photo" />
+            <button mat-icon-button class="remove-photo-btn" matTooltip="Remove photo" (click)="removeMainPhoto()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <div class="upload-placeholder" *ngIf="!mainPhotoPreviewUrl && !isMainUploading">
+            <label class="upload-trigger">
+              <mat-icon>cloud_upload</mat-icon>
+              <span>Click to upload main photo</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)" hidden>
+            </label>
+          </div>
+          <div class="uploading-indicator" *ngIf="isMainUploading">
+            <mat-spinner diameter="28"></mat-spinner>
+            <span>Uploading...</span>
+          </div>
+
+          <mat-form-field appearance="outline" class="form-field full-width" *ngIf="mainPhotoPreviewUrl" style="margin-top:10px">
+            <mat-label>Photo Caption</mat-label>
+            <input matInput formControlName="imageCaption" placeholder="Describe the harvest scene...">
+          </mat-form-field>
+        </div>
+
+        <!-- Reference Photos -->
+        <div class="photo-upload-area">
+          <div class="upload-label">Additional Reference Photos</div>
+          <div class="reference-grid" *ngIf="referencePhotoPreviews.length > 0">
+            <div class="ref-preview" *ngFor="let rp of referencePhotoPreviews; let i = index">
+              <img [src]="rp.url" class="ref-img" [alt]="'Reference ' + (i+1)" />
+              <button mat-icon-button class="remove-ref-btn" (click)="removeReferencePhoto(i)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div class="upload-placeholder" *ngIf="!isRefsUploading">
+            <label class="upload-trigger">
+              <mat-icon>add_photo_alternate</mat-icon>
+              <span>Add more photos (multi-select)</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="onMultipleFilesSelected($event)" hidden>
+            </label>
+          </div>
+          <div class="uploading-indicator" *ngIf="isRefsUploading">
+            <mat-spinner diameter="28"></mat-spinner>
+            <span>Uploading photos...</span>
+          </div>
+        </div>
+
+      </mat-dialog-content>
+
+     <mat-dialog-actions class="dialog-actions">
+      <button mat-button (click)="closeDialog()">Cancel</button> <!-- Changed from closeDetails() -->
+      <button mat-raised-button class="btn-primary" (click)="saveHarvest()" [disabled]="harvestForm.invalid">
+        <mat-icon>{{ editingId ? 'save' : 'agriculture' }}</mat-icon>
+        {{ editingId ? 'Update Harvest' : 'Submit Harvest' }}
+      </button>
+    </mat-dialog-actions>
+    </form>
+  </div>
+</ng-template>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- View Details Dialog -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<ng-template #viewDetailsDialog>
+  <div class="dialog-container details-dialog" *ngIf="selectedHarvest as h">
+    <div class="dialog-header">
+      <div class="dialog-title-group">
+        <mat-icon class="dialog-icon">info</mat-icon>
+        <h2 class="dialog-title">Harvest Details</h2>
+      </div>
+      <button mat-icon-button (click)="closeDetails()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <mat-dialog-content class="dialog-content details-content">
+
+      <!-- Status Banner -->
+      <div class="status-banner" [ngClass]="getApprovalBadgeClass(h.approvalStatus)">
+        <mat-icon>{{ getApprovalIcon(h.approvalStatus) }}</mat-icon>
+        <span>{{ h.approvalStatus }}</span>
+      </div>
+
+      <!-- Rejection reason / Admin notes -->
+      <div class="alert-box alert-rejected" *ngIf="h.rejectionReason">
+        <mat-icon>cancel</mat-icon>
+        <div>
+          <strong>Rejection Reason</strong>
+          <p>{{ h.rejectionReason }}</p>
+        </div>
+      </div>
+      <div class="alert-box alert-changes" *ngIf="h.adminNotes && h.approvalStatus === 'REQUEST_CHANGES'">
+        <mat-icon>edit_note</mat-icon>
+        <div>
+          <strong>Admin Notes</strong>
+          <p>{{ h.adminNotes }}</p>
+        </div>
+      </div>
+
+      <!-- Info Grid -->
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Harvest Date</span>
+          <span class="detail-value">{{ h.harvestDate | date:'dd MMMM yyyy' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Field</span>
+          <span class="detail-value">{{ h.fieldName }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Crop Type</span>
+          <span class="detail-value">{{ h.cropType || '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Quantity</span>
+          <span class="detail-value highlight">{{ h.quantityKg | number:'1.2-2' }} kg</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Quality Grade</span>
+          <span class="detail-value">
+            <span class="quality-badge" [ngClass]="getQualityClass(h.qualityGrade)">{{ formatQualityGrade(h.qualityGrade) }}</span>
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Harvest Method</span>
+          <span class="detail-value">{{ formatHarvestMethod(h.harvestMethod) }}</span>
+        </div>
+        <div class="detail-item" *ngIf="h.pricePerKg">
+          <span class="detail-label">Price / kg</span>
+          <span class="detail-value">{{ h.pricePerKg | currency:'USD':'symbol':'1.2-2' }}</span>
+        </div>
+        <div class="detail-item" *ngIf="h.totalValue">
+          <span class="detail-label">Total Value</span>
+          <span class="detail-value highlight">{{ h.totalValue | currency:'USD':'symbol':'1.2-2' }}</span>
+        </div>
+        <div class="detail-item" *ngIf="h.batchNumber">
+          <span class="detail-label">Batch #</span>
+          <span class="detail-value">{{ h.batchNumber }}</span>
+        </div>
+        <div class="detail-item" *ngIf="h.approvedAt">
+          <span class="detail-label">Approved At</span>
+          <span class="detail-value">{{ h.approvedAt | date:'dd MMM yyyy, HH:mm' }}</span>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="detail-notes" *ngIf="h.notes">
+        <span class="detail-label">Notes</span>
+        <p class="notes-text">{{ h.notes }}</p>
+      </div>
+
+      <!-- Images -->
+      <div class="detail-images" *ngIf="h.imagePath">
+        <span class="detail-label">Photos</span>
+        <div class="image-gallery">
+          <div class="gallery-item main-img-item">
+            <img [src]="h.imagePath" class="gallery-img" alt="Main harvest photo" />
+            <div class="img-caption" *ngIf="h.imageCaption">{{ h.imageCaption }}</div>
+          </div>
+          <div class="gallery-item" *ngFor="let img of h.additionalImagePaths">
+            <img [src]="img" class="gallery-img" alt="Reference photo" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Worker Response (if any) -->
+      <div class="worker-response" *ngIf="h.workerResponse">
+        <span class="detail-label">Your Response</span>
+        <p class="response-text">{{ h.workerResponse }}</p>
+      </div>
+
+    </mat-dialog-content>
+
+    <mat-dialog-actions class="dialog-actions">
+      <button mat-button (click)="closeDetails()">Close</button>
+      <button mat-raised-button class="btn-warning" *ngIf="canRespond(h)" (click)="openEditFromDetails(h)">
+        <mat-icon>reply</mat-icon> Respond to Admin
+      </button>
+      <button mat-raised-button class="btn-primary" *ngIf="canEdit(h)" (click)="openEditFromDetails(h)">
+        <mat-icon>edit</mat-icon> Edit Harvest
+      </button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Respond to Admin Dialog -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<ng-template #respondDialog>
+  <div class="dialog-container">
+    <div class="dialog-header">
+      <div class="dialog-title-group">
+        <mat-icon class="dialog-icon">reply</mat-icon>
+        <h2 class="dialog-title">Respond to Admin</h2>
+      </div>
+      <button mat-icon-button (click)="closeDetails()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <form [formGroup]="responseForm">
+      <mat-dialog-content class="dialog-content">
+        <p class="respond-hint">Explain the changes you've made or provide additional context to the admin.</p>
+        <mat-form-field appearance="outline" class="form-field full-width">
+          <mat-label>Your Response *</mat-label>
+          <textarea matInput formControlName="responseNotes" rows="5"
+            placeholder="Describe the updates you've made or any clarification..."></textarea>
+          <mat-error>Response is required</mat-error>
+        </mat-form-field>
+      </mat-dialog-content>
+
+      <mat-dialog-actions class="dialog-actions">
+        <button mat-button (click)="closeDetails()">Cancel</button>
+        <button mat-raised-button class="btn-primary" (click)="sendResponse()" [disabled]="responseForm.invalid">
+          <mat-icon>send</mat-icon> Send Response
+        </button>
+      </mat-dialog-actions>
+    </form>
+  </div>
+</ng-template>
+
+
+--> i HAVE ATTATCHED ALL THE BACKEND AND FRONTNEFD files of worker panle's harvests section!
+-- > so check and ensure all features implemented correcltly in UI as exactly how the api controller written!
+-> and should ensure data is isolated based on farmId and adminId!
+--> and ensure audit_logging data also correclt y implemented!
+--> and now check the file storage service implement in ui page , and ensure after successfull submission of form or any other operation only, the data should be send to store in db for images local storage direcory!
+--> because previuosly before form submisson image data awere storing in local folder, ad cause time taken also!
+--> and ensure all filters and data fetched for drop downs and cursors and frontend validations done!
+--> if I missed any files, ask me before implementation plan, andask me any doubts!

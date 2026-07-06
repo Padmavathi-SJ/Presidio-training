@@ -1,0 +1,271 @@
+<!-- src/app/features/worker/harvests/components/harvest-list/harvest-list.component.html -->
+<div class="max-w-[1440px] mx-auto p-6">
+  <!-- Page Header -->
+  <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center">
+        <mat-icon class="text-2xl w-7 h-7 text-primary">agriculture</mat-icon>
+      </div>
+      <div>
+        <h1 class="text-2xl font-semibold m-0 text-on-surface">Harvest Records</h1>
+        <p class="text-sm text-on-surface-variant mt-1">Submit and track your harvest reports</p>
+      </div>
+    </div>
+    <button mat-raised-button color="primary" (click)="createHarvest.emit()">
+      <mat-icon>add</mat-icon>
+      Log Harvest
+    </button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-4 border border-outline-variant flex items-center gap-4 hover:border-primary hover:shadow-card transition-all">
+      <div class="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+        <mat-icon class="text-primary">list_alt</mat-icon>
+      </div>
+      <div>
+        <span class="text-xl font-semibold text-on-surface block">{{ totalHarvests }}</span>
+        <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Total Records</span>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl p-4 border border-outline-variant flex items-center gap-4 hover:border-primary hover:shadow-card transition-all">
+      <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+        <mat-icon class="text-amber-600">hourglass_empty</mat-icon>
+      </div>
+      <div>
+        <span class="text-xl font-semibold text-on-surface block">{{ pendingCount }}</span>
+        <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Pending Review</span>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl p-4 border border-outline-variant flex items-center gap-4 hover:border-primary hover:shadow-card transition-all">
+      <div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+        <mat-icon class="text-emerald-600">check_circle</mat-icon>
+      </div>
+      <div>
+        <span class="text-xl font-semibold text-on-surface block">{{ approvedCount }}</span>
+        <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Approved</span>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl p-4 border border-outline-variant flex items-center gap-4 hover:border-primary hover:shadow-card transition-all">
+      <div class="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+        <mat-icon class="text-primary">scale</mat-icon>
+      </div>
+      <div>
+        <span class="text-xl font-semibold text-on-surface block">{{ totalQuantityKg | number:'1.0-0' }} kg</span>
+        <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Approved Yield</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Panel -->
+  <div class="bg-white rounded-xl p-4 border border-outline-variant mb-6">
+    <form [formGroup]="filterForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 items-center">
+      <mat-form-field appearance="outline" class="w-full text-sm">
+        <mat-label>Field</mat-label>
+        <mat-select formControlName="fieldId" (selectionChange)="onFilterFieldSelected($event.value)">
+          <mat-option value="">All Fields</mat-option>
+          <mat-option *ngFor="let f of fields" [value]="f.fieldId || f.id">{{ f.fieldName }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full text-sm">
+        <mat-label>Quality Grade</mat-label>
+        <mat-select formControlName="qualityGrade">
+          <mat-option value="">All Grades</mat-option>
+          <mat-option *ngFor="let g of qualityGrades" [value]="g">{{ formatQualityGrade(g) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full text-sm">
+        <mat-label>Harvest Method</mat-label>
+        <mat-select formControlName="harvestMethod">
+          <mat-option value="">All Methods</mat-option>
+          <mat-option *ngFor="let m of harvestMethods" [value]="m">{{ formatHarvestMethod(m) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full text-sm">
+        <mat-label>From Date</mat-label>
+        <input matInput type="date" formControlName="fromDate">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full text-sm">
+        <mat-label>To Date</mat-label>
+        <input matInput type="date" formControlName="toDate">
+      </mat-form-field>
+
+      <div class="flex items-center justify-center px-4 col-span-full lg:col-span-1">
+        <mat-checkbox formControlName="includeDeleted" color="primary">Include Deleted</mat-checkbox>
+      </div>
+    </form>
+  </div>
+
+  <!-- Status Tabs -->
+  <mat-tab-group class="mb-4" [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="mr-2 text-base w-5 h-5">hourglass_empty</mat-icon>
+        Pending
+      </ng-template>
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="mr-2 text-base w-5 h-5">check_circle</mat-icon>
+        Approved
+      </ng-template>
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="mr-2 text-base w-5 h-5">cancel</mat-icon>
+        Rejected
+      </ng-template>
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="mr-2 text-base w-5 h-5">edit_note</mat-icon>
+        Changes Requested
+      </ng-template>
+    </mat-tab>
+  </mat-tab-group>
+
+  <!-- Table -->
+  <div class="relative bg-white rounded-xl border border-outline-variant overflow-hidden">
+    <div class="absolute inset-0 bg-white/70 flex items-center justify-center z-10" *ngIf="isLoading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <div class="py-12 px-6 text-center" *ngIf="!isLoading && harvests.data.length === 0">
+      <mat-icon class="text-5xl w-12 h-12 text-outline mx-auto">agriculture</mat-icon>
+      <h3 class="text-lg font-semibold text-on-surface mt-3">No harvests found</h3>
+      <p class="text-on-surface-variant">No harvest records match your current filters.</p>
+      <button mat-raised-button color="primary" class="mt-4" (click)="createHarvest.emit()">
+        <mat-icon>add</mat-icon> Log Your First Harvest
+      </button>
+    </div>
+
+    <table mat-table [dataSource]="harvests" matSort (matSortChange)="onSortChange($event)" *ngIf="!isLoading && harvests.data.length > 0" class="w-full">
+      <!-- Date Column -->
+      <ng-container matColumnDef="harvestDate">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Date</th>
+        <td mat-cell *matCellDef="let h" class="py-3 font-medium">{{ h.harvestDate | date:'dd MMM yyyy' }}</td>
+      </ng-container>
+
+      <!-- Field Column -->
+      <ng-container matColumnDef="fieldName">
+        <th mat-header-cell *matHeaderCellDef class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Field</th>
+        <td mat-cell *matCellDef="let h" class="py-3">
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-sm w-4 h-4 text-outline">crop_square</mat-icon>
+            <span>{{ h.fieldName }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Crop Type Column -->
+      <ng-container matColumnDef="cropType">
+        <th mat-header-cell *matHeaderCellDef class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Crop</th>
+        <td mat-cell *matCellDef="let h" class="py-3">
+          <span class="bg-primary-50 text-primary px-2 py-0.5 rounded-full text-xs font-medium">{{ h.cropType || '—' }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Quantity Column -->
+      <ng-container matColumnDef="quantityKg">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Quantity</th>
+        <td mat-cell *matCellDef="let h" class="py-3">
+          <div class="flex items-baseline gap-0.5">
+            <span class="font-semibold text-on-surface">{{ h.quantityKg | number:'1.1-1' }}</span>
+            <span class="text-xs text-outline">kg</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Quality Column -->
+      <ng-container matColumnDef="qualityGrade">
+        <th mat-header-cell *matHeaderCellDef class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Quality</th>
+        <td mat-cell *matCellDef="let h" class="py-3">
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium" 
+                [class.bg-amber-400]="h.qualityGrade === 'A_PLUS'"
+                [class.bg-emerald-600]="h.qualityGrade === 'A'"
+                [class.bg-emerald-400]="h.qualityGrade === 'B'"
+                [class.bg-amber-300]="h.qualityGrade === 'C'"
+                [class.bg-orange-400]="h.qualityGrade === 'D'"
+                [class.bg-red-500]="h.qualityGrade === 'REJECTED'"
+                [class.bg-gray-200]="!h.qualityGrade"
+                [class.text-white]="h.qualityGrade && h.qualityGrade !== 'C' && h.qualityGrade !== 'D'"
+                [class.text-on-surface]="!h.qualityGrade || h.qualityGrade === 'C' || h.qualityGrade === 'D'">
+            {{ formatQualityGrade(h.qualityGrade) }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Images Column -->
+      <ng-container matColumnDef="images">
+        <th mat-header-cell *matHeaderCellDef class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Photos</th>
+        <td mat-cell *matCellDef="let h" class="py-3">
+          <div class="relative inline-block" *ngIf="h.imagePath">
+            <img [src]="h.imagePath" class="w-10 h-10 rounded object-cover border border-outline-variant" [matTooltip]="h.imageCaption || 'Harvest photo'" />
+            <span class="absolute -bottom-1 -right-1 bg-primary text-white text-xs font-semibold px-1.5 rounded-full" *ngIf="h.additionalImagePaths?.length">+{{ h.additionalImagePaths.length }}</span>
+          </div>
+          <span class="text-outline" *ngIf="!h.imagePath">—</span>
+        </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="approvalStatus">
+        <th mat-header-cell *matHeaderCellDef class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Status</th>
+        <td mat-cell *matCellDef="let h" class="py-3">
+          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium uppercase"
+                [class.bg-amber-100]="h.approvalStatus === 'PENDING'"
+                [class.text-amber-800]="h.approvalStatus === 'PENDING'"
+                [class.bg-emerald-100]="h.approvalStatus === 'APPROVED'"
+                [class.text-emerald-800]="h.approvalStatus === 'APPROVED'"
+                [class.bg-red-100]="h.approvalStatus === 'REJECTED'"
+                [class.text-red-800]="h.approvalStatus === 'REJECTED'"
+                [class.bg-amber-100]="h.approvalStatus === 'REQUEST_CHANGES'"
+                [class.text-amber-800]="h.approvalStatus === 'REQUEST_CHANGES'">
+            <mat-icon class="text-sm w-4 h-4">{{ getApprovalIcon(h.approvalStatus) }}</mat-icon>
+            {{ h.approvalStatus | titlecase }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Actions</th>
+        <td mat-cell *matCellDef="let h" class="py-3">
+          <div class="flex gap-1">
+            <button mat-icon-button class="w-8 h-8 text-primary" matTooltip="View Details" (click)="viewHarvest.emit(h)">
+              <mat-icon class="text-lg w-5 h-5">visibility</mat-icon>
+            </button>
+            <button mat-icon-button class="w-8 h-8 text-primary" matTooltip="Edit" (click)="editHarvest.emit(h)" [disabled]="!canEdit(h)">
+              <mat-icon class="text-lg w-5 h-5">edit</mat-icon>
+            </button>
+            <button mat-icon-button class="w-8 h-8 text-amber-600" matTooltip="Respond to Admin" (click)="respondHarvest.emit(h)" [disabled]="!canRespond(h)">
+              <mat-icon class="text-lg w-5 h-5">reply</mat-icon>
+            </button>
+            <button mat-icon-button class="w-8 h-8 text-red-600" matTooltip="Delete" (click)="deleteHarvest.emit(h.id)" [disabled]="!canDelete(h)">
+              <mat-icon class="text-lg w-5 h-5">delete</mat-icon>
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-surface"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+          class="hover:bg-surface transition-colors cursor-pointer"
+          [class.border-l-4]="row.approvalStatus === 'REQUEST_CHANGES'"
+          [class.border-l-amber-400]="row.approvalStatus === 'REQUEST_CHANGES'"
+          (click)="viewHarvest.emit(row)"></tr>
+    </table>
+
+    <mat-paginator *ngIf="harvests.data.length > 0"
+      [length]="totalHarvests"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+      class="bg-transparent py-2 px-4">
+    </mat-paginator>
+  </div>
+</div>

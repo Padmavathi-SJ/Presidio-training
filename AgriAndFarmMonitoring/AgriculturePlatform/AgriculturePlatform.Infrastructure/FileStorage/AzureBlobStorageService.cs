@@ -56,4 +56,21 @@ public class AzureBlobStorageService : IFileStorageService
         var blobClient = _containerClient.GetBlobClient(filePath);
         return blobClient.Uri.AbsoluteUri;
     }
+
+    // ✅ Add FileExistsAsync
+    public async Task<bool> FileExistsAsync(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+            return false;
+
+        var blobClient = _containerClient.GetBlobClient(filePath);
+        return await blobClient.ExistsAsync();
+    }
+
+    // ✅ Add GetPublicUrl (same as GetDownloadUrl for Azure)
+    public string GetPublicUrl(string filePath)
+    {
+        return GetDownloadUrl(filePath);
+    }
+
 }

@@ -1397,7 +1397,6 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AdditionalImagePaths")
-                        .IsRequired()
                         .HasColumnType("jsonb");
 
                     b.Property<int>("AdminId")

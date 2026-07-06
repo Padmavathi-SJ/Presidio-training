@@ -63,4 +63,8 @@ export class WorkerHarvestService {
     formData.append('file', file);
     return this.http.post<any>(`${this.API_URL}/worker/harvests/upload`, formData);
   }
+
+  deleteUploadedImage(fileName: string): Observable<any> {
+    return this.http.delete<any>(`${this.API_URL}/worker/harvests/upload/${encodeURIComponent(fileName)}`);
+  }
 }

@@ -1,10 +1,11 @@
-// Application/Services/HarvestService.cs
-using AutoMapper;
+using System.Text.Json;
+using AutoMapper; // ✅ Add this using directive
 using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Application.DTOs.Harvest;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Domain.Entities.YieldReports;
 using AgriculturePlatform.Domain.Enums;
+using AgriculturePlatform.Application.Extensions;
 
 namespace AgriculturePlatform.Application.Services;
 
@@ -15,6 +16,7 @@ public class HarvestService : IHarvestService
     private readonly ICropCycleRepository _cropCycleRepository;
     private readonly IWorkerRepository _workerRepository;
     private readonly IAuditLogService _auditLogService;
+    private readonly IFileStorageService _fileStorageService;
     private readonly IMapper _mapper;
 
     public HarvestService(
@@ -23,6 +25,7 @@ public class HarvestService : IHarvestService
         ICropCycleRepository cropCycleRepository,
         IWorkerRepository workerRepository,
         IAuditLogService auditLogService,
+        IFileStorageService fileStorageService,
         IMapper mapper)
     {
         _harvestRepository = harvestRepository;
@@ -30,6 +33,7 @@ public class HarvestService : IHarvestService
         _cropCycleRepository = cropCycleRepository;
         _workerRepository = workerRepository;
         _auditLogService = auditLogService;
+        _fileStorageService = fileStorageService;
         _mapper = mapper;
     }
 
@@ -37,57 +41,135 @@ public class HarvestService : IHarvestService
     // WORKER OPERATIONS
     // =============================================
 
-    public async Task<ApiResponse<HarvestDto>> CreateHarvestAsync(CreateHarvestDto dto, int farmId, int workerId, int adminId)
+// Application/Services/HarvestService.cs - Updated CreateHarvestAsync
+
+// Application/Services/HarvestService.cs - Update CreateHarvestAsync
+
+public async Task<ApiResponse<HarvestDto>> CreateHarvestAsync(CreateHarvestDto dto, int farmId, int workerId, int adminId)
+{
+    // Validate field access
+    var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
+    if (field == null)
+        return ApiResponse<HarvestDto>.Fail($"Field with ID {dto.FieldId} not found");
+
+    // Validate crop cycle
+    var cropCycle = await _cropCycleRepository.GetByIdAsync(dto.CropCycleId, farmId);
+    if (cropCycle == null)
+        return ApiResponse<HarvestDto>.Fail($"Crop cycle with ID {dto.CropCycleId} not found");
+
+    // ✅ Clean image paths
+    var cleanedImagePath = CleanImagePath(dto.ImagePath);
+    var cleanedAdditionalPaths = dto.AdditionalImagePaths?
+        .Select(CleanImagePath)
+        .Where(p => !string.IsNullOrEmpty(p))
+        .ToList() ?? new List<string>(); // ✅ Always ensure it's not null
+
+    // ✅ Validate image paths
+    if (!string.IsNullOrEmpty(cleanedImagePath))
     {
-        // Validate field access
-        var field = await _fieldRepository.GetByIdAsync(dto.FieldId, farmId);
-        if (field == null)
-            return ApiResponse<HarvestDto>.Fail($"Field with ID {dto.FieldId} not found");
-
-        // Validate crop cycle
-        var cropCycle = await _cropCycleRepository.GetByIdAsync(dto.CropCycleId, farmId);
-        if (cropCycle == null)
-            return ApiResponse<HarvestDto>.Fail($"Crop cycle with ID {dto.CropCycleId} not found");
-
-        var harvest = new Harvest
+        var imageExists = await _fileStorageService.FileExistsAsync(cleanedImagePath);
+        if (!imageExists)
         {
-            FarmId = farmId,
-            AdminId = adminId,
-            FieldId = dto.FieldId,
-            CropCycleId = dto.CropCycleId,
-            HarvestedBy = workerId,
-            SubmittedBy = workerId,
-            HarvestDate = dto.HarvestDate.ToUniversalTime(),
-            QuantityKg = dto.QuantityKg,
-            Notes = dto.Notes,
-            PricePerKg = dto.PricePerKg,
-            BatchNumber = dto.BatchNumber,
-            ApprovalStatus = "PENDING",
-            CreatedBy = workerId,
-            CreatedAt = DateTime.UtcNow,
-            // Image fields
-            ImagePath = dto.ImagePath,
-            ThumbnailPath = dto.ThumbnailPath,
-            ImageCaption = dto.ImageCaption,
-            AdditionalImagePaths = dto.AdditionalImagePaths ?? new List<string>(),
-            ImageMetadata = dto.ImageMetadata
-        };
-
-        if (!string.IsNullOrWhiteSpace(dto.QualityGrade))
-            harvest.QualityGrade = Enum.Parse<QualityGradeEnum>(dto.QualityGrade, true);
-        
-        if (!string.IsNullOrWhiteSpace(dto.HarvestMethod))
-            harvest.HarvestMethod = Enum.Parse<HarvestMethodEnum>(dto.HarvestMethod, true);
-
-        var created = await _harvestRepository.CreateAsync(harvest);
-        
-        await _auditLogService.LogCreateAsync(farmId, adminId, "Harvest", created.Id, created, null, null);
-
-        var result = _mapper.Map<HarvestDto>(created);
-        result.FieldName = field.FieldName;
-        
-        return ApiResponse<HarvestDto>.Ok(result, "Harvest submitted for approval");
+            return ApiResponse<HarvestDto>.Fail("Main image file not found. Please re-upload.");
+        }
     }
+
+    if (cleanedAdditionalPaths.Any())
+    {
+        foreach (var path in cleanedAdditionalPaths)
+        {
+            if (!await _fileStorageService.FileExistsAsync(path))
+                return ApiResponse<HarvestDto>.Fail($"Reference image '{path}' not found. Please re-upload.");
+        }
+    }
+
+    var harvest = new Harvest
+    {
+        FarmId = farmId,
+        AdminId = adminId,
+        FieldId = dto.FieldId,
+        CropCycleId = dto.CropCycleId,
+        HarvestedBy = workerId,
+        SubmittedBy = workerId,
+        HarvestDate = dto.HarvestDate.ToUniversalTime(),
+        QuantityKg = dto.QuantityKg,
+        Notes = dto.Notes,
+        PricePerKg = dto.PricePerKg,
+        BatchNumber = dto.BatchNumber,
+        ApprovalStatus = "PENDING",
+        CreatedBy = workerId,
+        CreatedAt = DateTime.UtcNow,
+        ImagePath = cleanedImagePath,
+        ThumbnailPath = CleanImagePath(dto.ThumbnailPath),
+        ImageCaption = dto.ImageCaption,
+        AdditionalImagePaths = cleanedAdditionalPaths, // ✅ Always a list, never null
+        ImageMetadata = dto.ImageMetadata
+    };
+
+    if (!string.IsNullOrWhiteSpace(dto.QualityGrade))
+    {
+        harvest.QualityGrade = MapQualityGrade(dto.QualityGrade);
+    }
+    
+    if (!string.IsNullOrWhiteSpace(dto.HarvestMethod))
+    {
+        harvest.HarvestMethod = Enum.Parse<HarvestMethodEnum>(dto.HarvestMethod, true);
+    }
+
+    var created = await _harvestRepository.CreateAsync(harvest);
+    
+    await _auditLogService.LogCreateAsync(farmId, adminId, "Harvest", created.Id, created, null, null);
+
+    var result = _mapper.Map<HarvestDto>(created);
+    result.FieldName = field.FieldName;
+    result.WithPublicUrls(_fileStorageService);
+    
+    return ApiResponse<HarvestDto>.Ok(result, "Harvest submitted for approval");
+}
+
+// Application/Services/HarvestService.cs - Update CreateHarvestAsync
+
+private string? CleanImagePath(string? path)
+{
+    if (string.IsNullOrEmpty(path))
+        return null;
+
+    // ✅ Remove "http://localhost:5000/uploads/" if present
+    if (path.StartsWith("http://"))
+    {
+        var uri = new Uri(path);
+        path = uri.AbsolutePath.TrimStart('/');
+    }
+    
+    // Remove "uploads/" prefix if present
+    var cleaned = path.Replace("uploads/", "");
+    cleaned = cleaned.TrimStart('/');
+    
+    return string.IsNullOrEmpty(cleaned) ? null : cleaned;
+}
+
+// ✅ Helper method to clean image paths
+
+private QualityGradeEnum? MapQualityGrade(string grade)
+{
+    var gradeMap = new Dictionary<string, QualityGradeEnum>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "A_PLUS", QualityGradeEnum.A_PLUS },
+        { "PREMIUM", QualityGradeEnum.A_PLUS },
+        { "A", QualityGradeEnum.A },
+        { "GRADE_A", QualityGradeEnum.A },
+        { "B", QualityGradeEnum.B },
+        { "GRADE_B", QualityGradeEnum.B },
+        { "C", QualityGradeEnum.C },
+        { "GRADE_C", QualityGradeEnum.C },
+        { "D", QualityGradeEnum.D },
+        { "GRADE_D", QualityGradeEnum.D },
+        { "REJECTED", QualityGradeEnum.REJECTED },
+        { "REJECT", QualityGradeEnum.REJECTED }
+    };
+    
+    return gradeMap.TryGetValue(grade, out var mappedGrade) ? mappedGrade : null;
+}
 
     public async Task<ApiResponse<HarvestDto>> UpdateOwnHarvestAsync(int id, UpdateHarvestDto dto, int workerId, int farmId)
     {
@@ -116,7 +198,7 @@ public class HarvestService : IHarvestService
             harvest.PricePerKg = dto.PricePerKg;
         if (!string.IsNullOrWhiteSpace(dto.BatchNumber))
             harvest.BatchNumber = dto.BatchNumber;
-        // Image fields
+        
         if (dto.ImagePath != null)
             harvest.ImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : dto.ImagePath;
         if (dto.ThumbnailPath != null)
@@ -131,7 +213,6 @@ public class HarvestService : IHarvestService
         harvest.UpdatedAt = DateTime.UtcNow;
         harvest.UpdatedBy = workerId;
         
-        // Reset status to PENDING if it was REQUEST_CHANGES
         if (harvest.ApprovalStatus == "REQUEST_CHANGES")
         {
             harvest.ApprovalStatus = "PENDING";
@@ -146,6 +227,7 @@ public class HarvestService : IHarvestService
         return ApiResponse<HarvestDto>.Ok(result, "Harvest updated successfully");
     }
 
+    // ✅ Only ONE DeleteOwnHarvestAsync method
     public async Task<ApiResponse<bool>> DeleteOwnHarvestAsync(int id, int workerId, int farmId)
     {
         if (!await _harvestRepository.IsOwnerAsync(id, workerId, farmId))
@@ -157,12 +239,12 @@ public class HarvestService : IHarvestService
         if (harvest == null)
             return ApiResponse<bool>.Fail($"Harvest with ID {id} not found");
 
-        // Only allow deletion of PENDING or REJECTED harvests
         if (harvest.ApprovalStatus == "APPROVED")
         {
             return ApiResponse<bool>.Fail("Cannot delete an approved harvest. Please contact an admin.");
         }
 
+        await CleanupHarvestImagesAsync(harvest);
         await _harvestRepository.SoftDeleteAsync(harvest, workerId);
         
         await _auditLogService.LogSoftDeleteAsync(farmId, null, "Harvest", harvest.Id, harvest, null, null);
@@ -223,7 +305,7 @@ public class HarvestService : IHarvestService
             harvest.PricePerKg = dto.PricePerKg;
         if (!string.IsNullOrWhiteSpace(dto.BatchNumber))
             harvest.BatchNumber = dto.BatchNumber;
-        // Image fields
+        
         if (dto.ImagePath != null)
             harvest.ImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : dto.ImagePath;
         if (dto.ThumbnailPath != null)
@@ -246,12 +328,14 @@ public class HarvestService : IHarvestService
         return ApiResponse<HarvestDto>.Ok(result, "Harvest updated successfully");
     }
 
+    // ✅ Only ONE DeleteHarvestAsync method
     public async Task<ApiResponse<bool>> DeleteHarvestAsync(int id, int farmId, int adminId)
     {
         var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
         if (harvest == null)
             return ApiResponse<bool>.Fail($"Harvest with ID {id} not found");
 
+        await CleanupHarvestImagesAsync(harvest);
         await _harvestRepository.SoftDeleteAsync(harvest, adminId);
         
         await _auditLogService.LogSoftDeleteAsync(farmId, adminId, "Harvest", harvest.Id, harvest, null, null);
@@ -322,6 +406,8 @@ public class HarvestService : IHarvestService
             PageSize = pagedResult.PageSize
         };
 
+        result.WithPublicUrls(_fileStorageService);
+
         return ApiResponse<PagedResult<HarvestDto>>.Ok(result);
     }
 
@@ -332,6 +418,7 @@ public class HarvestService : IHarvestService
             return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
 
         var result = _mapper.Map<HarvestDto>(harvest);
+        result.WithPublicUrls(_fileStorageService);
         return ApiResponse<HarvestDto>.Ok(result);
     }
 
@@ -339,6 +426,7 @@ public class HarvestService : IHarvestService
     {
         var harvests = await _harvestRepository.GetByFieldAsync(fieldId, farmId);
         var dtos = _mapper.Map<IEnumerable<HarvestDto>>(harvests);
+         dtos.WithPublicUrls(_fileStorageService);
         return ApiResponse<IEnumerable<HarvestDto>>.Ok(dtos);
     }
 
@@ -346,6 +434,7 @@ public class HarvestService : IHarvestService
     {
         var harvests = await _harvestRepository.GetByCropCycleAsync(cropCycleId, farmId);
         var dtos = _mapper.Map<IEnumerable<HarvestDto>>(harvests);
+        dtos.WithPublicUrls(_fileStorageService);
         return ApiResponse<IEnumerable<HarvestDto>>.Ok(dtos);
     }
 
@@ -353,6 +442,7 @@ public class HarvestService : IHarvestService
     {
         var harvests = await _harvestRepository.GetByWorkerAsync(workerId, farmId);
         var dtos = _mapper.Map<IEnumerable<HarvestDto>>(harvests);
+         dtos.WithPublicUrls(_fileStorageService);
         return ApiResponse<IEnumerable<HarvestDto>>.Ok(dtos);
     }
 
@@ -374,6 +464,7 @@ public class HarvestService : IHarvestService
             Page = pagination.Page,
             PageSize = pagination.PageSize
         };
+        result.WithPublicUrls(_fileStorageService);
         
         return ApiResponse<PagedResult<HarvestDto>>.Ok(result);
     }
@@ -418,5 +509,40 @@ public class HarvestService : IHarvestService
     public async Task<bool> HasPendingApprovalsAsync(int workerId, int farmId)
     {
         return await _harvestRepository.HasPendingApprovalAsync(workerId, farmId);
+    }
+
+    // =============================================
+    // IMAGE CLEANUP HELPER
+    // =============================================
+
+    private async Task CleanupHarvestImagesAsync(Harvest harvest)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(harvest.ImagePath))
+            {
+                await _fileStorageService.DeleteFileAsync(harvest.ImagePath);
+            }
+
+            if (!string.IsNullOrEmpty(harvest.ThumbnailPath))
+            {
+                await _fileStorageService.DeleteFileAsync(harvest.ThumbnailPath);
+            }
+
+            if (harvest.AdditionalImagePaths?.Any() == true)
+            {
+                foreach (var path in harvest.AdditionalImagePaths)
+                {
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        await _fileStorageService.DeleteFileAsync(path);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cleaning up harvest images: {ex.Message}");
+        }
     }
 }

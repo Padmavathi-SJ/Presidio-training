@@ -57,4 +57,20 @@ public class FileStorageService : IFileStorageService
     {
         return $"{_baseUrl}/api/downloads/reports/{fileName}";
     }
+
+     // ✅ Add FileExistsAsync
+    public Task<bool> FileExistsAsync(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+            return Task.FromResult(false);
+
+        var fullPath = Path.Combine(_environment.ContentRootPath, filePath);
+        return Task.FromResult(File.Exists(fullPath));
+    }
+
+    // ✅ Add GetPublicUrl
+    public string GetPublicUrl(string filePath)
+    {
+        return GetDownloadUrl(filePath);
+    }
 }

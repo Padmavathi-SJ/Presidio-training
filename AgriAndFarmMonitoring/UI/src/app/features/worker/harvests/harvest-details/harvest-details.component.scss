@@ -1,0 +1,37 @@
+// src/app/features/worker/harvests/components/harvest-details/harvest-details.component.scss
+
+:host {
+  display: block;
+}
+
+.text-primary {
+  color: #2d6a4f;
+}
+
+.bg-primary {
+  background-color: #2d6a4f;
+}
+
+.bg-primary-50 {
+  background-color: #e8f5e9;
+}
+
+.bg-surface {
+  background-color: #f8f9fa;
+}
+
+.border-outline-variant {
+  border-color: #bfc9c1;
+}
+
+.text-on-surface {
+  color: #191c1d;
+}
+
+.text-on-surface-variant {
+  color: #404943;
+}
+
+.text-outline {
+  color: #707973;
+}

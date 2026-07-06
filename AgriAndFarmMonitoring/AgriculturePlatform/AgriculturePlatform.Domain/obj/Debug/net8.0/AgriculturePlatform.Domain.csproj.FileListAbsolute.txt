@@ -6,7 +6,6 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Domain/obj/Debug/net8.0/AgriculturePlatform.Domain.AssemblyInfoInputs.cache
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Domain/obj/Debug/net8.0/AgriculturePlatform.Domain.AssemblyInfo.cs
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Domain/obj/Debug/net8.0/AgriculturePlatform.Domain.csproj.CoreCompileInputs.cache
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Domain/obj/Debug/net8.0/AgriculturePlatform.Domain.sourcelink.json
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Domain/obj/Debug/net8.0/AgriculturePlatform.Domain.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Domain/obj/Debug/net8.0/refint/AgriculturePlatform.Domain.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Domain/obj/Debug/net8.0/AgriculturePlatform.Domain.pdb

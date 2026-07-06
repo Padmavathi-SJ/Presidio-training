@@ -1,5 +1,6 @@
 // AgriculturePlatform.Tests/Services/HarvestTest/HarvestServiceTests.cs
 using FluentAssertions;
+using AutoMapper;
 using Moq;
 using AgriculturePlatform.Application.Common;
 using AgriculturePlatform.Application.DTOs.Harvest;
@@ -20,6 +21,8 @@ public class HarvestServiceTests
     private readonly Mock<ICropCycleRepository> _cropCycleRepositoryMock;
     private readonly Mock<IWorkerRepository> _workerRepositoryMock;
     private readonly Mock<IAuditLogService> _auditLogServiceMock;
+    private readonly Mock<IFileStorageService> _fileStorageServiceMock; // ✅ Added
+    private readonly IMapper _mapper; // ✅ Added
     private readonly HarvestService _harvestService;
 
     public HarvestServiceTests()
@@ -29,8 +32,9 @@ public class HarvestServiceTests
         _cropCycleRepositoryMock = new Mock<ICropCycleRepository>();
         _workerRepositoryMock = new Mock<IWorkerRepository>();
         _auditLogServiceMock = new Mock<IAuditLogService>();
+        _fileStorageServiceMock = new Mock<IFileStorageService>(); // ✅ Added
         
-        var mapper = MapperHelper.CreateMapper();
+        _mapper = MapperHelper.CreateMapper(); // ✅ Use the mapper from helper
         
         _harvestService = new HarvestService(
             _harvestRepositoryMock.Object,
@@ -38,7 +42,8 @@ public class HarvestServiceTests
             _cropCycleRepositoryMock.Object,
             _workerRepositoryMock.Object,
             _auditLogServiceMock.Object,
-            mapper);
+            _fileStorageServiceMock.Object, // ✅ Added
+            _mapper); // ✅ Added
     }
 
     // =============================================
@@ -65,7 +70,6 @@ public class HarvestServiceTests
         
         var field = TestHelper.CreateTestField(1, farmId, adminId);
         
-        //  Create crop cycle manually instead of using TestHelper
         var cropCycle = new CropCycle 
         { 
             Id = 1, 

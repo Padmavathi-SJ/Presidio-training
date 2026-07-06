@@ -3,7 +3,6 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/obj/Debug/net8.0/AgriculturePlatform.Application.AssemblyInfoInputs.cache
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/obj/Debug/net8.0/AgriculturePlatform.Application.AssemblyInfo.cs
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/obj/Debug/net8.0/AgriculturePlatform.Application.csproj.CoreCompileInputs.cache
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/obj/Debug/net8.0/AgriculturePlatform.Application.sourcelink.json
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/bin/Debug/net8.0/AgriculturePlatform.Application.deps.json
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/bin/Debug/net8.0/AgriculturePlatform.Application.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/bin/Debug/net8.0/AgriculturePlatform.Application.pdb

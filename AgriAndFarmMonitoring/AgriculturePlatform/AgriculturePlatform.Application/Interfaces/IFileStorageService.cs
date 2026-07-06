@@ -6,5 +6,7 @@ public interface IFileStorageService
     Task<string> SaveFileAsync(byte[] fileContent, string fileName, string subDirectory);
     Task<byte[]> GetFileAsync(string filePath);
     Task<bool> DeleteFileAsync(string filePath);
-    string GetDownloadUrl(string fileName);
+    Task<bool> FileExistsAsync(string filePath);
+    string GetDownloadUrl(string filePath);
+    string GetPublicUrl(string filePath);
 }
