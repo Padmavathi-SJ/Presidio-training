@@ -1,5 +1,5 @@
 // src/app/features/worker/harvests/harvests.component.ts
-import { Component, inject } from '@angular/core';
+import { Component, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -7,7 +7,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { HarvestListComponent } from './harvest-list/harvest-list.component';
 import { HarvestFormComponent } from './harvest-form/harvest-form.component';
 import { HarvestDetailsComponent } from './harvest-details/harvest-details.component';
-import { WorkerHarvestService } from '../services/worker-harvest.service';
+import { HarvestStateService } from '../services/harvest-state.service';
 import { HarvestDto } from '../models/worker-harvest.model';
 
 @Component({
@@ -27,19 +27,23 @@ import { HarvestDto } from '../models/worker-harvest.model';
       (respondHarvest)="openRespondDialog($event)"
       (deleteHarvest)="deleteHarvest($event)">
     </app-harvest-list>
-
-    <!-- ✅ HarvestFormComponent is now only used as a dialog, not rendered here -->
   `
 })
 export class HarvestsComponent {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
-  private harvestService = inject(WorkerHarvestService);
+  private harvestState = inject(HarvestStateService);
 
   private formDialogRef: any = null;
 
+  constructor() {
+    // ✅ Auto-refresh when state changes
+    effect(() => {
+      // The list will auto-update via signals
+    });
+  }
+
   openCreateForm(): void {
-    // ✅ Open the form as a dialog
     this.formDialogRef = this.dialog.open(HarvestFormComponent, {
       width: '620px',
       maxHeight: '90vh',
@@ -52,15 +56,12 @@ export class HarvestsComponent {
 
     this.formDialogRef.afterClosed().subscribe((result: any) => {
       if (result?.saved) {
-        this.onFormSaved();
+        console.log('✅ Harvest created, list auto-updated via signals');
       }
     });
   }
 
   openEditForm(harvest: HarvestDto): void {
-    console.log('📝 Opening edit form with data:', harvest);
-    
-    // ✅ Open the form as a dialog with edit data
     this.formDialogRef = this.dialog.open(HarvestFormComponent, {
       width: '620px',
       maxHeight: '90vh',
@@ -73,12 +74,14 @@ export class HarvestsComponent {
 
     this.formDialogRef.afterClosed().subscribe((result: any) => {
       if (result?.saved) {
-        this.onFormSaved();
+        console.log('✅ Harvest updated, list auto-updated via signals');
       }
     });
   }
 
   viewDetails(harvest: HarvestDto): void {
+    this.harvestState.selectHarvest(harvest);
+    
     const dialogRef = this.dialog.open(HarvestDetailsComponent, {
       width: '560px',
       maxHeight: '90vh',
@@ -92,6 +95,7 @@ export class HarvestsComponent {
       } else if (result?.action === 'respond' && result.harvest) {
         this.openRespondDialog(result.harvest);
       }
+      this.harvestState.clearSelection();
     });
   }
 
@@ -101,19 +105,14 @@ export class HarvestsComponent {
 
   deleteHarvest(id: number): void {
     if (confirm('Are you sure you want to delete this harvest?')) {
-      this.harvestService.deleteHarvest(id).subscribe({
+      this.harvestState.deleteHarvest(id).subscribe({
         next: (res) => {
           if (res.success) {
             this.snackBar.open('Harvest deleted successfully', 'Close', { duration: 3000 });
           }
         },
-        error: (err) => this.snackBar.open(err.error?.message || 'Failed to delete harvest', 'Close', { duration: 5000 })
+        error: (err: any) => this.snackBar.open(err.error?.message || 'Failed to delete harvest', 'Close', { duration: 5000 })
       });
     }
-  }
-
-  onFormSaved(): void {
-    console.log('✅ Form saved, refreshing list...');
-    // The list will refresh when the dialog closes
   }
 }

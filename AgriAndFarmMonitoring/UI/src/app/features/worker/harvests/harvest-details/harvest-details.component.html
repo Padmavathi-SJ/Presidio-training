@@ -69,7 +69,7 @@
       <span class="text-base font-medium text-on-surface">{{ formatHarvestMethod(h.harvestMethod) }}</span>
     </div>
     <div *ngIf="h.pricePerKg">
-      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Price / kg</span>
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Price per kg</span>
       <span class="text-base font-medium text-on-surface">{{ h.pricePerKg | currency:'USD':'symbol':'1.2-2' }}</span>
     </div>
     <div *ngIf="h.totalValue">
@@ -77,7 +77,7 @@
       <span class="text-base font-bold text-primary">{{ h.totalValue | currency:'USD':'symbol':'1.2-2' }}</span>
     </div>
     <div *ngIf="h.batchNumber">
-      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Batch #</span>
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Batch Number</span>
       <span class="text-base font-medium text-on-surface">{{ h.batchNumber }}</span>
     </div>
     <div *ngIf="h.approvedAt">
@@ -88,7 +88,7 @@
 
   <!-- Notes -->
   <div class="mb-4" *ngIf="h.notes">
-    <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider mb-1">Notes</span>
+    <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider mb-1">Worker Notes</span>
     <p class="m-0 p-3 bg-surface rounded-lg text-sm text-on-surface whitespace-pre-wrap leading-relaxed">{{ h.notes }}</p>
   </div>
 
@@ -98,16 +98,33 @@
     <p class="m-0 p-3 bg-surface rounded-lg text-sm text-on-surface whitespace-pre-wrap leading-relaxed">{{ h.workerResponse }}</p>
   </div>
 
-  <!-- Images -->
-  <div class="mb-4" *ngIf="h.imagePath || h.additionalImagePaths?.length">
+  <!-- ✅ Images Section with Proper Labels - Fixed null checks -->
+  <div class="mb-4" *ngIf="h.imagePath || (h.additionalImagePaths && h.additionalImagePaths.length > 0)">
     <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider mb-2">Photos</span>
-    <div class="grid grid-cols-2 gap-3">
-      <div class="rounded-lg overflow-hidden border-2 border-primary" *ngIf="h.imagePath">
-        <img [src]="h.imagePath" class="w-full h-[150px] object-cover" [alt]="'Main harvest photo'" />
-        <div class="p-2 text-xs text-center text-on-surface-variant bg-surface" *ngIf="h.imageCaption">{{ h.imageCaption }}</div>
+    
+    <!-- ✅ Main Image -->
+    <div class="mb-4" *ngIf="h.imagePath">
+      <div class="flex items-center gap-2 mb-2">
+        <mat-icon class="text-primary text-sm w-4 h-4">photo_camera</mat-icon>
+        <span class="text-sm font-medium text-on-surface">Main Harvest Photo</span>
+        <span class="text-xs text-on-surface-variant" *ngIf="h.imageCaption">- {{ h.imageCaption }}</span>
       </div>
-      <div class="rounded-lg overflow-hidden border border-outline-variant" *ngFor="let img of h.additionalImagePaths">
-        <img [src]="img" class="w-full h-[150px] object-cover" [alt]="'Reference photo'" />
+      <div class="rounded-lg overflow-hidden border-2 border-primary">
+        <img [src]="h.imagePath" class="w-full h-[200px] object-cover" [alt]="'Main harvest photo'" />
+      </div>
+    </div>
+
+    <!-- ✅ Reference Images - Fixed with proper null check -->
+    <div *ngIf="h.additionalImagePaths && h.additionalImagePaths.length > 0">
+      <div class="flex items-center gap-2 mb-2">
+        <mat-icon class="text-outline text-sm w-4 h-4">collections</mat-icon>
+        <span class="text-sm font-medium text-on-surface">Reference Photos</span>
+        <span class="text-xs text-on-surface-variant">({{ h.additionalImagePaths.length }} images)</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-lg overflow-hidden border border-outline-variant" *ngFor="let img of h.additionalImagePaths">
+          <img [src]="img" class="w-full h-[120px] object-cover" [alt]="'Reference photo'" />
+        </div>
       </div>
     </div>
   </div>

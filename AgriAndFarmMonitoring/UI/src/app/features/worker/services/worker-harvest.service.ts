@@ -46,10 +46,10 @@ export class WorkerHarvestService {
     return this.http.post<ApiResponse<HarvestDto>>(`${this.API_URL}/worker/harvests`, data);
   }
 
-  updateHarvest(id: number, data: UpdateHarvestDto): Observable<ApiResponse<HarvestDto>> {
-    return this.http.put<ApiResponse<HarvestDto>>(`${this.API_URL}/worker/harvests/${id}`, data);
-  }
-
+updateHarvest(id: number, data: UpdateHarvestDto): Observable<ApiResponse<HarvestDto>> {
+  // ✅ Use PATCH for partial updates
+  return this.http.patch<ApiResponse<HarvestDto>>(`${this.API_URL}/worker/harvests/${id}`, data);
+}
   deleteHarvest(id: number): Observable<ApiResponse<boolean>> {
     return this.http.delete<ApiResponse<boolean>>(`${this.API_URL}/worker/harvests/${id}`);
   }

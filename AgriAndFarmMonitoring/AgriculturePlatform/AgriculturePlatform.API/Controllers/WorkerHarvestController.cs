@@ -9,6 +9,8 @@ using AgriculturePlatform.API.Filters;
 
 namespace AgriculturePlatform.API.Controllers;
 
+// API/Controllers/WorkerHarvestController.cs - Updated with PATCH
+
 [ApiController]
 [Route("api/worker/harvests")]
 [Authorize]
@@ -88,7 +90,21 @@ public class WorkerHarvestController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Data?.Id }, result);
     }
 
-    // PUT: api/worker/harvests/{id}
+    // ✅ PATCH: api/worker/harvests/{id} - Partial update
+    [HttpPatch("{id}")]
+    public async Task<IActionResult> Patch(int id, [FromBody] UpdateHarvestDto dto)
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        var result = await _harvestService.PatchHarvestAsync(id, dto, workerId, farmId);
+        
+        if (!result.Success)
+            return BadRequest(result);
+            
+        return Ok(result);
+    }
+
+    // Keep PUT for backward compatibility or full updates
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateHarvestDto dto)
     {
@@ -141,123 +157,77 @@ public class WorkerHarvestController : ControllerBase
         return Ok(new { HasPendingApprovals = hasPending });
     }
 
-
-// API/Controllers/WorkerHarvestController.cs - Upload Endpoint
-
-[HttpPost("upload")]
-[RequestSizeLimit(10 * 1024 * 1024)] // 10MB
-public async Task<IActionResult> UploadImage(IFormFile file)
-{
-    try
+    // POST: api/worker/harvests/upload
+    [HttpPost("upload")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<IActionResult> UploadImage(IFormFile file)
     {
-        // Validate file
-        if (file == null || file.Length == 0)
-            return BadRequest(new { success = false, message = "No file uploaded." });
-
-        var extension = Path.GetExtension(file.FileName).ToLower();
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-        
-        if (!allowedExtensions.Contains(extension))
-            return BadRequest(new { success = false, message = "Invalid file type. Only JPG, PNG and WEBP are allowed." });
-
-        if (file.Length > 10 * 1024 * 1024)
-            return BadRequest(new { success = false, message = "File size exceeds limit (10MB)." });
-
-        // Generate unique filename
-        var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
-        var subDirectory = $"harvests/{DateTime.UtcNow:yyyy/MM/dd}";
-
-        // Read file
-        using var stream = file.OpenReadStream();
-        var fileBytes = new byte[file.Length];
-        await stream.ReadAsync(fileBytes, 0, (int)file.Length);
-
-        // Save file
-        var relativePath = await _fileStorageService.SaveFileAsync(fileBytes, uniqueFileName, subDirectory);
-        
-        // Get public URL
-        var publicUrl = _fileStorageService.GetPublicUrl(relativePath);
-
-        return Ok(new
+        try
         {
-            success = true,
-            data = new
+            if (file == null || file.Length == 0)
+                return BadRequest(new { success = false, message = "No file uploaded." });
+
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            
+            if (!allowedExtensions.Contains(extension))
+                return BadRequest(new { success = false, message = "Invalid file type. Only JPG, PNG and WEBP are allowed." });
+
+            if (file.Length > 10 * 1024 * 1024)
+                return BadRequest(new { success = false, message = "File size exceeds limit (10MB)." });
+
+            var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
+            var subDirectory = $"harvests/{DateTime.UtcNow:yyyy/MM/dd}";
+
+            using var stream = file.OpenReadStream();
+            var fileBytes = new byte[file.Length];
+            await stream.ReadAsync(fileBytes, 0, (int)file.Length);
+
+            var relativePath = await _fileStorageService.SaveFileAsync(fileBytes, uniqueFileName, subDirectory);
+            var publicUrl = _fileStorageService.GetPublicUrl(relativePath);
+
+            return Ok(new
             {
-                fileName = relativePath, // Stores: "harvests/2026/07/06/file.jpg"
-                url = publicUrl           // Returns: "http://localhost:5000/uploads/harvests/2026/07/06/file.jpg"
-            }
-        });
+                success = true,
+                data = new
+                {
+                    fileName = relativePath,
+                    url = publicUrl
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = $"Upload failed: {ex.Message}" });
+        }
     }
-    catch (Exception ex)
-    {
-        return StatusCode(500, new { success = false, message = $"Upload failed: {ex.Message}" });
-    }
-}
 
-
-// ✅ OPTIMIZED: Resize thumbnail instead of copying full image
-private async Task<string> GenerateThumbnailAsync(byte[] imageBytes, string fileName, string subDirectory)
-{
-    var thumbnailName = $"thumb_{fileName}";
-    var thumbnailPath = Path.Combine(subDirectory, thumbnailName);
-    
-    try
+    [HttpDelete("upload/{fileName}")]
+    public async Task<IActionResult> DeleteUploadedImage(string fileName)
     {
-        // Use ImageSharp to resize (add SixLabors.ImageSharp NuGet package)
-        // For now, create a simple resize using System.Drawing (if on Windows)
-        // Or skip thumbnail generation for now to improve speed
-        // If you want to keep it simple, just save a small version
+        if (string.IsNullOrEmpty(fileName))
+            return BadRequest(new { message = "File name is required." });
+
+        var decodedFileName = Uri.UnescapeDataString(fileName);
         
-        // 🚀 OPTIMIZATION: Skip thumbnail generation entirely for speed
-        // or use a lightweight resizing library
-        
-        // For now, just save a compressed version (smaller quality)
-        // This is faster than copying the full image
-        await _fileStorageService.SaveFileAsync(imageBytes, thumbnailName, subDirectory);
+        try
+        {
+            var deleted = await _fileStorageService.DeleteFileAsync(decodedFileName);
+            
+            if (!deleted)
+                return NotFound(new { message = "File not found." });
+
+            return Ok(new { success = true, message = "File deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = $"Error deleting file: {ex.Message}" });
+        }
     }
-    catch
-    {
-        // If thumbnail fails, just return null
-        return null!;
-    }
-    
-    return thumbnailPath;
-}
-
-
-    // DELETE: api/worker/harvests/upload/{fileName} - NEW: Delete uploaded temp file
-// API/Controllers/WorkerHarvestController.cs - Add this endpoint
-
-[HttpDelete("upload/{fileName}")]
-public async Task<IActionResult> DeleteUploadedImage(string fileName)
-{
-    if (string.IsNullOrEmpty(fileName))
-        return BadRequest(new { message = "File name is required." });
-
-    // Decode the URL-encoded file name
-    var decodedFileName = Uri.UnescapeDataString(fileName);
-    
-    try
-    {
-        var deleted = await _fileStorageService.DeleteFileAsync(decodedFileName);
-        
-        if (!deleted)
-            return NotFound(new { message = "File not found." });
-
-        return Ok(new { success = true, message = "File deleted successfully." });
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(500, new { success = false, message = $"Error deleting file: {ex.Message}" });
-    }
-}
 
     private bool IsImageFile(string extension)
     {
         var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
         return validExtensions.Contains(extension.ToLower());
     }
-
-
-
 }

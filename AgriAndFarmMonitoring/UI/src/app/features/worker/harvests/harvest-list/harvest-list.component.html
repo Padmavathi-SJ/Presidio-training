@@ -24,7 +24,7 @@
         <mat-icon class="text-primary">list_alt</mat-icon>
       </div>
       <div>
-        <span class="text-xl font-semibold text-on-surface block">{{ totalHarvests }}</span>
+        <span class="text-xl font-semibold text-on-surface block">{{ totalCount() }}</span>
         <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Total Records</span>
       </div>
     </div>
@@ -33,7 +33,7 @@
         <mat-icon class="text-amber-600">hourglass_empty</mat-icon>
       </div>
       <div>
-        <span class="text-xl font-semibold text-on-surface block">{{ pendingCount }}</span>
+        <span class="text-xl font-semibold text-on-surface block">{{ pendingCount() }}</span>
         <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Pending Review</span>
       </div>
     </div>
@@ -42,7 +42,7 @@
         <mat-icon class="text-emerald-600">check_circle</mat-icon>
       </div>
       <div>
-        <span class="text-xl font-semibold text-on-surface block">{{ approvedCount }}</span>
+        <span class="text-xl font-semibold text-on-surface block">{{ approvedCount() }}</span>
         <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Approved</span>
       </div>
     </div>
@@ -51,7 +51,7 @@
         <mat-icon class="text-primary">scale</mat-icon>
       </div>
       <div>
-        <span class="text-xl font-semibold text-on-surface block">{{ totalQuantityKg | number:'1.0-0' }} kg</span>
+        <span class="text-xl font-semibold text-on-surface block">{{ totalQuantityKg() | number:'1.0-0' }} kg</span>
         <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Approved Yield</span>
       </div>
     </div>
@@ -130,11 +130,11 @@
 
   <!-- Table -->
   <div class="relative bg-white rounded-xl border border-outline-variant overflow-hidden">
-    <div class="absolute inset-0 bg-white/70 flex items-center justify-center z-10" *ngIf="isLoading">
+    <div class="absolute inset-0 bg-white/70 flex items-center justify-center z-10" *ngIf="isLoading()">
       <mat-spinner diameter="40"></mat-spinner>
     </div>
 
-    <div class="py-12 px-6 text-center" *ngIf="!isLoading && harvests.data.length === 0">
+    <div class="py-12 px-6 text-center" *ngIf="!isLoading() && harvests().length === 0">
       <mat-icon class="text-5xl w-12 h-12 text-outline mx-auto">agriculture</mat-icon>
       <h3 class="text-lg font-semibold text-on-surface mt-3">No harvests found</h3>
       <p class="text-on-surface-variant">No harvest records match your current filters.</p>
@@ -143,7 +143,7 @@
       </button>
     </div>
 
-    <table mat-table [dataSource]="harvests" matSort (matSortChange)="onSortChange($event)" *ngIf="!isLoading && harvests.data.length > 0" class="w-full">
+    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)" *ngIf="!isLoading() && harvests().length > 0" class="w-full">
       <!-- Date Column -->
       <ng-container matColumnDef="harvestDate">
         <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Date</th>
@@ -235,16 +235,23 @@
         <th mat-header-cell *matHeaderCellDef class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Actions</th>
         <td mat-cell *matCellDef="let h" class="py-3">
           <div class="flex gap-1">
-            <button mat-icon-button class="w-8 h-8 text-primary" matTooltip="View Details" (click)="viewHarvest.emit(h)">
+            <button mat-icon-button class="w-8 h-8 text-primary" matTooltip="View Details" 
+              (click)="viewHarvest.emit(h); $event.stopPropagation()">
               <mat-icon class="text-lg w-5 h-5">visibility</mat-icon>
             </button>
-            <button mat-icon-button class="w-8 h-8 text-primary" matTooltip="Edit" (click)="editHarvest.emit(h)" [disabled]="!canEdit(h)">
+            <button mat-icon-button class="w-8 h-8 text-primary" matTooltip="Edit" 
+              (click)="editHarvest.emit(h); $event.stopPropagation()" 
+              [disabled]="!canEdit(h)">
               <mat-icon class="text-lg w-5 h-5">edit</mat-icon>
             </button>
-            <button mat-icon-button class="w-8 h-8 text-amber-600" matTooltip="Respond to Admin" (click)="respondHarvest.emit(h)" [disabled]="!canRespond(h)">
+            <button mat-icon-button class="w-8 h-8 text-amber-600" matTooltip="Respond to Admin" 
+              (click)="respondHarvest.emit(h); $event.stopPropagation()" 
+              [disabled]="!canRespond(h)">
               <mat-icon class="text-lg w-5 h-5">reply</mat-icon>
             </button>
-            <button mat-icon-button class="w-8 h-8 text-red-600" matTooltip="Delete" (click)="deleteHarvest.emit(h.id)" [disabled]="!canDelete(h)">
+            <button mat-icon-button class="w-8 h-8 text-red-600" matTooltip="Delete" 
+              (click)="deleteHarvest.emit(h.id); $event.stopPropagation()" 
+              [disabled]="!canDelete(h)">
               <mat-icon class="text-lg w-5 h-5">delete</mat-icon>
             </button>
           </div>
@@ -259,9 +266,9 @@
           (click)="viewHarvest.emit(row)"></tr>
     </table>
 
-    <mat-paginator *ngIf="harvests.data.length > 0"
-      [length]="totalHarvests"
-      [pageSize]="pageSize"
+    <mat-paginator *ngIf="harvests().length > 0"
+      [length]="totalCount()"
+      [pageSize]="10"
       [pageSizeOptions]="[5, 10, 25, 50]"
       (page)="onPageChange($event)"
       showFirstLastButtons

@@ -105,7 +105,8 @@
           </button>
         </div>
         
-        <div class="border-2 border-dashed border-outline-variant rounded-lg p-5 text-center hover:border-primary transition-colors" *ngIf="!mainPhotoPreviewUrl && !isSubmitting">
+        <!-- ✅ FIX: Changed isSubmitting to isSaving -->
+        <div class="border-2 border-dashed border-outline-variant rounded-lg p-5 text-center hover:border-primary transition-colors" *ngIf="!mainPhotoPreviewUrl && !isSaving">
           <label class="cursor-pointer flex flex-col items-center gap-2">
             <mat-icon class="text-4xl w-9 h-9 text-outline">cloud_upload</mat-icon>
             <span class="text-sm text-on-surface-variant">Choose main photo</span>
@@ -116,25 +117,33 @@
 
       <!-- Reference Photos -->
       <div class="mt-4">
-        <label class="font-medium text-sm text-on-surface block mb-2">Additional Reference Photos</label>
+  <label class="font-medium text-sm text-on-surface block mb-2">Additional Reference Photos</label>
+  
+  <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3" *ngIf="referencePhotoPreviews.length > 0">
+    <div class="relative rounded-lg border border-outline-variant overflow-hidden aspect-square" *ngFor="let rp of referencePhotoPreviews; let i = index">
+      <img [src]="rp.url" class="w-full h-full object-cover" alt="Reference photo" />
+      <button mat-icon-button class="absolute top-1 right-1 bg-black/60 text-white hover:bg-black/80 w-6 h-6" (click)="removeReferencePhoto(i)">
+        <mat-icon class="text-xs w-3 h-3">close</mat-icon>
+      </button>
+    </div>
+  </div>
         
-        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3" *ngIf="referencePhotoPreviews.length > 0">
-          <div class="relative rounded-lg border border-outline-variant overflow-hidden aspect-square" *ngFor="let rp of referencePhotoPreviews; let i = index">
-            <img [src]="rp.url" class="w-full h-full object-cover" alt="Reference photo" />
-            <button mat-icon-button class="absolute top-1 right-1 bg-black/60 text-white hover:bg-black/80 w-6 h-6" (click)="removeReferencePhoto(i)">
-              <mat-icon class="text-xs w-3 h-3">close</mat-icon>
-            </button>
-          </div>
-        </div>
-        
-        <div class="border-2 border-dashed border-outline-variant rounded-lg p-4 text-center hover:border-primary transition-colors">
-          <label class="cursor-pointer flex flex-col items-center gap-2">
-            <mat-icon class="text-3xl w-8 h-8 text-outline">add_photo_alternate</mat-icon>
-            <span class="text-sm text-on-surface-variant">Add more photos (multi-select)</span>
-            <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="onMultipleFilesSelected($event)" hidden>
-          </label>
-        </div>
-      </div>
+       <!-- ✅ Ensure multiple attribute is properly set -->
+  <div class="border-2 border-dashed border-outline-variant rounded-lg p-4 text-center hover:border-primary transition-colors">
+    <label class="cursor-pointer flex flex-col items-center gap-2">
+      <mat-icon class="text-3xl w-8 h-8 text-outline">add_photo_alternate</mat-icon>
+      <span class="text-sm text-on-surface-variant">Add more photos (multi-select)</span>
+      <input 
+        type="file" 
+        accept="image/jpeg,image/png,image/webp" 
+        multiple 
+        (change)="onMultipleFilesSelected($event)" 
+        hidden
+        #fileInput
+      >
+    </label>
+  </div>
+</div>
 
       <!-- Image Caption -->
       <mat-form-field appearance="outline" class="w-full mt-3">
@@ -143,19 +152,19 @@
       </mat-form-field>
     </div>
 
-    <!-- Progress Bar -->
-    <div *ngIf="isSubmitting" class="px-6 py-3 bg-surface border-t border-outline-variant">
+    <!-- ✅ FIX: Changed isSubmitting to isSaving -->
+    <div *ngIf="isSaving" class="px-6 py-3 bg-surface border-t border-outline-variant">
       <mat-progress-bar mode="determinate" [value]="uploadProgress" class="rounded-full"></mat-progress-bar>
       <span class="block mt-1.5 text-sm text-on-surface-variant text-center">{{ uploadStatus }}</span>
     </div>
 
     <!-- Actions -->
     <div class="flex justify-end gap-2 px-6 py-4 border-t border-outline-variant">
-      <button mat-button (click)="closeDialog()" [disabled]="isSubmitting">Cancel</button>
-      <button mat-raised-button color="primary" (click)="save()" [disabled]="harvestForm.invalid || isSubmitting" class="min-w-[120px]">
-        <mat-spinner diameter="20" *ngIf="isSubmitting"></mat-spinner>
-        <span *ngIf="!isSubmitting">{{ editingId ? 'Update Harvest' : 'Submit Harvest' }}</span>
-        <span *ngIf="isSubmitting">Saving...</span>
+      <button mat-button (click)="closeDialog()" [disabled]="isSaving">Cancel</button>
+      <button mat-raised-button color="primary" (click)="save()" [disabled]="harvestForm.invalid || isSaving" class="min-w-[120px]">
+        <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+        <span *ngIf="!isSaving">{{ editingId ? 'Update Harvest' : 'Submit Harvest' }}</span>
+        <span *ngIf="isSaving">Saving...</span>
       </button>
     </div>
   </form>

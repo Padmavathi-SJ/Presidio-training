@@ -129,16 +129,30 @@ public async Task<ApiResponse<HarvestDto>> CreateHarvestAsync(CreateHarvestDto d
 
 // Application/Services/HarvestService.cs - Update CreateHarvestAsync
 
+// Application/Services/HarvestService.cs - Fix CleanImagePath
+
 private string? CleanImagePath(string? path)
 {
     if (string.IsNullOrEmpty(path))
         return null;
 
-    // ✅ Remove "http://localhost:5000/uploads/" if present
-    if (path.StartsWith("http://"))
+    // ✅ Remove full URL if present
+    if (path.StartsWith("http://") || path.StartsWith("https://"))
     {
-        var uri = new Uri(path);
-        path = uri.AbsolutePath.TrimStart('/');
+        try
+        {
+            var uri = new Uri(path);
+            path = uri.AbsolutePath.TrimStart('/');
+        }
+        catch
+        {
+            // If URI parsing fails, try to clean manually
+            var parts = path.Split(new[] { "uploads/" }, StringSplitOptions.None);
+            if (parts.Length > 1)
+            {
+                path = parts[parts.Length - 1];
+            }
+        }
     }
     
     // Remove "uploads/" prefix if present
@@ -171,61 +185,92 @@ private QualityGradeEnum? MapQualityGrade(string grade)
     return gradeMap.TryGetValue(grade, out var mappedGrade) ? mappedGrade : null;
 }
 
-    public async Task<ApiResponse<HarvestDto>> UpdateOwnHarvestAsync(int id, UpdateHarvestDto dto, int workerId, int farmId)
+// Application/Services/HarvestService.cs - Update UpdateOwnHarvestAsync
+
+public async Task<ApiResponse<HarvestDto>> UpdateOwnHarvestAsync(int id, UpdateHarvestDto dto, int workerId, int farmId)
+{
+    if (!await _harvestRepository.CanWorkerEditAsync(id, workerId, farmId))
     {
-        if (!await _harvestRepository.CanWorkerEditAsync(id, workerId, farmId))
-        {
-            return ApiResponse<HarvestDto>.Fail("You don't have permission to update this harvest. Only pending or requested changes harvests can be edited.");
-        }
-
-        var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
-        if (harvest == null)
-            return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
-
-        var oldHarvest = _mapper.Map<Harvest>(harvest);
-
-        if (dto.HarvestDate.HasValue)
-            harvest.HarvestDate = dto.HarvestDate.Value.ToUniversalTime();
-        if (dto.QuantityKg.HasValue)
-            harvest.QuantityKg = dto.QuantityKg.Value;
-        if (!string.IsNullOrWhiteSpace(dto.QualityGrade))
-            harvest.QualityGrade = Enum.Parse<QualityGradeEnum>(dto.QualityGrade, true);
-        if (!string.IsNullOrWhiteSpace(dto.HarvestMethod))
-            harvest.HarvestMethod = Enum.Parse<HarvestMethodEnum>(dto.HarvestMethod, true);
-        if (!string.IsNullOrWhiteSpace(dto.Notes))
-            harvest.Notes = dto.Notes;
-        if (dto.PricePerKg.HasValue)
-            harvest.PricePerKg = dto.PricePerKg;
-        if (!string.IsNullOrWhiteSpace(dto.BatchNumber))
-            harvest.BatchNumber = dto.BatchNumber;
-        
-        if (dto.ImagePath != null)
-            harvest.ImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : dto.ImagePath;
-        if (dto.ThumbnailPath != null)
-            harvest.ThumbnailPath = string.IsNullOrWhiteSpace(dto.ThumbnailPath) ? null : dto.ThumbnailPath;
-        if (dto.ImageCaption != null)
-            harvest.ImageCaption = string.IsNullOrWhiteSpace(dto.ImageCaption) ? null : dto.ImageCaption;
-        if (dto.AdditionalImagePaths != null)
-            harvest.AdditionalImagePaths = dto.AdditionalImagePaths;
-        if (dto.ImageMetadata != null)
-            harvest.ImageMetadata = string.IsNullOrWhiteSpace(dto.ImageMetadata) ? null : dto.ImageMetadata;
-
-        harvest.UpdatedAt = DateTime.UtcNow;
-        harvest.UpdatedBy = workerId;
-        
-        if (harvest.ApprovalStatus == "REQUEST_CHANGES")
-        {
-            harvest.ApprovalStatus = "PENDING";
-            harvest.WorkerResponse = null;
-        }
-
-        await _harvestRepository.UpdateAsync(harvest);
-        
-        await _auditLogService.LogUpdateAsync(farmId, null, "Harvest", harvest.Id, oldHarvest, harvest, null, null);
-
-        var result = _mapper.Map<HarvestDto>(harvest);
-        return ApiResponse<HarvestDto>.Ok(result, "Harvest updated successfully");
+        return ApiResponse<HarvestDto>.Fail("You don't have permission to update this harvest. Only pending or requested changes harvests can be edited.");
     }
+
+    var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
+    if (harvest == null)
+        return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
+
+    var oldHarvest = _mapper.Map<Harvest>(harvest);
+
+    // ✅ Update fields only if they are provided
+    if (dto.HarvestDate.HasValue)
+        harvest.HarvestDate = dto.HarvestDate.Value.ToUniversalTime();
+    
+    if (dto.QuantityKg.HasValue)
+        harvest.QuantityKg = dto.QuantityKg.Value;
+    
+    if (!string.IsNullOrWhiteSpace(dto.QualityGrade))
+        harvest.QualityGrade = Enum.Parse<QualityGradeEnum>(dto.QualityGrade, true);
+    
+    if (!string.IsNullOrWhiteSpace(dto.HarvestMethod))
+        harvest.HarvestMethod = Enum.Parse<HarvestMethodEnum>(dto.HarvestMethod, true);
+    
+    if (!string.IsNullOrWhiteSpace(dto.Notes))
+        harvest.Notes = dto.Notes;
+    
+    if (dto.PricePerKg.HasValue)
+        harvest.PricePerKg = dto.PricePerKg;
+    
+    if (!string.IsNullOrWhiteSpace(dto.BatchNumber))
+        harvest.BatchNumber = dto.BatchNumber;
+    
+    if (!string.IsNullOrWhiteSpace(dto.ImageCaption))
+        harvest.ImageCaption = dto.ImageCaption;
+
+    // ✅ Handle image updates carefully - only update if explicitly provided
+    // If dto.ImagePath is explicitly set (including null), update it
+    if (dto.ImagePath != null)
+    {
+        // Check if the path is different or explicitly set to null
+        harvest.ImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : dto.ImagePath;
+    }
+    // Otherwise, keep the existing ImagePath (don't change it)
+
+    // ✅ Handle AdditionalImagePaths - only update if explicitly provided
+    // If dto.AdditionalImagePaths is explicitly set (including empty array or null), update it
+    if (dto.AdditionalImagePaths != null)
+    {
+        // Clean the paths
+        var cleanedPaths = dto.AdditionalImagePaths
+            .Select(CleanImagePath)
+            .Where(p => !string.IsNullOrEmpty(p))
+            .ToList();
+        
+        harvest.AdditionalImagePaths = cleanedPaths.Any() ? cleanedPaths : new List<string>();
+    }
+    // Otherwise, keep the existing AdditionalImagePaths (don't change it)
+
+    if (dto.ThumbnailPath != null)
+        harvest.ThumbnailPath = string.IsNullOrWhiteSpace(dto.ThumbnailPath) ? null : dto.ThumbnailPath;
+
+    if (dto.ImageMetadata != null)
+        harvest.ImageMetadata = string.IsNullOrWhiteSpace(dto.ImageMetadata) ? null : dto.ImageMetadata;
+
+    harvest.UpdatedAt = DateTime.UtcNow;
+    harvest.UpdatedBy = workerId;
+    
+    if (harvest.ApprovalStatus == "REQUEST_CHANGES")
+    {
+        harvest.ApprovalStatus = "PENDING";
+        harvest.WorkerResponse = null;
+    }
+
+    await _harvestRepository.UpdateAsync(harvest);
+    
+    await _auditLogService.LogUpdateAsync(farmId, null, "Harvest", harvest.Id, oldHarvest, harvest, null, null);
+
+    var result = _mapper.Map<HarvestDto>(harvest);
+    result.WithPublicUrls(_fileStorageService);
+    return ApiResponse<HarvestDto>.Ok(result, "Harvest updated successfully");
+}
 
     // ✅ Only ONE DeleteOwnHarvestAsync method
     public async Task<ApiResponse<bool>> DeleteOwnHarvestAsync(int id, int workerId, int farmId)
@@ -283,50 +328,76 @@ private QualityGradeEnum? MapQualityGrade(string grade)
     // ADMIN OPERATIONS
     // =============================================
 
-    public async Task<ApiResponse<HarvestDto>> UpdateHarvestAsync(int id, UpdateHarvestDto dto, int farmId, int adminId)
+// Application/Services/HarvestService.cs - Update UpdateHarvestAsync (Admin)
+
+public async Task<ApiResponse<HarvestDto>> UpdateHarvestAsync(int id, UpdateHarvestDto dto, int farmId, int adminId)
+{
+    var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
+    if (harvest == null)
+        return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
+
+    var oldHarvest = _mapper.Map<Harvest>(harvest);
+
+    // ✅ Only update fields that are provided
+    if (dto.HarvestDate.HasValue)
+        harvest.HarvestDate = dto.HarvestDate.Value.ToUniversalTime();
+    
+    if (dto.QuantityKg.HasValue)
+        harvest.QuantityKg = dto.QuantityKg.Value;
+    
+    if (!string.IsNullOrWhiteSpace(dto.QualityGrade))
+        harvest.QualityGrade = Enum.Parse<QualityGradeEnum>(dto.QualityGrade, true);
+    
+    if (!string.IsNullOrWhiteSpace(dto.HarvestMethod))
+        harvest.HarvestMethod = Enum.Parse<HarvestMethodEnum>(dto.HarvestMethod, true);
+    
+    if (!string.IsNullOrWhiteSpace(dto.Notes))
+        harvest.Notes = dto.Notes;
+    
+    if (dto.PricePerKg.HasValue)
+        harvest.PricePerKg = dto.PricePerKg;
+    
+    if (!string.IsNullOrWhiteSpace(dto.BatchNumber))
+        harvest.BatchNumber = dto.BatchNumber;
+    
+    if (!string.IsNullOrWhiteSpace(dto.ImageCaption))
+        harvest.ImageCaption = dto.ImageCaption;
+
+    // ✅ Handle images - only update if explicitly provided
+    if (dto.ImagePath != null)
     {
-        var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
-        if (harvest == null)
-            return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
-
-        var oldHarvest = _mapper.Map<Harvest>(harvest);
-
-        if (dto.HarvestDate.HasValue)
-            harvest.HarvestDate = dto.HarvestDate.Value.ToUniversalTime();
-        if (dto.QuantityKg.HasValue)
-            harvest.QuantityKg = dto.QuantityKg.Value;
-        if (!string.IsNullOrWhiteSpace(dto.QualityGrade))
-            harvest.QualityGrade = Enum.Parse<QualityGradeEnum>(dto.QualityGrade, true);
-        if (!string.IsNullOrWhiteSpace(dto.HarvestMethod))
-            harvest.HarvestMethod = Enum.Parse<HarvestMethodEnum>(dto.HarvestMethod, true);
-        if (!string.IsNullOrWhiteSpace(dto.Notes))
-            harvest.Notes = dto.Notes;
-        if (dto.PricePerKg.HasValue)
-            harvest.PricePerKg = dto.PricePerKg;
-        if (!string.IsNullOrWhiteSpace(dto.BatchNumber))
-            harvest.BatchNumber = dto.BatchNumber;
-        
-        if (dto.ImagePath != null)
-            harvest.ImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : dto.ImagePath;
-        if (dto.ThumbnailPath != null)
-            harvest.ThumbnailPath = string.IsNullOrWhiteSpace(dto.ThumbnailPath) ? null : dto.ThumbnailPath;
-        if (dto.ImageCaption != null)
-            harvest.ImageCaption = string.IsNullOrWhiteSpace(dto.ImageCaption) ? null : dto.ImageCaption;
-        if (dto.AdditionalImagePaths != null)
-            harvest.AdditionalImagePaths = dto.AdditionalImagePaths;
-        if (dto.ImageMetadata != null)
-            harvest.ImageMetadata = string.IsNullOrWhiteSpace(dto.ImageMetadata) ? null : dto.ImageMetadata;
-
-        harvest.UpdatedAt = DateTime.UtcNow;
-        harvest.UpdatedBy = adminId;
-
-        await _harvestRepository.UpdateAsync(harvest);
-        
-        await _auditLogService.LogUpdateAsync(farmId, adminId, "Harvest", harvest.Id, oldHarvest, harvest, null, null);
-
-        var result = _mapper.Map<HarvestDto>(harvest);
-        return ApiResponse<HarvestDto>.Ok(result, "Harvest updated successfully");
+        harvest.ImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : dto.ImagePath;
     }
+    // Keep existing if not provided
+
+    if (dto.AdditionalImagePaths != null)
+    {
+        var cleanedPaths = dto.AdditionalImagePaths
+            .Select(CleanImagePath)
+            .Where(p => !string.IsNullOrEmpty(p))
+            .ToList();
+        
+        harvest.AdditionalImagePaths = cleanedPaths.Any() ? cleanedPaths : new List<string>();
+    }
+    // Keep existing if not provided
+
+    if (dto.ThumbnailPath != null)
+        harvest.ThumbnailPath = string.IsNullOrWhiteSpace(dto.ThumbnailPath) ? null : dto.ThumbnailPath;
+
+    if (dto.ImageMetadata != null)
+        harvest.ImageMetadata = string.IsNullOrWhiteSpace(dto.ImageMetadata) ? null : dto.ImageMetadata;
+
+    harvest.UpdatedAt = DateTime.UtcNow;
+    harvest.UpdatedBy = adminId;
+
+    await _harvestRepository.UpdateAsync(harvest);
+    
+    await _auditLogService.LogUpdateAsync(farmId, adminId, "Harvest", harvest.Id, oldHarvest, harvest, null, null);
+
+    var result = _mapper.Map<HarvestDto>(harvest);
+    result.WithPublicUrls(_fileStorageService);
+    return ApiResponse<HarvestDto>.Ok(result, "Harvest updated successfully");
+}
 
     // ✅ Only ONE DeleteHarvestAsync method
     public async Task<ApiResponse<bool>> DeleteHarvestAsync(int id, int farmId, int adminId)
@@ -545,4 +616,149 @@ private QualityGradeEnum? MapQualityGrade(string grade)
             Console.WriteLine($"Error cleaning up harvest images: {ex.Message}");
         }
     }
+
+// Application/Services/HarvestService.cs - Updated PatchHarvestAsync
+
+/// <summary>
+/// PATCH: Partial update - only updates fields that are provided
+/// </summary>
+public async Task<ApiResponse<HarvestDto>> PatchHarvestAsync(int id, UpdateHarvestDto dto, int workerId, int farmId)
+{
+    if (!await _harvestRepository.CanWorkerEditAsync(id, workerId, farmId))
+    {
+        return ApiResponse<HarvestDto>.Fail("You don't have permission to update this harvest. Only pending or requested changes harvests can be edited.");
+    }
+
+    var harvest = await _harvestRepository.GetByIdAsync(id, farmId);
+    if (harvest == null)
+        return ApiResponse<HarvestDto>.Fail($"Harvest with ID {id} not found");
+
+    var oldHarvest = _mapper.Map<Harvest>(harvest);
+    var hasChanges = false;
+
+    // ❌ REMOVED: FieldId and CropCycleId - workers cannot change these
+    // Workers should not be able to change the Field or CropCycle of an existing harvest
+
+    // ✅ Only update fields that are explicitly provided (not null)
+    if (dto.HarvestDate.HasValue && dto.HarvestDate.Value != harvest.HarvestDate)
+    {
+        harvest.HarvestDate = dto.HarvestDate.Value.ToUniversalTime();
+        hasChanges = true;
+    }
+
+    if (dto.QuantityKg.HasValue && dto.QuantityKg.Value != harvest.QuantityKg)
+    {
+        harvest.QuantityKg = dto.QuantityKg.Value;
+        hasChanges = true;
+    }
+
+    if (dto.QualityGrade != null && dto.QualityGrade != harvest.QualityGrade?.ToString())
+    {
+        harvest.QualityGrade = string.IsNullOrWhiteSpace(dto.QualityGrade) ? null : MapQualityGrade(dto.QualityGrade);
+        hasChanges = true;
+    }
+
+    if (dto.HarvestMethod != null && dto.HarvestMethod != harvest.HarvestMethod?.ToString())
+    {
+        harvest.HarvestMethod = string.IsNullOrWhiteSpace(dto.HarvestMethod) ? null : Enum.Parse<HarvestMethodEnum>(dto.HarvestMethod, true);
+        hasChanges = true;
+    }
+
+    if (dto.Notes != null && dto.Notes != harvest.Notes)
+    {
+        harvest.Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes;
+        hasChanges = true;
+    }
+
+    if (dto.PricePerKg.HasValue && dto.PricePerKg.Value != harvest.PricePerKg)
+    {
+        harvest.PricePerKg = dto.PricePerKg.Value;
+        hasChanges = true;
+    }
+
+    if (dto.BatchNumber != null && dto.BatchNumber != harvest.BatchNumber)
+    {
+        harvest.BatchNumber = string.IsNullOrWhiteSpace(dto.BatchNumber) ? null : dto.BatchNumber;
+        hasChanges = true;
+    }
+
+    if (dto.ImageCaption != null && dto.ImageCaption != harvest.ImageCaption)
+    {
+        harvest.ImageCaption = string.IsNullOrWhiteSpace(dto.ImageCaption) ? null : dto.ImageCaption;
+        hasChanges = true;
+    }
+
+    // ✅ Handle image changes carefully
+    if (dto.ImagePath != null)
+    {
+        var newImagePath = string.IsNullOrWhiteSpace(dto.ImagePath) ? null : CleanImagePath(dto.ImagePath);
+        if (newImagePath != harvest.ImagePath)
+        {
+            harvest.ImagePath = newImagePath;
+            hasChanges = true;
+        }
+    }
+
+    if (dto.ThumbnailPath != null)
+    {
+        var newThumbnailPath = string.IsNullOrWhiteSpace(dto.ThumbnailPath) ? null : CleanImagePath(dto.ThumbnailPath);
+        if (newThumbnailPath != harvest.ThumbnailPath)
+        {
+            harvest.ThumbnailPath = newThumbnailPath;
+            hasChanges = true;
+        }
+    }
+
+   if (dto.AdditionalImagePaths != null)
+{
+    var cleanedPaths = dto.AdditionalImagePaths
+        .Select(CleanImagePath)
+        .Where(p => !string.IsNullOrEmpty(p))
+        .Select(p => p!) // ✅ Tell compiler it's not null
+        .ToList();
+    
+    var newPaths = cleanedPaths.Any() ? cleanedPaths : new List<string>();
+    
+    // Check if the list has changed
+    if (!harvest.AdditionalImagePaths.SequenceEqual(newPaths))
+    {
+        harvest.AdditionalImagePaths = newPaths;
+        hasChanges = true;
+    }
+}
+
+    if (dto.ImageMetadata != null && dto.ImageMetadata != harvest.ImageMetadata)
+    {
+        harvest.ImageMetadata = string.IsNullOrWhiteSpace(dto.ImageMetadata) ? null : dto.ImageMetadata;
+        hasChanges = true;
+    }
+
+    // ✅ If no changes, return early
+    if (!hasChanges)
+    {
+        var noChangeResult = _mapper.Map<HarvestDto>(harvest);
+        noChangeResult.WithPublicUrls(_fileStorageService);
+        return ApiResponse<HarvestDto>.Ok(noChangeResult, "No changes detected");
+    }
+
+    // ✅ Update the harvest
+    harvest.UpdatedAt = DateTime.UtcNow;
+    harvest.UpdatedBy = workerId;
+    
+    if (harvest.ApprovalStatus == "REQUEST_CHANGES")
+    {
+        harvest.ApprovalStatus = "PENDING";
+        harvest.WorkerResponse = null;
+    }
+
+    await _harvestRepository.UpdateAsync(harvest);
+    
+    await _auditLogService.LogUpdateAsync(farmId, null, "Harvest", harvest.Id, oldHarvest, harvest, null, null);
+
+    var result = _mapper.Map<HarvestDto>(harvest);
+    result.WithPublicUrls(_fileStorageService);
+    return ApiResponse<HarvestDto>.Ok(result, "Harvest updated successfully");
+}
+
+
 }

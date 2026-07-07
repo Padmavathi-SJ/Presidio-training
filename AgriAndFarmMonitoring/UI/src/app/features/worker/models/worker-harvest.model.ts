@@ -1,5 +1,23 @@
 // src/app/features/worker/models/worker-harvest.model.ts
 
+// ✅ Add these exports for the state service
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  errors?: string[];
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
 export interface HarvestDto {
   id: number;
   farmId: number;
@@ -67,12 +85,9 @@ export interface CreateHarvestDto {
   imageMetadata?: string;
 }
 
-// src/app/features/worker/models/worker-harvest.model.ts
-
 export interface UpdateHarvestDto {
-  // ✅ Add missing fields that can be updated
-  fieldId?: number;        // ✅ Added
-  cropCycleId?: number;    // ✅ Added
+  fieldId?: number;
+  cropCycleId?: number;
   harvestDate?: string;
   quantityKg?: number;
   qualityGrade?: string | null;
@@ -80,10 +95,10 @@ export interface UpdateHarvestDto {
   notes?: string | null;
   pricePerKg?: number | null;
   batchNumber?: string | null;
-  imagePath?: string | null;  // ✅ Changed to allow null
+  imagePath?: string | null;
   thumbnailPath?: string | null;
   imageCaption?: string | null;
-  additionalImagePaths?: string[] | null;  // ✅ Changed to allow null
+  additionalImagePaths?: string[] | null;
   imageMetadata?: string | null;
 }
 

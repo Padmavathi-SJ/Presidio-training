@@ -9,6 +9,7 @@ public interface IHarvestService
     // Worker Operations
     Task<ApiResponse<HarvestDto>> CreateHarvestAsync(CreateHarvestDto dto, int farmId, int workerId, int adminId);
     Task<ApiResponse<HarvestDto>> UpdateOwnHarvestAsync(int id, UpdateHarvestDto dto, int workerId, int farmId);
+    Task<ApiResponse<HarvestDto>> PatchHarvestAsync(int id, UpdateHarvestDto dto, int workerId, int farmId);
     Task<ApiResponse<bool>> DeleteOwnHarvestAsync(int id, int workerId, int farmId);
     Task<ApiResponse<HarvestDto>> RespondToAdminAsync(int id, HarvestWorkerResponseDto response, int farmId, int workerId);
     

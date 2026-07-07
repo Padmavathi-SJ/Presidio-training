@@ -2,7 +2,7 @@
 <div class="min-h-screen bg-surface">
   <!-- Main Content -->
   <div class="max-w-[1440px] mx-auto">
-    <!-- Harvest List -->
+    <!-- Harvest List Only - Form is opened as dialog -->
     <app-harvest-list
       (createHarvest)="openCreateForm()"
       (editHarvest)="openEditForm($event)"
@@ -10,14 +10,5 @@
       (respondHarvest)="openRespondDialog($event)"
       (deleteHarvest)="deleteHarvest($event)">
     </app-harvest-list>
-
-    <!-- Harvest Form (Hidden by default, opened via dialog) -->
-    <app-harvest-form
-      #harvestForm
-      [editingId]="editingId"
-      [editData]="editData"
-      (saved)="onFormSaved()"
-      (cancelled)="onFormCancelled()">
-    </app-harvest-form>
   </div>
 </div>

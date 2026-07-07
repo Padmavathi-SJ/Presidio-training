@@ -1,5 +1,5 @@
 // src/app/features/worker/harvests/components/harvest-list/harvest-list.component.ts
-import { Component, OnInit, OnDestroy, inject, ViewChild, EventEmitter, Output, Input } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, EventEmitter, Output, effect, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe, CurrencyPipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -17,9 +17,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { debounceTime, distinctUntilChanged, finalize, Subject, takeUntil } from 'rxjs';
+import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 
-import { WorkerHarvestService } from '../../services/worker-harvest.service';
+import { HarvestStateService } from '../../services/harvest-state.service';
 import { WorkerFieldService } from '../../services/worker-field.service';
 import { HarvestDto, HarvestFilterDto } from '../../models/worker-harvest.model';
 
@@ -52,65 +52,59 @@ import { HarvestDto, HarvestFilterDto } from '../../models/worker-harvest.model'
   styleUrls: ['./harvest-list.component.scss']
 })
 export class HarvestListComponent implements OnInit, OnDestroy {
-  private harvestService = inject(WorkerHarvestService);
+  private harvestState = inject(HarvestStateService);
   private fieldService = inject(WorkerFieldService);
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
 
-  private destroy$ = new Subject<void>();
-
-  @Input() farmId: number = 0;
   @Output() createHarvest = new EventEmitter<void>();
   @Output() editHarvest = new EventEmitter<HarvestDto>();
   @Output() viewHarvest = new EventEmitter<HarvestDto>();
   @Output() respondHarvest = new EventEmitter<HarvestDto>();
   @Output() deleteHarvest = new EventEmitter<number>();
 
-  harvests = new MatTableDataSource<HarvestDto>([]);
-  fields: any[] = [];
-  cropCycles: any[] = [];
+  // ✅ Signals for reactive data
+  readonly harvests = this.harvestState.harvests;
+  readonly totalCount = this.harvestState.totalCount;
+  readonly isLoading = this.harvestState.isLoading;
+  readonly pendingCount = this.harvestState.pendingCount;
+  readonly approvedCount = this.harvestState.approvedCount;
+  readonly totalQuantityKg = this.harvestState.totalQuantityKg;
 
+  // ✅ MatTableDataSource for the table
+  dataSource = new MatTableDataSource<HarvestDto>([]);
+
+  // ✅ Signal for selected tab
   selectedTabIndex = 0;
+
   displayedColumns: string[] = [
     'harvestDate', 'fieldName', 'cropType', 'quantityKg',
     'qualityGrade', 'images', 'approvalStatus', 'actions'
   ];
 
-  totalHarvests = 0;
-  pageSize = 10;
-  pageIndex = 0;
-  isLoading = false;
-
   filterForm!: FormGroup;
+  fields: any[] = [];
+  cropCycles: any[] = [];
 
   readonly qualityGrades = ['A_PLUS', 'A', 'B', 'C', 'D', 'REJECTED'];
   readonly harvestMethods = ['MANUAL', 'MECHANICAL', 'SEMI_MECHANICAL', 'COMBINE'];
-  readonly approvalStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'REQUEST_CHANGES'];
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
+  private destroy$ = new Subject<void>();
+
   constructor() {
     this.initFilterForm();
+    
+    // ✅ Auto-update dataSource when harvests signal changes
+    effect(() => {
+      this.dataSource.data = this.harvests();
+    });
   }
 
   ngOnInit(): void {
     this.loadFields();
-    this.loadHarvests();
-
-    this.filterForm.valueChanges.pipe(
-      debounceTime(400),
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.pageIndex = 0;
-      this.loadHarvests();
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   private initFilterForm(): void {
@@ -124,6 +118,34 @@ export class HarvestListComponent implements OnInit, OnDestroy {
       fromDate: [''],
       toDate: ['']
     });
+
+    // ✅ Auto-trigger filter changes
+    this.filterForm.valueChanges
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((values) => {
+        const filter: HarvestFilterDto = {
+          page: 1,
+          pageSize: 10,
+          ...values,
+          fromDate: values.fromDate ? new Date(values.fromDate).toISOString() : undefined,
+          toDate: values.toDate ? new Date(values.toDate).toISOString() : undefined
+        };
+        
+        // Remove empty values
+        Object.keys(filter).forEach(key => {
+          const k = key as keyof HarvestFilterDto;
+          if (filter[k] === '' || filter[k] === null || filter[k] === undefined) {
+            delete filter[k];
+          }
+        });
+        
+        // ✅ Update state filter - auto triggers reload
+        this.harvestState.updateFilter(filter);
+      });
   }
 
   onTabChange(index: number): void {
@@ -144,7 +166,6 @@ export class HarvestListComponent implements OnInit, OnDestroy {
         error: () => {}
       });
     }
-    this.loadHarvests();
   }
 
   loadFields(): void {
@@ -158,51 +179,23 @@ export class HarvestListComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadHarvests(): void {
-    this.isLoading = true;
-    const formVal = this.filterForm.value;
-    const filter: HarvestFilterDto = {
-      page: this.pageIndex + 1,
-      pageSize: this.pageSize,
-      ...formVal,
-      fromDate: formVal.fromDate ? new Date(formVal.fromDate).toISOString() : undefined,
-      toDate: formVal.toDate ? new Date(formVal.toDate).toISOString() : undefined
-    };
-
-    Object.keys(filter).forEach(key => {
-      const k = key as keyof HarvestFilterDto;
-      if (filter[k] === '' || filter[k] === null || filter[k] === undefined) {
-        delete filter[k];
-      }
-    });
-
-    this.harvestService.getMyHarvests(filter)
-      .pipe(finalize(() => this.isLoading = false))
-      .subscribe({
-        next: (res) => {
-          if (res.success && res.data) {
-            this.harvests.data = res.data.items || [];
-            this.totalHarvests = res.data.totalCount;
-          }
-        },
-        error: () => this.showError('Failed to load harvests.')
-      });
-  }
-
   onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadHarvests();
+    this.harvestState.updateFilter({
+      page: event.pageIndex + 1,
+      pageSize: event.pageSize
+    });
   }
 
   onSortChange(sortState: Sort): void {
-    this.filterForm.patchValue({
-      sortBy: sortState.direction ? sortState.active : 'harvestDate',
-      isDescending: sortState.direction === 'desc'
-    }, { emitEvent: false });
-    this.loadHarvests();
+    if (sortState.direction) {
+      this.harvestState.updateFilter({
+        sortBy: sortState.active,
+        isDescending: sortState.direction === 'desc'
+      });
+    }
   }
 
+  // ✅ Helper methods for template
   getApprovalBadgeClass(status: string): string {
     switch (status?.toUpperCase()) {
       case 'APPROVED': return 'badge-approved';
@@ -263,21 +256,8 @@ export class HarvestListComponent implements OnInit, OnDestroy {
     return harvest.approvalStatus === 'REQUEST_CHANGES';
   }
 
-  get pendingCount(): number {
-    return this.harvests.data.filter(h => h.approvalStatus === 'PENDING').length;
-  }
-
-  get approvedCount(): number {
-    return this.harvests.data.filter(h => h.approvalStatus === 'APPROVED').length;
-  }
-
-  get totalQuantityKg(): number {
-    return this.harvests.data
-      .filter(h => h.approvalStatus === 'APPROVED')
-      .reduce((sum, h) => sum + (h.quantityKg || 0), 0);
-  }
-
-  private showError(message: string): void {
-    this.snackBar.open(message, 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

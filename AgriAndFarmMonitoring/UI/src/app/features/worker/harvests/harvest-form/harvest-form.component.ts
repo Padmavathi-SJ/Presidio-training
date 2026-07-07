@@ -12,11 +12,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Subject } from 'rxjs';
+import { Subject, finalize } from 'rxjs';
 
-import { WorkerHarvestService } from '../../services/worker-harvest.service';
+import { HarvestStateService } from '../../services/harvest-state.service';
 import { WorkerFieldService } from '../../services/worker-field.service';
 import { ImageCompressorService } from '../../../../core/services/image-compressor.service';
+import { WorkerHarvestService } from '../../services/worker-harvest.service';
 import { HarvestDto, UpdateHarvestDto } from '../../models/worker-harvest.model';
 
 @Component({
@@ -41,6 +42,7 @@ import { HarvestDto, UpdateHarvestDto } from '../../models/worker-harvest.model'
 })
 export class HarvestFormComponent implements OnInit, OnDestroy {
   private harvestService = inject(WorkerHarvestService);
+  private harvestState = inject(HarvestStateService);
   private fieldService = inject(WorkerFieldService);
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<HarvestFormComponent>);
@@ -48,10 +50,12 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
   private snackBar = inject(MatSnackBar);
   private imageCompressor = inject(ImageCompressorService);
 
-  private destroy$ = new Subject<void>();
+  // ✅ Local saving state (not using signal to avoid issues)
+  isSaving = false;
 
   editingId: number | null = null;
   editData: HarvestDto | null = null;
+  isLoading = false;
 
   harvestForm!: FormGroup;
   fields: any[] = [];
@@ -61,13 +65,12 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
   originalFormValues: any = {};
   originalAdditionalImagePaths: string[] = [];
 
-  // Image states - store files locally until submission
+  // Image states
   selectedMainFile: File | null = null;
   selectedReferenceFiles: File[] = [];
   existingMainImagePath: string | null = null;
   existingReferencePaths: string[] = [];
   
-  // Preview URLs
   mainPhotoPreviewUrl: string | null = null;
   referencePhotoPreviews: { 
     id: string;
@@ -77,8 +80,6 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
     file?: File;
   }[] = [];
 
-  // Upload state
-  isSubmitting = false;
   uploadProgress = 0;
   uploadStatus = '';
 
@@ -87,7 +88,6 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
 
   constructor() {
     this.initForm();
-    // Get data from dialog
     this.editingId = this.data?.editingId || null;
     this.editData = this.data?.editData || null;
   }
@@ -95,17 +95,14 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadFields();
     if (this.editData) {
-      console.log('📝 Populating form with edit data:', this.editData);
-      this.populateForm(this.editData);
+      this.loadCropCyclesAndPopulate(this.editData);
     } else {
-      console.log('🆕 Creating new harvest');
       this.harvestForm.reset({ harvestDate: new Date() });
     }
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    // Cleanup
   }
 
   private initForm(): void {
@@ -134,25 +131,26 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
     });
   }
 
-  onFieldSelected(fieldId: number): void {
-    this.cropCycles = [];
-    if (this.harvestForm) {
-      this.harvestForm.patchValue({ cropCycleId: '' }, { emitEvent: false });
-    }
-    if (fieldId) {
-      this.fieldService.getAssignedFieldDetail(fieldId).subscribe({
-        next: (res: any) => {
-          if (res.success && res.data?.cropCycles) {
-            this.cropCycles = res.data.cropCycles;
-          }
-        },
-        error: () => console.error('Failed to load crop cycles')
-      });
-    }
+  loadCropCyclesAndPopulate(harvest: HarvestDto): void {
+    this.isLoading = true;
+    
+    this.fieldService.getAssignedFieldDetail(harvest.fieldId).subscribe({
+      next: (res: any) => {
+        if (res.success && res.data?.cropCycles) {
+          this.cropCycles = res.data.cropCycles;
+        }
+        this.populateForm(harvest);
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load crop cycles:', err);
+        this.populateForm(harvest);
+        this.isLoading = false;
+      }
+    });
   }
 
   populateForm(harvest: HarvestDto): void {
-    // Store original values for change detection
     this.originalFormValues = {
       fieldId: harvest.fieldId,
       cropCycleId: harvest.cropCycleId,
@@ -167,14 +165,11 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
     };
 
     this.harvestForm.patchValue(this.originalFormValues);
-    console.log('✅ Form patched with values:', this.harvestForm.value);
 
-    // Store existing image paths
     this.existingMainImagePath = harvest.imagePath || null;
     this.existingReferencePaths = harvest.additionalImagePaths || [];
     this.originalAdditionalImagePaths = harvest.additionalImagePaths ? [...harvest.additionalImagePaths] : [];
 
-    // Show existing images as previews
     this.mainPhotoPreviewUrl = harvest.imagePath || null;
     this.referencePhotoPreviews = (harvest.additionalImagePaths || []).map((url, index) => ({
       id: `existing-${index}-${Date.now()}`,
@@ -184,7 +179,24 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
     }));
 
     if (harvest.fieldId) {
-      this.onFieldSelected(harvest.fieldId);
+      this.cropCycles = [...this.cropCycles];
+    }
+  }
+
+  onFieldSelected(fieldId: number): void {
+    this.cropCycles = [];
+    if (this.harvestForm) {
+      this.harvestForm.patchValue({ cropCycleId: '' }, { emitEvent: false });
+    }
+    if (fieldId) {
+      this.fieldService.getAssignedFieldDetail(fieldId).subscribe({
+        next: (res: any) => {
+          if (res.success && res.data?.cropCycles) {
+            this.cropCycles = res.data.cropCycles;
+          }
+        },
+        error: () => console.error('Failed to load crop cycles')
+      });
     }
   }
 
@@ -219,40 +231,83 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
     event.target.value = '';
   }
 
-  async onMultipleFilesSelected(event: any): Promise<void> {
-    const files: FileList = event.target.files;
-    if (!files || files.length === 0) return;
+
+// src/app/features/worker/harvests/components/harvest-form/harvest-form.component.ts
+// Update the onMultipleFilesSelected method
+
+async onMultipleFilesSelected(event: any): Promise<void> {
+  const files: FileList = event.target.files;
+  if (!files || files.length === 0) return;
+  
+  console.log(`📸 Selected ${files.length} reference photos`);
+  
+  try {
+    const processedFiles: File[] = [];
     
-    try {
-      const processedFiles = await Promise.all(
-        Array.from(files).map(async file => {
-          if (file.size > 1024 * 1024) {
-            return await this.imageCompressor.compressImage(file);
-          }
-          return file;
-        })
-      );
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      console.log(`📸 Processing file ${i + 1}: ${file.name} (${file.size} bytes)`);
       
-      this.selectedReferenceFiles = [...this.selectedReferenceFiles, ...processedFiles];
+      // Validate file type
+      if (!file.type.match(/image\/(jpeg|png|webp)/)) {
+        this.showError(`Invalid file type: ${file.name}. Only JPG, PNG and WEBP are allowed.`);
+        continue;
+      }
       
-      processedFiles.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.referencePhotoPreviews.push({
-            id: `new-${Date.now()}-${Math.random()}`,
-            fileName: file.name,
-            url: e.target?.result as string,
-            isExisting: false,
-            file: file
-          });
-        };
-        reader.readAsDataURL(file);
-      });
-    } catch (err) {
-      this.showError('Failed to process images');
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        this.showError(`File ${file.name} exceeds 10MB limit.`);
+        continue;
+      }
+      
+      let processedFile = file;
+      if (file.size > 1024 * 1024) { // > 1MB
+        processedFile = await this.imageCompressor.compressImage(file);
+        console.log(`✅ Compressed ${file.name}: ${file.size} -> ${processedFile.size} bytes`);
+      }
+      
+      processedFiles.push(processedFile);
     }
+    
+    if (processedFiles.length === 0) {
+      this.showError('No valid images selected');
+      event.target.value = '';
+      return;
+    }
+    
+    // Add all processed files
+    this.selectedReferenceFiles = [...this.selectedReferenceFiles, ...processedFiles];
+    console.log(`✅ Added ${processedFiles.length} reference photos, total: ${this.selectedReferenceFiles.length}`);
+    
+    // Create previews for all files
+    processedFiles.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.referencePhotoPreviews.push({
+          id: `new-${Date.now()}-${Math.random()}`,
+          fileName: file.name,
+          url: e.target?.result as string,
+          isExisting: false,
+          file: file
+        });
+        console.log(`✅ Preview created for ${file.name}`);
+      };
+      reader.onerror = (error) => {
+        console.error(`❌ Error reading file ${file.name}:`, error);
+        this.showError(`Failed to read file: ${file.name}`);
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    // Reset the input so the same files can be selected again
+    event.target.value = '';
+    
+  } catch (err) {
+    console.error('❌ Error processing images:', err);
+    this.showError('Failed to process images');
     event.target.value = '';
   }
+}
 
   removeMainPhoto(): void {
     this.selectedMainFile = null;
@@ -277,29 +332,29 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
     this.selectedReferenceFiles = [];
     this.mainPhotoPreviewUrl = null;
     this.referencePhotoPreviews = [];
-    this.isSubmitting = false;
     this.uploadProgress = 0;
     this.uploadStatus = '';
     this.existingMainImagePath = null;
     this.existingReferencePaths = [];
     this.originalAdditionalImagePaths = [];
     this.originalFormValues = {};
+    this.isSaving = false;
   }
 
   // =============================================
-  // SAVE HARVEST
+  // SAVE HARVEST - Uses State Service
   // =============================================
 
   async save(): Promise<void> {
     if (this.harvestForm.invalid) return;
 
-    this.isSubmitting = true;
+    // ✅ Set local saving state
+    this.isSaving = true;
     this.uploadProgress = 0;
     this.uploadStatus = 'Preparing files...';
 
     const currentValues = { ...this.harvestForm.value };
     
-    // Clean up empty strings
     if (currentValues.cropCycleId === '') currentValues.cropCycleId = null;
     if (currentValues.qualityGrade === '') currentValues.qualityGrade = null;
     if (currentValues.harvestMethod === '') currentValues.harvestMethod = null;
@@ -312,7 +367,7 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
       let mainImagePath: string | null = null;
       let referencePaths: string[] = [];
 
-      // Step 1: Handle main photo
+      // Handle main photo
       if (this.selectedMainFile) {
         this.uploadStatus = 'Uploading main photo...';
         this.uploadProgress = 10;
@@ -327,11 +382,10 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
         mainImagePath = this.existingMainImagePath;
       }
 
-      // Step 2: Handle reference photos
+      // Handle reference photos
       const keptExistingPaths = this.existingReferencePaths.filter(path =>
         this.referencePhotoPreviews.some(p => p.isExisting && p.url === path)
       );
-      
       referencePaths = [...keptExistingPaths];
 
       const newFilesToUpload = this.referencePhotoPreviews
@@ -358,14 +412,12 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
         this.uploadProgress = 80;
       }
 
-      // Step 3: Build DTO
       this.uploadStatus = 'Saving harvest...';
       this.uploadProgress = 90;
 
       let response;
 
       if (this.editingId) {
-        // For EDIT: Only send changed values
         const updateDto: UpdateHarvestDto = {};
 
         if (currentValues.fieldId !== this.originalFormValues.fieldId) {
@@ -417,20 +469,21 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
         if (Object.keys(updateDto).length === 0) {
           this.snackBar.open('No changes to update', 'Close', { duration: 3000 });
           this.dialogRef.close({ saved: false });
-          this.isSubmitting = false;
+          this.isSaving = false;
           return;
         }
 
-        response = await this.harvestService.updateHarvest(this.editingId, updateDto).toPromise();
+        // ✅ Use state service - auto refreshes list
+        response = await this.harvestState.updateHarvest(this.editingId, updateDto).toPromise();
       } else {
-        // For CREATE: Send all values
         const createDto = {
           ...currentValues,
           harvestDate: new Date(currentValues.harvestDate).toISOString(),
           imagePath: mainImagePath,
           additionalImagePaths: referencePaths.length > 0 ? referencePaths : null
         };
-        response = await this.harvestService.createHarvest(createDto).toPromise();
+        // ✅ Use state service - auto refreshes list
+        response = await this.harvestState.createHarvest(createDto).toPromise();
       }
 
       if (response?.success) {
@@ -448,7 +501,10 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
     } catch (error: any) {
       this.showError(error.message || 'Failed to save harvest');
     } finally {
-      this.isSubmitting = false;
+      // ✅ Reset saving state
+      this.isSaving = false;
+      this.uploadProgress = 0;
+      this.uploadStatus = '';
     }
   }
 
@@ -456,32 +512,25 @@ export class HarvestFormComponent implements OnInit, OnDestroy {
   // HELPERS
   // =============================================
 
-// src/app/features/worker/harvests/components/harvest-form/harvest-form.component.ts
-
-private extractFileNameFromUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  
-  // ✅ If it's a full URL, extract the file name
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    try {
-      const parsedUrl = new URL(url);
-      const pathname = parsedUrl.pathname;
-      // Remove /uploads/ prefix
-      const cleanPath = pathname.replace('/uploads/', '');
-      // Get the last segment (file name)
-      const segments = cleanPath.split('/').filter(s => s);
-      return segments.length > 0 ? segments[segments.length - 1] : null;
-    } catch {
-      return url;
+  private extractFileNameFromUrl(url: string | null | undefined): string | null {
+    if (!url) return null;
+    
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      try {
+        const parsedUrl = new URL(url);
+        const pathname = parsedUrl.pathname;
+        const cleanPath = pathname.replace('/uploads/', '');
+        const segments = cleanPath.split('/').filter(s => s);
+        return segments.length > 0 ? segments[segments.length - 1] : null;
+      } catch {
+        return url;
+      }
     }
+    
+    const cleanPath = url.replace('uploads/', '');
+    const segments = cleanPath.split('/').filter(s => s);
+    return segments.length > 0 ? segments[segments.length - 1] : url;
   }
-  
-  // If it's already a relative path
-  const cleanPath = url.replace('uploads/', '');
-  const segments = cleanPath.split('/').filter(s => s);
-  return segments.length > 0 ? segments[segments.length - 1] : url;
-}
-
 
   formatQualityGrade(grade: string | undefined): string {
     if (!grade) return '—';
