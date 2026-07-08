@@ -12,15 +12,21 @@ public class SensorReadingService : ISensorReadingService
 {
     private readonly ISensorReadingRepository _sensorRepository;
     private readonly IFieldRepository _fieldRepository;
+    private readonly IAlertService _alertService;
+    private readonly IAlertNotificationService _notificationService;
     private readonly IMapper _mapper;
 
     public SensorReadingService(
         ISensorReadingRepository sensorRepository,
         IFieldRepository fieldRepository,
+        IAlertService alertService,
+        IAlertNotificationService notificationService,
         IMapper mapper)
     {
         _sensorRepository = sensorRepository;
         _fieldRepository = fieldRepository;
+        _alertService = alertService;
+        _notificationService = notificationService;
         _mapper = mapper;
     }
 
@@ -107,5 +113,39 @@ public class SensorReadingService : ISensorReadingService
     {
         var stats = await _sensorRepository.GetAverageReadingsAsync(farmId, groupBy, fromDate, toDate);
         return ApiResponse<SensorStatisticsDto>.Ok(stats);
+    }
+
+    public async Task<ApiResponse<SensorReadingDto>> AddManualReadingAsync(
+        CreateManualSensorReadingDto dto, int farmId, int adminId)
+    {
+        if (!Enum.TryParse<SensorTypeEnum>(dto.SensorType, true, out var sensorType))
+        {
+            return ApiResponse<SensorReadingDto>.Fail("Invalid sensor type");
+        }
+
+        var reading = new SensorReading
+        {
+            FarmId = farmId,
+            AdminId = adminId,
+            FieldId = dto.FieldId,
+            CropCycleId = dto.CropCycleId,
+            SensorType = sensorType,
+            Value = dto.Value,
+            Unit = dto.Unit,
+            RecordedAt = dto.RecordedAt ?? DateTime.UtcNow
+        };
+
+        var created = await _sensorRepository.CreateAsync(reading);
+
+        // Check for alerts immediately
+        await _alertService.CheckAndCreateAlertAsync(
+            dto.FieldId, dto.CropCycleId, sensorType.ToString(), dto.Value, farmId, adminId);
+
+        var result = _mapper.Map<SensorReadingDto>(created);
+
+        // Notify UI in real-time
+        await _notificationService.NotifySensorReadingAsync(farmId, result);
+
+        return ApiResponse<SensorReadingDto>.Ok(result, "Manual reading added successfully");
     }
 }

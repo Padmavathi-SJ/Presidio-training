@@ -31,11 +31,15 @@ public class YieldReport : BaseEntity
     public decimal PassRate { get; set; }
     public decimal RejectionRate { get; set; }
     
-    // Detailed data (stored as JSON)
+    // JSON fields
     public string? FieldBreakdownJson { get; set; }
     public string? CropTypeBreakdownJson { get; set; }
     public string? MonthlyTrendJson { get; set; }
     public string? QualityDistributionJson { get; set; }
+    public string? SensorStatisticsJson { get; set; }
+    public string? WeatherStatisticsJson { get; set; }
+    public string? ObservationSummaryJson { get; set; }
+    public string? TaskSummaryJson { get; set; }
     
     // File storage fields - ADD THESE
     public string? FileName { get; set; }

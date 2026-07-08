@@ -250,36 +250,52 @@
               </tr>
             </thead>
             <tbody>
-              @for (item of getDailyStatsArray(); track item.key) {
+              @for (stat of getPaginatedStats(); track stat.key) {
                 <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td class="px-4 py-2 text-gray-700">{{ formatDate(item.key) }}</td>
+                  <td class="px-4 py-2 text-gray-700">{{ formatDate(stat.key) }}</td>
                   <td class="px-4 py-2 text-right font-medium tabular-nums">
-                    {{ item.value.avgSoilMoisture?.toFixed(1) || '--' }}%
+                    {{ stat.value.avgSoilMoisture?.toFixed(1) || '--' }}%
                   </td>
                   <td class="px-4 py-2 text-right font-medium tabular-nums">
-                    {{ item.value.avgSoilTemp?.toFixed(1) || '--' }}°C
+                    {{ stat.value.avgSoilTemp?.toFixed(1) || '--' }}°C
                   </td>
                   <td class="px-4 py-2 text-right font-medium tabular-nums">
-                    {{ item.value.avgAirTemp?.toFixed(1) || '--' }}°C
+                    {{ stat.value.avgAirTemp?.toFixed(1) || '--' }}°C
                   </td>
                   <td class="px-4 py-2 text-right font-medium tabular-nums">
-                    {{ item.value.avgHumidity?.toFixed(1) || '--' }}%
+                    {{ stat.value.avgHumidity?.toFixed(1) || '--' }}%
                   </td>
-                  <td class="px-4 py-2 text-center text-gray-600">{{ item.value.readingsCount }}</td>
+                  <td class="px-4 py-2 text-center text-gray-600">{{ stat.value.readingsCount }}</td>
                   <td class="px-4 py-2 text-center">
-                    @if (item.value.alertCount > 0) {
+                    @if (stat.value.alertCount > 0) {
                       <span class="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
-                        {{ item.value.alertCount }}
+                        {{ stat.value.alertCount }}
                       </span>
                     } @else {
                       <span class="text-xs text-gray-400">0</span>
                     }
                   </td>
                 </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="text-center py-8">
+                    <mat-icon class="text-3xl text-gray-300">analytics</mat-icon>
+                    <p class="text-gray-500 mt-2">No statistics data available for the selected criteria</p>
+                  </td>
+                </tr>
               }
             </tbody>
           </table>
         </div>
+        <!-- Paginator -->
+        <mat-paginator 
+          [length]="getDailyStatsArray().length"
+          [pageSize]="pageSize()"
+          [pageIndex]="pageIndex()"
+          [pageSizeOptions]="[10, 25, 50]"
+          (page)="handlePageEvent($event)"
+          aria-label="Select page">
+        </mat-paginator>
       </mat-card-content>
     </mat-card>
   }

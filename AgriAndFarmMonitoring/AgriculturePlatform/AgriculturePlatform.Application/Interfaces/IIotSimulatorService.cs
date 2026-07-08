@@ -10,4 +10,5 @@ public interface IIoTSimulatorService
     Task<IEnumerable<object>> GetSimulationStatusAsync(int farmId);
     Task GenerateTestCriticalAlertsAsync(int farmId, int adminId);
     Task GenerateRandomSeverityReadingsAsync(int farmId, int adminId);
+    Task GenerateHourlyRandomAlertAsync(int farmId, int adminId);
 }

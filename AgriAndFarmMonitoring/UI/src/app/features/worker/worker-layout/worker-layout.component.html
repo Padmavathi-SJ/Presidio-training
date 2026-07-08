@@ -27,9 +27,12 @@
     <span class="flex-1"></span>
     
     <!-- Current Route Title -->
-    <span class="text-white/90 text-base font-medium hidden md:block">
-      {{ currentRoute() }}
-    </span>
+    <div class="hidden md:flex flex-1 items-center justify-center">
+      <span class="topbar-highlight-title">
+        <mat-icon>{{ currentRouteIcon() }}</mat-icon>
+        {{ currentRoute() }}
+      </span>
+    </div>
     
     <!-- Spacer -->
     <span class="flex-1"></span>
@@ -100,7 +103,6 @@
             #link="routerLinkActive"
             class="!mx-3 !my-1 !rounded-lg transition-all duration-200 cursor-pointer !h-11"
             [class]="link.isActive ? '!bg-primary-50 !text-primary-700' : 'hover:!bg-gray-100'"
-            (click)="currentRoute.set(item.label)"
           >
             <mat-icon 
               matListItemIcon 

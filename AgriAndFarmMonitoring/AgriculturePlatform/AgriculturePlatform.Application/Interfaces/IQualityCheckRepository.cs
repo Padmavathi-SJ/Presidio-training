@@ -32,7 +32,7 @@ public interface IQualityCheckRepository
     Task<IEnumerable<QualityCheck>> GetByDateRangeAsync(int farmId, DateTime fromDate, DateTime toDate);
     
     // Statistics
-    Task<QualityStatisticsDto> GetQualityStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate);
+    Task<QualityStatisticsDto> GetQualityStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate, int? workerId = null);
     
     // Ownership and permissions
     Task<bool> IsOwnerAsync(int qualityCheckId, int workerId, int farmId);

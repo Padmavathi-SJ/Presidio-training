@@ -1,0 +1,70 @@
+<h2 mat-dialog-title class="dialog-header-professional">
+  <mat-icon>add_chart</mat-icon>
+  Generate Yield Report
+</h2>
+
+<mat-dialog-content class="dialog-content-professional">
+  <form [formGroup]="reportForm" class="flex flex-col gap-4 mt-2">
+    
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Report Name</mat-label>
+      <input matInput formControlName="reportName" placeholder="e.g. Q3 Harvest Summary">
+      <mat-error *ngIf="reportForm.get('reportName')?.hasError('required')">Report Name is required</mat-error>
+    </mat-form-field>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline">
+        <mat-label>Start Date</mat-label>
+        <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+        <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+        <mat-error *ngIf="reportForm.get('startDate')?.hasError('required')">Start Date is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>End Date</mat-label>
+        <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+        <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+        <mat-error *ngIf="reportForm.get('endDate')?.hasError('required')">End Date is required</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline">
+        <mat-label>Filter by Field (Optional)</mat-label>
+        <mat-select formControlName="fieldId">
+          <mat-option [value]="null">-- All Fields --</mat-option>
+          <mat-option *ngFor="let field of fields" [value]="field.id">{{ field.fieldName }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Filter by Crop Cycle (Optional)</mat-label>
+        <mat-select formControlName="cropCycleId">
+          <mat-option [value]="null">-- All Crop Cycles --</mat-option>
+          <mat-option *ngFor="let cycle of cropCycles" [value]="cycle.id">{{ cycle.cropType }} ({{ cycle.id }})</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Export Format</mat-label>
+      <mat-select formControlName="exportFormat">
+        <mat-option value="csv">CSV (Comma Separated Values)</mat-option>
+        <mat-option value="pdf">PDF (Portable Document Format)</mat-option>
+      </mat-select>
+      <mat-error *ngIf="reportForm.get('exportFormat')?.hasError('required')">Format is required</mat-error>
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions-professional">
+  <button mat-button (click)="onCancel()" [disabled]="isSubmitting">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="reportForm.invalid || isSubmitting">
+    <mat-icon *ngIf="!isSubmitting">analytics</mat-icon>
+    <mat-icon *ngIf="isSubmitting"><mat-spinner diameter="20"></mat-spinner></mat-icon>
+    Generate Report
+  </button>
+</mat-dialog-actions>

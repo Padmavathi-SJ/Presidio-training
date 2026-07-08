@@ -35,6 +35,16 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./observations/observations.component')
           .then(c => c.Observations)
       },
+      {
+        path: 'harvests',
+        loadComponent: () => import('./harvests/harvests.component')
+          .then(c => c.Harvests)
+      },
+      {
+        path: 'quality-checks',
+        loadComponent: () => import('./quality-checks/quality-checks.component')
+          .then(c => c.QualityChecksComponent)
+      },
       // ✅ Sensor Module Routes
       {
         path: 'sensors',
@@ -65,6 +75,11 @@ export const ADMIN_ROUTES: Routes = [
             path: 'alerts',
             loadComponent: () => import('./sensors/alerts/alerts.component')
               .then(c => c.AlertsComponent)
+          },
+          {
+            path: 'thresholds',
+            loadComponent: () => import('./sensors/alert-thresholds/alert-thresholds.component')
+              .then(c => c.AlertThresholdsComponent)
           },
           {
             path: 'field/:fieldId',
@@ -107,19 +122,9 @@ export const ADMIN_ROUTES: Routes = [
           .then(c => c.TasksComponent)
       },
       {
-        path: 'harvests',
-        loadComponent: () => import('./harvests/harvests.component')
-          .then(c => c.Harvests)
-      },
-      {
-        path: 'quality-checks',
-        loadComponent: () => import('./quality-checks/quality-checks.component')
-          .then(c => c.QualityChecks)
-      },
-      {
         path: 'yield-reports',
         loadComponent: () => import('./yield-reports/yield-reports.component')
-          .then(c => c.YieldReports)
+          .then(c => c.YieldReportsComponent)
       },
       {
         path: 'profile',

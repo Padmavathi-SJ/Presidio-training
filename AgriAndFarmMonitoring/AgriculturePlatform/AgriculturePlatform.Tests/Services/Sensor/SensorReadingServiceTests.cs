@@ -15,18 +15,21 @@ public class SensorReadingServiceTests
 {
     private readonly Mock<ISensorReadingRepository> _sensorRepositoryMock;
     private readonly Mock<IFieldRepository> _fieldRepositoryMock;
+    private readonly Mock<IAlertService> _alertServiceMock;
     private readonly SensorReadingService _sensorService;
 
     public SensorReadingServiceTests()
     {
         _sensorRepositoryMock = new Mock<ISensorReadingRepository>();
         _fieldRepositoryMock = new Mock<IFieldRepository>();
+        _alertServiceMock = new Mock<IAlertService>();
         
         var mapper = MapperHelper.CreateMapper();
         
         _sensorService = new SensorReadingService(
             _sensorRepositoryMock.Object,
             _fieldRepositoryMock.Object,
+            _alertServiceMock.Object,
             mapper);
     }
 

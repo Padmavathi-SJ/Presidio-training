@@ -115,23 +115,3 @@ public class AlertThresholdService : IAlertThresholdService
         return ApiResponse<bool>.Ok(true, "Threshold deleted successfully");
     }
 }
-
-// Add IAlertThresholdService interface
-public interface IAlertThresholdService
-{
-    Task<ApiResponse<IEnumerable<AlertThresholdDto>>> GetAllThresholdsAsync(int farmId);
-    Task<ApiResponse<AlertThresholdDto>> GetThresholdByIdAsync(int id, int farmId);
-    Task<ApiResponse<AlertThresholdDto>> CreateThresholdAsync(CreateAlertThresholdDto dto, int farmId, int adminId);
-    Task<ApiResponse<AlertThresholdDto>> UpdateThresholdAsync(int id, UpdateAlertThresholdDto dto, int farmId, int adminId);
-    Task<ApiResponse<bool>> DeleteThresholdAsync(int id, int farmId, int adminId);
-}
-
-// UpdateAlertThresholdDto
-public class UpdateAlertThresholdDto
-{
-    public decimal? MinValue { get; set; }
-    public decimal? MaxValue { get; set; }
-    public string? Severity { get; set; }
-    public bool? IsActive { get; set; }
-    public string? NotificationEmails { get; set; }
-}

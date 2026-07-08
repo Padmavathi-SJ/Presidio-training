@@ -6,6 +6,8 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
@@ -13,6 +15,7 @@ import { Subject } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { SensorService } from '../services/sensor.service';
 import { SensorSignalRService } from '../services/sensor-signalr.service';
+import { ManualReadingDialogComponent } from './manual-reading-dialog/manual-reading-dialog.component';
 
 @Component({
   selector: 'app-sensors',
@@ -23,7 +26,8 @@ import { SensorSignalRService } from '../services/sensor-signalr.service';
     MatTabsModule,
     MatIconModule,
     MatBadgeModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatButtonModule
   ],
   template: `
     <div class="sensors-module">
@@ -73,6 +77,23 @@ import { SensorSignalRService } from '../services/sensor-signalr.service';
                 </span>
               }
             </a>
+            <a mat-tab-link
+               [routerLink]="'thresholds'"
+               routerLinkActive #rla5="routerLinkActive"
+               [active]="rla5.isActive"
+               class="flex items-center gap-2">
+              <mat-icon class="text-sm">rule</mat-icon>
+              Thresholds
+            </a>
+            
+            <div class="flex-grow"></div>
+            
+            <div class="flex items-center px-4">
+              <button mat-raised-button color="accent" (click)="openManualReadingDialog()">
+                <mat-icon>add</mat-icon>
+                Manual Reading
+              </button>
+            </div>
           </nav>
         </div>
       </div>
@@ -142,6 +163,7 @@ export class SensorsComponent implements OnInit, OnDestroy {
   private sensorSignalR = inject(SensorSignalRService);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
+  private dialog = inject(MatDialog);
 
   private destroy$ = new Subject<void>();
   unreadAlertCount = signal(0);
@@ -151,6 +173,12 @@ export class SensorsComponent implements OnInit, OnDestroy {
     this.loadAlertCounts();
     this.setupSignalR();
     this.trackNavigation();
+  }
+
+  openManualReadingDialog() {
+    this.dialog.open(ManualReadingDialogComponent, {
+      width: '500px'
+    });
   }
 
   private loadAlertCounts(): void {

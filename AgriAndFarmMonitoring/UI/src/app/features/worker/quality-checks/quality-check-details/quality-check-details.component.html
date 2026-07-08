@@ -1,0 +1,41 @@
+<div class="bg-white rounded-xl p-6 max-w-[560px] w-full" *ngIf="check as c">
+  <div class="flex items-center gap-4 pb-4 mb-4 border-b border-outline-variant relative">
+    <div>
+      <h2 class="text-xl font-semibold m-0 text-on-surface">Quality Check Details</h2>
+      <p class="text-sm text-on-surface-variant mt-1">Recorded on {{ c.checkDate | date:'mediumDate' }}</p>
+    </div>
+    <button mat-icon-button class="absolute -top-2 -right-2" (click)="closeDialog()"><mat-icon>close</mat-icon></button>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 mb-4">
+    <div><span class="block text-xs text-on-surface-variant uppercase font-semibold">Harvest ID</span><span class="text-base font-medium">{{ c.harvestId }}</span></div>
+    <div><span class="block text-xs text-on-surface-variant uppercase font-semibold">Moisture</span><span class="text-base font-medium">{{ c.moisturePct ? c.moisturePct + '%' : '—' }}</span></div>
+    <div><span class="block text-xs text-on-surface-variant uppercase font-semibold">Defect</span><span class="text-base font-medium">{{ c.defectPct ? c.defectPct + '%' : '—' }}</span></div>
+    <div><span class="block text-xs text-on-surface-variant uppercase font-semibold">Quality Grade</span><span class="text-base font-medium">{{ c.finalGrade || '—' }}</span></div>
+  </div>
+
+  <div class="mb-4" *ngIf="c.notes">
+    <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider mb-1">Notes</span>
+    <p class="m-0 p-3 bg-surface rounded-lg text-sm border border-outline-variant">{{ c.notes }}</p>
+  </div>
+
+  <div class="mb-4" *ngIf="c.adminNotes">
+    <span class="block text-xs text-red-600 uppercase font-semibold tracking-wider mb-1 flex items-center gap-1">
+      <mat-icon class="text-[16px] w-4 h-4">admin_panel_settings</mat-icon> Admin Notes ({{ c.approvalStatus | titlecase }})
+    </span>
+    <p class="m-0 p-3 bg-red-50 text-red-800 rounded-lg text-sm border border-red-100">{{ c.adminNotes }}</p>
+  </div>
+
+  <div class="mb-4" *ngIf="c.workerResponse">
+    <span class="block text-xs text-primary uppercase font-semibold tracking-wider mb-1 flex items-center gap-1">
+      <mat-icon class="text-[16px] w-4 h-4">forum</mat-icon> Worker Reply
+    </span>
+    <p class="m-0 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm border border-blue-100">{{ c.workerResponse }}</p>
+  </div>
+
+  <div class="flex justify-end gap-2 pt-4 border-t border-outline-variant">
+    <button mat-button (click)="closeDialog()">Close</button>
+    <button mat-raised-button color="accent" *ngIf="canRespond()" (click)="respondToAdmin()"><mat-icon>reply</mat-icon> Respond</button>
+    <button mat-raised-button color="primary" *ngIf="canEdit()" (click)="editCheck()"><mat-icon>edit</mat-icon> Edit</button>
+  </div>
+</div>

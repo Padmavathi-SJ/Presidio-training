@@ -45,6 +45,15 @@ public class AdminTestController : ControllerBase
         return Ok(new { message = "Random severity readings generated and emails sent" });
     }
 
+    [HttpPost("generate-hourly-alert")]
+    public async Task<IActionResult> GenerateHourlyAlert()
+    {
+        var farmId = GetCurrentFarmId();
+        var adminId = GetCurrentAdminId();
+        await _ioTSimulatorService.GenerateHourlyRandomAlertAsync(farmId, adminId);
+        return Ok(new { success = true, message = "Hourly alert generated" });
+    }
+
     [HttpPost("send-test-email")]
     public async Task<IActionResult> SendTestEmail([FromQuery] string email)
     {

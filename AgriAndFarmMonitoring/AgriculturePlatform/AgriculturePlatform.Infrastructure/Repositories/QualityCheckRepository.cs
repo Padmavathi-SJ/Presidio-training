@@ -165,12 +165,15 @@ public class QualityCheckRepository : IQualityCheckRepository
         .ToListAsync();
     }
 
-    public async Task<QualityStatisticsDto> GetQualityStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate)
+    public async Task<QualityStatisticsDto> GetQualityStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate, int? workerId = null)
     {
         var query = _context.QualityChecks
             .Include(q => q.Checker)
             .Include(q => q.Harvest)
             .Where(q => q.FarmId == farmId && !q.IsDeleted);
+
+        if (workerId.HasValue)
+            query = query.Where(q => q.CheckedBy == workerId.Value);
 
         if (fromDate.HasValue)
             query = query.Where(q => q.CheckDate >= fromDate.Value);
@@ -194,12 +197,12 @@ public class QualityCheckRepository : IQualityCheckRepository
             QualityByHarvest = checks.Where(q => q.Harvest != null && q.Harvest.BatchNumber != null)
                 .GroupBy(q => q.Harvest!.BatchNumber!)
                 .ToDictionary(g => g.Key, g => g.Count()),
-            AverageMoisturePct = checks.Where(q => q.MoisturePct.HasValue).Average(q => q.MoisturePct ?? 0),
-            AverageDefectPct = checks.Where(q => q.DefectPct.HasValue).Average(q => q.DefectPct ?? 0),
-            MinMoisturePct = checks.Where(q => q.MoisturePct.HasValue).Min(q => q.MoisturePct ?? 0),
-            MaxMoisturePct = checks.Where(q => q.MoisturePct.HasValue).Max(q => q.MoisturePct ?? 0),
-            MinDefectPct = checks.Where(q => q.DefectPct.HasValue).Min(q => q.DefectPct ?? 0),
-            MaxDefectPct = checks.Where(q => q.DefectPct.HasValue).Max(q => q.DefectPct ?? 0),
+            AverageMoisturePct = checks.Any(q => q.MoisturePct.HasValue) ? checks.Where(q => q.MoisturePct.HasValue).Average(q => q.MoisturePct ?? 0) : 0,
+            AverageDefectPct = checks.Any(q => q.DefectPct.HasValue) ? checks.Where(q => q.DefectPct.HasValue).Average(q => q.DefectPct ?? 0) : 0,
+            MinMoisturePct = checks.Any(q => q.MoisturePct.HasValue) ? checks.Where(q => q.MoisturePct.HasValue).Min(q => q.MoisturePct ?? 0) : 0,
+            MaxMoisturePct = checks.Any(q => q.MoisturePct.HasValue) ? checks.Where(q => q.MoisturePct.HasValue).Max(q => q.MoisturePct ?? 0) : 0,
+            MinDefectPct = checks.Any(q => q.DefectPct.HasValue) ? checks.Where(q => q.DefectPct.HasValue).Min(q => q.DefectPct ?? 0) : 0,
+            MaxDefectPct = checks.Any(q => q.DefectPct.HasValue) ? checks.Where(q => q.DefectPct.HasValue).Max(q => q.DefectPct ?? 0) : 0,
             MonthlyTrend = checks
                 .GroupBy(q => new { q.CheckDate.Year, q.CheckDate.Month })
                 .Select(g => new MonthlyQualityTrendDto

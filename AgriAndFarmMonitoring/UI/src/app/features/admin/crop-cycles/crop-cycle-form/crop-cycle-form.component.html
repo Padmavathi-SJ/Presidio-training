@@ -69,6 +69,7 @@
             <mat-option [value]="stage">{{ stage | titlecase }}</mat-option>
           }
         </mat-select>
+        <mat-hint>Auto-updates based on planting/harvest dates if enabled below</mat-hint>
       </mat-form-field>
 
       <!-- Status -->
@@ -80,6 +81,19 @@
           }
         </mat-select>
       </mat-form-field>
+
+      <!-- ✅ NEW: Auto-update toggle -->
+      <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div>
+          <span class="font-medium text-gray-800 text-sm">Auto-Update Growth Stage</span>
+          <p class="text-xs text-gray-500 mt-0.5">Automatically calculate growth stage based on dates</p>
+        </div>
+        <mat-slide-toggle 
+          formControlName="autoUpdateGrowthStage"
+          color="primary"
+          class="ml-4 flex-shrink-0"
+        ></mat-slide-toggle>
+      </div>
     </div>
 
     <!-- Actions -->

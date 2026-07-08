@@ -145,7 +145,7 @@ export class SensorReadingsComponent implements OnInit, OnDestroy {
       if (trigger > 0 || trigger === 0) {
         this.loadReadings();
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   ngOnInit(): void {
@@ -384,6 +384,10 @@ export class SensorReadingsComponent implements OnInit, OnDestroy {
       'SOIL_TEMP': { normal: [15, 30], warning: [10, 35] },
       'AIR_HUMIDITY': { normal: [40, 80], warning: [30, 90] },
       'SOIL_PH': { normal: [6, 7.5], warning: [5.5, 8] },
+      'LIGHT_INTENSITY': { normal: [2000, 8000], warning: [1000, 10000] },
+      'RAINFALL': { normal: [0, 50], warning: [0, 100] },
+      'LEAF_WETNESS': { normal: [0, 50], warning: [0, 80] },
+      'BATTERY': { normal: [20, 100], warning: [10, 100] },
     };
 
     const range = thresholds[sensorType];
@@ -407,10 +411,14 @@ export class SensorReadingsComponent implements OnInit, OnDestroy {
       'SOIL_TEMP': { normal: [15, 30], warning: [10, 35] },
       'AIR_HUMIDITY': { normal: [40, 80], warning: [30, 90] },
       'SOIL_PH': { normal: [6, 7.5], warning: [5.5, 8] },
+      'LIGHT_INTENSITY': { normal: [2000, 8000], warning: [1000, 10000] },
+      'RAINFALL': { normal: [0, 50], warning: [0, 100] },
+      'LEAF_WETNESS': { normal: [0, 50], warning: [0, 80] },
+      'BATTERY': { normal: [20, 100], warning: [10, 100] },
     };
 
     const range = thresholds[sensorType];
-    if (!range) return 'Unknown';
+    if (!range) return 'N/A';
 
     if (value >= range.normal[0] && value <= range.normal[1]) {
       return 'Normal';

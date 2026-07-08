@@ -134,6 +134,7 @@ var mapperConfig = new MapperConfiguration(cfg =>
     cfg.AddProfile<HarvestMappingProfile>();
     cfg.AddProfile<QualityCheckMappingProfile>();
     cfg.AddProfile<YieldReportMappingProfile>();
+    cfg.AddProfile<WeatherAlertMappingProfile>();
 });
 
 builder.Services.AddSingleton<IMapper>(sp => new Mapper(mapperConfig, sp.GetService));
@@ -180,6 +181,7 @@ builder.Services.AddScoped<IExcelTaskService, ExcelTaskService>();
 builder.Services.AddScoped<IWorkerTaskService, WorkerTaskService>();
 builder.Services.AddScoped<ISensorReadingService, SensorReadingService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
+builder.Services.AddScoped<IAlertThresholdService, AlertThresholdService>();
 builder.Services.AddScoped<IIoTSimulatorService, IoTSimulatorService>();
 builder.Services.AddScoped<AgriculturePlatform.Application.Services.AlertNotificationService>();
 builder.Services.AddScoped<IAlertNotificationService, AgriculturePlatform.API.Services.AlertNotificationService>();
@@ -200,6 +202,7 @@ builder.Services.AddScoped<IYieldReportService, YieldReportService>();
         builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationImagePathResolver>();
         builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationAdditionalImagePathsResolver>();
         builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHostedService<GrowthStageUpdateService>();      
 
 builder.Services.AddScoped<ObservationStatisticsFormatter>();
 

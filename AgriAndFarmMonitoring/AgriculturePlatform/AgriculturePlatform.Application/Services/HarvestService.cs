@@ -293,7 +293,6 @@ public class HarvestService : IHarvestService
         }
 
         harvest.WorkerResponse = response.WorkerResponse;
-        harvest.ApprovalStatus = "PENDING";
         harvest.UpdatedAt = DateTime.UtcNow;
         harvest.UpdatedBy = workerId;
         

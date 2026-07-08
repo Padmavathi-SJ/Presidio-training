@@ -126,4 +126,23 @@ public class CropCyclesController : ControllerBase
             
         return Ok(result);
     }
+
+    // In CropCyclesController.cs - Add this endpoint
+
+// POST: api/farms/{farmId}/crop-cycles/{id}/update-growth-stage
+[HttpPost("{id}/update-growth-stage")]
+public async Task<IActionResult> UpdateGrowthStage(int id)
+{
+    var farmId = GetCurrentFarmId();
+    var adminId = GetCurrentAdminId();
+    var ipAddress = GetIpAddress();
+    var userAgent = GetUserAgent();
+    
+    var result = await _cropCycleService.UpdateGrowthStageManuallyAsync(id, farmId, adminId, ipAddress, userAgent);
+    
+    if (!result.Success)
+        return BadRequest(result);
+        
+    return Ok(result);
+}
 }

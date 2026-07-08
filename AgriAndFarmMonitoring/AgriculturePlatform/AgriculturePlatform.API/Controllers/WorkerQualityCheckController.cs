@@ -121,4 +121,13 @@ public class WorkerQualityCheckController : ControllerBase
         var hasPending = await _qualityCheckService.HasPendingApprovalsAsync(workerId, farmId);
         return Ok(new { HasPendingApprovals = hasPending });
     }
+
+    [HttpGet("statistics/quality")]
+    public async Task<IActionResult> GetQualityStatistics([FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        var result = await _qualityCheckService.GetQualityStatisticsAsync(farmId, fromDate, toDate, workerId);
+        return Ok(result);
+    }
 }

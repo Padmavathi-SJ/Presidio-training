@@ -27,6 +27,8 @@ public class CropCycleService : ICropCycleService
         _mapper = mapper;
     }
 
+
+// Application/Services/CropCycleService.cs - Updated Create Method
 public async Task<ApiResponse<CropCycleDto>> CreateAsync(CreateCropCycleDto dto, int farmId, int adminId, string ipAddress, string userAgent)
 {
     // Validate field exists and belongs to farm
@@ -38,45 +40,70 @@ public async Task<ApiResponse<CropCycleDto>> CreateAsync(CreateCropCycleDto dto,
 
     // Parse enums
     var cropType = Enum.Parse<CropTypeEnum>(dto.CropType, true);
-    var growthStage = Enum.Parse<GrowthStageEnum>(dto.GrowthStage ?? "GERMINATION", true);
+    
+    // ✅ Calculate initial growth stage based on planting date
+    GrowthStageEnum growthStage;
+    if (!string.IsNullOrWhiteSpace(dto.GrowthStage))
+    {
+        // Use provided growth stage
+        growthStage = Enum.Parse<GrowthStageEnum>(dto.GrowthStage, true);
+    }
+    else
+    {
+        // Calculate based on date
+        var tempCropCycle = new CropCycle
+        {
+            PlantingDate = dto.PlantingDate,
+            ExpectedHarvestDate = dto.ExpectedHarvestDate
+        };
+        growthStage = tempCropCycle.CalculateGrowthStage();
+    }
     
     // Convert status string to TaskStatusEnum
-    TaskStatusEnum status = TaskStatusEnum.IN_PROGRESS; // Default for active
-if (!string.IsNullOrWhiteSpace(dto.Status))
-{
-    status = dto.Status.ToUpper() switch
+    TaskStatusEnum status = TaskStatusEnum.IN_PROGRESS;
+    if (!string.IsNullOrWhiteSpace(dto.Status))
     {
-        "ACTIVE" or "IN_PROGRESS" => TaskStatusEnum.IN_PROGRESS,
-        "COMPLETED" or "HARVESTED" => TaskStatusEnum.COMPLETED,
-        "CANCELLED" or "FAILED" => TaskStatusEnum.CANCELLED,
-        "PENDING" => TaskStatusEnum.PENDING,
-        _ => TaskStatusEnum.IN_PROGRESS
-    };
-}
+        status = dto.Status.ToUpper() switch
+        {
+            "ACTIVE" or "IN_PROGRESS" => TaskStatusEnum.IN_PROGRESS,
+            "COMPLETED" or "HARVESTED" => TaskStatusEnum.COMPLETED,
+            "CANCELLED" or "FAILED" => TaskStatusEnum.CANCELLED,
+            "PENDING" => TaskStatusEnum.PENDING,
+            _ => TaskStatusEnum.IN_PROGRESS
+        };
+    }
 
     // Create crop cycle
     var cropCycle = new CropCycle
     {
-        FarmId = farmId,           // ← ADD THIS - Foreign key to Farms table
+        FarmId = farmId,
         AdminId = adminId,
         FieldId = dto.FieldId,
         CropType = cropType,
-        PlantingDate = dto.PlantingDate,
-        ExpectedHarvestDate = dto.ExpectedHarvestDate,
+        PlantingDate = dto.PlantingDate.ToUniversalTime(),
+        ExpectedHarvestDate = dto.ExpectedHarvestDate?.ToUniversalTime(),
         GrowthStage = growthStage,
-        Status = status,  //  Now assigning enum
+        Status = status,
+        AutoUpdateGrowthStage = dto.AutoUpdateGrowthStage,
+        LastStageUpdate = DateTime.UtcNow,
         CreatedBy = adminId,
         CreatedAt = DateTime.UtcNow
     };
 
     var created = await _cropCycleRepository.CreateAsync(cropCycle);
 
-    // Audit log
-   
-
     var result = _mapper.Map<CropCycleDto>(created);
+    
+    // ✅ Add computed properties
+    result.GrowthPercentage = created.GrowthPercentage;
+    result.DaysUntilHarvest = created.DaysUntilHarvest;
+    result.IsOverdue = created.IsOverdue;
+    result.IsReadyForHarvest = created.GrowthStage == GrowthStageEnum.READY_FOR_HARVEST;
+    
     return ApiResponse<CropCycleDto>.Ok(result, "Crop cycle created successfully");
-}
+}  
+    
+    
     public async Task<ApiResponse<CropCycleDto>> UpdateAsync(int id, UpdateCropCycleDto dto, int farmId, int adminId, string ipAddress, string userAgent)
     {
         var cropCycle = await _cropCycleRepository.GetByIdAsync(id, farmId);
@@ -209,4 +236,38 @@ if (!string.IsNullOrWhiteSpace(dto.Status))
     {
         return await _cropCycleRepository.ExistsAsync(cropCycleId, farmId);
     }
+
+
+public async Task<ApiResponse<CropCycleDto>> UpdateGrowthStageManuallyAsync(int id, int farmId, int adminId, string ipAddress, string userAgent)
+{
+    var cropCycle = await _cropCycleRepository.GetByIdAsync(id, farmId);
+    if (cropCycle == null)
+    {
+        return ApiResponse<CropCycleDto>.Fail($"Crop cycle with ID {id} not found");
+    }
+    
+    var oldStage = cropCycle.GrowthStage;
+    var updated = cropCycle.UpdateGrowthStage(forceUpdate: true);
+    
+    if (updated)
+    {
+        cropCycle.UpdatedAt = DateTime.UtcNow;
+        cropCycle.UpdatedBy = adminId;
+        await _cropCycleRepository.UpdateAsync(cropCycle);
+        
+        var result = _mapper.Map<CropCycleDto>(cropCycle);
+        result.GrowthPercentage = cropCycle.GrowthPercentage;
+        result.DaysUntilHarvest = cropCycle.DaysUntilHarvest;
+        result.IsOverdue = cropCycle.IsOverdue;
+        
+        return ApiResponse<CropCycleDto>.Ok(result, $"Growth stage updated from {oldStage} to {cropCycle.GrowthStage}");
+    }
+    
+    var currentResult = _mapper.Map<CropCycleDto>(cropCycle);
+    currentResult.GrowthPercentage = cropCycle.GrowthPercentage;
+    currentResult.DaysUntilHarvest = cropCycle.DaysUntilHarvest;
+    currentResult.IsOverdue = cropCycle.IsOverdue;
+    
+    return ApiResponse<CropCycleDto>.Ok(currentResult, "No change needed - growth stage is already correct");
+}
 }

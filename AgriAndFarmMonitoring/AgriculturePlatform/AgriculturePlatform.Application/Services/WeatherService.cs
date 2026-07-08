@@ -7,6 +7,7 @@ using AgriculturePlatform.Domain.Entities.CropMonitoring;
 using AgriculturePlatform.Domain.Enums;
 
 
+
 namespace AgriculturePlatform.Application.Services;
 
 public class WeatherService : IWeatherService
@@ -377,6 +378,8 @@ public async Task<ApiResponse<List<WeatherAlertDto>>> GetActiveWeatherAlertsAsyn
             {
                 return ApiResponse<bool>.Fail($"Field {fieldId} has no coordinates");
             }
+
+            
 
             var admin = await _adminRepository.GetByIdAsync(adminId);
             if (admin == null)

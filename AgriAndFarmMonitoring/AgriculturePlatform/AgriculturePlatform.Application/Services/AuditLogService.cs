@@ -69,8 +69,10 @@ public class AuditLogService : IAuditLogService
         }
     }
 
-    private object CreateSafeObject(object obj)
+    private object? CreateSafeObject(object? obj)
     {
+        if (obj == null) return null;
+
         // For Field entity, create a simplified DTO
         var field = obj as Domain.Entities.CropMonitoring.Field;
         if (field != null)

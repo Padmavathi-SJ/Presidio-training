@@ -1,63 +1,62 @@
 <!-- src/app/features/admin/weather/weather-alert-dialog/weather-alert-dialog.component.html -->
-<div class="p-4 sm:p-6">
-  <!-- Header -->
-  <div class="flex items-start justify-between mb-4">
-    <div>
-      <h2 class="text-xl font-bold text-gray-800">
-        @if (isViewMode) {
-          Weather Alert Details
-        } @else if (isCreateMode) {
-          Create Weather Alert
-        } @else {
-          Edit Weather Alert
-        }
-      </h2>
-      <p class="text-sm text-gray-500 mt-1">
-        @if (isViewMode) {
-          View alert details and take action
-        } @else if (isCreateMode) {
-          Create a new weather alert for your farm
-        } @else {
-          Update weather alert information
-        }
-      </p>
-    </div>
-    <button 
-      mat-icon-button 
-      (click)="onCancel()"
-      class="!w-8 !h-8 !text-gray-400 hover:!text-gray-600"
-    >
-      <mat-icon>close</mat-icon>
-    </button>
-  </div>
-
-  <!-- Alert Status (View Mode) -->
-  @if (isViewMode && data.alert) {
-    <div class="flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
-      <span class="text-xs font-medium text-gray-500 uppercase">Status:</span>
-      <span class="text-xs px-2 py-1 rounded-full font-medium {{ getSeverityColor(data.alert.severity) }}">
-        {{ data.alert.severity }}
-      </span>
-      @if (data.alert.isAcknowledged) {
-        <span class="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
-          ✓ Acknowledged
-        </span>
+<!-- Header -->
+<div mat-dialog-title class="flex items-start justify-between !pb-2 !mb-0 border-b border-gray-100">
+  <div>
+    <h2 class="text-xl font-bold text-gray-800 m-0">
+      @if (isViewMode) {
+        Weather Alert Details
+      } @else if (isCreateMode) {
+        Create Weather Alert
       } @else {
-        <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">
-          ⚠ Pending Acknowledgment
-        </span>
+        Edit Weather Alert
       }
-      <span class="text-xs text-gray-500 ml-auto">
-        Created: {{ data.alert.createdAt | date:'MMM d, y HH:mm' }}
-      </span>
-    </div>
-  }
+    </h2>
+    <p class="text-sm text-gray-500 mt-1 mb-0">
+      @if (isViewMode) {
+        View alert details and take action
+      } @else if (isCreateMode) {
+        Create a new weather alert for your farm
+      } @else {
+        Update weather alert information
+      }
+    </p>
+  </div>
+  <button 
+    mat-icon-button 
+    (click)="onCancel()"
+    class="!w-8 !h-8 !text-gray-400 hover:!text-gray-600 -mt-2 -mr-2"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
 
-  <!-- Form -->
-  <form [formGroup]="alertForm" (ngSubmit)="onSubmit()">
+<form [formGroup]="alertForm" (ngSubmit)="onSubmit()">
+  <mat-dialog-content class="!pt-4">
+    <!-- Alert Status (View Mode) -->
+    @if (isViewMode && data.alert) {
+      <div class="flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
+        <span class="text-xs font-medium text-gray-500 uppercase">Status:</span>
+        <span class="text-xs px-2 py-1 rounded-full font-medium {{ getSeverityColor(data.alert.severity) }}">
+          {{ data.alert.severity }}
+        </span>
+        @if (data.alert.isAcknowledged) {
+          <span class="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700 flex items-center">
+            <mat-icon class="text-sm w-4 h-4 mr-1">check_circle</mat-icon> Acknowledged
+          </span>
+        } @else {
+          <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700 flex items-center">
+            <mat-icon class="text-sm w-4 h-4 mr-1">warning</mat-icon> Pending Acknowledgment
+          </span>
+        }
+        <span class="text-xs text-gray-500 ml-auto">
+          Created: {{ data.alert.createdAt | date:'MMM d, y HH:mm' }}
+        </span>
+      </div>
+    }
+
     <div class="space-y-4">
       <!-- Field Selection -->
-      <mat-form-field class="w-full" appearance="outline">
+      <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Field *</mat-label>
         <mat-select formControlName="fieldId" [disabled]="isViewMode">
           @for (field of fields; track field.id) {
@@ -67,34 +66,36 @@
         <mat-error *ngIf="hasError('fieldId', 'required')">Field is required</mat-error>
       </mat-form-field>
 
-      <!-- Alert Type -->
-      <mat-form-field class="w-full" appearance="outline">
-        <mat-label>Alert Type *</mat-label>
-        <mat-select formControlName="alertType" [disabled]="isViewMode">
-          @for (type of alertTypes; track type) {
-            <mat-option [value]="type">{{ type | titlecase }}</mat-option>
-          }
-        </mat-select>
-        <mat-error *ngIf="hasError('alertType', 'required')">Alert type is required</mat-error>
-      </mat-form-field>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Alert Type -->
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Alert Type *</mat-label>
+          <mat-select formControlName="alertType" [disabled]="isViewMode">
+            @for (type of alertTypes; track type) {
+              <mat-option [value]="type">{{ type | titlecase }}</mat-option>
+            }
+          </mat-select>
+          <mat-error *ngIf="hasError('alertType', 'required')">Alert type is required</mat-error>
+        </mat-form-field>
 
-      <!-- Severity -->
-      <mat-form-field class="w-full" appearance="outline">
-        <mat-label>Severity *</mat-label>
-        <mat-select formControlName="severity" [disabled]="isViewMode">
-          @for (severity of severities; track severity) {
-            <mat-option [value]="severity">
-              <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ getSeverityColor(severity) }}">
-                {{ severity }}
-              </span>
-            </mat-option>
-          }
-        </mat-select>
-        <mat-error *ngIf="hasError('severity', 'required')">Severity is required</mat-error>
-      </mat-form-field>
+        <!-- Severity -->
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Severity *</mat-label>
+          <mat-select formControlName="severity" [disabled]="isViewMode">
+            @for (severity of severities; track severity) {
+              <mat-option [value]="severity">
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ getSeverityColor(severity) }}">
+                  {{ severity }}
+                </span>
+              </mat-option>
+            }
+          </mat-select>
+          <mat-error *ngIf="hasError('severity', 'required')">Severity is required</mat-error>
+        </mat-form-field>
+      </div>
 
       <!-- Title -->
-      <mat-form-field class="w-full" appearance="outline">
+      <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Alert Title *</mat-label>
         <input matInput formControlName="title" placeholder="Enter alert title" [disabled]="isViewMode" maxlength="200">
         <mat-hint align="end">{{ alertForm.get('title')?.value?.length || 0 }}/200</mat-hint>
@@ -103,7 +104,7 @@
       </mat-form-field>
 
       <!-- Message -->
-      <mat-form-field class="w-full" appearance="outline">
+      <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Alert Message *</mat-label>
         <textarea matInput formControlName="message" placeholder="Enter detailed alert message" 
                   rows="3" [disabled]="isViewMode" maxlength="1000"></textarea>
@@ -114,96 +115,96 @@
 
       <!-- Weather Data (Optional) -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <mat-form-field class="w-full" appearance="outline">
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
           <mat-label>Temperature (°C)</mat-label>
           <input matInput type="number" formControlName="temperature" [disabled]="isViewMode" step="0.1">
         </mat-form-field>
 
-        <mat-form-field class="w-full" appearance="outline">
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
           <mat-label>Wind Speed (m/s)</mat-label>
           <input matInput type="number" formControlName="windSpeed" [disabled]="isViewMode" step="0.1">
         </mat-form-field>
 
-        <mat-form-field class="w-full" appearance="outline">
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
           <mat-label>Rainfall (mm)</mat-label>
           <input matInput type="number" formControlName="rainfallMm" [disabled]="isViewMode" step="0.1">
         </mat-form-field>
       </div>
 
       <!-- Expires At -->
-      <mat-form-field class="w-full" appearance="outline">
+      <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Expires At (Optional)</mat-label>
         <input matInput [matDatepicker]="expiryPicker" formControlName="expiresAt" [disabled]="isViewMode" readonly>
-        <mat-datepicker-toggle matSuffix [for]="expiryPicker"></mat-datepicker-toggle>
+        <mat-datepicker-toggle matSuffix [for]="expiryPicker" [disabled]="isViewMode"></mat-datepicker-toggle>
         <mat-datepicker #expiryPicker></mat-datepicker>
       </mat-form-field>
     </div>
+  </mat-dialog-content>
 
-    <!-- Actions -->
-    <div class="flex flex-col sm:flex-row justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
-      @if (isViewMode) {
-        <!-- View Mode Actions -->
-        <button 
-          mat-button 
-          type="button" 
-          (click)="onCancel()"
-          class="w-full sm:w-auto order-2 sm:order-1"
-        >
-          Close
-        </button>
-        @if (data.alert && !data.alert.isAcknowledged) {
-          <button 
-            mat-raised-button 
-            color="primary"
-            type="button"
-            (click)="acknowledgeAlert()"
-            [disabled]="isLoading"
-            class="!bg-primary-600 w-full sm:w-auto order-1 sm:order-2"
-          >
-            @if (isLoading) {
-              <span class="flex items-center justify-center">
-                <mat-spinner [diameter]="20" class="mr-2"></mat-spinner>
-                Acknowledging...
-              </span>
-            } @else {
-              <span><mat-icon>check_circle</mat-icon> Acknowledge Alert</span>
-            }
-          </button>
-        }
-      } @else {
-        <!-- Create/Edit Mode Actions -->
-        <button 
-          mat-button 
-          type="button" 
-          (click)="onCancel()" 
-          [disabled]="isLoading"
-          class="w-full sm:w-auto order-2 sm:order-1"
-        >
-          Cancel
-        </button>
+  <!-- Actions -->
+  <mat-dialog-actions align="end" class="!px-6 !py-4 border-t border-gray-100 mt-2">
+    @if (isViewMode) {
+      <!-- View Mode Actions -->
+      <button 
+        mat-button 
+        type="button" 
+        (click)="onCancel()"
+        class="order-2 sm:order-1"
+      >
+        Close
+      </button>
+      @if (data.alert && !data.alert.isAcknowledged) {
         <button 
           mat-raised-button 
-          color="primary" 
-          type="submit" 
-          [disabled]="alertForm.invalid || isLoading"
-          class="!bg-primary-600 w-full sm:w-auto order-1 sm:order-2"
+          color="primary"
+          type="button"
+          (click)="acknowledgeAlert()"
+          [disabled]="isLoading"
+          class="!bg-primary-600 order-1 sm:order-2"
         >
           @if (isLoading) {
             <span class="flex items-center justify-center">
               <mat-spinner [diameter]="20" class="mr-2"></mat-spinner>
-              Saving...
+              Acknowledging...
             </span>
           } @else {
-            <span>
-              @if (isCreateMode) {
-                <mat-icon>add</mat-icon> Create Alert
-              } @else {
-                <mat-icon>save</mat-icon> Update Alert
-              }
-            </span>
+            <span class="flex items-center"><mat-icon class="mr-1">check_circle</mat-icon> Acknowledge Alert</span>
           }
         </button>
       }
-    </div>
-  </form>
-</div>
+    } @else {
+      <!-- Create/Edit Mode Actions -->
+      <button 
+        mat-button 
+        type="button" 
+        (click)="onCancel()" 
+        [disabled]="isLoading"
+        class="order-2 sm:order-1"
+      >
+        Cancel
+      </button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        [disabled]="alertForm.invalid || isLoading"
+        class="!bg-primary-600 order-1 sm:order-2"
+      >
+        @if (isLoading) {
+          <span class="flex items-center justify-center">
+            <mat-spinner [diameter]="20" class="mr-2"></mat-spinner>
+            Saving...
+          </span>
+        } @else {
+          <span class="flex items-center">
+            @if (isCreateMode) {
+              <mat-icon class="mr-1">add</mat-icon> Create Alert
+            } @else {
+              <mat-icon class="mr-1">save</mat-icon> Update Alert
+            }
+          </span>
+        }
+      </button>
+    }
+  </mat-dialog-actions>
+</form>

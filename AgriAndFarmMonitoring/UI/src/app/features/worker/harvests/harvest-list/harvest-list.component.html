@@ -1,66 +1,10 @@
 <!-- src/app/features/worker/harvests/components/harvest-list/harvest-list.component.html -->
-<div class="max-w-[1440px] mx-auto p-6">
-  <!-- Page Header -->
-  <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
-    <div class="flex items-center gap-4">
-      <div class="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center">
-        <mat-icon class="text-2xl w-7 h-7 text-primary">agriculture</mat-icon>
-      </div>
-      <div>
-        <h1 class="text-2xl font-semibold m-0 text-on-surface">Harvest Records</h1>
-        <p class="text-sm text-on-surface-variant mt-1">Submit and track your harvest reports</p>
-      </div>
-    </div>
-    <button mat-raised-button color="primary" (click)="createHarvest.emit()">
-      <mat-icon>add</mat-icon>
-      Log Harvest
-    </button>
-  </div>
-
-  <!-- Summary Cards -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white rounded-xl p-4 border border-outline-variant flex items-center gap-4 hover:border-primary hover:shadow-card transition-all">
-      <div class="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
-        <mat-icon class="text-primary">list_alt</mat-icon>
-      </div>
-      <div>
-        <span class="text-xl font-semibold text-on-surface block">{{ totalCount() }}</span>
-        <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Total Records</span>
-      </div>
-    </div>
-    <div class="bg-white rounded-xl p-4 border border-outline-variant flex items-center gap-4 hover:border-primary hover:shadow-card transition-all">
-      <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
-        <mat-icon class="text-amber-600">hourglass_empty</mat-icon>
-      </div>
-      <div>
-        <span class="text-xl font-semibold text-on-surface block">{{ pendingCount() }}</span>
-        <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Pending Review</span>
-      </div>
-    </div>
-    <div class="bg-white rounded-xl p-4 border border-outline-variant flex items-center gap-4 hover:border-primary hover:shadow-card transition-all">
-      <div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
-        <mat-icon class="text-emerald-600">check_circle</mat-icon>
-      </div>
-      <div>
-        <span class="text-xl font-semibold text-on-surface block">{{ approvedCount() }}</span>
-        <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Approved</span>
-      </div>
-    </div>
-    <div class="bg-white rounded-xl p-4 border border-outline-variant flex items-center gap-4 hover:border-primary hover:shadow-card transition-all">
-      <div class="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
-        <mat-icon class="text-primary">scale</mat-icon>
-      </div>
-      <div>
-        <span class="text-xl font-semibold text-on-surface block">{{ totalQuantityKg() | number:'1.0-0' }} kg</span>
-        <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Approved Yield</span>
-      </div>
-    </div>
-  </div>
+<div class="worker-table-card">
 
   <!-- Filter Panel -->
-  <div class="bg-white rounded-xl p-4 border border-outline-variant mb-6">
-    <form [formGroup]="filterForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 items-center">
-      <mat-form-field appearance="outline" class="w-full text-sm">
+  <div class="worker-filter-bar">
+    <form [formGroup]="filterForm" class="worker-filter-form">
+      <mat-form-field appearance="outline" class="worker-filter-field">
         <mat-label>Field</mat-label>
         <mat-select formControlName="fieldId" (selectionChange)="onFilterFieldSelected($event.value)">
           <mat-option value="">All Fields</mat-option>
@@ -68,7 +12,7 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="w-full text-sm">
+      <mat-form-field appearance="outline" class="worker-filter-field">
         <mat-label>Quality Grade</mat-label>
         <mat-select formControlName="qualityGrade">
           <mat-option value="">All Grades</mat-option>
@@ -76,7 +20,7 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="w-full text-sm">
+      <mat-form-field appearance="outline" class="worker-filter-field">
         <mat-label>Harvest Method</mat-label>
         <mat-select formControlName="harvestMethod">
           <mat-option value="">All Methods</mat-option>
@@ -84,24 +28,27 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="w-full text-sm">
+      <mat-form-field appearance="outline" class="worker-filter-field">
         <mat-label>From Date</mat-label>
         <input matInput type="date" formControlName="fromDate">
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="w-full text-sm">
+      <mat-form-field appearance="outline" class="worker-filter-field">
         <mat-label>To Date</mat-label>
         <input matInput type="date" formControlName="toDate">
       </mat-form-field>
 
-      <div class="flex items-center justify-center px-4 col-span-full lg:col-span-1">
-        <mat-checkbox formControlName="includeDeleted" color="primary">Include Deleted</mat-checkbox>
+      <div class="flex items-center">
+        <mat-checkbox formControlName="includeDeleted" color="primary" class="text-xs">Include Deleted</mat-checkbox>
       </div>
     </form>
   </div>
 
+
+
   <!-- Status Tabs -->
-  <mat-tab-group class="mb-4" [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
+  <div class="worker-tabs-bar">
+  <mat-tab-group class="worker-tab-group" [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
     <mat-tab>
       <ng-template mat-tab-label>
         <mat-icon class="mr-2 text-base w-5 h-5">hourglass_empty</mat-icon>
@@ -127,11 +74,12 @@
       </ng-template>
     </mat-tab>
   </mat-tab-group>
+  </div>
 
   <!-- Table -->
-  <div class="relative bg-white rounded-xl border border-outline-variant overflow-hidden">
-    <div class="absolute inset-0 bg-white/70 flex items-center justify-center z-10" *ngIf="isLoading()">
-      <mat-spinner [diameter]="40"></mat-spinner>
+  <div class="worker-table-wrap">
+    <div class="worker-loading-shade" *ngIf="isLoading()">
+      <mat-spinner [diameter]="36"></mat-spinner>
     </div>
 
     <div class="py-12 px-6 text-center" *ngIf="!isLoading() && harvests().length === 0">
@@ -143,7 +91,9 @@
       </button>
     </div>
 
-    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)" *ngIf="!isLoading() && harvests().length > 0" class="w-full">
+
+    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)" *ngIf="!isLoading() && harvests().length > 0" class="worker-data-table">
+
       <!-- Date Column -->
       <ng-container matColumnDef="harvestDate">
         <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Date</th>
@@ -215,18 +165,23 @@
       <ng-container matColumnDef="approvalStatus">
         <th mat-header-cell *matHeaderCellDef class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Status</th>
         <td mat-cell *matCellDef="let h" class="py-3">
-          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium uppercase"
-                [class.bg-amber-100]="h.approvalStatus === 'PENDING'"
-                [class.text-amber-800]="h.approvalStatus === 'PENDING'"
-                [class.bg-emerald-100]="h.approvalStatus === 'APPROVED'"
-                [class.text-emerald-800]="h.approvalStatus === 'APPROVED'"
-                [class.bg-red-100]="h.approvalStatus === 'REJECTED'"
-                [class.text-red-800]="h.approvalStatus === 'REJECTED'"
-                [class.bg-amber-100]="h.approvalStatus === 'REQUEST_CHANGES'"
-                [class.text-amber-800]="h.approvalStatus === 'REQUEST_CHANGES'">
-            <mat-icon class="text-sm w-4 h-4">{{ getApprovalIcon(h.approvalStatus) }}</mat-icon>
-            {{ h.approvalStatus | titlecase }}
-          </span>
+          <div class="flex flex-col gap-1 items-start">
+            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium uppercase"
+                  [class.bg-amber-100]="h.approvalStatus === 'PENDING'"
+                  [class.text-amber-800]="h.approvalStatus === 'PENDING'"
+                  [class.bg-emerald-100]="h.approvalStatus === 'APPROVED'"
+                  [class.text-emerald-800]="h.approvalStatus === 'APPROVED'"
+                  [class.bg-red-100]="h.approvalStatus === 'REJECTED'"
+                  [class.text-red-800]="h.approvalStatus === 'REJECTED'"
+                  [class.bg-amber-100]="h.approvalStatus === 'REQUEST_CHANGES'"
+                  [class.text-amber-800]="h.approvalStatus === 'REQUEST_CHANGES'">
+              <mat-icon class="text-sm w-4 h-4">{{ getApprovalIcon(h.approvalStatus) }}</mat-icon>
+              {{ h.approvalStatus | titlecase }}
+            </span>
+            <span *ngIf="h.workerResponse" class="inline-flex items-center gap-1 text-xs text-primary font-medium" [matTooltip]="h.workerResponse">
+              <mat-icon class="text-[14px] w-[14px] h-[14px]">forum</mat-icon> Replied
+            </span>
+          </div>
         </td>
       </ng-container>
 
@@ -258,21 +213,18 @@
         </td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-surface"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
-          class="hover:bg-surface transition-colors cursor-pointer"
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+          class="worker-data-row"
           [class.border-l-4]="row.approvalStatus === 'REQUEST_CHANGES'"
           [class.border-l-amber-400]="row.approvalStatus === 'REQUEST_CHANGES'"
           (click)="viewHarvest.emit(row)"></tr>
     </table>
 
     <mat-paginator *ngIf="harvests().length > 0"
-      [length]="totalCount()"
-      [pageSize]="10"
-      [pageSizeOptions]="[5, 10, 25, 50]"
-      (page)="onPageChange($event)"
-      showFirstLastButtons
-      class="bg-transparent py-2 px-4">
+      [length]="totalCount()" [pageSize]="10"
+      [pageSizeOptions]="[10, 25, 50]" (page)="onPageChange($event)"
+      class="worker-paginator">
     </mat-paginator>
   </div>
 </div>

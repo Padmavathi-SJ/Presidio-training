@@ -90,7 +90,27 @@ export class SensorDashboardComponent implements OnInit, OnDestroy {
   selectedFieldId = signal<number | null>(null);
 
   // Computed
-  hasReadings = computed(() => this.latestReadings().length > 0);
+  filteredLatestReadings = computed(() => {
+    const fieldId = this.selectedFieldId();
+    if (!fieldId) return this.latestReadings();
+    return this.latestReadings().filter(r => r.fieldId === fieldId);
+  });
+
+  groupedReadings = computed(() => {
+    const readings = this.filteredLatestReadings();
+    const groups: { [key: string]: SensorReading[] } = {};
+    for (const r of readings) {
+      if (!groups[r.fieldName]) groups[r.fieldName] = [];
+      groups[r.fieldName].push(r);
+    }
+    return Object.keys(groups).map(k => ({ 
+      fieldName: k, 
+      fieldId: groups[k][0].fieldId, 
+      readings: groups[k] 
+    }));
+  });
+
+  hasReadings = computed(() => this.filteredLatestReadings().length > 0);
   hasAlerts = computed(() => (this.alertDashboard()?.unresolvedAlerts || 0) > 0);
   criticalAlerts = computed(() => this.alertDashboard()?.criticalAlerts || 0);
 
@@ -101,11 +121,11 @@ export class SensorDashboardComponent implements OnInit, OnDestroy {
   // Charts
   temperatureChartData!: ChartConfiguration['data'];
   temperatureChartOptions!: ChartConfiguration['options'];
-  temperatureChartType: ChartType = 'line';
+  temperatureChartType: ChartType = 'bar';
 
   humidityChartData!: ChartConfiguration['data'];
   humidityChartOptions!: ChartConfiguration['options'];
-  humidityChartType: ChartType = 'line';
+  humidityChartType: ChartType = 'bar';
 
   constructor() {
     this.filterForm = this.fb.group({
@@ -127,7 +147,7 @@ export class SensorDashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(value => {
         this.selectedFieldId.set(value);
-        this.loadData();
+        this.updateCharts(this.latestReadings());
       });
   }
 
@@ -199,11 +219,9 @@ export class SensorDashboardComponent implements OnInit, OnDestroy {
         data: [],
         label: 'Temperature (°C)',
         borderColor: '#40916c',
-        backgroundColor: 'rgba(64, 145, 108, 0.1)',
-        fill: true,
-        tension: 0.4,
-        pointRadius: 3,
-        pointBackgroundColor: '#40916c'
+        backgroundColor: 'rgba(64, 145, 108, 0.7)',
+        borderWidth: 1,
+        borderRadius: 4
       }]
     };
 
@@ -223,12 +241,10 @@ export class SensorDashboardComponent implements OnInit, OnDestroy {
       datasets: [{
         data: [],
         label: 'Humidity (%)',
-        borderColor: '#d4a373',
-        backgroundColor: 'rgba(212, 163, 115, 0.1)',
-        fill: true,
-        tension: 0.4,
-        pointRadius: 3,
-        pointBackgroundColor: '#d4a373'
+        borderColor: '#0284c7',
+        backgroundColor: 'rgba(2, 132, 199, 0.7)',
+        borderWidth: 1,
+        borderRadius: 4
       }]
     };
 
@@ -244,18 +260,50 @@ export class SensorDashboardComponent implements OnInit, OnDestroy {
   }
 
   private updateCharts(readings: SensorReading[]): void {
-    // Filter temperature readings
-    const tempReadings = readings.filter(r => r.sensorType === 'AIR_TEMP' || r.sensorType === 'SOIL_TEMP');
-    const humidityReadings = readings.filter(r => r.sensorType === 'AIR_HUMIDITY');
+    const fieldId = this.selectedFieldId();
+    let chartReadings = readings;
+    if (fieldId) {
+      chartReadings = readings.filter(r => r.fieldId === fieldId);
+    }
 
-    const labels = readings.map(r => r.fieldName);
+    // Filter temperature readings
+    const tempReadings = chartReadings.filter(r => r.sensorType === 'AIR_TEMP' || r.sensorType === 'SOIL_TEMP');
+    const humidityReadings = chartReadings.filter(r => r.sensorType === 'AIR_HUMIDITY');
+
+    const labels = Array.from(new Set(chartReadings.map(r => r.fieldName)));
+
+    // Colors palette for different fields
+    const colors = [
+      'rgba(64, 145, 108, 0.7)', // green
+      'rgba(2, 132, 199, 0.7)',  // blue
+      'rgba(212, 163, 115, 0.7)', // brown
+      'rgba(225, 29, 72, 0.7)', // rose
+      'rgba(217, 119, 6, 0.7)', // amber
+      'rgba(147, 51, 234, 0.7)' // purple
+    ];
+
+    const tempBgColors = labels.map((_, i) => colors[i % colors.length]);
+    const tempBorderColors = tempBgColors.map(c => c.replace('0.7', '1'));
+    
+    // Sort readings by label order to match bars
+    const sortedTemp = labels.map(l => {
+      const r = tempReadings.find(tr => tr.fieldName === l);
+      return r ? (r.value ?? 0) : 0;
+    });
+
+    const sortedHum = labels.map(l => {
+      const r = humidityReadings.find(hr => hr.fieldName === l);
+      return r ? (r.value ?? 0) : 0;
+    });
 
     this.temperatureChartData = {
       ...this.temperatureChartData,
       labels: labels,
       datasets: [{
         ...this.temperatureChartData.datasets[0],
-        data: tempReadings.map(r => r.value ?? 0)
+        data: sortedTemp,
+        backgroundColor: tempBgColors,
+        borderColor: tempBorderColors
       }]
     };
 
@@ -264,7 +312,9 @@ export class SensorDashboardComponent implements OnInit, OnDestroy {
       labels: labels,
       datasets: [{
         ...this.humidityChartData.datasets[0],
-        data: humidityReadings.map(r => r.value ?? 0)
+        data: sortedHum,
+        backgroundColor: tempBgColors, // Use same palette
+        borderColor: tempBorderColors
       }]
     };
   }

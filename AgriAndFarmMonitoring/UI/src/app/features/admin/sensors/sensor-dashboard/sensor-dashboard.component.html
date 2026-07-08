@@ -184,35 +184,39 @@
     </div>
   }
 
-  <!-- Readings Grid -->
+  <!-- Readings Grid (Kanban Style) -->
   @if (!isLoading()) {
     @if (hasReadings()) {
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        @for (reading of latestReadings(); track reading.fieldId + reading.sensorType) {
-          <div 
-            class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
-            (click)="viewFieldDetails(reading.fieldId)"
-          >
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-medium text-gray-700 truncate">{{ reading.fieldName }}</span>
-              <mat-icon class="text-gray-400 text-sm">{{ getSensorTypeIcon(reading.sensorType) }}</mat-icon>
+      <div class="flex overflow-x-auto gap-4 pb-4 snap-x kanban-container">
+        @for (group of groupedReadings(); track group.fieldName) {
+          <div class="flex-shrink-0 w-80 bg-gray-50 rounded-xl p-4 border border-gray-200 snap-start flex flex-col max-h-[500px]">
+            <div class="flex justify-between items-center mb-4 sticky top-0 bg-gray-50 z-10 pb-2 border-b border-gray-200">
+              <h3 class="font-bold text-gray-800">{{ group.fieldName }}</h3>
+              <button mat-icon-button (click)="viewFieldDetails(group.fieldId)" matTooltip="View Field Details" class="!text-gray-500">
+                <mat-icon>open_in_new</mat-icon>
+              </button>
             </div>
-            <div class="flex items-end justify-between">
-              <div>
-                <span class="text-xs text-gray-500">{{ getSensorTypeLabel(reading.sensorType) }}</span>
-                <div class="text-2xl font-bold {{ getStatusColor(reading.value, reading.sensorType) }}">
-                  {{ reading.value !== null ? reading.value : '--' }}
-                  <span class="text-sm font-normal text-gray-400">{{ getSensorTypeUnit(reading.sensorType) }}</span>
+            
+            <div class="flex-1 overflow-y-auto space-y-1.5 pr-2 custom-scrollbar">
+              @for (reading of group.readings; track reading.sensorType) {
+                <div 
+                  class="bg-white rounded py-2 px-3 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-2"
+                  (click)="viewFieldDetails(reading.fieldId)"
+                >
+                  <div class="flex items-center gap-2 overflow-hidden">
+                    <mat-icon class="text-gray-400 text-[18px] w-[18px] h-[18px] leading-none flex-shrink-0">{{ getSensorTypeIcon(reading.sensorType) }}</mat-icon>
+                    <span class="text-[11px] font-medium text-gray-700 truncate">{{ getSensorTypeLabel(reading.sensorType) }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="text-sm font-bold {{ getStatusColor(reading.value, reading.sensorType) }}">
+                      {{ reading.value !== null ? (reading.value | number:'1.0-1') : '--' }}{{ getSensorTypeUnit(reading.sensorType) }}
+                    </span>
+                    @if (reading.isThresholdViolation) {
+                      <mat-icon class="text-red-500 text-[16px] w-[16px] h-[16px] leading-none flex-shrink-0" matTooltip="Threshold Violation">warning</mat-icon>
+                    }
+                  </div>
                 </div>
-              </div>
-              @if (reading.isThresholdViolation) {
-                <span class="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
-                  Violation
-                </span>
               }
-            </div>
-            <div class="mt-2 text-xs text-gray-400">
-              {{ formatDate(reading.recordedAt) }}
             </div>
           </div>
         }

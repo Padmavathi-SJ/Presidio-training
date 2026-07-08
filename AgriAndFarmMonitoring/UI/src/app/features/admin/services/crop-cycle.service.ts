@@ -68,4 +68,9 @@ export class CropCycleService {
   getOverdueCropCycles(farmId: number): Observable<ApiResponse<CropCycle[]>> {
     return this.http.get<ApiResponse<CropCycle[]>>(`${this.API_URL}/farms/${farmId}/crop-cycles/overdue`);
   }
+
+  // ✅ NEW: Manually update growth stage
+  updateGrowthStage(farmId: number, id: number): Observable<ApiResponse<CropCycle>> {
+    return this.http.post<ApiResponse<CropCycle>>(`${this.API_URL}/farms/${farmId}/crop-cycles/${id}/update-growth-stage`, {});
+  }
 }

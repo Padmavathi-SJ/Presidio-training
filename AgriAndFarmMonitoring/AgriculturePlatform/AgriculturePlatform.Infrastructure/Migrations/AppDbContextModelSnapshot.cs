@@ -594,8 +594,16 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ActualHarvestDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("AdminId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("AutoUpdateGrowthStage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -629,8 +637,15 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("LastStageUpdate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("PlantingDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PreviousGrowthStage")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Status")
                         .HasMaxLength(30)
@@ -646,7 +661,13 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("AdminId");
 
+                    b.HasIndex("AutoUpdateGrowthStage");
+
+                    b.HasIndex("ExpectedHarvestDate");
+
                     b.HasIndex("FieldId");
+
+                    b.HasIndex("GrowthStage");
 
                     b.HasIndex("PlantingDate");
 
@@ -1738,6 +1759,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("NextScheduledRun")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ObservationSummaryJson")
+                        .HasColumnType("jsonb");
+
                     b.Property<decimal>("PassRate")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
@@ -1763,8 +1787,14 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("SensorStatisticsJson")
+                        .HasColumnType("jsonb");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TaskSummaryJson")
+                        .HasColumnType("jsonb");
 
                     b.Property<int>("TotalHarvests")
                         .HasColumnType("integer");
@@ -1782,6 +1812,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.Property<int?>("UpdatedBy")
                         .HasColumnType("integer");
+
+                    b.Property<string>("WeatherStatisticsJson")
+                        .HasColumnType("jsonb");
 
                     b.HasKey("Id");
 

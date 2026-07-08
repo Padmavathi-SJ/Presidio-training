@@ -601,99 +601,49 @@ private async Task<byte[]> ExportToCsvBytes(YieldReport report)
     var csv = new System.Text.StringBuilder();
     
     // =============================================
-    // SECTION 1: REPORT HEADER
+    // SECTION 1: REPORT HEADER & SUMMARY
     // =============================================
     csv.AppendLine("\"Report Name\",\"Value\"");
     csv.AppendLine($"\"Report Name\",\"{EscapeCsvValue(report.ReportName)}\"");
     csv.AppendLine($"\"Generated On\",\"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\"");
     csv.AppendLine($"\"Date Range Start\",\"{report.StartDate:yyyy-MM-dd}\"");
     csv.AppendLine($"\"Date Range End\",\"{report.EndDate:yyyy-MM-dd}\"");
-    csv.AppendLine();
-    
-    // =============================================
-    // SECTION 2: SUMMARY STATISTICS
-    // =============================================
-    csv.AppendLine("\"Metric\",\"Value\"");
     csv.AppendLine($"\"Total Yield (kg)\",\"{report.TotalYieldKg:N0}\"");
     csv.AppendLine($"\"Total Harvests\",\"{report.TotalHarvests}\"");
-    csv.AppendLine($"\"Average Price per kg\",\"{report.AveragePricePerKg:F2}\"");
     csv.AppendLine($"\"Total Value\",\"{report.TotalValue:C}\"");
-    csv.AppendLine($"\"Yield per Hectare (kg/ha)\",\"{report.AverageYieldPerHectare:N0}\"");
-    csv.AppendLine($"\"Pass Rate (%)\",\"{report.PassRate:F1}\"");
-    csv.AppendLine($"\"Rejection Rate (%)\",\"{report.RejectionRate:F1}\"");
-    csv.AppendLine($"\"Average Quality Grade\",\"{report.AverageQualityGrade}\"");
     csv.AppendLine();
     
     // =============================================
-    // SECTION 3: FIELD BREAKDOWN
+    // SECTION 2: RAW HARVEST DATA (Row-by-Row)
     // =============================================
-    if (!string.IsNullOrEmpty(report.FieldBreakdownJson))
-    {
-        var fieldBreakdown = JsonSerializer.Deserialize<List<FieldYieldBreakdownDto>>(report.FieldBreakdownJson);
-        if (fieldBreakdown != null && fieldBreakdown.Any())
-        {
-            csv.AppendLine("\"=== FIELD BREAKDOWN ===\"");
-            csv.AppendLine("\"Field Name\",\"Total Yield (kg)\",\"Harvest Count\",\"Yield per Hectare (kg/ha)\",\"Percentage of Total\"");
-            foreach (var field in fieldBreakdown)
-            {
-                csv.AppendLine($"\"{EscapeCsvValue(field.FieldName)}\",\"{field.TotalYieldKg:N0}\",\"{field.HarvestCount}\",\"{field.YieldPerHectare:N0}\",\"{field.PercentageOfTotal:F1}%\"");
-            }
-            csv.AppendLine();
-        }
-    }
+    csv.AppendLine("\"=== DETAILED HARVEST DATA ===\"");
+    csv.AppendLine("\"Date\",\"Field\",\"Crop\",\"Quantity (kg)\",\"Quality Grade\",\"Price per kg\",\"Total Value\",\"Worker\",\"Status\"");
     
-    // =============================================
-    // SECTION 4: CROP TYPE BREAKDOWN
-    // =============================================
-    if (!string.IsNullOrEmpty(report.CropTypeBreakdownJson))
-    {
-        var cropBreakdown = JsonSerializer.Deserialize<List<CropTypeYieldBreakdownDto>>(report.CropTypeBreakdownJson);
-        if (cropBreakdown != null && cropBreakdown.Any())
-        {
-            csv.AppendLine("\"=== CROP TYPE BREAKDOWN ===\"");
-            csv.AppendLine("\"Crop Type\",\"Total Yield (kg)\",\"Harvest Count\",\"Average Price\",\"Total Value\",\"Percentage of Total\"");
-            foreach (var crop in cropBreakdown)
-            {
-                csv.AppendLine($"\"{EscapeCsvValue(crop.CropType)}\",\"{crop.TotalYieldKg:N0}\",\"{crop.HarvestCount}\",\"{crop.AveragePricePerKg:C}\",\"{crop.TotalValue:C}\",\"{crop.PercentageOfTotal:F1}%\"");
-            }
-            csv.AppendLine();
-        }
-    }
+    // Fetch the raw data
+    var harvests = await _harvestRepository.GetByDateRangeAsync(report.FarmId, report.StartDate, report.EndDate);
     
-    // =============================================
-    // SECTION 5: MONTHLY TREND
-    // =============================================
-    if (!string.IsNullOrEmpty(report.MonthlyTrendJson))
-    {
-        var monthlyTrend = JsonSerializer.Deserialize<List<MonthlyYieldTrendDto>>(report.MonthlyTrendJson);
-        if (monthlyTrend != null && monthlyTrend.Any())
-        {
-            csv.AppendLine("\"=== MONTHLY TREND ===\"");
-            csv.AppendLine("\"Month\",\"Year\",\"Yield (kg)\",\"Harvest Count\",\"Average Price\",\"Total Value\"");
-            foreach (var trend in monthlyTrend)
-            {
-                csv.AppendLine($"\"{EscapeCsvValue(trend.Month)}\",\"{trend.Year}\",\"{trend.YieldKg:N0}\",\"{trend.HarvestCount}\",\"{trend.AveragePrice:C}\",\"{trend.TotalValue:C}\"");
-            }
-            csv.AppendLine();
-        }
-    }
+    if (report.FieldId.HasValue)
+        harvests = harvests.Where(h => h.FieldId == report.FieldId.Value).ToList();
+        
+    if (report.CropCycleId.HasValue)
+        harvests = harvests.Where(h => h.CropCycleId == report.CropCycleId.Value).ToList();
+
+    // The user requested NO status filtering for the export, so we include all statuses (pending, approved, rejected, etc)
+    // unless they added specific status filters (which aren't in the entity yet). So we just dump everything matching the field/crop/date.
     
-    // =============================================
-    // SECTION 6: QUALITY DISTRIBUTION
-    // =============================================
-    if (!string.IsNullOrEmpty(report.QualityDistributionJson))
+    foreach (var harvest in harvests.OrderBy(h => h.HarvestDate))
     {
-        var qualityDist = JsonSerializer.Deserialize<List<QualityDistributionDto>>(report.QualityDistributionJson);
-        if (qualityDist != null && qualityDist.Any())
-        {
-            csv.AppendLine("\"=== QUALITY DISTRIBUTION ===\"");
-            csv.AppendLine("\"Grade\",\"Count\",\"Percentage\"");
-            foreach (var q in qualityDist)
-            {
-                csv.AppendLine($"\"{EscapeCsvValue(q.Grade)}\",\"{q.Count}\",\"{q.Percentage:F1}%\"");
-            }
-            csv.AppendLine();
-        }
+        var date = harvest.HarvestDate.ToString("yyyy-MM-dd");
+        var fieldName = harvest.Field?.FieldName ?? "N/A";
+        var cropName = harvest.CropCycle?.CropType?.ToString() ?? "N/A";
+        var quantity = harvest.QuantityKg.ToString("F2");
+        var quality = harvest.QualityGrade?.ToString() ?? "N/A";
+        var price = harvest.PricePerKg?.ToString("F2") ?? "0.00";
+        var totalValue = harvest.TotalValue?.ToString("F2") ?? "0.00";
+        var worker = harvest.Harvester != null ? harvest.Harvester.Name : "N/A";
+        var status = harvest.ApprovalStatus ?? "PENDING";
+        
+        csv.AppendLine($"\"{date}\",\"{EscapeCsvValue(fieldName)}\",\"{EscapeCsvValue(cropName)}\",\"{quantity}\",\"{quality}\",\"{price}\",\"{totalValue}\",\"{EscapeCsvValue(worker)}\",\"{status}\"");
     }
     
     return System.Text.Encoding.UTF8.GetBytes(csv.ToString());

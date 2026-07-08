@@ -26,8 +26,13 @@ export class WeatherSignalRService {
   }
 
   private startConnection(): void {
+    const baseUrl = this.API_URL.replace('/api', '');
+    const token = localStorage.getItem('token');
+    
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl(`${this.API_URL}/weatherHub`)
+      .withUrl(`${baseUrl}/weatherHub`, {
+        accessTokenFactory: () => token || ''
+      })
       .withAutomaticReconnect()
       .build();
 

@@ -24,3 +24,12 @@ public class CreateAlertThresholdDto
     public string Severity { get; set; } = "MEDIUM";
     public string? NotificationEmails { get; set; }
 }
+
+public class UpdateAlertThresholdDto
+{
+    public decimal? MinValue { get; set; }
+    public decimal? MaxValue { get; set; }
+    public string? Severity { get; set; }
+    public bool? IsActive { get; set; }
+    public string? NotificationEmails { get; set; }
+}

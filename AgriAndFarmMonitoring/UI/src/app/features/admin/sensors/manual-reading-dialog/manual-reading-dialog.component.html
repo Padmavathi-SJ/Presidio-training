@@ -1,0 +1,59 @@
+<h2 mat-dialog-title>Add Manual Sensor Reading</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="reading-form">
+    
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Field</mat-label>
+      <mat-select formControlName="fieldId">
+        <mat-option *ngFor="let field of fields()" [value]="field.id">
+          {{ field.fieldName }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('fieldId')?.hasError('required')">Field is required</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Crop Cycle</mat-label>
+      <mat-select formControlName="cropCycleId">
+        <mat-option *ngFor="let cycle of cropCycles()" [value]="cycle.id">
+          {{ cycle.cropType }} ({{ cycle.plantingDate | date:'shortDate' }} - {{ (cycle.expectedHarvestDate | date:'shortDate') || 'Present' }})
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('cropCycleId')?.hasError('required')">Crop cycle is required</mat-error>
+    </mat-form-field>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Sensor Type</mat-label>
+        <mat-select formControlName="sensorType">
+          <mat-option *ngFor="let type of sensorTypes" [value]="type">
+            {{ sensorTypeLabels[type] || type }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('sensorType')?.hasError('required')">Sensor type is required</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Value</mat-label>
+        <input matInput type="number" formControlName="value" step="0.1">
+        <mat-error *ngIf="form.get('value')?.hasError('required')">Value is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Unit</mat-label>
+        <input matInput formControlName="unit" readonly>
+      </mat-form-field>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="onSubmit()">
+    Submit
+  </button>
+</mat-dialog-actions>

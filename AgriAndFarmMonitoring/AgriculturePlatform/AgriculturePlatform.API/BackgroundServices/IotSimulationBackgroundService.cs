@@ -17,6 +17,7 @@ public class IoTSimulatorBackgroundService : BackgroundService
     private readonly IHubContext<SensorHub> _hubContext;
     private readonly ILogger<IoTSimulatorBackgroundService> _logger;
     private readonly Random _random = new();
+    private DateTime _lastRandomAlertTime = DateTime.MinValue;
     
     // Sensor frequency configuration (in seconds)
     private readonly Dictionary<string, int> _sensorFrequencies = new()
@@ -82,6 +83,7 @@ public class IoTSimulatorBackgroundService : BackgroundService
             try
             {
                 await GenerateSensorReadings(stoppingToken);
+                await GenerateHourlyAlerts(stoppingToken);
                 _logger.LogInformation("IoT simulation cycle completed at {Time}", DateTime.UtcNow);
             }
             catch (Exception ex)
@@ -94,6 +96,30 @@ public class IoTSimulatorBackgroundService : BackgroundService
         }
         
         _logger.LogInformation("IoT Simulator Background Service stopped");
+    }
+
+    private async Task GenerateHourlyAlerts(CancellationToken stoppingToken)
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastRandomAlertTime).TotalHours < 1)
+            return;
+
+        using var scope = _scopeFactory.CreateScope();
+        var iotSimulatorService = scope.ServiceProvider.GetRequiredService<IIoTSimulatorService>();
+        var farmRepository = scope.ServiceProvider.GetRequiredService<IFarmRepository>();
+        var adminRepository = scope.ServiceProvider.GetRequiredService<IAdminRepository>();
+
+        var farms = await farmRepository.GetAllActiveAsync();
+        foreach (var farm in farms)
+        {
+            var admins = await adminRepository.GetByFarmIdAsync(farm.Id);
+            var adminId = admins.FirstOrDefault()?.Id ?? 1;
+
+            await iotSimulatorService.GenerateHourlyRandomAlertAsync(farm.Id, adminId);
+        }
+
+        _lastRandomAlertTime = now;
+        _logger.LogInformation($"Hourly random alerts generation completed at {now}");
     }
 
     private async Task GenerateSensorReadings(CancellationToken stoppingToken)
@@ -201,7 +227,7 @@ public class IoTSimulatorBackgroundService : BackgroundService
         // Check if value has changed significantly (threshold-based)
         if (_lastValues.TryGetValue(key, out var lastValue))
         {
-            var changePercent = Math.Abs((value - lastValue) / lastValue);
+            var changePercent = lastValue == 0 ? 1 : Math.Abs((value - lastValue) / lastValue);
             if (changePercent < _changeThreshold && _lastGenerated.ContainsKey(key))
             {
                 // Value hasn't changed significantly, but still generate if enough time passed

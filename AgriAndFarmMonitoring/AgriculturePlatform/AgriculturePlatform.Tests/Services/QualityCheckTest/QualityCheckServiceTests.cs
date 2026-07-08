@@ -705,7 +705,7 @@ public class QualityCheckServiceTests
             QualityByHarvest = new Dictionary<string, int>()
         };
         
-        _qualityCheckRepositoryMock.Setup(r => r.GetQualityStatisticsAsync(farmId, null, null))
+        _qualityCheckRepositoryMock.Setup(r => r.GetQualityStatisticsAsync(farmId, null, null, It.IsAny<int?>()))
             .ReturnsAsync(stats);
 
         // Act
@@ -743,7 +743,7 @@ public class QualityCheckServiceTests
             // PassRate will be 25/30 * 100 = 83.33
         };
         
-        _qualityCheckRepositoryMock.Setup(r => r.GetQualityStatisticsAsync(farmId, fromDate, toDate))
+        _qualityCheckRepositoryMock.Setup(repo => repo.GetQualityStatisticsAsync(farmId, It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<int?>()))
             .ReturnsAsync(stats);
 
         // Act
@@ -774,7 +774,7 @@ public class QualityCheckServiceTests
             QualityByHarvest = new Dictionary<string, int>()
         };
         
-        _qualityCheckRepositoryMock.Setup(r => r.GetQualityStatisticsAsync(farmId, null, null))
+        _qualityCheckRepositoryMock.Setup(r => r.GetQualityStatisticsAsync(farmId, null, null, It.IsAny<int?>()))
             .ReturnsAsync(stats);
 
         // Act

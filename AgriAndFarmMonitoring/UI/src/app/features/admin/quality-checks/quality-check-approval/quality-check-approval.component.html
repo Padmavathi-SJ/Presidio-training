@@ -1,0 +1,38 @@
+<h2 mat-dialog-title class="dialog-header-professional">Review Quality Check</h2>
+
+<mat-dialog-content class="dialog-content-professional">
+  <form [formGroup]="approvalForm" class="flex flex-col gap-4 mt-2">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Review Action</mat-label>
+      <mat-select formControlName="actionType">
+        <mat-option value="APPROVED">Approve</mat-option>
+        <mat-option value="REQUEST_CHANGES">Request Changes</mat-option>
+        <mat-option value="REJECTED">Reject</mat-option>
+      </mat-select>
+      <mat-error *ngIf="approvalForm.get('actionType')?.hasError('required')">
+        Action is required
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full" *ngIf="approvalForm.get('actionType')?.value === 'REJECTED'">
+      <mat-label>Rejection Reason</mat-label>
+      <textarea matInput formControlName="rejectionReason" rows="3" placeholder="Why is this rejected?"></textarea>
+      <mat-error *ngIf="approvalForm.get('rejectionReason')?.hasError('required')">
+        Rejection reason is required
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Admin Notes</mat-label>
+      <textarea matInput formControlName="adminNotes" rows="3" placeholder="Additional notes..."></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="mb-2 dialog-actions-professional">
+  <button mat-button (click)="closeDialog()" [disabled]="isSaving">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="approvalForm.invalid || isSaving">
+    <mat-icon *ngIf="isSaving">pending</mat-icon>
+    Submit Review
+  </button>
+</mat-dialog-actions>

@@ -88,6 +88,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   // State Signals
   isLoading = signal(false);
+  isGeneratingAlert = signal(false);
   isResolving = signal<number | null>(null);
   alerts = signal<Alert[]>([]);
   totalCount = signal(0);
@@ -152,7 +153,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
       if (trigger > 0 || trigger === 0) {
         this.loadAlerts();
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   ngOnInit(): void {
@@ -367,20 +368,17 @@ export class AlertsComponent implements OnInit, OnDestroy {
         message: `Are you sure you want to resolve this alert?`,
         confirmText: 'Resolve',
         cancelText: 'Cancel',
-        type: 'info',
-        inputLabel: 'Resolution Notes (Optional)',
-        inputPlaceholder: 'Enter resolution notes...',
-        inputRequired: false
+        type: 'info'
       }
     });
 
-    dialogRef.afterClosed().subscribe((result: any) => {
-      if (result?.confirmed) {
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
         const farmId = this.authService.getFarmId();
         if (!farmId) return;
 
         this.isResolving.set(alert.id);
-        this.sensorService.resolveAlert(farmId, alert.id, { alertId: alert.id, resolutionNotes: result.input })
+        this.sensorService.resolveAlert(farmId, alert.id, { alertId: alert.id, resolutionNotes: 'Resolved by admin' })
           .pipe(finalize(() => this.isResolving.set(null)))
           .subscribe({
             next: (response: any) => {
@@ -453,6 +451,29 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   clearSelection(): void {
     this.selectedAlerts.set([]);
+  }
+
+  generateHourlyAlert(): void {
+    const farmId = this.authService.getFarmId();
+    if (!farmId) return;
+
+    this.isGeneratingAlert.set(true);
+    this.sensorService.generateHourlyAlert(farmId)
+      .pipe(finalize(() => this.isGeneratingAlert.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            this.showSuccess('Hourly alert simulation triggered');
+            this.triggerReload();
+          } else {
+            this.showError('Failed to trigger alert simulation');
+          }
+        },
+        error: (err: any) => {
+          console.error(err);
+          this.showError('Error triggering alert simulation');
+        }
+      });
   }
 
   // =============================================

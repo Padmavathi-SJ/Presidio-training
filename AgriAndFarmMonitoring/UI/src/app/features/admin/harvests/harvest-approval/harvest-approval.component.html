@@ -1,0 +1,44 @@
+<div class="bg-white rounded-xl max-w-[500px] w-full">
+  <div class="flex justify-between items-center px-6 py-4 border-b border-outline-variant">
+    <div class="flex items-center gap-3">
+      <mat-icon class="text-primary text-2xl w-6 h-6">fact_check</mat-icon>
+      <h2 class="text-xl font-semibold m-0 text-on-surface">Review Harvest</h2>
+    </div>
+    <button mat-icon-button (click)="closeDialog()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  
+  <form [formGroup]="approvalForm" class="flex flex-col">
+    <div class="px-6 py-4">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Status *</mat-label>
+        <mat-select formControlName="approvalStatus">
+          <mat-option value="APPROVED">Approve</mat-option>
+          <mat-option value="REQUEST_CHANGES">Request Changes</mat-option>
+          <mat-option value="REJECTED">Reject</mat-option>
+        </mat-select>
+        <mat-error>Status is required</mat-error>
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline" class="w-full mt-2" *ngIf="approvalForm.get('approvalStatus')?.value === 'REJECTED'">
+        <mat-label>Rejection Reason *</mat-label>
+        <textarea matInput formControlName="rejectionReason" rows="3"></textarea>
+        <mat-error>Rejection reason is required</mat-error>
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline" class="w-full mt-2" *ngIf="approvalForm.get('approvalStatus')?.value !== 'REJECTED'">
+        <mat-label>Admin Notes</mat-label>
+        <textarea matInput formControlName="adminNotes" rows="3"></textarea>
+      </mat-form-field>
+    </div>
+    
+    <div class="flex justify-end gap-2 px-6 py-4 border-t border-outline-variant">
+      <button type="button" mat-button (click)="closeDialog()" [disabled]="isSaving">Cancel</button>
+      <button mat-raised-button color="primary" (click)="save()" [disabled]="approvalForm.invalid || isSaving">
+        <span *ngIf="!isSaving">Submit Review</span>
+        <span *ngIf="isSaving">Saving...</span>
+      </button>
+    </div>
+  </form>
+</div>

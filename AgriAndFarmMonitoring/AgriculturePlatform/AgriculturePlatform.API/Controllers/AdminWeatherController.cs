@@ -25,8 +25,8 @@ public class AdminWeatherController : ControllerBase
     private int GetCurrentFarmId() => int.Parse(User.FindFirst("farmId")?.Value ?? "0");
     private int GetCurrentAdminId() => int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-// GET: api/admin/farms/{farmId}/weather/current/{fieldId}
-[HttpGet("current/{fieldId}")]
+// GET: api/admin/farms/{farmId}/weather/current/{fieldId:int}
+[HttpGet("current/{fieldId:int}")]
 public async Task<IActionResult> GetCurrentWeather(int fieldId)
 {
     var farmId = GetCurrentFarmId();
@@ -37,8 +37,8 @@ public async Task<IActionResult> GetCurrentWeather(int fieldId)
 }
 
 
-    // GET: api/admin/farms/{farmId}/weather/forecast/{fieldId}
-    [HttpGet("forecast/{fieldId}")]
+    // GET: api/admin/farms/{farmId}/weather/forecast/{fieldId:int}
+    [HttpGet("forecast/{fieldId:int}")]
     public async Task<IActionResult> GetForecast(int fieldId)
     {
         var farmId = GetCurrentFarmId();
@@ -57,10 +57,10 @@ public async Task<IActionResult> GetCurrentWeather(int fieldId)
 
     // GET: api/admin/farms/{farmId}/weather/alerts
     [HttpGet("alerts")]
-    public async Task<IActionResult> GetAlerts()
+    public async Task<IActionResult> GetAlerts([FromQuery] WeatherAlertFilterDto filter)
     {
         var farmId = GetCurrentFarmId();
-        var result = await _weatherService.GetActiveWeatherAlertsAsync(farmId);
+        var result = await _weatherService.GetWeatherAlertsAsync(filter, farmId);
         return Ok(result);
     }
 
@@ -74,8 +74,8 @@ public async Task<IActionResult> GetCurrentWeather(int fieldId)
         return Ok(result);
     }
 
-    // PUT: api/admin/farms/{farmId}/weather/{id}
-    [HttpPut("{id}")]
+    // PUT: api/admin/farms/{farmId}/weather/{id:int}
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateWeather(int id, [FromBody] ManualWeatherEntryDto dto)
     {
         var farmId = GetCurrentFarmId();
@@ -84,8 +84,8 @@ public async Task<IActionResult> GetCurrentWeather(int fieldId)
         return Ok(result);
     }
 
-    // DELETE: api/admin/farms/{farmId}/weather/{id}
-    [HttpDelete("{id}")]
+    // DELETE: api/admin/farms/{farmId}/weather/{id:int}
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteWeather(int id)
     {
         var farmId = GetCurrentFarmId();
@@ -94,8 +94,8 @@ public async Task<IActionResult> GetCurrentWeather(int fieldId)
         return Ok(result);
     }
 
-// POST: api/admin/farms/{farmId}/weather/refresh/{fieldId}
-[HttpPost("refresh/{fieldId}")]
+// POST: api/admin/farms/{farmId}/weather/refresh/{fieldId:int}
+[HttpPost("refresh/{fieldId:int}")]
 public async Task<IActionResult> RefreshWeather(int fieldId)
 {
     var farmId = GetCurrentFarmId();
@@ -161,8 +161,8 @@ public async Task<IActionResult> GetActiveAlerts()
     return Ok(result);
 }
 
-// GET: api/admin/farms/{farmId}/weather/alerts/{id}
-[HttpGet("alerts/{id}")]
+// GET: api/admin/farms/{farmId}/weather/alerts/{id:int}
+[HttpGet("alerts/{id:int}")]
 public async Task<IActionResult> GetAlertById(int id)
 {
     var farmId = GetCurrentFarmId();
@@ -180,8 +180,8 @@ public async Task<IActionResult> CreateAlert([FromBody] WeatherAlertCreateDto dt
     return Ok(result);
 }
 
-// PUT: api/admin/farms/{farmId}/weather/alerts/{id}
-[HttpPut("alerts/{id}")]
+// PUT: api/admin/farms/{farmId}/weather/alerts/{id:int}
+[HttpPut("alerts/{id:int}")]
 public async Task<IActionResult> UpdateAlert(int id, [FromBody] WeatherAlertUpdateDto dto)
 {
     var farmId = GetCurrentFarmId();
@@ -190,8 +190,8 @@ public async Task<IActionResult> UpdateAlert(int id, [FromBody] WeatherAlertUpda
     return Ok(result);
 }
 
-// DELETE: api/admin/farms/{farmId}/weather/alerts/{id}
-[HttpDelete("alerts/{id}")]
+// DELETE: api/admin/farms/{farmId}/weather/alerts/{id:int}
+[HttpDelete("alerts/{id:int}")]
 public async Task<IActionResult> DeleteAlert(int id)
 {
     var farmId = GetCurrentFarmId();
@@ -200,8 +200,8 @@ public async Task<IActionResult> DeleteAlert(int id)
     return Ok(result);
 }
 
-// POST: api/admin/farms/{farmId}/weather/alerts/{id}/acknowledge
-[HttpPost("alerts/{id}/acknowledge")]
+// POST: api/admin/farms/{farmId}/weather/alerts/{id:int}/acknowledge
+[HttpPost("alerts/{id:int}/acknowledge")]
 public async Task<IActionResult> AcknowledgeAlert(int id)
 {
     var farmId = GetCurrentFarmId();
@@ -210,8 +210,8 @@ public async Task<IActionResult> AcknowledgeAlert(int id)
     return Ok(result);
 }
 
-// POST: api/admin/farms/{farmId}/weather/alerts/acknowledge-all/{fieldId}
-[HttpPost("alerts/acknowledge-all/{fieldId}")]
+// POST: api/admin/farms/{farmId}/weather/alerts/acknowledge-all/{fieldId:int}
+[HttpPost("alerts/acknowledge-all/{fieldId:int}")]
 public async Task<IActionResult> AcknowledgeAllAlerts(int fieldId)
 {
     var farmId = GetCurrentFarmId();

@@ -22,8 +22,10 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, provideNativeDateAdapter } from '@angular/material/core';
+import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 // App Imports
 import { AuthService } from '../../../../core/services/auth.service';
@@ -62,8 +64,11 @@ Chart.register(...registerables);
     MatDatepickerModule,
     MatNativeDateModule,
     MatTabsModule,
+    MatInputModule,
+    MatPaginatorModule,
     BaseChartDirective
   ],
+  providers: [provideNativeDateAdapter()],
   templateUrl: './sensor-statistics.component.html',
   styleUrls: ['./sensor-statistics.component.scss']
 })
@@ -79,6 +84,8 @@ export class SensorStatisticsComponent implements OnInit, OnDestroy {
   statistics = signal<SensorStatistics | null>(null);
   fields: any[] = [];
   selectedTabIndex = signal(0);
+  pageIndex = signal(0);
+  pageSize = signal(10);
 
   // Form
   filterForm: FormGroup;
@@ -456,6 +463,17 @@ export class SensorStatisticsComponent implements OnInit, OnDestroy {
     return Object.entries(stats.dailyStats)
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([key, value]) => ({ key, value }));
+  }
+
+  getPaginatedStats(): { key: string; value: DailySensorStats }[] {
+    const arr = this.getDailyStatsArray();
+    const start = this.pageIndex() * this.pageSize();
+    return arr.slice(start, start + this.pageSize());
+  }
+
+  handlePageEvent(e: PageEvent) {
+    this.pageSize.set(e.pageSize);
+    this.pageIndex.set(e.pageIndex);
   }
 
   getSensorTypeLabel(type: string): string {

@@ -42,8 +42,8 @@ public class AdminAlertsController : ControllerBase
         return Ok(result);
     }
 
-    // GET: api/admin/farms/{farmId}/alerts/{id}
-    [HttpGet("{id}")]
+    // GET: api/admin/farms/{farmId}/alerts/{id:int}
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         var farmId = GetCurrentFarmId();
@@ -82,8 +82,8 @@ public class AdminAlertsController : ControllerBase
         return Ok(result);
     }
 
-    // PUT: api/admin/farms/{farmId}/alerts/{id}/resolve
-    [HttpPut("{id}/resolve")]
+    // PUT: api/admin/farms/{farmId}/alerts/{id:int}/resolve
+    [HttpPut("{id:int}/resolve")]
     public async Task<IActionResult> ResolveAlert(int id, [FromBody] ResolveAlertDto dto)
     {
         var farmId = GetCurrentFarmId();

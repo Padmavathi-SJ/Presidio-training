@@ -1,0 +1,55 @@
+<div class="bg-white rounded-xl max-w-[620px] w-full">
+  <div class="flex justify-between items-center px-6 py-4 border-b border-outline-variant">
+    <div class="flex items-center gap-3">
+      <mat-icon class="text-primary text-2xl w-6 h-6">fact_check</mat-icon>
+      <h2 class="text-xl font-semibold m-0 text-on-surface">{{ isEditMode ? 'Edit' : 'Create' }} Quality Check</h2>
+    </div>
+    <button mat-icon-button (click)="dialogRef.close()"><mat-icon>close</mat-icon></button>
+  </div>
+  
+  <form [formGroup]="form" class="flex flex-col">
+    <div class="px-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline" class="w-full sm:col-span-2">
+        <mat-label>Harvest *</mat-label>
+        <mat-select formControlName="harvestId">
+          <mat-option *ngFor="let h of harvests()" [value]="h.id">
+            {{ h.harvestDate | date:'mediumDate' }} - {{ h.cropType }} ({{ h.quantityKg }}kg)
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('harvestId')?.hasError('required')">Harvest is required</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Check Date *</mat-label>
+        <input matInput type="date" formControlName="checkDate">
+        <mat-error *ngIf="form.get('checkDate')?.hasError('required')">Date is required</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Final Grade</mat-label>
+        <mat-select formControlName="finalGrade">
+          <mat-option [value]="null">None</mat-option>
+          <mat-option *ngFor="let g of grades" [value]="g">{{ g }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Moisture % (0-100)</mat-label>
+        <input matInput type="number" formControlName="moisturePct" min="0" max="100">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Defect % (0-100)</mat-label>
+        <input matInput type="number" formControlName="defectPct" min="0" max="100">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-full sm:col-span-2">
+        <mat-label>Notes</mat-label>
+        <textarea matInput formControlName="notes" rows="3"></textarea>
+      </mat-form-field>
+    </div>
+    
+    <div class="flex justify-end gap-2 px-6 py-4 border-t border-outline-variant">
+      <button type="button" mat-button (click)="dialogRef.close()" [disabled]="isSubmitting()">Cancel</button>
+      <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid || isSubmitting()">
+        <span *ngIf="!isSubmitting()">{{ isEditMode ? 'Save Changes' : 'Submit Check' }}</span>
+        <span *ngIf="isSubmitting()">Saving...</span>
+      </button>
+    </div>
+  </form>
+</div>

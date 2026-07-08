@@ -23,7 +23,7 @@ public interface IQualityCheckService
     Task<ApiResponse<PagedResult<QualityCheckDto>>> GetPendingApprovalsAsync(int farmId, PaginationParams pagination);
     
     // Statistics
-    Task<ApiResponse<QualityStatisticsDto>> GetQualityStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate);
+    Task<ApiResponse<QualityStatisticsDto>> GetQualityStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate, int? workerId = null);
     
     // Validation
     Task<bool> ValidateQualityCheckOwnershipAsync(int qualityCheckId, int workerId, int farmId);

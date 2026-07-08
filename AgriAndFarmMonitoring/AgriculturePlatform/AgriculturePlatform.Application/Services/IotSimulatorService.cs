@@ -247,8 +247,10 @@ public class IoTSimulatorService : IIoTSimulatorService
             GrowthStageEnum.VEGETATIVE => 0.7m,
             GrowthStageEnum.FLOWERING => 0.6m,
             GrowthStageEnum.FRUITING => 0.55m,
-            GrowthStageEnum.MATURITY => 0.65m,
-            _ => 0.8m
+            GrowthStageEnum.MATURE => 0.65m,
+            GrowthStageEnum.READY_FOR_HARVEST => 0.6m, // ✅ ADDED
+        GrowthStageEnum.HARVESTED => 0.5m,          // ✅ ADDED
+        _ => 0.8m
         };
         
         return baseValue * growthFactor;
@@ -459,6 +461,56 @@ private AlertTypeEnum GetAlertTypeForSensor(string sensorType)
         "NPK_POTASSIUM" => AlertTypeEnum.NUTRIENT_DEFICIENCY,
         _ => AlertTypeEnum.DROUGHT_STRESS
     };
+}
+
+public async Task GenerateHourlyRandomAlertAsync(int farmId, int adminId)
+{
+    _logger.LogInformation($"Generating hourly random alert for farm {farmId}");
+    
+    var fields = await _fieldRepository.GetAllAsync(farmId);
+    if (!fields.Any()) return;
+
+    // Pick a random field
+    var randomField = fields.OrderBy(f => _random.Next()).FirstOrDefault();
+    if (randomField == null) return;
+
+    var activeCropCycles = await GetActiveCropCyclesForFieldAsync(randomField.Id, farmId);
+    var activeCycle = activeCropCycles.FirstOrDefault();
+    if (activeCycle == null) return;
+
+    var alertTypes = new[] { "DROUGHT_STRESS", "HEAT_STRESS", "PEST_INFESTATION", "SOIL_PH_ALERT" };
+    var randomAlertType = alertTypes[_random.Next(alertTypes.Length)];
+    
+    decimal criticalValue = randomAlertType switch
+    {
+        "DROUGHT_STRESS" => 10m,
+        "HEAT_STRESS" => 42m,
+        "PEST_INFESTATION" => 100m,
+        "SOIL_PH_ALERT" => 8.5m,
+        _ => 0
+    };
+
+    var alert = new Alert
+    {
+        FarmId = farmId,
+        AdminId = adminId,
+        FieldId = randomField.Id,
+        CropCycleId = activeCycle.Id,
+        AlertType = Enum.Parse<AlertTypeEnum>(randomAlertType),
+        Severity = AlertSeverityEnum.CRITICAL,
+        Message = $"HOURLY ALERT: {randomAlertType} detected in {randomField.FieldName}! Immediate action required.",
+        SensorValue = criticalValue,
+        ThresholdValue = randomAlertType == "DROUGHT_STRESS" ? 25m : 
+                        randomAlertType == "HEAT_STRESS" ? 35m :
+                        randomAlertType == "SOIL_PH_ALERT" ? 7.0m : 0,
+        IsResolved = false,
+        CreatedAt = DateTime.UtcNow
+    };
+    
+    await _alertRepository.CreateAsync(alert);
+    await _alertNotificationService.SendAlertNotificationsAsync(alert, farmId);
+    
+    _logger.LogWarning($"Generated hourly random CRITICAL alert for field {randomField.FieldName}: {randomAlertType}");
 }
 
 }

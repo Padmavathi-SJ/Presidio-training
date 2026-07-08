@@ -44,6 +44,20 @@ public class AdminSensorController : ControllerBase
         return Ok(result);
     }
 
+    // POST: api/admin/farms/{farmId}/sensors/manual
+    [HttpPost("manual")]
+    public async Task<IActionResult> AddManualReading([FromBody] CreateManualSensorReadingDto dto)
+    {
+        var farmId = GetCurrentFarmId();
+        var adminId = GetCurrentAdminId();
+        var result = await _sensorService.AddManualReadingAsync(dto, farmId, adminId);
+        
+        if (!result.Success)
+            return BadRequest(result);
+            
+        return Ok(result);
+    }
+
 // GET: api/admin/farms/{farmId}/sensors/field/{fieldId}/history
 // AgriculturePlatform.API/Controllers/AdminSensorController.cs
 

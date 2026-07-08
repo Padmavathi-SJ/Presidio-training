@@ -140,15 +140,18 @@ public class WorkerFieldService : IWorkerFieldService
         if (!growthStage.HasValue) return 0;
 
         var stageProgress = new Dictionary<GrowthStageEnum, double>
-        {
-            { GrowthStageEnum.GERMINATION, 10 },
-            { GrowthStageEnum.SEEDLING, 25 },
-            { GrowthStageEnum.VEGETATIVE, 50 },
-            { GrowthStageEnum.FLOWERING, 65 },
-            { GrowthStageEnum.FRUITING, 80 },
-            { GrowthStageEnum.MATURITY, 95 },
-            { GrowthStageEnum.HARVESTED, 100 }
-        };
+       {
+        { GrowthStageEnum.PLANTED, 5 },
+        { GrowthStageEnum.GERMINATION, 10 },
+        { GrowthStageEnum.SEEDLING, 25 },
+        { GrowthStageEnum.VEGETATIVE, 50 },
+        { GrowthStageEnum.FLOWERING, 65 },
+        { GrowthStageEnum.FRUITING, 80 },
+        { GrowthStageEnum.MATURE, 90 },              // ✅ CHANGED from MATURITY to MATURE
+        { GrowthStageEnum.READY_FOR_HARVEST, 98 },   // ✅ ADDED
+        { GrowthStageEnum.HARVESTED, 100 },          // ✅ ADDED
+        { GrowthStageEnum.OVERRIPE, 100 }            // ✅ ADDED
+    };
 
         return stageProgress.GetValueOrDefault(growthStage.Value, 0);
     }

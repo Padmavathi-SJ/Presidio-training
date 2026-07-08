@@ -133,11 +133,6 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/AgriculturePlatform.API.pdb
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/AgriculturePlatform.API.genruntimeconfig.cache
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/ref/AgriculturePlatform.API.dll
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets/msbuild.AgriculturePlatform.API.Microsoft.AspNetCore.StaticWebAssets.props
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets/msbuild.build.AgriculturePlatform.API.props
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.AgriculturePlatform.API.props
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.AgriculturePlatform.API.props
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets.pack.json
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/bin/Debug/net8.0/Azure.Core.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/bin/Debug/net8.0/Azure.Storage.Blobs.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/bin/Debug/net8.0/Azure.Storage.Common.dll
@@ -146,3 +141,8 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/bin/Debug/net8.0/System.Memory.Data.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/bin/Debug/net8.0/AgriculturePlatform.API.staticwebassets.runtime.json
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/AgriculturePlatform.API.sourcelink.json
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets/msbuild.AgriculturePlatform.API.Microsoft.AspNetCore.StaticWebAssets.props
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets/msbuild.build.AgriculturePlatform.API.props
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.AgriculturePlatform.API.props
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.AgriculturePlatform.API.props
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets.pack.json

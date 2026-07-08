@@ -65,6 +65,12 @@ export class HarvestStateService {
       .reduce((sum, h) => sum + (h.quantityKg || 0), 0)
   );
 
+  public readonly totalValue = computed(() => 
+    this.state().harvests
+      .filter(h => h.approvalStatus === 'APPROVED')
+      .reduce((sum, h) => sum + (h.totalValue || 0), 0)
+  );
+
   // ✅ Current filter state
   private currentFilter = signal<HarvestFilterDto>({
     page: 1,

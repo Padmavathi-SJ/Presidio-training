@@ -1,0 +1,224 @@
+<div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden mb-6">
+  <!-- Status Filter Tabs -->
+  <div class="border-b border-outline-variant bg-surface flex overflow-x-auto">
+    <button class="px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+            [class.border-primary]="selectedTabIndex === 0"
+            [class.text-primary]="selectedTabIndex === 0"
+            [class.border-transparent]="selectedTabIndex !== 0"
+            [class.text-surface-on-variant]="selectedTabIndex !== 0"
+            (click)="onTabChange(0)">
+      Pending Review
+    </button>
+    <button class="px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+            [class.border-primary]="selectedTabIndex === 1"
+            [class.text-primary]="selectedTabIndex === 1"
+            [class.border-transparent]="selectedTabIndex !== 1"
+            [class.text-surface-on-variant]="selectedTabIndex !== 1"
+            (click)="onTabChange(1)">
+      Approved
+    </button>
+    <button class="px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+            [class.border-primary]="selectedTabIndex === 2"
+            [class.text-primary]="selectedTabIndex === 2"
+            [class.border-transparent]="selectedTabIndex !== 2"
+            [class.text-surface-on-variant]="selectedTabIndex !== 2"
+            (click)="onTabChange(2)">
+      Rejected
+    </button>
+    <button class="px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+            [class.border-primary]="selectedTabIndex === 3"
+            [class.text-primary]="selectedTabIndex === 3"
+            [class.border-transparent]="selectedTabIndex !== 3"
+            [class.text-surface-on-variant]="selectedTabIndex !== 3"
+            (click)="onTabChange(3)">
+      Needs Changes
+    </button>
+  </div>
+
+  <!-- Active Filters Form -->
+  <form [formGroup]="filterForm" class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-surface/50">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Field</mat-label>
+      <mat-select formControlName="fieldId">
+        <mat-option value="">All Fields</mat-option>
+        <mat-option *ngFor="let field of fields" [value]="field.id">
+          {{ field.fieldName }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Crop Cycle</mat-label>
+      <mat-select formControlName="cropCycleId">
+        <mat-option value="">All Cycles</mat-option>
+        <mat-option *ngFor="let cycle of filteredCropCycles" [value]="cycle.id">
+          {{ cycle.cropType }} ({{ cycle.plantingDate | date:'shortDate' }})
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Quality Grade</mat-label>
+      <mat-select formControlName="qualityGrade">
+        <mat-option value="">All Grades</mat-option>
+        <mat-option value="A_PLUS">Grade A+ (Premium)</mat-option>
+        <mat-option value="A">Grade A</mat-option>
+        <mat-option value="B">Grade B</mat-option>
+        <mat-option value="C">Grade C</mat-option>
+        <mat-option value="D">Grade D</mat-option>
+        <mat-option value="REJECTED">Rejected</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="flex gap-2 w-full col-span-1">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>From</mat-label>
+        <input matInput [matDatepicker]="fromPicker" formControlName="fromDate">
+        <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+        <mat-datepicker #fromPicker></mat-datepicker>
+      </mat-form-field>
+  
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>To</mat-label>
+        <input matInput [matDatepicker]="toPicker" formControlName="toDate">
+        <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+        <mat-datepicker #toPicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+  </form>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="isLoading() && dataSource.data.length === 0" class="flex justify-center py-12">
+  <mat-spinner [diameter]="40"></mat-spinner>
+</div>
+
+<!-- Empty State -->
+<div *ngIf="!isLoading() && dataSource.data.length === 0" 
+     class="bg-surface-low border border-outline-variant rounded-xl p-12 text-center shadow-sm">
+  <mat-icon class="text-5xl h-12 w-12 text-surface-on-variant mb-3">inventory_2</mat-icon>
+  <h3 class="text-lg font-bold text-surface-on">No harvests found</h3>
+  <p class="text-sm text-surface-on-variant mt-1">Try adjusting your filters or tab criteria.</p>
+</div>
+
+<!-- Harvests Table -->
+<div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden" 
+     *ngIf="dataSource.data.length > 0">
+  <div class="overflow-x-auto">
+    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)" class="w-full">
+      
+      <!-- Date Column -->
+      <ng-container matColumnDef="harvestDate">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
+        <td mat-cell *matCellDef="let harvest">
+          <span class="font-medium text-surface-on">{{ harvest.harvestDate | date:'mediumDate' }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Field Column -->
+      <ng-container matColumnDef="fieldName">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Field</th>
+        <td mat-cell *matCellDef="let harvest">
+          <div class="flex flex-col">
+            <span class="font-semibold text-surface-on">{{ harvest.fieldName || 'N/A' }}</span>
+          </div>
+        </td>
+      </ng-container>
+      
+      <!-- Crop Column -->
+      <ng-container matColumnDef="cropType">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Crop</th>
+        <td mat-cell *matCellDef="let harvest">
+          <span class="text-surface-on">{{ harvest.cropType || 'N/A' }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Quantity Column -->
+      <ng-container matColumnDef="quantityKg">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Quantity (kg)</th>
+        <td mat-cell *matCellDef="let harvest">
+          <span class="font-medium text-surface-on">{{ harvest.quantityKg | number:'1.2-2' }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Quality Column -->
+      <ng-container matColumnDef="qualityGrade">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Quality</th>
+        <td mat-cell *matCellDef="let harvest">
+          <span class="text-surface-on">{{ harvest.qualityGrade || 'N/A' }}</span>
+        </td>
+      </ng-container>
+      
+      <!-- Worker Column -->
+      <ng-container matColumnDef="submitterName">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Worker</th>
+        <td mat-cell *matCellDef="let harvest">
+          <span class="text-surface-on">{{ harvest.submitterName || 'N/A' }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+        <td mat-cell *matCellDef="let harvest">
+          <div class="flex flex-col gap-1 items-start">
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider border"
+                  [ngClass]="{
+                    'bg-green-50 text-green-700 border-green-200': harvest.approvalStatus === 'APPROVED',
+                    'bg-yellow-50 text-yellow-700 border-yellow-200': harvest.approvalStatus === 'PENDING',
+                    'bg-orange-50 text-orange-700 border-orange-200': harvest.approvalStatus === 'REQUEST_CHANGES',
+                    'bg-red-50 text-red-700 border-red-200': harvest.approvalStatus === 'REJECTED'
+                  }">
+              {{ harvest.approvalStatus.replace('_', ' ') }}
+            </span>
+            <span *ngIf="harvest.workerResponse" class="inline-flex items-center gap-1 text-xs text-primary font-medium" [matTooltip]="harvest.workerResponse">
+              <mat-icon class="text-[14px] w-[14px] h-[14px]">forum</mat-icon> Replied
+            </span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="text-right">Actions</th>
+        <td mat-cell *matCellDef="let harvest" class="text-right">
+          <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu" xPosition="before">
+            <button mat-menu-item (click)="viewDetails(harvest)">
+              <mat-icon>visibility</mat-icon>
+              <span>View Details</span>
+            </button>
+            <button mat-menu-item (click)="openEditDialog(harvest)">
+              <mat-icon>edit</mat-icon>
+              <span>Edit Details</span>
+            </button>
+            <button mat-menu-item (click)="openApproveDialog(harvest)" *ngIf="harvest.approvalStatus === 'PENDING' || harvest.approvalStatus === 'REQUEST_CHANGES'">
+              <mat-icon>check_circle</mat-icon>
+              <span>Audit / Review</span>
+            </button>
+            <mat-divider></mat-divider>
+            <button mat-menu-item class="text-error" (click)="deleteHarvest(harvest)">
+              <mat-icon class="text-error">delete</mat-icon>
+              <span>Delete</span>
+            </button>
+          </mat-menu>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+          (click)="viewDetails(row)" 
+          class="hover:bg-surface-low/80 cursor-pointer transition-colors duration-150"></tr>
+    </table>
+  </div>
+  
+  <mat-paginator [length]="totalCount()"
+                 [pageSize]="currentFilter().pageSize"
+                 [pageIndex]="(currentFilter().page || 1) - 1"
+                 [pageSizeOptions]="[5, 10, 25, 50]"
+                 (page)="onPageChange($event)"
+                 showFirstLastButtons>
+  </mat-paginator>
+</div>

@@ -1,0 +1,84 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Edit' : 'Create' }} Alert Threshold</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="threshold-form">
+    
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Crop Type</mat-label>
+        <mat-select formControlName="cropType">
+          <mat-option *ngFor="let type of cropTypes" [value]="type">
+            {{ type }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('cropType')?.hasError('required')">Crop type is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Growth Stage</mat-label>
+        <mat-select formControlName="growthStage">
+          <mat-option *ngFor="let stage of growthStages" [value]="stage">
+            {{ stage }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('growthStage')?.hasError('required')">Growth stage is required</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Sensor Type</mat-label>
+        <mat-select formControlName="sensorType">
+          <mat-option *ngFor="let type of sensorTypes" [value]="type">
+            {{ sensorTypeLabels[type] || type }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('sensorType')?.hasError('required')">Sensor type is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Severity</mat-label>
+        <mat-select formControlName="severity">
+          <mat-option *ngFor="let level of severities" [value]="level">
+            {{ level }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Min Value</mat-label>
+        <input matInput type="number" formControlName="minValue" step="0.1">
+        <mat-error *ngIf="form.get('minValue')?.hasError('required')">Required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Max Value</mat-label>
+        <input matInput type="number" formControlName="maxValue" step="0.1">
+        <mat-error *ngIf="form.get('maxValue')?.hasError('required')">Required</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row full-width">
+      <mat-form-field appearance="outline">
+        <mat-label>Notification Emails (comma separated)</mat-label>
+        <input matInput formControlName="notificationEmails" placeholder="admin@example.com">
+      </mat-form-field>
+    </div>
+
+    <div class="form-row" *ngIf="isEditMode">
+      <mat-slide-toggle formControlName="isActive" color="primary">
+        Is Active
+      </mat-slide-toggle>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="onSubmit()">
+    {{ isEditMode ? 'Update' : 'Create' }}
+  </button>
+</mat-dialog-actions>

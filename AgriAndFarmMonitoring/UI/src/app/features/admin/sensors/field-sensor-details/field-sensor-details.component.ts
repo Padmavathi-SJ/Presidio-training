@@ -22,7 +22,8 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, provideNativeDateAdapter } from '@angular/material/core';
+import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -71,8 +72,10 @@ Chart.register(...registerables);
     MatTableModule,
     MatPaginatorModule,
     MatBadgeModule,
+    MatInputModule,
     BaseChartDirective
   ],
+  providers: [provideNativeDateAdapter()],
   templateUrl: './field-sensor-details.component.html',
   styleUrls: ['./field-sensor-details.component.scss']
 })
@@ -95,7 +98,7 @@ export class FieldSensorDetailsComponent implements OnInit, OnDestroy {
   alerts = signal<Alert[]>([]);
   selectedSensorType = signal<string | null>(null);
   totalCount = signal(0);
-  pageSize = signal(50);
+  pageSize = signal(10);
   pageIndex = signal(0);
 
   // Filter form
@@ -114,6 +117,11 @@ export class FieldSensorDetailsComponent implements OnInit, OnDestroy {
     const type = this.selectedSensorType();
     if (!type) return this.readings();
     return this.readings().filter(r => r.sensorType === type);
+  });
+  paginatedReadings = computed(() => {
+    const data = this.filteredReadings();
+    const start = this.pageIndex() * this.pageSize();
+    return data.slice(start, start + this.pageSize());
   });
   latestReading = computed(() => {
     const sorted = [...this.readings()].sort((a, b) => 
@@ -164,7 +172,7 @@ export class FieldSensorDetailsComponent implements OnInit, OnDestroy {
       if (trigger >= 0) {
         this.loadData();
       }
-    });
+    }, { allowSignalWrites: true });
 
     this.initCharts();
   }
@@ -580,6 +588,11 @@ export class FieldSensorDetailsComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/admin/sensors/dashboard']);
+  }
+
+  handlePageEvent(e: PageEvent) {
+    this.pageSize.set(e.pageSize);
+    this.pageIndex.set(e.pageIndex);
   }
 
   viewAllSensors(): void {

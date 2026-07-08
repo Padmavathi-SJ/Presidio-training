@@ -20,15 +20,17 @@ public enum CropTypeEnum
 // Growth stages
 public enum GrowthStageEnum
 {
-    GERMINATION,    // Seed sprouting (0-10 days)
-    SEEDLING,       // Early growth (10-20 days)
-    VEGETATIVE,     // Leaf/stem growth (20-60 days)
-    FLOWERING,      // Flower/bloom stage (60-80 days)
-    FRUITING,       // Fruit development (80-100 days)
-    MATURITY,       // Ready for harvest (100-120 days)
-    HARVESTED       // Harvest completed
+    PLANTED = 0,              // Just planted, not yet germinated
+    GERMINATION = 1,          // Germinated, early growth
+    SEEDLING = 2,             // Seedling stage
+    VEGETATIVE = 3,           // Vegetative growth phase
+    FLOWERING = 4,            // Flowering/pollination phase
+    FRUITING = 5,             // Fruit/seed development
+    MATURE = 6,               // Fully grown, not yet ready for harvest
+    READY_FOR_HARVEST = 7,    // Ready for harvest
+    HARVESTED = 8,            // Already harvested
+    OVERRIPE = 9              // Past optimal harvest time
 }
-
 // Field status
 public enum FieldStatusEnum
 {

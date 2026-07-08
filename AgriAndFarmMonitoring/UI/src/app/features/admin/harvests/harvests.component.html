@@ -1,1 +1,88 @@
-<p>harvests works!</p>
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-outline-variant pb-4">
+    <div>
+      <h1 class="text-headline-md font-bold text-surface-on m-0">Harvest Management</h1>
+      <p class="text-body-sm text-surface-on-variant mt-1">Review, audit, and manage crop harvests</p>
+    </div>
+  </div>
+
+  <!-- KPI Summary Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4" *ngIf="statistics() as stats">
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
+      <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant flex items-center gap-1">
+        <mat-icon class="text-[16px] h-4 w-4">inventory</mat-icon> Total Yield (Kg)
+      </span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-surface-on">{{ stats.totalYieldKg | number:'1.0-0' }}</span>
+      </div>
+    </div>
+    
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-primary">
+      <span class="text-xs font-semibold uppercase tracking-wider text-primary flex items-center gap-1">
+        <mat-icon class="text-[16px] h-4 w-4">agriculture</mat-icon> Total Harvests
+      </span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-primary">{{ stats.totalHarvests }}</span>
+      </div>
+    </div>
+
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-success">
+      <span class="text-xs font-semibold uppercase tracking-wider text-success flex items-center gap-1">
+        <mat-icon class="text-[16px] h-4 w-4">payments</mat-icon> Total Value
+      </span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-success">${{ stats.totalValue | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-accent">
+      <span class="text-xs font-semibold uppercase tracking-wider text-accent flex items-center gap-1">
+        <mat-icon class="text-[16px] h-4 w-4">trending_up</mat-icon> Yield Growth
+      </span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-accent" [class.text-error]="stats.yieldGrowthPercentage < 0">
+          {{ stats.yieldGrowthPercentage > 0 ? '+' : '' }}{{ stats.yieldGrowthPercentage }}%
+        </span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" *ngIf="statistics() as stats">
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
+      <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant flex items-center gap-1">
+        <mat-icon class="text-[16px] h-4 w-4">sell</mat-icon> Avg Price/Kg
+      </span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-surface-on">${{ stats.averagePricePerKg | number:'1.2-2' }}</span>
+      </div>
+    </div>
+    
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
+      <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant flex items-center gap-1">
+        <mat-icon class="text-[16px] h-4 w-4">landscape</mat-icon> Avg Yield/Ha
+      </span>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-3xl font-bold text-surface-on">{{ stats.averageYieldPerHectare | number:'1.1-1' }} kg</span>
+      </div>
+    </div>
+    
+    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between sm:col-span-2 lg:col-span-2">
+      <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant flex items-center gap-1">
+        <mat-icon class="text-[16px] h-4 w-4">stars</mat-icon> Quality Distribution
+      </span>
+      <div class="flex items-center gap-4 mt-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <ng-container *ngFor="let item of stats.qualityDistribution | keyvalue">
+            <span class="px-2.5 py-1 bg-surface border border-outline-variant rounded-md text-sm font-semibold text-surface-on">
+              {{ item.key }}: <span class="text-primary">{{ item.value }}</span>
+            </span>
+          </ng-container>
+          <span *ngIf="(stats.qualityDistribution | keyvalue).length === 0" class="text-sm text-surface-on-variant">No data available</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-harvest-list></app-harvest-list>
+</div>

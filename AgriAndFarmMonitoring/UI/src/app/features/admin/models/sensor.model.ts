@@ -119,6 +119,47 @@ export interface ResolveAlert {
   resolutionNotes?: string;
 }
 
+// Alert Thresholds
+export interface AlertThreshold {
+  id: number;
+  cropType: string;
+  growthStage: string;
+  sensorType: string;
+  minValue: number;
+  maxValue: number;
+  severity: string;
+  isActive: boolean;
+  notificationEmails?: string;
+}
+
+export interface CreateAlertThreshold {
+  cropType: string;
+  growthStage: string;
+  sensorType: string;
+  minValue: number;
+  maxValue: number;
+  severity: string;
+  notificationEmails?: string;
+}
+
+export interface UpdateAlertThreshold {
+  minValue?: number;
+  maxValue?: number;
+  severity?: string;
+  isActive?: boolean;
+  notificationEmails?: string;
+}
+
+// Manual Reading
+export interface CreateManualSensorReading {
+  fieldId: number;
+  cropCycleId: number;
+  sensorType: string;
+  value: number;
+  unit: string;
+  recordedAt?: string;
+}
+
 // Sensor Type Constants
 export const SENSOR_TYPES = [
   'SOIL_MOISTURE',

@@ -1,5 +1,5 @@
 // src/app/features/admin/weather/weather-alerts/weather-alerts.component.ts
-import { Component, inject, OnInit, OnDestroy, signal, computed, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -96,12 +96,12 @@ export class WeatherAlertsComponent implements OnInit, OnDestroy {
   fields: any[] = [];
 
   // Computed Signals
-  hasAlerts = computed(() => this.alerts().length > 0);
-  isEmpty = computed(() => !this.isLoading() && this.alerts().length === 0);
-  selectedCount = computed(() => this.selectedAlerts().length);
+  hasAlerts = computed(() => (this.alerts() || []).length > 0);
+  isEmpty = computed(() => !this.isLoading() && (this.alerts() || []).length === 0);
+  selectedCount = computed(() => (this.selectedAlerts() || []).length);
   hasSelected = computed(() => this.selectedCount() > 0);
-  allSelected = computed(() => this.hasAlerts() && this.selectedCount() === this.alerts().length);
-  isIndeterminate = computed(() => this.selectedCount() > 0 && this.selectedCount() < this.alerts().length);
+  allSelected = computed(() => this.hasAlerts() && this.selectedCount() === (this.alerts() || []).length);
+  isIndeterminate = computed(() => this.selectedCount() > 0 && this.selectedCount() < (this.alerts() || []).length);
 
   // Filter form
   filterForm: FormGroup;
@@ -140,10 +140,11 @@ export class WeatherAlertsComponent implements OnInit, OnDestroy {
 
     effect(() => {
       const trigger = this.reloadTrigger();
+      // Use untracked for other signals to prevent accidental infinite loops and duplicate calls
       if (trigger > 0 || trigger === 0) {
-        this.loadAlerts();
+        untracked(() => this.loadAlerts());
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   ngOnInit(): void {
@@ -185,6 +186,11 @@ export class WeatherAlertsComponent implements OnInit, OnDestroy {
             this.alerts.update(alerts => [alert, ...alerts]);
             this.totalCount.update(count => count + 1);
             this.showAlertNotification(alert);
+          } else {
+            // Update existing alert
+            this.alerts.update(alerts => 
+              alerts.map(a => a.id === alert.id ? { ...a, ...alert } : a)
+            );
           }
         }
       });
@@ -238,9 +244,9 @@ export class WeatherAlertsComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (response) => {
-          if (response.success) {
-            this.alerts.set(response.data.items);
-            this.totalCount.set(response.data.totalCount);
+          if (response.success && response.data) {
+            this.alerts.set(response.data.items || []);
+            this.totalCount.set(response.data.totalCount || 0);
             this.selectedAlerts.set([]);
           } else {
             this.showError(response.message || 'Failed to load alerts');
@@ -317,10 +323,16 @@ export class WeatherAlertsComponent implements OnInit, OnDestroy {
   }
 
   viewAlert(alert: WeatherAlert): void {
-    this.dialog.open(WeatherAlertDialogComponent, {
+    const dialogRef = this.dialog.open(WeatherAlertDialogComponent, {
       width: '600px',
       maxWidth: '95vw',
       data: { alert, mode: 'view' }
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.success) {
+        this.triggerReload();
+      }
     });
   }
 

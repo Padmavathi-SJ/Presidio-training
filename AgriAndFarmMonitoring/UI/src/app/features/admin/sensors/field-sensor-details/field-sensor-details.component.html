@@ -231,7 +231,7 @@
 
       <mat-card-content>
         <div class="overflow-x-auto">
-          <table mat-table [dataSource]="filteredReadings()" class="w-full">
+          <table mat-table [dataSource]="paginatedReadings()" class="w-full">
             
             <!-- Sensor Type Column -->
             <ng-container matColumnDef="sensorType">
@@ -310,6 +310,14 @@
             </div>
           }
         </div>
+        <mat-paginator 
+          [length]="filteredReadings().length"
+          [pageSize]="pageSize()"
+          [pageIndex]="pageIndex()"
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          (page)="handlePageEvent($event)"
+          aria-label="Select page">
+        </mat-paginator>
       </mat-card-content>
     </mat-card>
 

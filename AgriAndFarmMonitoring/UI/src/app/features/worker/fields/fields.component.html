@@ -1,174 +1,122 @@
 <!-- src/app/features/worker/fields/fields.component.html -->
-<div class="p-4 sm:p-6">
-  <!-- Header -->
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-800">My Fields</h1>
-      <p class="text-sm text-gray-500">View fields assigned to you and their crop cycles</p>
+<div class="worker-page-container">
+
+  <!-- Compact Page Header -->
+  <div class="worker-page-header">
+    <div class="worker-page-header-content">
+      <div class="worker-page-icon">
+        <mat-icon>crop_free</mat-icon>
+      </div>
+      <div>
+        <h1 class="worker-page-title">My Fields</h1>
+        <p class="worker-page-subtitle">Assigned fields &amp; active crop cycles</p>
+      </div>
     </div>
-    <div class="flex flex-wrap gap-2">
-      <!-- Refresh Button -->
-      <button 
-        mat-stroked-button 
-        (click)="refresh()"
-        [disabled]="isRefreshing() || isLoading()"
-        class="!border-primary-600 !text-primary-600"
-      >
-        @if (isRefreshing()) {
-          <mat-spinner [diameter]="20" class="!inline-block mr-2"></mat-spinner>
-        } @else {
-          <mat-icon>refresh</mat-icon>
-        }
+    <div class="flex items-center gap-3">
+      <span class="worker-meta-chip">
+        <mat-icon>layers</mat-icon>{{ totalCount() }} Field{{ totalCount() !== 1 ? 's' : '' }}
+      </span>
+      <button mat-stroked-button class="worker-btn-refresh" (click)="refresh()" [disabled]="isRefreshing() || isLoading()">
+        <mat-spinner *ngIf="isRefreshing()" [diameter]="14"></mat-spinner>
+        <mat-icon *ngIf="!isRefreshing()">refresh</mat-icon>
         Refresh
       </button>
-
-      <!-- Stats Badge -->
-      <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-200">
-        <mat-icon class="text-gray-500 text-sm">crop</mat-icon>
-        <span class="text-sm font-medium text-gray-700">{{ totalCount() }} fields</span>
-      </div>
     </div>
   </div>
 
-  <!-- Loading State -->
+  <!-- Loading -->
   @if (isLoading()) {
-    <div class="flex justify-center items-center py-16">
-      <mat-spinner [diameter]="40"></mat-spinner>
+    <div class="worker-loading-state">
+      <mat-spinner [diameter]="32"></mat-spinner>
+      <span>Loading fields…</span>
     </div>
   }
 
   <!-- Fields Grid -->
   @if (!isLoading()) {
     @if (hasFields()) {
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="fields-grid">
         @for (field of getPaginatedFields(); track field.fieldId) {
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-            <!-- Field Card -->
-            <div 
-              class="cursor-pointer"
-              (click)="toggleField(field)"
-              matRipple
-            >
-              <div class="p-4">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2 min-w-0 flex-1">
-                    <mat-icon class="text-primary-600 text-sm flex-shrink-0">agriculture</mat-icon>
-                    <span class="text-sm font-semibold text-gray-800 truncate">{{ field.fieldName }}</span>
-                    @if (field.activeCropCount > 0) {
-                      <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex-shrink-0">
-                        {{ field.activeCropCount }} crop{{ field.activeCropCount > 1 ? 's' : '' }}
-                      </span>
-                    }
-                  </div>
-                  <div class="flex items-center gap-2 flex-shrink-0 ml-2">
-                    <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ getStatusColor(field.status) }}">
-                      <mat-icon class="text-xs align-middle">{{ getStatusIcon(field.status) }}</mat-icon>
-                      {{ field.status || 'Unknown' }}
-                    </span>
-                    <mat-icon class="text-gray-400 text-sm">
-                      {{ expandedFieldId() === field.fieldId ? 'expand_less' : 'expand_more' }}
-                    </mat-icon>
-                  </div>
-                </div>
+          <div class="field-card" [class.field-card--expanded]="expandedFieldId() === field.fieldId">
 
-                <!-- Field Details Row -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 text-xs">
-                  <div>
-                    <span class="text-gray-500">Area</span>
-                    <span class="block font-medium text-gray-700">{{ formatArea(field.areaHectares) }}</span>
-                  </div>
-                  <div>
-                    <span class="text-gray-500">Soil</span>
-                    <span class="block font-medium text-gray-700">{{ getSoilTypeLabel(field.soilType) }}</span>
-                  </div>
-                  <div>
-                    <span class="text-gray-500">Assigned</span>
-                    <span class="block font-medium text-gray-700">{{ formatDate(field.assignedDate) }}</span>
-                  </div>
-                  <div>
-                    <span class="text-gray-500">Location</span>
-                    <span class="block font-medium text-gray-700 truncate">{{ field.location || 'N/A' }}</span>
-                  </div>
+            <!-- Clickable Header -->
+            <div class="field-card-header" (click)="toggleField(field)" matRipple>
+              <div class="field-card-ident">
+                <div class="field-avatar">
+                  <mat-icon>agriculture</mat-icon>
                 </div>
+                <div class="field-text">
+                  <span class="field-name">{{ field.fieldName }}</span>
+                  <span class="field-loc">
+                    <mat-icon>place</mat-icon>{{ field.location || 'No location' }}
+                  </span>
+                </div>
+              </div>
+              <div class="field-card-badges">
+                @if (field.activeCropCount > 0) {
+                  <span class="crop-count-badge">
+                    <mat-icon>grass</mat-icon>{{ field.activeCropCount }}
+                  </span>
+                }
+                <span class="field-status-pill" [ngClass]="getStatusColor(field.status)">
+                  {{ field.status || 'Unknown' }}
+                </span>
+                <mat-icon class="expand-caret">{{ expandedFieldId() === field.fieldId ? 'expand_less' : 'expand_more' }}</mat-icon>
               </div>
             </div>
 
-            <!-- Crop Cycles Expansion -->
+            <!-- Meta Strip -->
+            <div class="field-meta-strip">
+              <span><mat-icon>straighten</mat-icon>{{ formatArea(field.areaHectares) }}</span>
+              <span><mat-icon>landscape</mat-icon>{{ getSoilTypeLabel(field.soilType) }}</span>
+              <span><mat-icon>event</mat-icon>Since {{ formatDate(field.assignedDate) }}</span>
+            </div>
+
+            <!-- Crop Cycles Panel -->
             @if (expandedFieldId() === field.fieldId) {
-              <div class="border-t border-gray-100 bg-gray-50/50 p-4 animate-fadeIn">
-                <div class="flex items-center gap-2 mb-3">
-                  <mat-icon class="text-primary-600 text-sm">grass</mat-icon>
-                  <h4 class="text-sm font-semibold text-gray-700">Crop Cycles</h4>
+              <div class="crop-panel animate-fadeIn">
+                <div class="crop-panel-title">
+                  <mat-icon>grass</mat-icon>
+                  <span>Crop Cycles</span>
                   @if (isLoadingCropCycles() === field.fieldId) {
-                    <mat-spinner [diameter]="16" class="ml-2"></mat-spinner>
+                    <mat-spinner [diameter]="13"></mat-spinner>
                   }
                 </div>
 
                 @if (isLoadingCropCycles() === field.fieldId) {
-                  <div class="flex justify-center py-4">
+                  <div class="flex justify-center py-3">
                     <mat-spinner [diameter]="24"></mat-spinner>
                   </div>
                 } @else {
                   @if (expandedFieldCropCycles().length > 0) {
-                    <div class="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                    <div class="crop-list">
                       @for (cycle of expandedFieldCropCycles(); track cycle.id) {
-                        <div class="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-sm transition-shadow">
-                          <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                              <mat-icon class="text-primary-600 text-sm">{{ getCropTypeIcon(cycle.cropType) }}</mat-icon>
-                              <span class="text-sm font-medium text-gray-800">{{ cycle.cropType || 'Unknown Crop' }}</span>
-                            </div>
-                            <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ getGrowthStageColor(cycle.growthStage) }}">
+                        <div class="crop-item">
+                          <div class="crop-item-top">
+                            <span class="crop-item-name">
+                              <mat-icon>{{ getCropTypeIcon(cycle.cropType) }}</mat-icon>
+                              {{ cycle.cropType || 'Unknown Crop' }}
+                            </span>
+                            <span class="crop-stage-badge" [ngClass]="getGrowthStageColor(cycle.growthStage)">
                               {{ getGrowthStageLabel(cycle.growthStage) }}
                             </span>
                           </div>
-
-                          <!-- Growth Progress -->
-                          <mat-progress-bar 
-                            mode="determinate" 
-                            [value]="getGrowthProgress(cycle.growthStage)"
-                            class="h-1.5 rounded-full mb-2"
-                            [class.bg-green-100]="true"
-                          ></mat-progress-bar>
-
-                          <!-- Dates & Info -->
-                          <div class="grid grid-cols-3 gap-2 text-xs">
-                            <div>
-                              <span class="text-gray-400">Planted</span>
-                              <p class="font-medium text-gray-700">{{ formatDate(cycle.plantingDate) }}</p>
-                            </div>
-                            <div>
-                              <span class="text-gray-400">Harvest</span>
-                              <p class="font-medium text-gray-700" [class.text-red-600]="(cycle.daysToHarvest || 0) < 0">
-                                {{ formatDate(cycle.expectedHarvestDate) }}
-                              </p>
-                            </div>
-                            <div>
-                              <span class="text-gray-400">Status</span>
-                              <p class="font-medium text-gray-700">{{ cycle.status || 'N/A' }}</p>
-                            </div>
-                          </div>
-
-                          <!-- Timing Info -->
-                          <div class="flex items-center gap-4 mt-2 pt-2 border-t border-gray-100 text-xs">
-                            <span class="text-gray-500 flex items-center gap-1">
-                              <mat-icon class="text-sm">schedule</mat-icon>
-                              {{ getDaysSincePlanting(cycle) }}
+                          <mat-progress-bar mode="determinate" [value]="getGrowthProgress(cycle.growthStage)" class="crop-progress"></mat-progress-bar>
+                          <div class="crop-item-dates">
+                            <span><mat-icon>eco</mat-icon>{{ formatDate(cycle.plantingDate) }}</span>
+                            <span [class.harvest-near]="(cycle.daysToHarvest || 0) > 0 && (cycle.daysToHarvest || 0) <= 7"
+                                  [class.harvest-overdue]="(cycle.daysToHarvest || 0) < 0">
+                              <mat-icon>agriculture</mat-icon>{{ formatDate(cycle.expectedHarvestDate) }}
                             </span>
-                            <span class="text-gray-500 flex items-center gap-1" 
-                                  [class.text-green-600]="(cycle.daysToHarvest || 0) > 0 && (cycle.daysToHarvest || 0) <= 7"
-                                  [class.text-red-600]="(cycle.daysToHarvest || 0) < 0">
-                              <mat-icon class="text-sm">harvest</mat-icon>
-                              {{ getDaysToHarvest(cycle) }}
-                            </span>
+                            <span><mat-icon>schedule</mat-icon>{{ getDaysSincePlanting(cycle) }}</span>
                           </div>
                         </div>
                       }
                     </div>
                   } @else {
-                    <div class="text-center py-4 text-gray-500 text-sm">
-                      <mat-icon class="text-gray-300 text-2xl mb-1 block">grass</mat-icon>
-                      No crop cycles active for this field
+                    <div class="crop-empty">
+                      <mat-icon>grass</mat-icon>
+                      <span>No active crop cycles</span>
                     </div>
                   }
                 }
@@ -178,28 +126,18 @@
         }
       </div>
 
-      <!-- Paginator -->
       @if (totalCount() > pageSize()) {
-        <mat-paginator 
-          [length]="totalCount()"
-          [pageSize]="pageSize()"
-          [pageIndex]="pageIndex()"
-          [pageSizeOptions]="[6, 12, 18]"
-          (page)="onPageChange($event)"
-          class="mt-4"
-        ></mat-paginator>
+        <mat-paginator
+          [length]="totalCount()" [pageSize]="pageSize()" [pageIndex]="pageIndex()"
+          [pageSizeOptions]="[6, 12, 18]" (page)="onPageChange($event)"
+          class="worker-paginator">
+        </mat-paginator>
       }
     } @else {
-      <!-- Empty State -->
-      <div class="text-center py-16 bg-white rounded-xl border border-gray-100">
-        <div class="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <mat-icon class="text-4xl text-gray-300">crop</mat-icon>
-        </div>
-        <h3 class="text-lg font-medium text-gray-800">No Fields Assigned</h3>
-        <p class="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-          You haven't been assigned to any fields yet. 
-          Contact your farm administrator for field assignments.
-        </p>
+      <div class="worker-empty-state">
+        <div class="worker-empty-icon"><mat-icon>crop_free</mat-icon></div>
+        <h3>No Fields Assigned</h3>
+        <p>You haven't been assigned to any fields yet.<br>Contact your farm administrator.</p>
       </div>
     }
   }

@@ -8,6 +8,15 @@
     </div>
     <div class="flex flex-wrap gap-2">
       <button 
+        mat-stroked-button
+        color="warn"
+        (click)="generateHourlyAlert()"
+        [disabled]="isLoading() || isGeneratingAlert()"
+      >
+        <mat-icon>warning</mat-icon>
+        Simulate Hourly Alert
+      </button>
+      <button 
         mat-stroked-button 
         (click)="triggerReload()"
         [disabled]="isLoading()"

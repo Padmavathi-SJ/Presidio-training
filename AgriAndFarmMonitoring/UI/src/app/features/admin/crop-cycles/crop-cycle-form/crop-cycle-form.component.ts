@@ -12,10 +12,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
 import { CropCycleService } from '../../services/crop-cycle.service';
-import { CropCycle, CROP_TYPES, GROWTH_STAGES, CROP_STATUSES } from '../../models/crop-cycle.model';
+import { 
+  CropCycle, 
+  CROP_TYPES,        // ✅ Now available
+  GROWTH_STAGES, 
+  CROP_STATUSES 
+} from '../../models/crop-cycle.model';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_NATIVE_DATE_FORMATS, NativeDateAdapter } from '@angular/material/core';
 
 interface DialogData {
@@ -40,7 +46,8 @@ interface DialogData {
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSlideToggleModule
   ],
   providers: [
     { provide: DateAdapter, useClass: NativeDateAdapter },
@@ -57,14 +64,11 @@ export class CropCycleFormComponent {
   
   dialogData = inject<DialogData>(MAT_DIALOG_DATA);
 
-  // ✅ Signal for form
   cropCycleForm: FormGroup;
-  
-  // ✅ State signals
   isLoading = signal(false);
   isMobile = signal(false);
 
-  // ✅ Constants
+  // ✅ Use imported constants
   cropTypes = CROP_TYPES;
   growthStages = GROWTH_STAGES;
   statuses = CROP_STATUSES;
@@ -77,7 +81,8 @@ export class CropCycleFormComponent {
       plantingDate: ['', Validators.required],
       expectedHarvestDate: [''],
       growthStage: ['GERMINATION'],
-      status: ['ACTIVE']
+      status: ['ACTIVE'],
+      autoUpdateGrowthStage: [true]
     });
 
     if (this.dialogData.mode === 'edit' && this.dialogData.cropCycle) {
@@ -87,7 +92,8 @@ export class CropCycleFormComponent {
         plantingDate: new Date(cycle.plantingDate),
         expectedHarvestDate: cycle.expectedHarvestDate ? new Date(cycle.expectedHarvestDate) : '',
         growthStage: cycle.growthStage,
-        status: cycle.status
+        status: cycle.status,
+        autoUpdateGrowthStage: cycle.autoUpdateGrowthStage ?? true
       });
     }
 
@@ -144,7 +150,8 @@ export class CropCycleFormComponent {
       plantingDate: new Date(formValue.plantingDate).toISOString(),
       expectedHarvestDate: formValue.expectedHarvestDate ? new Date(formValue.expectedHarvestDate).toISOString() : null,
       growthStage: formValue.growthStage,
-      status: formValue.status
+      status: formValue.status,
+      autoUpdateGrowthStage: formValue.autoUpdateGrowthStage
     };
 
     let request;

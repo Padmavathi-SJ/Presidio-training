@@ -1,0 +1,87 @@
+<div class="thresholds-container">
+  <div class="header-actions">
+    <h3>Alert Thresholds</h3>
+    <button mat-raised-button color="primary" (click)="openThresholdDialog()">
+      <mat-icon>add</mat-icon>
+      New Threshold
+    </button>
+  </div>
+
+  <div class="table-container mat-elevation-z2">
+    <table mat-table [dataSource]="thresholds()">
+      
+      <!-- Crop Type Column -->
+      <ng-container matColumnDef="cropType">
+        <th mat-header-cell *matHeaderCellDef> Crop Type </th>
+        <td mat-cell *matCellDef="let element"> {{element.cropType}} </td>
+      </ng-container>
+
+      <!-- Growth Stage Column -->
+      <ng-container matColumnDef="growthStage">
+        <th mat-header-cell *matHeaderCellDef> Growth Stage </th>
+        <td mat-cell *matCellDef="let element"> {{element.growthStage}} </td>
+      </ng-container>
+
+      <!-- Sensor Type Column -->
+      <ng-container matColumnDef="sensorType">
+        <th mat-header-cell *matHeaderCellDef> Sensor Type </th>
+        <td mat-cell *matCellDef="let element"> {{element.sensorType}} </td>
+      </ng-container>
+
+      <!-- Range Column -->
+      <ng-container matColumnDef="range">
+        <th mat-header-cell *matHeaderCellDef> Range </th>
+        <td mat-cell *matCellDef="let element"> 
+          {{element.minValue}} - {{element.maxValue}}
+        </td>
+      </ng-container>
+
+      <!-- Severity Column -->
+      <ng-container matColumnDef="severity">
+        <th mat-header-cell *matHeaderCellDef> Severity </th>
+        <td mat-cell *matCellDef="let element"> 
+          <mat-chip [color]="getSeverityColor(element.severity)" highlighted>
+            {{element.severity}}
+          </mat-chip>
+        </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef> Active </th>
+        <td mat-cell *matCellDef="let element"> 
+          <mat-slide-toggle 
+            [checked]="element.isActive" 
+            (change)="toggleActive(element)">
+          </mat-slide-toggle>
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="actions-cell"> Actions </th>
+        <td mat-cell *matCellDef="let element" class="actions-cell">
+          <button mat-icon-button color="primary" (click)="openThresholdDialog(element)" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="deleteThreshold(element)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.inactive]="!row.isActive"></tr>
+      
+      <!-- No Data Row -->
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell empty-state" colspan="7">
+          <div class="empty-state-content">
+            <mat-icon>rule</mat-icon>
+            <p>No alert thresholds configured yet.</p>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

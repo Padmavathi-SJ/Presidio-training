@@ -1,0 +1,22 @@
+.threshold-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+
+  .form-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+
+    mat-form-field {
+      flex: 1;
+    }
+
+    &.full-width {
+      mat-form-field {
+        width: 100%;
+      }
+    }
+  }
+}

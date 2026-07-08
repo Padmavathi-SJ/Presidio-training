@@ -318,9 +318,9 @@ public async Task<ApiResponse<QualityCheckDto>> ApproveQualityCheckAsync(int id,
     // STATISTICS
     // =============================================
 
-    public async Task<ApiResponse<QualityStatisticsDto>> GetQualityStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate)
+    public async Task<ApiResponse<QualityStatisticsDto>> GetQualityStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate, int? workerId = null)
     {
-        var stats = await _qualityCheckRepository.GetQualityStatisticsAsync(farmId, fromDate, toDate);
+        var stats = await _qualityCheckRepository.GetQualityStatisticsAsync(farmId, fromDate, toDate, workerId);
         return ApiResponse<QualityStatisticsDto>.Ok(stats);
     }
 

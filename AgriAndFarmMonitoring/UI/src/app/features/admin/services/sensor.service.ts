@@ -11,7 +11,11 @@ import {
   Alert,
   AlertFilter,
   AlertDashboard,
-  ResolveAlert
+  ResolveAlert,
+  AlertThreshold,
+  CreateAlertThreshold,
+  UpdateAlertThreshold,
+  CreateManualSensorReading
 } from '../models/sensor.model';
 
 @Injectable({
@@ -181,6 +185,54 @@ export class SensorService {
   resolveAlert(farmId: number, alertId: number, data: ResolveAlert): Observable<ApiResponse<Alert>> {
     return this.http.put<ApiResponse<Alert>>(
       `${this.API_URL}/admin/farms/${farmId}/alerts/${alertId}/resolve`,
+      data
+    );
+  }
+
+  generateHourlyAlert(farmId: number): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.API_URL}/admin/farms/${farmId}/test/generate-hourly-alert`,
+      {}
+    );
+  }
+
+  // =============================================
+  // ALERT THRESHOLD ENDPOINTS
+  // =============================================
+
+  getAlertThresholds(farmId: number): Observable<ApiResponse<AlertThreshold[]>> {
+    return this.http.get<ApiResponse<AlertThreshold[]>>(
+      `${this.API_URL}/admin/farms/${farmId}/sensors/thresholds`
+    );
+  }
+
+  createAlertThreshold(farmId: number, data: CreateAlertThreshold): Observable<ApiResponse<AlertThreshold>> {
+    return this.http.post<ApiResponse<AlertThreshold>>(
+      `${this.API_URL}/admin/farms/${farmId}/sensors/thresholds`,
+      data
+    );
+  }
+
+  updateAlertThreshold(farmId: number, id: number, data: UpdateAlertThreshold): Observable<ApiResponse<AlertThreshold>> {
+    return this.http.put<ApiResponse<AlertThreshold>>(
+      `${this.API_URL}/admin/farms/${farmId}/sensors/thresholds/${id}`,
+      data
+    );
+  }
+
+  deleteAlertThreshold(farmId: number, id: number): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(
+      `${this.API_URL}/admin/farms/${farmId}/sensors/thresholds/${id}`
+    );
+  }
+
+  // =============================================
+  // MANUAL SENSOR READING ENDPOINTS
+  // =============================================
+
+  addManualReading(farmId: number, data: CreateManualSensorReading): Observable<ApiResponse<SensorReading>> {
+    return this.http.post<ApiResponse<SensorReading>>(
+      `${this.API_URL}/admin/farms/${farmId}/sensors/manual`,
       data
     );
   }

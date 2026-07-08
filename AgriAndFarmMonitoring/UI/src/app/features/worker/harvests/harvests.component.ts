@@ -3,10 +3,12 @@ import { Component, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatIconModule } from '@angular/material/icon';
 
 import { HarvestListComponent } from './harvest-list/harvest-list.component';
 import { HarvestFormComponent } from './harvest-form/harvest-form.component';
 import { HarvestDetailsComponent } from './harvest-details/harvest-details.component';
+import { HarvestRespondComponent } from './harvest-respond/harvest-respond.component';
 import { HarvestStateService } from '../services/harvest-state.service';
 import { HarvestDto } from '../models/worker-harvest.model';
 
@@ -15,7 +17,8 @@ import { HarvestDto } from '../models/worker-harvest.model';
   standalone: true,
   imports: [
     CommonModule,
-    HarvestListComponent
+    HarvestListComponent,
+    MatIconModule
   ],
   template: `
     <app-harvest-list
@@ -30,7 +33,7 @@ import { HarvestDto } from '../models/worker-harvest.model';
 export class HarvestsComponent {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
-  private harvestState = inject(HarvestStateService);
+  public harvestState = inject(HarvestStateService);
 
   private formDialogRef: any = null;
 
@@ -98,7 +101,18 @@ export class HarvestsComponent {
   }
 
   openRespondDialog(harvest: HarvestDto): void {
-    this.snackBar.open('Respond to Admin feature coming soon', 'Close', { duration: 3000 });
+    const dialogRef = this.dialog.open(HarvestRespondComponent, {
+      width: '500px',
+      maxHeight: '90vh',
+      disableClose: true,
+      data: { harvest: harvest }
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result?.saved) {
+        console.log('✅ Harvest response submitted, list auto-updated');
+      }
+    });
   }
 
   deleteHarvest(id: number): void {

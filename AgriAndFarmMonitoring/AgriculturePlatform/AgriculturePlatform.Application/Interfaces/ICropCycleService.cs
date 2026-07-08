@@ -13,4 +13,5 @@ public interface ICropCycleService
     Task<ApiResponse<PagedResult<CropCycleDto>>> GetAllAsync(CropCycleFilterDto filter, int farmId);
     Task<ApiResponse<IEnumerable<CropCycleDto>>> GetOverdueAsync(int farmId);
     Task<bool> ValidateCropCycleOwnershipAsync(int cropCycleId, int farmId);
+    Task<ApiResponse<CropCycleDto>> UpdateGrowthStageManuallyAsync(int id, int farmId, int adminId, string ipAddress, string userAgent);
 }

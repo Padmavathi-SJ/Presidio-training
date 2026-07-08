@@ -45,4 +45,18 @@ public class WorkerYieldReportController : ControllerBase
             
         return Ok(result);
     }
+
+    [HttpPost("generate")]
+    public async Task<IActionResult> GenerateReport([FromBody] GenerateYieldReportDto dto)
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        // Since workers can only generate reports for their own fields, the service should enforce this, 
+        // but for now we reuse the admin method and pass workerId as adminId for tracking who created it.
+        // Actually, the IYieldReportService expects an adminId. We can pass workerId.
+        var result = await _reportService.GenerateReportAsync(dto, farmId, workerId);
+        if (!result.Success)
+            return BadRequest(result);
+        return Ok(result);
+    }
 }

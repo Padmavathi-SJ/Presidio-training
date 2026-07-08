@@ -81,6 +81,18 @@
       "PackagePath": "staticwebassets/uploads/observations/2026/07/07/ec498c2c425744dfb4ea6e04758efa00.jpeg"
     },
     {
+      "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/observations/2026/07/08/91508532a132477bab2aa227886d626b.jpeg",
+      "PackagePath": "staticwebassets/uploads/observations/2026/07/08/91508532a132477bab2aa227886d626b.jpeg"
+    },
+    {
+      "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/observations/2026/07/08/e57dff160beb4062a0a0c4db4e183e60.jpeg",
+      "PackagePath": "staticwebassets/uploads/observations/2026/07/08/e57dff160beb4062a0a0c4db4e183e60.jpeg"
+    },
+    {
+      "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/observations/2026/07/08/ed4aefb6c74e42688b57c47c1d491932.jpeg",
+      "PackagePath": "staticwebassets/uploads/observations/2026/07/08/ed4aefb6c74e42688b57c47c1d491932.jpeg"
+    },
+    {
       "Id": "obj/Debug/net8.0/staticwebassets/msbuild.AgriculturePlatform.API.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },

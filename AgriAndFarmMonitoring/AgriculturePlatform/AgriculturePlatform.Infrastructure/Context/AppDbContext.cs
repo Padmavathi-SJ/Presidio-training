@@ -161,28 +161,35 @@ modelBuilder.Entity<RefreshToken>(entity =>
         // =============================================
         // CROP CYCLE CONFIGURATION
         // =============================================
-        modelBuilder.Entity<CropCycle>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.CropType).HasConversion<string>().HasMaxLength(50);
-            entity.Property(e => e.GrowthStage).HasConversion<string>().HasMaxLength(50);
-            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
-            
-            entity.HasOne(e => e.Farm)
-                  .WithMany(f => f.CropCycles)
-                  .HasForeignKey(e => e.FarmId)
-                  .OnDelete(DeleteBehavior.Cascade);
-                  
-            entity.HasOne(e => e.Admin)
-                  .WithMany(a => a.CropCycles)
-                  .HasForeignKey(e => e.AdminId)
-                  .OnDelete(DeleteBehavior.Cascade);
-                  
-            entity.HasIndex(e => new { e.FarmId, e.Status });
-            entity.HasIndex(e => e.FieldId);
-            entity.HasIndex(e => e.PlantingDate);
-        });
-        
+// In AppDbContext.cs - Update CropCycle configuration
+modelBuilder.Entity<CropCycle>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    entity.Property(e => e.CropType).HasConversion<string>().HasMaxLength(50);
+    entity.Property(e => e.GrowthStage).HasConversion<string>().HasMaxLength(50);
+    entity.Property(e => e.PreviousGrowthStage).HasConversion<string>().HasMaxLength(50);
+    entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+    entity.Property(e => e.ActualHarvestDate).HasColumnType("timestamp with time zone");
+    entity.Property(e => e.LastStageUpdate).HasColumnType("timestamp with time zone");
+    entity.Property(e => e.AutoUpdateGrowthStage).HasDefaultValue(true);
+    
+    entity.HasOne(e => e.Farm)
+          .WithMany(f => f.CropCycles)
+          .HasForeignKey(e => e.FarmId)
+          .OnDelete(DeleteBehavior.Cascade);
+          
+    entity.HasOne(e => e.Admin)
+          .WithMany(a => a.CropCycles)
+          .HasForeignKey(e => e.AdminId)
+          .OnDelete(DeleteBehavior.Cascade);
+          
+    entity.HasIndex(e => new { e.FarmId, e.Status });
+    entity.HasIndex(e => e.FieldId);
+    entity.HasIndex(e => e.PlantingDate);
+    entity.HasIndex(e => e.ExpectedHarvestDate);
+    entity.HasIndex(e => e.GrowthStage);
+    entity.HasIndex(e => e.AutoUpdateGrowthStage);
+});        
         // =============================================
         // SENSOR READING CONFIGURATION
         // =============================================
@@ -751,6 +758,14 @@ modelBuilder.Entity<YieldReport>(entity =>
     entity.Property(e => e.MonthlyTrendJson)
           .HasColumnType("jsonb");
     entity.Property(e => e.QualityDistributionJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.SensorStatisticsJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.WeatherStatisticsJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.ObservationSummaryJson)
+          .HasColumnType("jsonb");
+    entity.Property(e => e.TaskSummaryJson)
           .HasColumnType("jsonb");
     
     // Export tracking

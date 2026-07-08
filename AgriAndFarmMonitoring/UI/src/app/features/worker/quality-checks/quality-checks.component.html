@@ -1,1 +1,64 @@
-<p>quality-checks works!</p>
+<!-- Worker Quality Checks — Professional Layout -->
+<div class="worker-page-container">
+
+  <!-- Page Header -->
+  <div class="worker-page-header">
+    <div class="worker-page-header-content">
+      <div class="worker-page-icon qc-icon">
+        <mat-icon>fact_check</mat-icon>
+      </div>
+      <div>
+        <h1 class="worker-page-title">Quality Checks</h1>
+        <p class="worker-page-subtitle">Submit, manage and track quality checks for your harvests</p>
+      </div>
+    </div>
+    <button mat-flat-button color="primary" (click)="openCreateForm()" class="qc-create-btn">
+      <mat-icon>add</mat-icon> New Quality Check
+    </button>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="qc-kpi-grid">
+    <div class="qc-kpi-card kpi-total">
+      <div class="kpi-icon"><mat-icon>fact_check</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Total Checks</span>
+        <span class="kpi-value">{{ state.totalCountGlobal() }}</span>
+      </div>
+    </div>
+
+    <div class="qc-kpi-card kpi-pending">
+      <div class="kpi-icon"><mat-icon>pending_actions</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Pending Reviews</span>
+        <span class="kpi-value">{{ state.pendingCount() }}</span>
+      </div>
+    </div>
+
+    <div class="qc-kpi-card kpi-approved">
+      <div class="kpi-icon"><mat-icon>verified</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Approved</span>
+        <span class="kpi-value">{{ state.approvedCount() }}</span>
+      </div>
+    </div>
+
+    <div class="qc-kpi-card kpi-rate">
+      <div class="kpi-icon"><mat-icon>analytics</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Pass Rate</span>
+        <span class="kpi-value">{{ state.passRate() | number:'1.0-1' }}<small>%</small></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- List Component -->
+  <app-quality-check-list
+    (createCheck)="openCreateForm()"
+    (editCheck)="openEditForm($event)"
+    (viewCheck)="viewDetails($event)"
+    (respondCheck)="openRespondDialog($event)"
+    (deleteCheck)="deleteCheck($event)">
+  </app-quality-check-list>
+</div>
+

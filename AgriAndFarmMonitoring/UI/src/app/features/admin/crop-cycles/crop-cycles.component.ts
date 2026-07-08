@@ -20,11 +20,14 @@ import { CropCycleFormComponent } from './crop-cycle-form/crop-cycle-form.compon
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { 
   CropCycle, 
-  CROP_TYPES, 
+  CROP_TYPES,           // ✅ Now available
   GROWTH_STAGES, 
   CROP_STATUSES,
   GROWTH_STAGE_COLORS,
-  STATUS_COLORS
+  STATUS_COLORS,
+  GROWTH_STAGE_ICONS,
+  GROWTH_STAGE_DESCRIPTIONS,
+  getGrowthProgress     // ✅ Use helper function
 } from '../models/crop-cycle.model';
 
 @Component({
@@ -53,7 +56,6 @@ export class CropCyclesComponent implements OnInit, OnChanges {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
-  // ✅ Inputs
   private _fieldId = signal<number>(0);
   private _fieldName = signal<string>('');
 
@@ -71,27 +73,27 @@ export class CropCyclesComponent implements OnInit, OnChanges {
     return this._fieldName();
   }
 
-  // ✅ Output - Notify parent when crop cycles change
   @Output() cropCyclesChanged = new EventEmitter<void>();
 
-  // ✅ State Signals
   isLoading = signal(false);
   cropCycles = signal<CropCycle[]>([]);
   totalCount = signal(0);
   pageSize = signal(6);
   pageIndex = signal(0);
 
-  // ✅ Computed Signals
+  updatingStage = signal<number | null>(null);
+
   hasCropCycles = computed(() => this.cropCycles().length > 0);
   isEmpty = computed(() => !this.isLoading() && this.cropCycles().length === 0);
   showPagination = computed(() => this.totalCount() > this.pageSize());
 
-  // ✅ Constants
+  // ✅ Use imported constants
   cropTypes = CROP_TYPES;
   growthStages = GROWTH_STAGES;
   statuses = CROP_STATUSES;
+  stageIcons = GROWTH_STAGE_ICONS;
+  stageDescriptions = GROWTH_STAGE_DESCRIPTIONS;
 
-  // ✅ Effect to watch for fieldId changes
   private loadEffect = effect(() => {
     const id = this._fieldId();
     if (id > 0) {
@@ -106,9 +108,7 @@ export class CropCyclesComponent implements OnInit, OnChanges {
     }
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    // Handled by effect
-  }
+  ngOnChanges(changes: SimpleChanges): void {}
 
   loadCropCycles(): void {
     const farmId = this.authService.getFarmId();
@@ -151,7 +151,31 @@ export class CropCyclesComponent implements OnInit, OnChanges {
       });
   }
 
-  // ✅ Notify parent when crop cycles data changes
+  refreshGrowthStage(cycle: CropCycle, event: Event): void {
+    event.stopPropagation();
+    
+    const farmId = this.authService.getFarmId();
+    if (!farmId) return;
+
+    this.updatingStage.set(cycle.id);
+    
+    this.cropCycleService.updateGrowthStage(farmId, cycle.id)
+      .pipe(finalize(() => this.updatingStage.set(null)))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.loadCropCycles();
+            this.showSuccess('Growth stage updated successfully');
+          } else {
+            this.showError(response.message || 'Failed to update growth stage');
+          }
+        },
+        error: () => {
+          this.showError('Failed to update growth stage');
+        }
+      });
+  }
+
   private notifyParent(): void {
     this.cropCyclesChanged.emit();
   }
@@ -172,7 +196,6 @@ export class CropCyclesComponent implements OnInit, OnChanges {
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.loadCropCycles();
-        // ✅ Notify parent
         this.notifyParent();
         this.showSuccess('Crop cycle created successfully');
       }
@@ -196,7 +219,6 @@ export class CropCyclesComponent implements OnInit, OnChanges {
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.loadCropCycles();
-        // ✅ Notify parent
         this.notifyParent();
         this.showSuccess('Crop cycle updated successfully');
       }
@@ -228,7 +250,6 @@ export class CropCyclesComponent implements OnInit, OnChanges {
             next: (response) => {
               if (response.success) {
                 this.loadCropCycles();
-                // ✅ Notify parent
                 this.notifyParent();
                 this.showSuccess('Crop cycle deleted successfully');
               } else {
@@ -257,11 +278,17 @@ export class CropCyclesComponent implements OnInit, OnChanges {
     return GROWTH_STAGE_COLORS[stage] || 'bg-gray-100 text-gray-700';
   }
 
+  getGrowthStageIcon(stage: string): string {
+    return this.stageIcons[stage] || 'grass';
+  }
+
+  getGrowthStageDescription(stage: string): string {
+    return this.stageDescriptions[stage] || 'Unknown stage';
+  }
+
+  // ✅ Use the helper function
   getGrowthProgress(stage: string): number {
-    const stages = ['GERMINATION', 'SEEDLING', 'VEGETATIVE', 'FLOWERING', 'FRUITING', 'MATURITY', 'HARVESTED'];
-    const index = stages.indexOf(stage);
-    if (index === -1) return 0;
-    return Math.round(((index + 1) / stages.length) * 100);
+    return getGrowthProgress(stage);
   }
 
   getDaysSincePlanting(cycle: CropCycle): string {
@@ -271,10 +298,22 @@ export class CropCyclesComponent implements OnInit, OnChanges {
     return `${days} day${days > 1 ? 's' : ''} since planting`;
   }
 
+  getDaysUntilHarvest(cycle: CropCycle): string {
+    if (!cycle.expectedHarvestDate) return 'N/A';
+    if (cycle.actualHarvestDate) return 'Harvested';
+    
+    const days = Math.floor((new Date(cycle.expectedHarvestDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+    if (days < 0) return 'Overdue';
+    if (days === 0) return 'Today';
+    return `${days} day${days > 1 ? 's' : ''}`;
+  }
+
   isOverdue(cycle: CropCycle): boolean {
-    if (!cycle.expectedHarvestDate) return false;
-    const harvestDate = new Date(cycle.expectedHarvestDate);
-    return harvestDate < new Date() && cycle.status === 'ACTIVE';
+    return cycle.isOverdue ?? false;
+  }
+
+  isReadyForHarvest(cycle: CropCycle): boolean {
+    return cycle.isReadyForHarvest ?? false;
   }
 
   private showSuccess(message: string): void {

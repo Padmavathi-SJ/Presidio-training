@@ -1,62 +1,73 @@
-<div class="tasks-container">
-  <div class="header">
-    <h1>My Tasks</h1>
-    <p>Manage and update your assigned tasks</p>
+<!-- Worker Tasks — Professional Compact Layout -->
+<div class="worker-page-container">
+
+  <!-- Page Header -->
+  <div class="worker-page-header">
+    <div class="worker-page-header-content">
+      <div class="worker-page-icon tasks-icon">
+        <mat-icon>task_alt</mat-icon>
+      </div>
+      <div>
+        <h1 class="worker-page-title">My Tasks</h1>
+        <p class="worker-page-subtitle">Manage and update your assigned tasks</p>
+      </div>
+    </div>
   </div>
 
-  <!-- Statistics Cards -->
-  <div class="stats-grid" *ngIf="statistics">
-    <mat-card class="stat-card primary">
-      <mat-card-content>
-        <div class="stat-icon"><mat-icon>assignment</mat-icon></div>
-        <div class="stat-details">
-          <h3>Total Tasks</h3>
-          <h2>{{ statistics.totalTasks }}</h2>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="stat-card warn">
-      <mat-card-content>
-        <div class="stat-icon"><mat-icon>schedule</mat-icon></div>
-        <div class="stat-details">
-          <h3>Pending</h3>
-          <h2>{{ statistics.pendingTasks }}</h2>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="stat-card accent">
-      <mat-card-content>
-        <div class="stat-icon"><mat-icon>autorenew</mat-icon></div>
-        <div class="stat-details">
-          <h3>In Progress</h3>
-          <h2>{{ statistics.inProgressTasks }}</h2>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="stat-card success">
-      <mat-card-content>
-        <div class="stat-icon"><mat-icon>check_circle</mat-icon></div>
-        <div class="stat-details">
-          <h3>Completed</h3>
-          <h2>{{ statistics.completedTasks }}</h2>
-        </div>
-      </mat-card-content>
-    </mat-card>
+  <!-- Statistics KPI Cards -->
+  <div class="tasks-kpi-grid" *ngIf="statistics">
+    <div class="tasks-kpi-card kpi-total">
+      <div class="kpi-icon"><mat-icon>assignment</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Total Tasks</span>
+        <span class="kpi-value">{{ statistics.totalTasks }}</span>
+      </div>
+    </div>
+    <div class="tasks-kpi-card kpi-pending">
+      <div class="kpi-icon"><mat-icon>pending_actions</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Pending</span>
+        <span class="kpi-value">{{ statistics.pendingTasks }}</span>
+      </div>
+    </div>
+    <div class="tasks-kpi-card kpi-inprogress">
+      <div class="kpi-icon"><mat-icon>autorenew</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">In Progress</span>
+        <span class="kpi-value">{{ statistics.inProgressTasks }}</span>
+      </div>
+    </div>
+    <div class="tasks-kpi-card kpi-done">
+      <div class="kpi-icon"><mat-icon>check_circle</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Completed</span>
+        <span class="kpi-value">{{ statistics.completedTasks }}</span>
+      </div>
+    </div>
   </div>
 
-  <mat-card class="table-card">
-    <mat-tab-group (selectedTabChange)="onTabChange($event)" color="primary">
-      <mat-tab label="Active Tasks"></mat-tab>
-      <mat-tab label="Task History"></mat-tab>
-    </mat-tab-group>
-    
-    <mat-card-content style="padding-top: 16px;">
-      <!-- Filters -->
-      <form [formGroup]="filterForm" class="filter-row">
-        <mat-form-field appearance="outline">
+  <!-- Table Card -->
+  <div class="worker-table-card">
+    <!-- Tabs -->
+    <div class="worker-tabs-bar">
+      <mat-tab-group (selectedTabChange)="onTabChange($event)" color="primary" class="worker-tab-group">
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">bolt</mat-icon> Active Tasks
+          </ng-template>
+        </mat-tab>
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">history</mat-icon> History
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+
+    <!-- Filters -->
+    <div class="worker-filter-bar">
+      <form [formGroup]="filterForm" class="worker-filter-form">
+        <mat-form-field appearance="outline" class="worker-filter-field">
           <mat-label>Task Type</mat-label>
           <mat-select formControlName="taskName">
             <mat-option value="">All Types</mat-option>
@@ -68,16 +79,16 @@
             <mat-option value="HARVESTING">Harvesting</mat-option>
             <mat-option value="MONITORING">Monitoring</mat-option>
             <mat-option value="MAINTENANCE">Maintenance</mat-option>
-            <mat-option value="SOIL_PREPARATION">Soil Preparation</mat-option>
+            <mat-option value="SOIL_PREPARATION">Soil Prep</mat-option>
             <mat-option value="PLANTING">Planting</mat-option>
             <mat-option value="QUALITY_CHECK">Quality Check</mat-option>
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="worker-filter-field">
           <mat-label>Status</mat-label>
           <mat-select formControlName="status">
-            <mat-option value="">All Statuses</mat-option>
+            <mat-option value="">All</mat-option>
             <mat-option value="PENDING">Pending</mat-option>
             <mat-option value="IN_PROGRESS">In Progress</mat-option>
             <mat-option value="COMPLETED">Completed</mat-option>
@@ -86,10 +97,10 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="worker-filter-field">
           <mat-label>Priority</mat-label>
           <mat-select formControlName="priority">
-            <mat-option value="">All Priorities</mat-option>
+            <mat-option value="">All</mat-option>
             <mat-option value="LOW">Low</mat-option>
             <mat-option value="MEDIUM">Medium</mat-option>
             <mat-option value="HIGH">High</mat-option>
@@ -97,117 +108,114 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="worker-filter-field worker-filter-field--wide">
           <mat-label>Due Date Range</mat-label>
           <mat-date-range-input [rangePicker]="picker">
-            <input matStartDate formControlName="dueDateFrom" placeholder="Start date">
-            <input matEndDate formControlName="dueDateTo" placeholder="End date">
+            <input matStartDate formControlName="dueDateFrom" placeholder="From">
+            <input matEndDate formControlName="dueDateTo" placeholder="To">
           </mat-date-range-input>
           <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-date-range-picker #picker></mat-date-range-picker>
         </mat-form-field>
       </form>
+    </div>
 
-      <!-- Table -->
-      <div class="table-container">
-        <div class="loading-shade" *ngIf="isLoading">
-          <mat-spinner [diameter]="40"></mat-spinner>
-        </div>
-
-        <table mat-table [dataSource]="tasks" matSort (matSortChange)="onSortChange($event)">
-          
-          <ng-container matColumnDef="taskName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Task </th>
-            <td mat-cell *matCellDef="let row"> 
-              <strong>{{row.taskName}}</strong>
-              <div class="text-muted text-small">{{row.notes}}</div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="fieldName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Field / Crop </th>
-            <td mat-cell *matCellDef="let row"> 
-              {{row.fieldName || 'N/A'}} 
-              <span *ngIf="row.cropType">({{row.cropType}})</span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="priority">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Priority </th>
-            <td mat-cell *matCellDef="let row"> 
-              <mat-chip-set>
-                <mat-chip [color]="getPriorityColor(row.priority)" highlighted>{{row.priority}}</mat-chip>
-              </mat-chip-set>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Status </th>
-            <td mat-cell *matCellDef="let row"> 
-              <mat-chip-set>
-                <mat-chip [color]="getStatusColor(row.status)" highlighted>{{row.status}}</mat-chip>
-              </mat-chip-set>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="dueDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Due Date </th>
-            <td mat-cell *matCellDef="let row" [class.overdue-text]="row.isOverdue && row.status !== 'COMPLETED'"> 
-              {{row.dueDate | date:'mediumDate'}}
-              <mat-icon *ngIf="row.isOverdue && row.status !== 'COMPLETED'" class="overdue-icon" matTooltip="Overdue">warning</mat-icon>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef> Actions </th>
-            <td mat-cell *matCellDef="let row">
-              <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Task actions">
-                <mat-icon>more_vert</mat-icon>
-              </button>
-              <mat-menu #menu="matMenu">
-                <button mat-menu-item [matMenuTriggerFor]="statusMenu">
-                  <mat-icon>update</mat-icon>
-                  <span>Update Status</span>
-                </button>
-              </mat-menu>
-              <mat-menu #statusMenu="matMenu">
-                <button mat-menu-item (click)="updateTaskStatus(row, 'PENDING')" [disabled]="row.status === 'PENDING'">
-                  <mat-icon color="warn">schedule</mat-icon>
-                  <span>Pending</span>
-                </button>
-                <button mat-menu-item (click)="updateTaskStatus(row, 'IN_PROGRESS')" [disabled]="row.status === 'IN_PROGRESS'">
-                  <mat-icon color="accent">play_arrow</mat-icon>
-                  <span>In Progress</span>
-                </button>
-                <button mat-menu-item (click)="updateTaskStatus(row, 'COMPLETED')" [disabled]="row.status === 'COMPLETED'">
-                  <mat-icon color="primary">check_circle</mat-icon>
-                  <span>Completed</span>
-                </button>
-                <button mat-menu-item (click)="updateTaskStatus(row, 'CANCELLED')" [disabled]="row.status === 'CANCELLED'">
-                  <mat-icon color="warn">cancel</mat-icon>
-                  <span>Cancelled</span>
-                </button>
-              </mat-menu>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="task-row"></tr>
-
-          <!-- Row shown when there is no matching data. -->
-          <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell empty-cell" colspan="6">No tasks found matching the current filters.</td>
-          </tr>
-        </table>
+    <!-- Table -->
+    <div class="worker-table-wrap">
+      <div class="worker-loading-shade" *ngIf="isLoading">
+        <mat-spinner [diameter]="36"></mat-spinner>
       </div>
 
-      <mat-paginator 
-        [length]="totalTasks" 
-        [pageSize]="pageSize" 
-        [pageSizeOptions]="[5, 10, 25, 100]" 
-        (page)="onPageChange($event)"
-        aria-label="Select page of tasks">
-      </mat-paginator>
-    </mat-card-content>
-  </mat-card>
+      <table mat-table [dataSource]="tasks" matSort (matSortChange)="onSortChange($event)" class="worker-data-table">
+
+        <ng-container matColumnDef="taskName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Task</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="task-cell-name">
+              <span class="task-name-text">{{ row.taskName }}</span>
+              <span class="task-notes" *ngIf="row.notes">{{ row.notes }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fieldName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Field / Crop</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="field-name-text">{{ row.fieldName || '—' }}</span>
+            <span class="crop-tag" *ngIf="row.cropType">{{ row.cropType }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="priority">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Priority</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="priority-badge" [attr.data-priority]="row.priority">{{ row.priority }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="task-status-badge" [attr.data-status]="row.status">{{ row.status | titlecase }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="dueDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Due Date</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="due-date-cell" [class.overdue]="row.isOverdue && row.status !== 'COMPLETED'">
+              <mat-icon *ngIf="row.isOverdue && row.status !== 'COMPLETED'" matTooltip="Overdue">warning</mat-icon>
+              <span>{{ row.dueDate | date:'dd MMM yyyy' }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button [matMenuTriggerFor]="menu" class="action-menu-btn">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item [matMenuTriggerFor]="statusMenu">
+                <mat-icon>update</mat-icon><span>Update Status</span>
+              </button>
+            </mat-menu>
+            <mat-menu #statusMenu="matMenu">
+              <button mat-menu-item (click)="updateTaskStatus(row, 'PENDING')" [disabled]="row.status === 'PENDING'">
+                <mat-icon>schedule</mat-icon><span>Pending</span>
+              </button>
+              <button mat-menu-item (click)="updateTaskStatus(row, 'IN_PROGRESS')" [disabled]="row.status === 'IN_PROGRESS'">
+                <mat-icon>play_arrow</mat-icon><span>In Progress</span>
+              </button>
+              <button mat-menu-item (click)="updateTaskStatus(row, 'COMPLETED')" [disabled]="row.status === 'COMPLETED'">
+                <mat-icon>check_circle</mat-icon><span>Completed</span>
+              </button>
+              <button mat-menu-item (click)="updateTaskStatus(row, 'CANCELLED')" [disabled]="row.status === 'CANCELLED'">
+                <mat-icon>cancel</mat-icon><span>Cancelled</span>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="worker-data-row"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="6">
+            <div class="worker-no-data">
+              <mat-icon>task_alt</mat-icon>
+              <span>No tasks found for current filters.</span>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="totalTasks" [pageSize]="pageSize"
+      [pageSizeOptions]="[10, 25, 50]" (page)="onPageChange($event)"
+      class="worker-paginator">
+    </mat-paginator>
+  </div>
 </div>
