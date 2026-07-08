@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using AgriculturePlatform.Application.DTOs.Observation;
 using AgriculturePlatform.Application.Interfaces;
+using AgriculturePlatform.Application.Services;
 using AgriculturePlatform.API.Filters;
 
 namespace AgriculturePlatform.API.Controllers;
@@ -183,6 +184,20 @@ public async Task<IActionResult> UploadImage(IFormFile file)
     {
         return StatusCode(500, new { success = false, message = $"Upload failed: {ex.Message}" });
     }
+}
+
+// ✅ PATCH: api/worker/observations/{id}
+[HttpPatch("{id}")]
+public async Task<IActionResult> Patch(int id, [FromBody] UpdateObservationDto dto)
+{
+    var farmId = GetCurrentFarmId();
+    var workerId = GetCurrentWorkerId();
+    var result = await _observationService.PatchObservationAsync(id, dto, workerId, farmId);
+    
+    if (!result.Success)
+        return BadRequest(result);
+        
+    return Ok(result);
 }
 
 }

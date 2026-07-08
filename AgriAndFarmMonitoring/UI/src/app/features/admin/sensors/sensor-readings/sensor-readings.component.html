@@ -15,7 +15,7 @@
         class="!border-primary-600 !text-primary-600"
       >
         @if (isExporting()) {
-          <mat-spinner diameter="20" class="!inline-block mr-2"></mat-spinner>
+          <mat-spinner [diameter]="20" class="!inline-block mr-2"></mat-spinner>
         } @else {
           <mat-icon>download</mat-icon>
         }
@@ -140,7 +140,7 @@
   <!-- Loading State -->
   @if (isLoading()) {
     <div class="flex justify-center items-center py-12">
-      <mat-spinner diameter="40"></mat-spinner>
+      <mat-spinner [diameter]="40"></mat-spinner>
     </div>
   }
 

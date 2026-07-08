@@ -210,7 +210,7 @@
       <div class="relative overflow-x-auto">
         @if (isLoading()) {
           <div class="flex justify-center items-center py-12 sm:py-20">
-            <mat-spinner diameter="40"></mat-spinner>
+            <mat-spinner [diameter]="40"></mat-spinner>
           </div>
         } @else {
           <table mat-table [dataSource]="assignments()" matSort (matSortChange)="onSortChange($event)" class="w-full">

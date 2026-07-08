@@ -131,7 +131,7 @@
   <!-- Table -->
   <div class="relative bg-white rounded-xl border border-outline-variant overflow-hidden">
     <div class="absolute inset-0 bg-white/70 flex items-center justify-center z-10" *ngIf="isLoading()">
-      <mat-spinner diameter="40"></mat-spinner>
+      <mat-spinner [diameter]="40"></mat-spinner>
     </div>
 
     <div class="py-12 px-6 text-center" *ngIf="!isLoading() && harvests().length === 0">

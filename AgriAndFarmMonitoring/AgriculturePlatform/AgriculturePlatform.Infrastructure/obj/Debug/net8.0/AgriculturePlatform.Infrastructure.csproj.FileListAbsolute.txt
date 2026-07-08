@@ -17,3 +17,4 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/AgriculturePlatform.Infrastructure.pdb
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/AgriculturePlatform.Infrastructure.genruntimeconfig.cache
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/ref/AgriculturePlatform.Infrastructure.dll
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Infrastructure/obj/Debug/net8.0/AgriculturePlatform.Infrastructure.sourcelink.json

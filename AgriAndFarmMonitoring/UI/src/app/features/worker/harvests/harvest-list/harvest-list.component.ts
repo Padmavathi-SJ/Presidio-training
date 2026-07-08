@@ -44,9 +44,7 @@ import { HarvestDto, HarvestFilterDto } from '../../models/worker-harvest.model'
     MatSelectModule,
     MatInputModule,
     MatProgressSpinnerModule,
-    DatePipe,
-    DecimalPipe,
-    CurrencyPipe
+    DecimalPipe
   ],
   templateUrl: './harvest-list.component.html',
   styleUrls: ['./harvest-list.component.scss']
@@ -135,11 +133,11 @@ export class HarvestListComponent implements OnInit, OnDestroy {
           toDate: values.toDate ? new Date(values.toDate).toISOString() : undefined
         };
         
-        // Remove empty values
+        // Convert empty strings to undefined so state merges them properly
         Object.keys(filter).forEach(key => {
           const k = key as keyof HarvestFilterDto;
-          if (filter[k] === '' || filter[k] === null || filter[k] === undefined) {
-            delete filter[k];
+          if (filter[k] === '') {
+            filter[k] = undefined as any;
           }
         });
         

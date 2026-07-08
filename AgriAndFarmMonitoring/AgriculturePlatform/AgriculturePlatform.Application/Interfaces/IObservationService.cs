@@ -13,6 +13,7 @@ public interface IObservationService
     
     // NEW: Worker responds to admin questions
     Task<ApiResponse<ObservationDto>> RespondToAdminAsync(int id, ObservationWorkerResponseDto response, int farmId, int workerId);
+     Task<ApiResponse<ObservationDto>> PatchObservationAsync(int id, UpdateObservationDto dto, int workerId, int farmId);
     
     // Admin operations
     Task<ApiResponse<ObservationDto>> UpdateObservationAsync(int id, UpdateObservationDto dto, int farmId, int adminId);

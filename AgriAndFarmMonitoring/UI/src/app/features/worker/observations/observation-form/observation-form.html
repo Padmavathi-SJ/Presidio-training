@@ -1,0 +1,158 @@
+<div class="bg-white rounded-xl max-w-[620px] w-full">
+  <!-- Header -->
+  <div class="flex justify-between items-center px-6 py-4 border-b border-outline-variant">
+    <div class="flex items-center gap-3">
+      <mat-icon class="text-primary text-2xl w-6 h-6">visibility</mat-icon>
+      <h2 class="text-xl font-semibold m-0 text-on-surface">{{ editingId ? 'Edit Observation' : 'New Observation' }}</h2>
+    </div>
+    <button mat-icon-button (click)="closeDialog()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <form [formGroup]="observationForm" class="flex flex-col">
+    <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">
+      <!-- Field + Crop Cycle -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Field *</mat-label>
+          <mat-select formControlName="fieldId" (selectionChange)="onFieldSelected($event.value)">
+            <mat-option *ngFor="let f of fields" [value]="f.fieldId || f.id">{{ f.fieldName }}</mat-option>
+          </mat-select>
+          <mat-error>Field is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Crop Cycle</mat-label>
+          <mat-select formControlName="cropCycleId">
+            <mat-option *ngFor="let c of cropCycles" [value]="c.id">
+              {{ c.cropType }} ({{ c.plantingDate || c.startDate | date:'MMM yyyy' }})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Date + Health -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Observation Date *</mat-label>
+          <input matInput type="date" formControlName="observationDate">
+          <mat-error>Date is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Crop Health</mat-label>
+          <mat-select formControlName="cropHealth">
+            <mat-option value="">Select health</mat-option>
+            <mat-option *ngFor="let h of healthStatuses" [value]="h">{{ formatHealthStatus(h) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Soil Moisture -->
+      <div class="grid grid-cols-1 gap-4 mt-2">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Soil Moisture (%)</mat-label>
+          <input matInput type="number" formControlName="soilMoisture" placeholder="0-100" min="0" max="100">
+          <mat-error>Value must be between 0 and 100</mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Pests & Diseases -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 bg-surface p-4 rounded-lg border border-outline-variant">
+        <div>
+          <mat-checkbox formControlName="pestDetected" color="primary" class="mb-2">Pest Detected</mat-checkbox>
+          <mat-form-field appearance="outline" class="w-full" *ngIf="observationForm.get('pestDetected')?.value">
+            <mat-label>Pest Type *</mat-label>
+            <input matInput formControlName="pestType" placeholder="Describe pest">
+            <mat-error>Pest type is required</mat-error>
+          </mat-form-field>
+        </div>
+        
+        <div>
+          <mat-checkbox formControlName="diseaseDetected" color="primary" class="mb-2">Disease Detected</mat-checkbox>
+          <mat-form-field appearance="outline" class="w-full" *ngIf="observationForm.get('diseaseDetected')?.value">
+            <mat-label>Disease Type *</mat-label>
+            <input matInput formControlName="diseaseType" placeholder="Describe disease">
+            <mat-error>Disease type is required</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <mat-form-field appearance="outline" class="w-full mt-4">
+        <mat-label>Notes</mat-label>
+        <textarea matInput formControlName="notes" rows="3" placeholder="Any additional observations..."></textarea>
+      </mat-form-field>
+
+      <!-- Image Section -->
+      <div class="flex items-center gap-2 pt-4 pb-3 border-b border-outline-variant mt-2">
+        <mat-icon class="text-primary">photo_camera</mat-icon>
+        <span class="font-semibold text-on-surface">Photo Documentation</span>
+      </div>
+
+      <!-- Main Photo -->
+      <div class="mt-3">
+        <label class="font-medium text-sm text-on-surface block mb-2">Main Observation Photo</label>
+        
+        <div class="relative inline-block rounded-lg border border-outline-variant overflow-hidden" *ngIf="mainPhotoPreviewUrl">
+          <img [src]="mainPhotoPreviewUrl" class="max-h-[200px] w-full object-contain" alt="Main observation photo" />
+          <button type="button" mat-icon-button class="absolute top-1 right-1 bg-black/60 text-white hover:bg-black/80 w-8 h-8" matTooltip="Remove photo" (click)="removeMainPhoto()">
+            <mat-icon class="text-sm w-4 h-4">close</mat-icon>
+          </button>
+        </div>
+        
+        <div class="border-2 border-dashed border-outline-variant rounded-lg p-5 text-center hover:border-primary transition-colors" *ngIf="!mainPhotoPreviewUrl && !isSaving">
+          <label class="cursor-pointer flex flex-col items-center gap-2">
+            <mat-icon class="text-4xl w-9 h-9 text-outline">cloud_upload</mat-icon>
+            <span class="text-sm text-on-surface-variant">Choose main photo</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)" hidden>
+          </label>
+        </div>
+      </div>
+
+      <!-- Reference Photos -->
+      <div class="mt-4">
+        <label class="font-medium text-sm text-on-surface block mb-2">Additional Reference Photos</label>
+        
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3" *ngIf="referencePhotoPreviews.length > 0">
+          <div class="relative rounded-lg border border-outline-variant overflow-hidden aspect-square" *ngFor="let rp of referencePhotoPreviews; let i = index">
+            <img [src]="rp.url" class="w-full h-full object-cover" alt="Reference photo" />
+            <button type="button" mat-icon-button class="absolute top-1 right-1 bg-black/60 text-white hover:bg-black/80 w-6 h-6" (click)="removeReferencePhoto(i)">
+              <mat-icon class="text-xs w-3 h-3">close</mat-icon>
+            </button>
+          </div>
+        </div>
+        
+        <div class="border-2 border-dashed border-outline-variant rounded-lg p-4 text-center hover:border-primary transition-colors">
+          <label class="cursor-pointer flex flex-col items-center gap-2">
+            <mat-icon class="text-3xl w-8 h-8 text-outline">add_photo_alternate</mat-icon>
+            <span class="text-sm text-on-surface-variant">Add more photos (multi-select)</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="onMultipleFilesSelected($event)" hidden>
+          </label>
+        </div>
+      </div>
+
+      <!-- Image Caption -->
+      <mat-form-field appearance="outline" class="w-full mt-3">
+        <mat-label>Photo Caption</mat-label>
+        <input matInput formControlName="imageCaption" placeholder="Describe the photos...">
+      </mat-form-field>
+    </div>
+
+    <div *ngIf="isSaving" class="px-6 py-3 bg-surface border-t border-outline-variant">
+      <mat-progress-bar mode="determinate" [value]="uploadProgress" class="rounded-full"></mat-progress-bar>
+      <span class="block mt-1.5 text-sm text-on-surface-variant text-center">{{ uploadStatus }}</span>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-2 px-6 py-4 border-t border-outline-variant">
+      <button type="button" mat-button (click)="closeDialog()" [disabled]="isSaving">Cancel</button>
+      <button type="button" mat-raised-button color="primary" (click)="save()" [disabled]="observationForm.invalid || isSaving" class="min-w-[120px]">
+        <mat-spinner [diameter]="20" *ngIf="isSaving"></mat-spinner>
+        <span *ngIf="!isSaving">{{ editingId ? 'Update Observation' : 'Submit Observation' }}</span>
+        <span *ngIf="isSaving">Saving...</span>
+      </button>
+    </div>
+  </form>
+</div>

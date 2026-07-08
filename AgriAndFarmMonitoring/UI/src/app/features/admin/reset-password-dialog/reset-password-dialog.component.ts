@@ -90,7 +90,7 @@ interface DialogData {
           >
             @if (isLoading) {
               <span class="flex items-center justify-center">
-                <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                <mat-spinner [diameter]="20" class="mr-2"></mat-spinner>
                 Resetting...
               </span>
             } @else {

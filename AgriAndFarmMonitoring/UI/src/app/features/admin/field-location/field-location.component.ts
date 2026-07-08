@@ -67,7 +67,7 @@ import { Field } from '../models/field.model';
           >
             @if (isLoading) {
               <span class="flex items-center">
-                <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                <mat-spinner [diameter]="20" class="mr-2"></mat-spinner>
                 Updating...
               </span>
             } @else {

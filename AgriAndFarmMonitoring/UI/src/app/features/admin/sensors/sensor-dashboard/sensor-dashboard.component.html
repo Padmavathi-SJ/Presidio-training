@@ -29,7 +29,7 @@
         class="!bg-primary-600 !text-white"
       >
         @if (isRefreshing()) {
-          <mat-spinner diameter="20" class="!inline-block mr-2"></mat-spinner>
+          <mat-spinner [diameter]="20" class="!inline-block mr-2"></mat-spinner>
         } @else {
           <mat-icon>sync</mat-icon>
         }
@@ -180,7 +180,7 @@
   <!-- Loading State -->
   @if (isLoading()) {
     <div class="flex justify-center items-center py-12">
-      <mat-spinner diameter="40"></mat-spinner>
+      <mat-spinner [diameter]="40"></mat-spinner>
     </div>
   }
 

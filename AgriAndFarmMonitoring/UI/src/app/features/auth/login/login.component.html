@@ -56,7 +56,7 @@
         <div class="flex items-center justify-center">
           <span *ngIf="!isLoading">Sign In</span>
           <div *ngIf="isLoading" class="flex items-center">
-            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            <mat-spinner [diameter]="20" class="mr-2"></mat-spinner>
             <span>Signing in...</span>
           </div>
         </div>

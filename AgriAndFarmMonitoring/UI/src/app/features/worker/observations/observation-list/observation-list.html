@@ -1,0 +1,241 @@
+<div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+  <div>
+    <h1 class="text-headline-md m-0">Field Observations</h1>
+    <p class="text-body-md text-surface-on-variant mt-1">Record and manage your crop health observations</p>
+  </div>
+  <button mat-raised-button color="primary" class="shadow-card" (click)="createObservation.emit()">
+    <mat-icon>add</mat-icon> New Observation
+  </button>
+</div>
+
+<mat-card class="shadow-card rounded-xl overflow-hidden">
+  <mat-card-content class="pt-4 px-6">
+    <!-- Filters -->
+    <form [formGroup]="filterForm" class="flex flex-wrap gap-4 mt-2">
+      <mat-form-field appearance="outline" class="min-w-[180px] flex-1">
+        <mat-label>Field</mat-label>
+        <mat-select formControlName="fieldId" (selectionChange)="onFilterFieldSelected($event.value)">
+          <mat-option value="">All Fields</mat-option>
+          <mat-option *ngFor="let field of fields" [value]="field.fieldId">
+            {{field.fieldName}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="min-w-[180px] flex-1">
+        <mat-label>Crop Cycle</mat-label>
+        <mat-select formControlName="cropCycleId" [disabled]="!filterForm.get('fieldId')?.value || cropCycles.length === 0">
+          <mat-option value="">All</mat-option>
+          <mat-option *ngFor="let cycle of cropCycles" [value]="cycle.id">
+            {{cycle.cropType}} ({{cycle.plantingDate | date:'shortDate'}}) - {{cycle.status}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="min-w-[160px] flex-1">
+        <mat-label>Crop Health</mat-label>
+        <mat-select formControlName="cropHealth">
+          <mat-option value="">All</mat-option>
+          <mat-option value="EXCELLENT">Excellent</mat-option>
+          <mat-option value="GOOD">Good</mat-option>
+          <mat-option value="AVERAGE">Average</mat-option>
+          <mat-option value="POOR">Poor</mat-option>
+          <mat-option value="CRITICAL">Critical</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="min-w-[200px] flex-1">
+        <mat-label>Date Range</mat-label>
+        <mat-date-range-input [rangePicker]="picker">
+          <input matStartDate formControlName="fromDate" placeholder="Start date">
+          <input matEndDate formControlName="toDate" placeholder="End date">
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-date-range-picker #picker></mat-date-range-picker>
+      </mat-form-field>
+      
+      <div class="flex items-center px-4">
+        <mat-checkbox formControlName="includeDeleted" color="primary">
+          Include Deleted
+        </mat-checkbox>
+      </div>
+    </form>
+
+    <!-- Table container -->
+    <div class="relative min-h-[200px] overflow-x-auto mt-4">
+      
+      <mat-tab-group (selectedIndexChange)="onTabChange($event)" [selectedIndex]="selectedTabIndex" class="mb-4">
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">hourglass_empty</mat-icon>
+            Pending
+          </ng-template>
+        </mat-tab>
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">help</mat-icon>
+            Questioned
+          </ng-template>
+        </mat-tab>
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">check_circle</mat-icon>
+            Verified
+          </ng-template>
+        </mat-tab>
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">cancel</mat-icon>
+            Invalid
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
+
+      <div class="absolute inset-0 bg-white/60 z-10 flex items-center justify-center" *ngIf="isLoading()">
+        <mat-spinner [diameter]="40"></mat-spinner>
+      </div>
+
+      <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)" class="w-full">
+        
+        <ng-container matColumnDef="observationDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant"> Date </th>
+          <td mat-cell *matCellDef="let row" class="py-3"> 
+            <strong>{{row.observationDate | date:'mediumDate'}}</strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fieldName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant"> Field / Crop </th>
+          <td mat-cell *matCellDef="let row" class="py-3"> 
+            {{row.fieldName || 'N/A'}} 
+            <span *ngIf="row.cropType" class="text-surface-on-variant text-sm">({{row.cropType}})</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="cropHealth">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant"> Crop Health </th>
+          <td mat-cell *matCellDef="let row" class="py-3"> 
+            <div class="flex items-center gap-1.5">
+              <mat-icon class="text-base h-4 w-4" [ngClass]="{
+                  'text-green-500': row.cropHealth === 'EXCELLENT',
+                  'text-blue-500': row.cropHealth === 'GOOD',
+                  'text-yellow-500': row.cropHealth === 'AVERAGE',
+                  'text-orange-500': row.cropHealth === 'POOR',
+                  'text-red-500': row.cropHealth === 'CRITICAL'
+                }">
+                fiber_manual_record
+              </mat-icon>
+              <span>{{row.cropHealth || 'N/A'}}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="pestDetected">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant"> Pest Detected </th>
+          <td mat-cell *matCellDef="let row" class="py-3"> 
+            <div class="flex items-center gap-2">
+              <mat-icon [color]="row.pestDetected ? 'warn' : 'primary'" class="text-base h-5 w-5">
+                {{row.pestDetected ? 'bug_report' : 'check_circle'}}
+              </mat-icon>
+              <span *ngIf="row.pestDetected" class="text-error text-sm font-medium">{{row.pestType}}</span>
+              <span *ngIf="!row.pestDetected" class="text-surface-on-variant text-sm">None</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="validationStatus">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant"> Status </th>
+          <td mat-cell *matCellDef="let row" class="py-3"> 
+            <mat-chip-set>
+              <mat-chip [color]="row.validationStatus === 'verified' ? 'primary' : row.validationStatus === 'invalid' ? 'warn' : row.validationStatus === 'questioned' ? 'accent' : ''" highlighted class="text-xs">
+                {{row.validationStatus | uppercase}}
+              </mat-chip>
+            </mat-chip-set>
+            <div *ngIf="row.isQuestioned" class="text-error text-xs mt-1 max-w-[200px] truncate" [matTooltip]="row.adminNotes">
+              Admin: {{row.adminNotes}}
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Images Column -->
+        <ng-container matColumnDef="images">
+          <th mat-header-cell *matHeaderCellDef class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant"> Photos </th>
+          <td mat-cell *matCellDef="let row" class="py-3">
+            <div class="flex items-center gap-1 text-outline">
+              <mat-icon class="text-base h-5 w-5" [class.text-primary]="row.imagePath" [class.opacity-30]="!row.imagePath" [matTooltip]="row.imagePath ? 'Main photo' : 'No main photo'">
+                image
+              </mat-icon>
+              <span class="text-xs font-semibold" *ngIf="row.additionalImagePaths?.length" [matTooltip]="row.additionalImagePaths.length + ' reference photo(s)'">
+                +{{row.additionalImagePaths.length}}
+              </span>
+              <mat-icon class="text-base h-5 w-5 opacity-30" *ngIf="!row.additionalImagePaths?.length">
+                photo_library
+              </mat-icon>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant"> Actions </th>
+          <td mat-cell *matCellDef="let row" class="py-3">
+            <div class="flex items-center gap-1">
+              <button mat-icon-button color="primary" 
+                      *ngIf="row.isPending || row.isQuestioned" 
+                      (click)="editObservation.emit(row); $event.stopPropagation()" 
+                      matTooltip="Edit Observation"
+                      class="h-8 w-8">
+                <mat-icon class="text-base">edit</mat-icon>
+              </button>
+              
+              <button mat-icon-button color="accent" 
+                      *ngIf="row.isQuestioned" 
+                      (click)="respondObservation.emit(row); $event.stopPropagation()" 
+                      matTooltip="Respond to Admin"
+                      class="h-8 w-8">
+                <mat-icon class="text-base">reply</mat-icon>
+              </button>
+              
+              <button mat-icon-button color="warn" 
+                      *ngIf="row.isPending" 
+                      (click)="deleteObservation.emit(row.id); $event.stopPropagation()" 
+                      matTooltip="Delete Observation"
+                      class="h-8 w-8">
+                <mat-icon class="text-base">delete</mat-icon>
+              </button>
+
+              <button mat-icon-button
+                      (click)="viewObservation.emit(row); $event.stopPropagation()"
+                      matTooltip="View Details"
+                      class="h-8 w-8">
+                <mat-icon class="text-base">visibility</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-surface-low"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-surface-low cursor-pointer transition-colors duration-200" (click)="viewObservation.emit(row)"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell p-8 text-center text-outline italic" colspan="7">
+            <div class="flex flex-col items-center gap-2 py-8">
+              <mat-icon class="text-4xl text-outline">visibility_off</mat-icon>
+              <p class="text-body-md">No observations found.</p>
+              <button mat-stroked-button color="primary" (click)="createObservation.emit()" class="mt-2">
+                <mat-icon>add</mat-icon> Create Observation
+              </button>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <mat-paginator 
+      [length]="totalCount()" 
+      [pageSize]="filterForm.value.pageSize || 10" 
+      [pageSizeOptions]="[5, 10, 25, 100]" 
+      (page)="onPageChange($event)"
+      class="mt-4">
+    </mat-paginator>
+  </mat-card-content>
+</mat-card>

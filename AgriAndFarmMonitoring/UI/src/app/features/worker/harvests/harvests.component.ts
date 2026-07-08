@@ -15,9 +15,7 @@ import { HarvestDto } from '../models/worker-harvest.model';
   standalone: true,
   imports: [
     CommonModule,
-    HarvestListComponent,
-    HarvestFormComponent,
-    HarvestDetailsComponent
+    HarvestListComponent
   ],
   template: `
     <app-harvest-list

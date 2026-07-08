@@ -111,7 +111,7 @@
       <!-- Table -->
       <div class="table-container">
         <div class="loading-shade" *ngIf="isLoading">
-          <mat-spinner diameter="40"></mat-spinner>
+          <mat-spinner [diameter]="40"></mat-spinner>
         </div>
 
         <table mat-table [dataSource]="tasks" matSort (matSortChange)="onSortChange($event)">

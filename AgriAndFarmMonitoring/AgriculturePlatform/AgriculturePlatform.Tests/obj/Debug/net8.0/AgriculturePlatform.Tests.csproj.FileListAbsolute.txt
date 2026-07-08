@@ -152,3 +152,4 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/System.ClientModel.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/System.IO.Hashing.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/bin/Debug/net8.0/System.Memory.Data.dll
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Tests/obj/Debug/net8.0/AgriculturePlatform.Tests.sourcelink.json

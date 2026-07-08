@@ -184,7 +184,7 @@
           <div class="flex items-center justify-center">
             <span *ngIf="!isLoading">Register Farm</span>
             <div *ngIf="isLoading" class="flex items-center">
-              <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+              <mat-spinner [diameter]="20" class="mr-2"></mat-spinner>
               <span>Creating account...</span>
             </div>
           </div>

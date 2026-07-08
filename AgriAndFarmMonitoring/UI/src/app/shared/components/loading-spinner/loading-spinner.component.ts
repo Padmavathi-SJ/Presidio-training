@@ -8,7 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
   imports: [CommonModule, MatProgressSpinnerModule],
   template: `
     <div class="flex justify-center items-center p-8">
-      <mat-spinner diameter="40"></mat-spinner>
+      <mat-spinner [diameter]="40"></mat-spinner>
       <span class="ml-4 text-gray-600">Loading...</span>
     </div>
   `

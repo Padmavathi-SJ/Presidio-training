@@ -15,7 +15,7 @@
         class="!border-primary-600 !text-primary-600"
       >
         @if (isRefreshing()) {
-          <mat-spinner diameter="20" class="!inline-block mr-2"></mat-spinner>
+          <mat-spinner [diameter]="20" class="!inline-block mr-2"></mat-spinner>
         } @else {
           <mat-icon>refresh</mat-icon>
         }
@@ -33,7 +33,7 @@
   <!-- Loading State -->
   @if (isLoading()) {
     <div class="flex justify-center items-center py-16">
-      <mat-spinner diameter="40"></mat-spinner>
+      <mat-spinner [diameter]="40"></mat-spinner>
     </div>
   }
 
@@ -100,13 +100,13 @@
                   <mat-icon class="text-primary-600 text-sm">grass</mat-icon>
                   <h4 class="text-sm font-semibold text-gray-700">Crop Cycles</h4>
                   @if (isLoadingCropCycles() === field.fieldId) {
-                    <mat-spinner diameter="16" class="ml-2"></mat-spinner>
+                    <mat-spinner [diameter]="16" class="ml-2"></mat-spinner>
                   }
                 </div>
 
                 @if (isLoadingCropCycles() === field.fieldId) {
                   <div class="flex justify-center py-4">
-                    <mat-spinner diameter="24"></mat-spinner>
+                    <mat-spinner [diameter]="24"></mat-spinner>
                   </div>
                 } @else {
                   @if (expandedFieldCropCycles().length > 0) {

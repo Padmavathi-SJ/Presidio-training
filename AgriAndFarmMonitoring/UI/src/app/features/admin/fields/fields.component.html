@@ -38,7 +38,7 @@
             [disabled]="isLoading() || isImporting()"
           >
             @if (isImporting()) {
-              <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+              <mat-spinner [diameter]="20" class="inline-block mr-2"></mat-spinner>
               Importing...
             } @else {
               <ng-container>
@@ -241,7 +241,7 @@
       <div class="relative overflow-x-auto">
         @if (isLoading()) {
           <div class="flex justify-center items-center py-20">
-            <mat-spinner diameter="40"></mat-spinner>
+            <mat-spinner [diameter]="40"></mat-spinner>
           </div>
         } @else {
           <table mat-table [dataSource]="fields()" matSort (matSortChange)="onSortChange($event)" class="w-full">

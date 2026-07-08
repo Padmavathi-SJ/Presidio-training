@@ -1,0 +1,145 @@
+<div class="bg-white rounded-xl p-6 max-w-[560px] w-full" *ngIf="observation as h">
+  <!-- Header -->
+  <div class="flex items-center gap-4 pb-4 mb-4 border-b border-outline-variant relative">
+    <div>
+      <h2 class="text-xl font-semibold m-0 text-on-surface">Observation Details</h2>
+      <p class="text-sm text-on-surface-variant mt-1">Recorded on {{ h.observationDate | date:'mediumDate' }}</p>
+    </div>
+    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium uppercase"
+          [ngClass]="getValidationBadgeClass(h.validationStatus)">
+      <mat-icon class="text-sm w-4 h-4">{{ getValidationIcon(h.validationStatus) }}</mat-icon>
+      {{ formatStatus(h.validationStatus) }}
+    </span>
+    <button mat-icon-button class="absolute -top-2 -right-2" (click)="closeDialog()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Alert Boxes -->
+  <div class="flex gap-3 p-3 rounded-lg border-l-4 bg-red-50 border-red-500 text-red-800 mb-4" *ngIf="h.flagReason">
+    <mat-icon class="text-red-500 w-5 h-5">cancel</mat-icon>
+    <div>
+      <strong class="text-sm">Flag Reason</strong>
+      <p class="text-sm m-0">{{ h.flagReason }}</p>
+    </div>
+  </div>
+
+  <div class="flex gap-3 p-3 rounded-lg border-l-4 bg-amber-50 border-amber-500 text-amber-800 mb-4" *ngIf="h.adminNotes && h.validationStatus === 'QUESTIONED'">
+    <mat-icon class="text-amber-500 w-5 h-5">edit_note</mat-icon>
+    <div>
+      <strong class="text-sm">Admin Notes</strong>
+      <p class="text-sm m-0">{{ h.adminNotes }}</p>
+    </div>
+  </div>
+
+  <!-- Info Grid -->
+  <div class="grid grid-cols-2 gap-3 mb-4">
+    <div>
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Date</span>
+      <span class="text-base font-medium text-on-surface">{{ h.observationDate | date:'dd MMMM yyyy' }}</span>
+    </div>
+    <div>
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Field</span>
+      <span class="text-base font-medium text-on-surface">{{ h.fieldName }}</span>
+    </div>
+    <div>
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Crop Cycle</span>
+      <span class="text-base font-medium text-on-surface">{{ h.cropType || '—' }}</span>
+    </div>
+    <div>
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Worker</span>
+      <span class="text-base font-medium text-on-surface">{{ h.workerName || '—' }}</span>
+    </div>
+    <div>
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Crop Health</span>
+      <span class="text-base font-medium text-on-surface">{{ formatCropHealth(h.cropHealth) }}</span>
+    </div>
+    <div *ngIf="$any(h).soilMoisture">
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Soil Moisture</span>
+      <span class="text-base font-medium text-on-surface">{{ $any(h).soilMoisture }}</span>
+    </div>
+    <div>
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Pest Detected</span>
+      <span class="text-base font-medium text-on-surface">
+        {{ h.pestDetected ? 'Yes' + (h.pestType ? ' (' + h.pestType + ')' : '') : 'No' }}
+      </span>
+    </div>
+    <div *ngIf="$any(h).diseaseDetected !== undefined">
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Disease Detected</span>
+      <span class="text-base font-medium text-on-surface">
+        {{ $any(h).diseaseDetected ? 'Yes' + ($any(h).diseaseType ? ' (' + $any(h).diseaseType + ')' : '') : 'No' }}
+      </span>
+    </div>
+    <div *ngIf="h.validatorName">
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Validated By</span>
+      <span class="text-base font-medium text-on-surface">{{ h.validatorName }}</span>
+    </div>
+    <div *ngIf="h.validatedAt">
+      <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider">Validated At</span>
+      <span class="text-base font-medium text-on-surface">{{ h.validatedAt | date:'dd MMM yyyy, HH:mm' }}</span>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  <div class="mb-4" *ngIf="h.notes">
+    <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider mb-1">Observation Notes</span>
+    <p class="m-0 p-3 bg-surface rounded-lg text-sm text-on-surface whitespace-pre-wrap leading-relaxed">{{ h.notes }}</p>
+  </div>
+
+  <!-- Worker Response -->
+  <div class="mb-4" *ngIf="h.workerResponse">
+    <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider mb-1">Your Response</span>
+    <p class="m-0 p-3 bg-surface rounded-lg text-sm text-on-surface whitespace-pre-wrap leading-relaxed">{{ h.workerResponse }}</p>
+  </div>
+
+  <!-- Images Section -->
+  <div class="mb-4" *ngIf="h.imagePath || (h.additionalImagePaths && h.additionalImagePaths.length > 0)">
+    <span class="block text-xs text-on-surface-variant uppercase font-semibold tracking-wider mb-2">Photos</span>
+    
+    <!-- Main Image -->
+    <div class="mb-4" *ngIf="h.imagePath">
+      <div class="flex items-center gap-2 mb-2">
+        <mat-icon class="text-primary text-sm w-4 h-4">photo_camera</mat-icon>
+        <span class="text-sm font-medium text-on-surface">Main Observation Photo</span>
+        <span class="text-xs text-on-surface-variant" *ngIf="h.imageCaption">- {{ h.imageCaption }}</span>
+      </div>
+      <div class="rounded-lg overflow-hidden border-2 border-primary relative">
+        <img [src]="h.imagePath" class="w-full h-[200px] object-cover" [alt]="'Main observation photo'" />
+        <!-- Image Verification Badge -->
+        <div class="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs flex items-center gap-1" *ngIf="h.isImageVerified !== undefined">
+          <mat-icon class="text-[14px] w-[14px] h-[14px]">{{ h.isImageVerified ? 'verified' : 'new_releases' }}</mat-icon>
+          {{ h.isImageVerified ? 'Verified' : 'Unverified' }}
+        </div>
+      </div>
+      <div *ngIf="h.imageVerificationNotes" class="mt-1 text-xs text-red-600 flex items-start gap-1">
+        <mat-icon class="text-[14px] w-[14px] h-[14px] mt-0.5">info</mat-icon>
+        <span>{{ h.imageVerificationNotes }}</span>
+      </div>
+    </div>
+
+    <!-- Reference Images -->
+    <div *ngIf="h.additionalImagePaths && h.additionalImagePaths.length > 0">
+      <div class="flex items-center gap-2 mb-2">
+        <mat-icon class="text-outline text-sm w-4 h-4">collections</mat-icon>
+        <span class="text-sm font-medium text-on-surface">Reference Photos</span>
+        <span class="text-xs text-on-surface-variant">({{ h.additionalImagePaths.length }} images)</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-lg overflow-hidden border border-outline-variant" *ngFor="let img of h.additionalImagePaths">
+          <img [src]="img" class="w-full h-[120px] object-cover" [alt]="'Reference photo'" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-2 pt-4 border-t border-outline-variant">
+    <button mat-button (click)="closeDialog()">Close</button>
+    <button mat-raised-button color="accent" class="bg-amber-600 hover:bg-amber-700" *ngIf="canRespond()" (click)="respondToAdmin()">
+      <mat-icon>reply</mat-icon> Respond to Admin
+    </button>
+    <button mat-raised-button color="primary" *ngIf="canEdit()" (click)="editObservation()">
+      <mat-icon>edit</mat-icon> Edit Observation
+    </button>
+  </div>
+</div>

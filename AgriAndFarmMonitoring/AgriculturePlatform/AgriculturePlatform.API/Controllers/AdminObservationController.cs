@@ -251,11 +251,11 @@ public async Task<IActionResult> GetValidationSummary()
     
     return Ok(ApiResponse<object>.Ok(new
     {
-        Total = allObservations.Data?.TotalCount ?? 0,
-        Pending = pendingResult.Data?.TotalCount ?? 0,
-        Questioned = questionedResult.Data?.TotalCount ?? 0,
-        Verified = verifiedCount,
-        Invalid = invalidCount
+        total = allObservations.Data?.TotalCount ?? 0,
+        pending = pendingResult.Data?.TotalCount ?? 0,
+        questioned = questionedResult.Data?.TotalCount ?? 0,
+        verified = verifiedCount,
+        invalid = invalidCount
     }));
 }
 
