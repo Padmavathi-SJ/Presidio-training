@@ -8,7 +8,7 @@ public interface IWeatherAlertRepository
 {
     // Read operations
     Task<WeatherAlert?> GetByIdAsync(int id, int farmId);
-    Task<List<WeatherAlert>> GetActiveAlertsAsync(int farmId);
+    Task<List<WeatherAlert>> GetActiveAlertsAsync(int farmId, List<int>? allowedFieldIds = null);
     Task<List<WeatherAlert>> GetAlertsByFieldAsync(int fieldId, int farmId);
     Task<List<WeatherAlert>> GetAlertsBySeverityAsync(int farmId, string severity);
     Task<PagedResult<WeatherAlert>> GetPagedAlertsAsync(
@@ -16,7 +16,8 @@ public interface IWeatherAlertRepository
         int? fieldId, 
         string? severity, 
         bool? isAcknowledged, 
-        PaginationParams paginationParams);
+        PaginationParams paginationParams,
+        List<int>? allowedFieldIds = null);
     
     // Write operations
     Task<WeatherAlert> CreateAsync(WeatherAlert alert);

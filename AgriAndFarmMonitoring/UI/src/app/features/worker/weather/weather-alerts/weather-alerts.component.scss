@@ -1,0 +1,20 @@
+// Weather Alerts — Professional Agriculture Theme
+:host { display: block; }
+
+.border-l-4 {
+  &.border-yellow-400 { border-left-color: #fbbf24 !important; }
+  &.border-orange-400 { border-left-color: #fb923c !important; }
+  &.border-red-400    { border-left-color: #f87171 !important; }
+  &.border-red-600    { border-left-color: #dc2626 !important; }
+}
+
+::ng-deep {
+  .alert-snackbar {
+    &.alert-advisory  { background: #fef3c7 !important; color: #92400e !important; border-left: 4px solid #fbbf24; }
+    &.alert-watch     { background: #ffedd5 !important; color: #9a3412 !important; border-left: 4px solid #fb923c; }
+    &.alert-warning   { background: #fee2e2 !important; color: #991b1b !important; border-left: 4px solid #f87171; }
+    &.alert-emergency { background: #7f1d1d !important; color: #fecaca !important; border-left: 4px solid #dc2626; }
+  }
+  .success-snackbar { background: #d1fae5 !important; color: #065f46 !important; border-left: 4px solid #059669; }
+  .error-snackbar   { background: #fee2e2 !important; color: #991b1b !important; border-left: 4px solid #ef4444; }
+}

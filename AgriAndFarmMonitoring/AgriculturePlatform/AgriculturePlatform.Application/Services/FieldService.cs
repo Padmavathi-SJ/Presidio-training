@@ -6,6 +6,7 @@ using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
 using AgriculturePlatform.Domain.Enums;
 using AgriculturePlatform.Application.Validators;
+using AgriculturePlatform.Application.Extensions;
 
 namespace AgriculturePlatform.Application.Services;
 
@@ -15,17 +16,20 @@ public class FieldService : IFieldService
     private readonly IExcelService _excelService;
     private readonly IAuditLogService _auditLogService;
     private readonly IMapper _mapper;
+    private readonly IFileStorageService _fileStorageService;
 
     public FieldService(
         IFieldRepository fieldRepository,
         IExcelService excelService,
         IAuditLogService auditLogService,
-        IMapper mapper)
+        IMapper mapper,
+        IFileStorageService fileStorageService)
     {
         _fieldRepository = fieldRepository;
         _excelService = excelService;
         _auditLogService = auditLogService;
         _mapper = mapper;
+        _fileStorageService = fileStorageService;
     }
 
 // Update the CreateAsync method in FieldService.cs
@@ -71,6 +75,10 @@ public async Task<ApiResponse<FieldDto>> CreateAsync(CreateFieldDto dto, int far
         Status = Enum.TryParse<FieldStatusEnum>(dto.Status, true, out var status) ? status : FieldStatusEnum.ACTIVE,
         Latitude = dto.Latitude,      // ADD THIS
         Longitude = dto.Longitude,    // ADD THIS
+        ImagePath = dto.ImagePath,
+        ThumbnailPath = dto.ThumbnailPath,
+        ImageCaption = dto.ImageCaption,
+        AdditionalImagePaths = dto.AdditionalImagePaths ?? new List<string>(),
         CreatedAt = DateTime.UtcNow
     };
 
@@ -79,7 +87,7 @@ public async Task<ApiResponse<FieldDto>> CreateAsync(CreateFieldDto dto, int far
     // Audit log
     await _auditLogService.LogCreateAsync(farmId, adminId, "Field", created.Id, created, ipAddress, userAgent);
     
-    var result = _mapper.Map<FieldDto>(created);
+    var result = _mapper.Map<FieldDto>(created).WithPublicUrls(_fileStorageService);
     result.ActiveCropCount = await _fieldRepository.GetActiveCropsCountAsync(created.Id);
     
     return ApiResponse<FieldDto>.Ok(result, "Field created successfully");
@@ -129,12 +137,18 @@ public async Task<ApiResponse<FieldDto>> UpdateAsync(int id, UpdateFieldDto dto,
     if (dto.Latitude.HasValue) field.Latitude = dto.Latitude;      // ADD THIS
     if (dto.Longitude.HasValue) field.Longitude = dto.Longitude;    // ADD THIS
     
+    // Image attachments
+    if (dto.ImagePath != null) field.ImagePath = dto.ImagePath;
+    if (dto.ThumbnailPath != null) field.ThumbnailPath = dto.ThumbnailPath;
+    if (dto.ImageCaption != null) field.ImageCaption = dto.ImageCaption;
+    if (dto.AdditionalImagePaths != null) field.AdditionalImagePaths = dto.AdditionalImagePaths;
+    
     field.UpdatedAt = DateTime.UtcNow;
     field.UpdatedBy = adminId;
 
     await _fieldRepository.UpdateAsync(field);
     
-    var result = _mapper.Map<FieldDto>(field);
+    var result = _mapper.Map<FieldDto>(field).WithPublicUrls(_fileStorageService);
     result.ActiveCropCount = await _fieldRepository.GetActiveCropsCountAsync(field.Id);
     
     return ApiResponse<FieldDto>.Ok(result, "Field updated successfully");
@@ -176,7 +190,7 @@ public async Task<ApiResponse<FieldDto>> UpdateAsync(int id, UpdateFieldDto dto,
             return ApiResponse<FieldDto>.Fail($"Field with ID {id} not found");
         }
 
-        var result = _mapper.Map<FieldDto>(field);
+        var result = _mapper.Map<FieldDto>(field).WithPublicUrls(_fileStorageService);
         result.ActiveCropCount = await _fieldRepository.GetActiveCropsCountAsync(field.Id);
         result.FarmName = field.Farm?.FarmName ?? string.Empty;
         
@@ -208,6 +222,7 @@ public async Task<ApiResponse<FieldDto>> UpdateAsync(int id, UpdateFieldDto dto,
         foreach (var dto in dtos)
         {
             dto.ActiveCropCount = await _fieldRepository.GetActiveCropsCountAsync(dto.Id);
+            dto.WithPublicUrls(_fileStorageService);
         }
 
         var result = new PagedResult<FieldDto>

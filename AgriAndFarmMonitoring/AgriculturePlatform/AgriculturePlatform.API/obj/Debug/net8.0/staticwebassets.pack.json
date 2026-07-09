@@ -1,6 +1,18 @@
 {
   "Files": [
     {
+      "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/fields/2c740265-b572-4944-b4fc-3b44f7197b03.jpeg",
+      "PackagePath": "staticwebassets/uploads/fields/2c740265-b572-4944-b4fc-3b44f7197b03.jpeg"
+    },
+    {
+      "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/fields/4a6806bd-7da2-4826-9cdd-a0331f666c18.jpeg",
+      "PackagePath": "staticwebassets/uploads/fields/4a6806bd-7da2-4826-9cdd-a0331f666c18.jpeg"
+    },
+    {
+      "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/fields/a44216a2-2f33-4859-bc9b-cb6fbf9ab124.jpeg",
+      "PackagePath": "staticwebassets/uploads/fields/a44216a2-2f33-4859-bc9b-cb6fbf9ab124.jpeg"
+    },
+    {
       "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/harvests/2026/07/06/0ab698cc8ff74bd9944c256f94ae1427.jpeg",
       "PackagePath": "staticwebassets/uploads/harvests/2026/07/06/0ab698cc8ff74bd9944c256f94ae1427.jpeg"
     },
@@ -91,6 +103,18 @@
     {
       "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/observations/2026/07/08/ed4aefb6c74e42688b57c47c1d491932.jpeg",
       "PackagePath": "staticwebassets/uploads/observations/2026/07/08/ed4aefb6c74e42688b57c47c1d491932.jpeg"
+    },
+    {
+      "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/observations/2026/07/09/71e13558d1154e3eba8cf13a6fdbe6a0.jpeg",
+      "PackagePath": "staticwebassets/uploads/observations/2026/07/09/71e13558d1154e3eba8cf13a6fdbe6a0.jpeg"
+    },
+    {
+      "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/observations/2026/07/09/e5dda4c3f1cb4e889b1022dd7fe78307.jpeg",
+      "PackagePath": "staticwebassets/uploads/observations/2026/07/09/e5dda4c3f1cb4e889b1022dd7fe78307.jpeg"
+    },
+    {
+      "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/observations/2026/07/09/e7d6e4be08904222ae43fe4dccb4f954.jpeg",
+      "PackagePath": "staticwebassets/uploads/observations/2026/07/09/e7d6e4be08904222ae43fe4dccb4f954.jpeg"
     },
     {
       "Id": "obj/Debug/net8.0/staticwebassets/msbuild.AgriculturePlatform.API.Microsoft.AspNetCore.StaticWebAssets.props",

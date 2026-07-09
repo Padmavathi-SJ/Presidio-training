@@ -17,6 +17,7 @@ public class HarvestService : IHarvestService
     private readonly IWorkerRepository _workerRepository;
     private readonly IAuditLogService _auditLogService;
     private readonly IFileStorageService _fileStorageService;
+    private readonly INotificationService _notificationService;
     private readonly IMapper _mapper;
 
     public HarvestService(
@@ -26,6 +27,7 @@ public class HarvestService : IHarvestService
         IWorkerRepository workerRepository,
         IAuditLogService auditLogService,
         IFileStorageService fileStorageService,
+        INotificationService notificationService,
         IMapper mapper)
     {
         _harvestRepository = harvestRepository;
@@ -34,6 +36,7 @@ public class HarvestService : IHarvestService
         _workerRepository = workerRepository;
         _auditLogService = auditLogService;
         _fileStorageService = fileStorageService;
+        _notificationService = notificationService;
         _mapper = mapper;
     }
 
@@ -115,6 +118,16 @@ public class HarvestService : IHarvestService
         var created = await _harvestRepository.CreateAsync(harvest);
         
         await _auditLogService.LogCreateAsync(farmId, adminId, "Harvest", created.Id, created, null, null);
+
+        var workerName = (await _workerRepository.GetByIdAsync(workerId, farmId))?.Name ?? "A worker";
+        await _notificationService.CreateAlertAggregateNotificationAsync(
+            farmId,
+            adminId,
+            "Harvest Logs",
+            "NewHarvest",
+            "/admin/harvests",
+            $"/admin/harvests/{created.Id}"
+        );
 
         var result = _mapper.Map<HarvestDto>(created);
         result.FieldName = field.FieldName;
@@ -293,10 +306,21 @@ public class HarvestService : IHarvestService
         }
 
         harvest.WorkerResponse = response.WorkerResponse;
+        harvest.ApprovalStatus = "PENDING";
         harvest.UpdatedAt = DateTime.UtcNow;
         harvest.UpdatedBy = workerId;
         
         await _harvestRepository.UpdateAsync(harvest);
+
+        var workerName = (await _workerRepository.GetByIdAsync(workerId, farmId))?.Name ?? "A worker";
+        await _notificationService.CreateAlertAggregateNotificationAsync(
+            farmId,
+            harvest.AdminId,
+            "Harvest Updates",
+            "HarvestUpdated",
+            "/admin/harvests",
+            $"/admin/harvests/{harvest.Id}"
+        );
 
         var result = _mapper.Map<HarvestDto>(harvest);
         
@@ -416,6 +440,16 @@ public class HarvestService : IHarvestService
         await _auditLogService.LogUpdateAsync(farmId, adminId, "Harvest", harvest.Id, 
             new { ApprovalStatus = oldStatus }, 
             new { ApprovalStatus = approval.ApprovalStatus }, null, null);
+
+        await _notificationService.CreateNotificationAsync(
+            farmId,
+            null,
+            harvest.HarvestedBy,
+            "Harvest Status Updated",
+            $"Your harvest log was marked as {approval.ApprovalStatus}.",
+            "HarvestStatus",
+            $"/worker/harvests/{harvest.Id}"
+        );
 
         var result = _mapper.Map<HarvestDto>(harvest);
         

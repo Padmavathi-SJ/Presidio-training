@@ -98,7 +98,7 @@ public class WorkerAuthServiceTests
         result.Name.Should().Be(worker.Name);
         result.FarmId.Should().Be(1);
         result.FarmName.Should().Be("Test Farm");
-        result.Role.Should().Be(worker.Role);
+        result.Role.Should().Be("Worker");
     }
 
     [Fact]

@@ -15,6 +15,7 @@ public class FieldServiceTests
     private readonly Mock<IFieldRepository> _fieldRepositoryMock;
     private readonly Mock<IExcelService> _excelServiceMock;
     private readonly Mock<IAuditLogService> _auditLogServiceMock;
+    private readonly Mock<IFileStorageService> _fileStorageServiceMock;
     private readonly FieldService _fieldService;
 
     public FieldServiceTests()
@@ -22,6 +23,7 @@ public class FieldServiceTests
         _fieldRepositoryMock = new Mock<IFieldRepository>();
         _excelServiceMock = new Mock<IExcelService>();
         _auditLogServiceMock = new Mock<IAuditLogService>();
+        _fileStorageServiceMock = new Mock<IFileStorageService>();
         
         var mapper = MapperHelper.CreateMapper(); // Use the helper
         
@@ -29,7 +31,8 @@ public class FieldServiceTests
             _fieldRepositoryMock.Object,
             _excelServiceMock.Object,
             _auditLogServiceMock.Object,
-            mapper);
+            mapper,
+            _fileStorageServiceMock.Object);
     }
 
     [Fact]

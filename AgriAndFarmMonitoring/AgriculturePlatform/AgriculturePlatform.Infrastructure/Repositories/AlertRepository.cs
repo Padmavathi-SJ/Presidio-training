@@ -45,7 +45,7 @@ public class AlertRepository : IAlertRepository
     public async Task<PagedResult<Alert>> GetPagedAsync(
         int farmId, int? fieldId, int? cropCycleId, string? alertType,
         string? severity, bool? isResolved, DateTime? fromDate, DateTime? toDate,
-        PaginationParams paginationParams)
+        PaginationParams paginationParams, List<int>? allowedFieldIds = null)
     {
         var specification = new AlertSpecification(
             farmId, fieldId, cropCycleId, alertType, severity, isResolved, fromDate, toDate);
@@ -54,6 +54,9 @@ public class AlertRepository : IAlertRepository
             .Include(a => a.Field)
             .Include(a => a.CropCycle)
             .Where(specification.Criteria!);
+            
+        if (allowedFieldIds != null && allowedFieldIds.Any())
+            query = query.Where(a => allowedFieldIds.Contains(a.FieldId));
 
         // Apply sorting
         if (!string.IsNullOrWhiteSpace(paginationParams.SortBy))

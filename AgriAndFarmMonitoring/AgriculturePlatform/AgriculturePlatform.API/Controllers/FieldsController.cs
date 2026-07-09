@@ -17,11 +17,13 @@ public class FieldsController : ControllerBase
 {
     private readonly IFieldService _fieldService;
     private readonly IExcelService _excelService;
+    private readonly IFileStorageService _fileStorageService;
 
-    public FieldsController(IFieldService fieldService, IExcelService excelService)
+    public FieldsController(IFieldService fieldService, IExcelService excelService, IFileStorageService fileStorageService)
     {
         _fieldService = fieldService;
         _excelService = excelService;
+        _fileStorageService = fileStorageService;
     }
 
     private int GetCurrentFarmId()
@@ -224,6 +226,41 @@ public class FieldsController : ControllerBase
     {
         var template = _excelService.CreateExcelTemplate();
         return File(template, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "fields_import_template.xlsx");
+    }
+
+    // POST: api/farms/{farmId}/fields/upload-image
+    [HttpPost("upload-image")]
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file uploaded." });
+
+        var extension = Path.GetExtension(file.FileName).ToLower();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowedExtensions.Contains(extension))
+            return BadRequest(new { message = "Invalid file type. Only JPG, PNG and WEBP are allowed." });
+
+        if (file.Length > 10 * 1024 * 1024)
+            return BadRequest(new { message = "File size exceeds limit (10MB)." });
+
+        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        var fileBytes = ms.ToArray();
+
+        var relativePath = await _fileStorageService.SaveFileAsync(fileBytes, uniqueFileName, "fields");
+        var fullUrl = _fileStorageService.GetDownloadUrl(relativePath);
+
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                fileName = relativePath,
+                url = fullUrl
+            }
+        });
     }
 }
 

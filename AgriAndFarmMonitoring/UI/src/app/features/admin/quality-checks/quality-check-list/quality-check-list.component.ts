@@ -22,6 +22,8 @@ import { AdminQualityCheckStateService } from '../services/admin-quality-check-s
 import { QualityCheckDto } from '../models/admin-quality-check.model';
 import { QualityCheckDetailsComponent } from '../quality-check-details/quality-check-details.component';
 import { QualityCheckApprovalComponent } from '../quality-check-approval/quality-check-approval.component';
+import { ReportGeneratorService } from '../../../../core/services/report-generator.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-quality-check-list',
@@ -39,6 +41,8 @@ import { QualityCheckApprovalComponent } from '../quality-check-approval/quality
 export class QualityCheckListComponent implements OnInit, AfterViewInit, OnDestroy {
   private qualityState = inject(AdminQualityCheckStateService);
   private fb = inject(FormBuilder);
+  private reportService = inject(ReportGeneratorService);
+  private snackBar = inject(MatSnackBar);
   public dialog = inject(MatDialog);
   
   private destroy$ = new Subject<void>();
@@ -153,5 +157,42 @@ export class QualityCheckListComponent implements OnInit, AfterViewInit, OnDestr
         this.qualityState.refresh();
       }
     });
+  }
+
+  exportPdf(): void {
+    const data = this.checks();
+    if (!data.length) {
+      this.snackBar.open('No data to export', 'Close', { duration: 3000 });
+      return;
+    }
+    const columns = [
+      { header: 'Date', dataKey: 'checkDate' },
+      { header: 'Batch', dataKey: 'harvestBatchNumber' },
+      { header: 'Checker', dataKey: 'checkerName' },
+      { header: 'Moisture %', dataKey: 'moisturePct' },
+      { header: 'Defects %', dataKey: 'defectPct' },
+      { header: 'Grade', dataKey: 'finalGrade' },
+      { header: 'Status', dataKey: 'approvalStatus' }
+    ];
+    this.reportService.exportToPdf(data, columns, 'Farm Quality Checks Report', 'Farm_QualityChecks');
+  }
+
+  exportCsv(): void {
+    const data = this.checks();
+    if (!data.length) {
+      this.snackBar.open('No data to export', 'Close', { duration: 3000 });
+      return;
+    }
+    const cleanData = data.map(d => ({
+      Date: d.checkDate,
+      Batch: d.harvestBatchNumber,
+      Checker: d.checkerName,
+      Moisture_Pct: d.moisturePct,
+      Defect_Pct: d.defectPct,
+      Grade: d.finalGrade,
+      Status: d.approvalStatus,
+      Notes: d.notes || ''
+    }));
+    this.reportService.exportToCsv(cleanData, 'Farm_QualityChecks');
   }
 }

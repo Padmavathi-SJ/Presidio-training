@@ -103,6 +103,63 @@
           }
         </mat-form-field>
       </div>
+
+      <!-- Photo Documentation -->
+      <mat-divider class="my-2"></mat-divider>
+      <div class="flex items-center gap-2 pt-2 pb-1">
+        <mat-icon class="text-primary-600">photo_camera</mat-icon>
+        <span class="font-semibold text-gray-800">Photo Documentation</span>
+      </div>
+
+      <!-- Main Photo -->
+      <div class="mt-3">
+        <label class="font-medium text-sm text-gray-700 block mb-2">Main Field Photo</label>
+        <div class="relative inline-block rounded-lg border border-gray-300 overflow-hidden" *ngIf="mainPhotoPreviewUrl">
+          <img [src]="mainPhotoPreviewUrl" class="max-h-[200px] w-full object-contain" alt="Main field photo" />
+          <button type="button" mat-icon-button class="absolute top-1 right-1 bg-black/60 text-white hover:bg-black/80 w-8 h-8" (click)="removeMainPhoto()">
+            <mat-icon class="text-sm w-4 h-4">close</mat-icon>
+          </button>
+        </div>
+        
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center hover:border-primary-600 transition-colors" *ngIf="!mainPhotoPreviewUrl && !isLoading">
+          <label class="cursor-pointer flex flex-col items-center gap-2">
+            <mat-icon class="text-4xl w-9 h-9 text-gray-400">cloud_upload</mat-icon>
+            <span class="text-sm text-gray-500">Choose main photo</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)" hidden>
+          </label>
+        </div>
+      </div>
+
+      <!-- Reference Photos -->
+      <div class="mt-4">
+        <label class="font-medium text-sm text-gray-700 block mb-2">Additional Reference Photos</label>
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3" *ngIf="referencePhotoPreviews.length > 0">
+          <div class="relative rounded-lg border border-gray-300 overflow-hidden aspect-square" *ngFor="let rp of referencePhotoPreviews; let i = index">
+            <img [src]="rp.url" class="w-full h-full object-cover" alt="Reference photo" />
+            <button type="button" mat-icon-button class="absolute top-1 right-1 bg-black/60 text-white hover:bg-black/80 w-6 h-6" (click)="removeReferencePhoto(i)">
+              <mat-icon class="text-xs w-3 h-3">close</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-600 transition-colors">
+          <label class="cursor-pointer flex flex-col items-center gap-2">
+            <mat-icon class="text-3xl w-8 h-8 text-gray-400">add_photo_alternate</mat-icon>
+            <span class="text-sm text-gray-500">Add more photos</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="onMultipleFilesSelected($event)" hidden>
+          </label>
+        </div>
+      </div>
+
+      <mat-form-field appearance="outline" class="w-full mt-3">
+        <mat-label>Photo Caption</mat-label>
+        <input matInput formControlName="imageCaption" placeholder="Brief description of the photos">
+      </mat-form-field>
+    </div>
+
+    <!-- Upload Progress -->
+    <div *ngIf="uploadStatus && isLoading" class="mt-4 px-2">
+      <mat-progress-bar mode="indeterminate" class="rounded-full"></mat-progress-bar>
+      <span class="block mt-1.5 text-sm text-gray-500 text-center">{{ uploadStatus }}</span>
     </div>
 
     <!-- Actions -->

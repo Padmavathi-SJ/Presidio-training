@@ -58,7 +58,8 @@ public class SensorReadingService : ISensorReadingService
             parsedSensorType,  // ✅ Pass the enum, not string
             filter.FromDate, 
             filter.ToDate, 
-            paginationParams);
+            paginationParams,
+            filter.AllowedFieldIds);
 
         var dtos = _mapper.Map<List<SensorReadingDto>>(pagedResult.Items);
         
@@ -73,9 +74,9 @@ public class SensorReadingService : ISensorReadingService
         return ApiResponse<PagedResult<SensorReadingDto>>.Ok(result);
     }
 
-    public async Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetLatestReadingsPerFieldAsync(int farmId)
+    public async Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetLatestReadingsPerFieldAsync(int farmId, List<int>? allowedFieldIds = null)
     {
-        var readings = await _sensorRepository.GetLatestPerFieldAsync(farmId);
+        var readings = await _sensorRepository.GetLatestPerFieldAsync(farmId, allowedFieldIds);
         var dtos = _mapper.Map<IEnumerable<SensorReadingDto>>(readings);
         return ApiResponse<IEnumerable<SensorReadingDto>>.Ok(dtos);
     }
@@ -95,23 +96,24 @@ public class SensorReadingService : ISensorReadingService
     }
 
     public async Task<ApiResponse<IEnumerable<SensorReadingDto>>> GetThresholdViolationsAsync(
-        int farmId, DateTime? fromDate, DateTime? toDate)
+        int farmId, DateTime? fromDate, DateTime? toDate, List<int>? allowedFieldIds = null)
     {
-        var violations = await _sensorRepository.GetThresholdViolationsAsync(farmId, fromDate, toDate);
+        var violations = await _sensorRepository.GetThresholdViolationsAsync(farmId, fromDate, toDate, allowedFieldIds);
         var dtos = _mapper.Map<IEnumerable<SensorReadingDto>>(violations);
         return ApiResponse<IEnumerable<SensorReadingDto>>.Ok(dtos);
     }
 
-    public async Task<ApiResponse<byte[]>> ExportToExcelAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate)
+    public async Task<ApiResponse<byte[]>> ExportToExcelAsync(
+        int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate, List<int>? allowedFieldIds = null)
     {
-        var excelData = await _sensorRepository.ExportToExcelAsync(farmId, fieldId, fromDate, toDate);
-        return ApiResponse<byte[]>.Ok(excelData);
+        var fileBytes = await _sensorRepository.ExportToExcelAsync(farmId, fieldId, fromDate, toDate, allowedFieldIds);
+        return ApiResponse<byte[]>.Ok(fileBytes);
     }
 
     public async Task<ApiResponse<SensorStatisticsDto>> GetAverageReadingsAsync(
-        int farmId, string groupBy, DateTime? fromDate, DateTime? toDate)
+        int farmId, string groupBy, DateTime? fromDate, DateTime? toDate, List<int>? allowedFieldIds = null)
     {
-        var stats = await _sensorRepository.GetAverageReadingsAsync(farmId, groupBy, fromDate, toDate);
+        var stats = await _sensorRepository.GetAverageReadingsAsync(farmId, groupBy, fromDate, toDate, allowedFieldIds);
         return ApiResponse<SensorStatisticsDto>.Ok(stats);
     }
 

@@ -29,6 +29,7 @@ public interface IWeatherService
     Task<ApiResponse<bool>> DeleteWeatherAlertAsync(int id, int farmId, int adminId);
     Task<ApiResponse<bool>> AcknowledgeWeatherAlertAsync(int id, int farmId, int adminId);
     Task<ApiResponse<bool>> AcknowledgeAllAlertsForFieldAsync(int fieldId, int farmId, int adminId);
+    Task<ApiResponse<bool>> ResolveWeatherAlertAsync(int id, ResolveWeatherAlertDto dto, int farmId, int workerId);
     
     // Settings
     Task<ApiResponse<WeatherApiSettingsDto>> GetApiSettingsAsync(int farmId);

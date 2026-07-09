@@ -1,0 +1,116 @@
+<!-- src/app/features/worker/weather/weather-alert-dialog/weather-alert-dialog.component.html -->
+<div mat-dialog-title class="flex items-start justify-between !pb-2 !mb-0 border-b border-gray-100">
+  <div>
+    <h2 class="text-xl font-bold text-gray-800 m-0">
+      Weather Alert Details
+    </h2>
+    <p class="text-sm text-gray-500 mt-1 mb-0">
+      View alert details
+    </p>
+  </div>
+  <button 
+    mat-icon-button 
+    (click)="onCancel()"
+    class="!w-8 !h-8 !text-gray-400 hover:!text-gray-600 -mt-2 -mr-2"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<form [formGroup]="alertForm">
+  <mat-dialog-content class="!pt-4">
+    @if (data.alert) {
+      <div class="flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
+        <span class="text-xs font-medium text-gray-500 uppercase">Status:</span>
+        <span class="text-xs px-2 py-1 rounded-full font-medium {{ getSeverityColor(data.alert.severity) }}">
+          {{ data.alert.severity }}
+        </span>
+        @if (data.alert.isAcknowledged) {
+          <span class="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
+            Resolved
+          </span>
+        } @else {
+          <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">
+            Unresolved
+          </span>
+        }
+        <span class="text-xs text-gray-500 ml-auto">
+          Created: {{ data.alert.createdAt | date:'MMM d, y HH:mm' }}
+        </span>
+      </div>
+    }
+
+    <div class="space-y-4">
+      <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Field</mat-label>
+        <mat-select formControlName="fieldId">
+          @for (field of fields; track field.fieldId) {
+            <mat-option [value]="field.fieldId">{{ field.fieldName }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Alert Type</mat-label>
+          <input matInput formControlName="alertType">
+        </mat-form-field>
+
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Severity</mat-label>
+          <input matInput formControlName="severity">
+        </mat-form-field>
+      </div>
+
+      <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Alert Title</mat-label>
+        <input matInput formControlName="title">
+      </mat-form-field>
+
+      <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Alert Message</mat-label>
+        <textarea matInput formControlName="message" rows="3"></textarea>
+      </mat-form-field>
+      
+      @if (data.alert) {
+        <mat-divider></mat-divider>
+        <h3 class="text-sm font-semibold text-gray-700 mt-2">Resolution details</h3>
+        
+        <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Resolution Notes</mat-label>
+          <textarea matInput formControlName="resolutionNotes" rows="3" placeholder="Enter notes on how this alert was or will be resolved..."></textarea>
+        </mat-form-field>
+      }
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="!px-6 !py-4 border-t border-gray-100 mt-2 gap-2">
+    <button 
+      mat-button 
+      type="button" 
+      (click)="onCancel()"
+      [disabled]="isLoading"
+    >
+      Close
+    </button>
+    
+    @if (data.alert && !data.alert.isAcknowledged) {
+      <button 
+        mat-flat-button 
+        color="primary"
+        type="button"
+        (click)="onResolve()"
+        [disabled]="isLoading"
+        class="bg-green-700 text-white"
+      >
+        @if (isLoading) {
+          <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+          Resolving...
+        } @else {
+          <mat-icon>check_circle</mat-icon>
+          Resolve Alert
+        }
+      </button>
+    }
+  </mat-dialog-actions>
+</form>

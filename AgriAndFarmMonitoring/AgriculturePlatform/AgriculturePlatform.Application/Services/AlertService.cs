@@ -48,7 +48,7 @@ public class AlertService : IAlertService
 
         var pagedResult = await _alertRepository.GetPagedAsync(
             farmId, filter.FieldId, filter.CropCycleId, filter.AlertType,
-            filter.Severity, filter.IsResolved, filter.FromDate, filter.ToDate, paginationParams);
+            filter.Severity, filter.IsResolved, filter.FromDate, filter.ToDate, paginationParams, filter.AllowedFieldIds);
 
         var dtos = _mapper.Map<List<AlertDto>>(pagedResult.Items);
         

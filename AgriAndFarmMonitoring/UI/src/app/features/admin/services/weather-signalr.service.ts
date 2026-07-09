@@ -4,6 +4,7 @@ import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { WeatherData, WeatherAlert } from '../models/weather.model';
+import { TokenService } from '../../../core/services/token.service';
 
 @Injectable({
   providedIn: 'root'
@@ -21,17 +22,17 @@ export class WeatherSignalRService {
   public alertUpdate$ = this.alertUpdateSubject.asObservable();
   public alertCount$ = this.alertCountSubject.asObservable();
 
+  private tokenService = inject(TokenService);
+
   constructor() {
     this.startConnection();
   }
 
   private startConnection(): void {
     const baseUrl = this.API_URL.replace('/api', '');
-    const token = localStorage.getItem('token');
-    
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(`${baseUrl}/weatherHub`, {
-        accessTokenFactory: () => token || ''
+        accessTokenFactory: () => this.tokenService.getAccessToken() || ''
       })
       .withAutomaticReconnect()
       .build();

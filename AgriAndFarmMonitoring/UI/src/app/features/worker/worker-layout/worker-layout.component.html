@@ -1,134 +1,133 @@
-<!-- src/app/features/worker/worker-layout/worker-layout.component.html -->
-<div class="h-screen flex flex-col bg-surface">
-  <!-- Top Navigation Bar -->
-  <mat-toolbar 
-    color="primary" 
-    class="!bg-primary-700 !h-16 !px-4 flex-shrink-0 sticky top-0 z-[1000]"
-  >
-    <button 
-      mat-icon-button 
-      (click)="toggleSidebar()" 
-      class="!text-white mr-2"
+<!-- Worker Panel Layout — Professional Agriculture Theme -->
+<div class="h-screen flex flex-col bg-[#f5f8f5] overflow-hidden">
+
+  <!-- ═══ TOPBAR ════════════════════════════════════════════ -->
+  <header class="worker-topbar">
+    <!-- Menu Toggle -->
+    <button
+      mat-icon-button
+      (click)="toggleSidebar()"
+      class="!text-white !w-10 !h-10"
       aria-label="Toggle sidebar"
     >
       <mat-icon>menu</mat-icon>
     </button>
-    
+
     <!-- Brand -->
-    <div class="flex items-center gap-2">
-      <span class="text-2xl">🌿</span>
-      <span class="text-white text-xl font-semibold tracking-wide">AgriMonitor</span>
-      <span class="bg-white/15 px-3 py-0.5 rounded-full text-xs font-medium text-white/90 ml-2">
-        Worker
-      </span>
+    <div class="topbar-brand ml-1">
+      <span class="brand-emoji">🌱</span>
+      <span class="brand-name hidden sm:inline">AgriMonitor</span>
+      <span class="brand-badge hidden sm:inline">Worker</span>
     </div>
-    
+
     <!-- Spacer -->
     <span class="flex-1"></span>
-    
-    <!-- Current Route Title -->
-    <div class="hidden md:flex flex-1 items-center justify-center">
+
+    <!-- Route Title (desktop centre) -->
+    <div class="topbar-route-title">
       <span class="topbar-highlight-title">
         <mat-icon>{{ currentRouteIcon() }}</mat-icon>
         {{ currentRoute() }}
       </span>
     </div>
-    
+
     <!-- Spacer -->
     <span class="flex-1"></span>
-    
-    <!-- User Info -->
-    <span class="text-white/90 text-sm mr-3 hidden md:block">
-      {{ user?.name }}
-    </span>
-    
+
+    <!-- Notifications Menu -->
+    <app-notification-menu></app-notification-menu>
+
+    <!-- User name -->
+    <span class="topbar-user-name hidden sm:inline mr-2">{{ user?.name }}</span>
+
     <!-- User Menu -->
-    <button 
-      mat-icon-button 
-      [matMenuTriggerFor]="userMenu" 
-      class="!text-white"
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="userMenu"
+      class="!text-white !w-10 !h-10"
       aria-label="User menu"
     >
       <mat-icon>account_circle</mat-icon>
     </button>
-    
-    <mat-menu #userMenu="matMenu" class="user-menu">
+
+    <mat-menu #userMenu="matMenu">
       <button mat-menu-item routerLink="/worker/profile">
-        <mat-icon>person</mat-icon>
-        <span>Profile</span>
+        <mat-icon>person</mat-icon><span>My Profile</span>
       </button>
       <button mat-menu-item routerLink="/worker/settings">
-        <mat-icon>settings</mat-icon>
-        <span>Settings</span>
+        <mat-icon>settings</mat-icon><span>Settings</span>
       </button>
       <mat-divider></mat-divider>
-      <button mat-menu-item (click)="logout()" class="!text-red-600 hover:!bg-red-50">
-        <mat-icon>logout</mat-icon>
-        <span>Logout</span>
+      <button mat-menu-item (click)="logout()" class="!text-red-600">
+        <mat-icon class="!text-red-500">logout</mat-icon><span>Logout</span>
       </button>
     </mat-menu>
-  </mat-toolbar>
+  </header>
 
-  <!-- Sidenav Container -->
-  <mat-sidenav-container class="flex-1 h-[calc(100vh-64px)] bg-surface">
-    <!-- Sidebar Navigation -->
-    <mat-sidenav 
-      mode="side" 
-      [opened]="isSidebarOpen()"
-      class="!w-[280px] !bg-white !border-r !border-gray-200 transition-all duration-300"
-      [class.!w-[72px]]="!isSidebarOpen()"
+  <!-- ═══ BODY: Sidebar + Content ══════════════════════════ -->
+  <div class="flex flex-1 overflow-hidden relative">
+
+    <!-- Mobile overlay -->
+    <div
+      class="sidebar-overlay"
+      [class.visible]="isMobileOverlayVisible()"
+      (click)="toggleSidebar()"
+    ></div>
+
+    <!-- ── SIDEBAR ─────────────────────────────────── -->
+    <nav
+      class="worker-sidebar"
+      [class.collapsed]="!isSidebarOpen()"
+      [class.mobile-hidden]="isMobileHidden()"
     >
-      <mat-nav-list class="pt-2">
-        <!-- Farm Info -->
-        <div class="flex items-center px-4 py-4 gap-3">
-          <div class="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0">
-            <mat-icon class="!text-primary-700">agriculture</mat-icon>
-          </div>
-          <div class="flex flex-col overflow-hidden transition-all duration-300" [class.hidden]="!isSidebarOpen()">
-            <span class="font-semibold text-gray-800 text-sm whitespace-nowrap">
-              {{ user?.farmName || 'Farm' }}
-            </span>
-            <span class="text-xs text-gray-500 whitespace-nowrap">Worker</span>
-          </div>
+      <!-- Farm Header -->
+      <div class="sidebar-farm-header">
+        <div class="farm-avatar">
+          <mat-icon>agriculture</mat-icon>
         </div>
-        
-        <mat-divider></mat-divider>
-        
-        <!-- Navigation Items -->
+        <div class="farm-info" [class.hidden]="!isSidebarOpen()">
+          <div class="farm-name">{{ user?.farmName || 'My Farm' }}</div>
+          <div class="farm-role">Field Worker</div>
+        </div>
+      </div>
+
+      <!-- Nav Items -->
+      <div class="sidebar-nav">
+        <div class="sidebar-section-label">Navigation</div>
+
         @for (item of navItems; track item.route) {
-          <a 
-            mat-list-item 
-            [routerLink]="item.route" 
+          <a
+            class="sidebar-nav-item"
+            [routerLink]="item.route"
             routerLinkActive="active-link"
-            #link="routerLinkActive"
-            class="!mx-3 !my-1 !rounded-lg transition-all duration-200 cursor-pointer !h-11"
-            [class]="link.isActive ? '!bg-primary-50 !text-primary-700' : 'hover:!bg-gray-100'"
+            [matTooltip]="!isSidebarOpen() ? item.label : ''"
+            matTooltipPosition="right"
           >
-            <mat-icon 
-              matListItemIcon 
-              class="!mr-3"
-              [class]="link.isActive ? '!text-primary-700' : '!text-gray-500'"
-            >
-              {{ item.icon }}
-            </mat-icon>
-            <span 
-              matListItemTitle 
-              class="text-sm font-medium"
-              [class]="link.isActive ? '!text-primary-700' : '!text-gray-700'"
-              [class.hidden]="!isSidebarOpen()"
-            >
-              {{ item.label }}
-            </span>
+            <mat-icon>{{ item.icon }}</mat-icon>
+            <span class="nav-label">{{ item.label }}</span>
           </a>
         }
-      </mat-nav-list>
-    </mat-sidenav>
+      </div>
 
-    <!-- Main Content Area -->
-    <mat-sidenav-content class="p-6 bg-surface min-h-[calc(100vh-64px)] overflow-y-auto">
-      <div class="max-w-[1440px] mx-auto">
+      <!-- Footer Links -->
+      <div class="sidebar-footer">
+        <a class="sidebar-footer-item" routerLink="/worker/profile">
+          <mat-icon>person_outline</mat-icon>
+          <span>Profile</span>
+        </a>
+        <div class="sidebar-footer-item danger" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Logout</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ── MAIN CONTENT ────────────────────────────── -->
+    <main class="worker-content-area flex-1">
+      <div class="worker-content-inner">
         <router-outlet></router-outlet>
       </div>
-    </mat-sidenav-content>
-  </mat-sidenav-container>
+    </main>
+
+  </div>
 </div>

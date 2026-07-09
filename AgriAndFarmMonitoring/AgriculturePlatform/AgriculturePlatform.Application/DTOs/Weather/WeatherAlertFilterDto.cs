@@ -13,4 +13,5 @@ public class WeatherAlertFilterDto
     public int PageSize { get; set; } = 20;
     public string? SortBy { get; set; }
     public bool IsDescending { get; set; } = true;
+    public List<int>? AllowedFieldIds { get; set; }
 }

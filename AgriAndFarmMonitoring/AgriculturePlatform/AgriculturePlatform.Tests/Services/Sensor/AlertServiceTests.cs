@@ -68,7 +68,7 @@ public class AlertServiceTests
         
         _alertRepositoryMock.Setup(r => r.GetPagedAsync(
             farmId, filter.FieldId, filter.CropCycleId, filter.AlertType,
-            filter.Severity, filter.IsResolved, filter.FromDate, filter.ToDate, It.IsAny<PaginationParams>()))
+            filter.Severity, filter.IsResolved, filter.FromDate, filter.ToDate, It.IsAny<PaginationParams>(), It.IsAny<List<int>>()))
             .ReturnsAsync(pagedResult);
 
         // Act

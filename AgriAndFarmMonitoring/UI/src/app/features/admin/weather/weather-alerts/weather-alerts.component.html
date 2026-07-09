@@ -126,6 +126,24 @@
     </form>
   </mat-card>
 
+  <!-- Report Generation Section -->
+  <div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden mb-4 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div>
+      <h3 class="text-sm font-bold text-surface-on flex items-center gap-2 m-0">
+        <mat-icon class="text-primary text-sm">auto_graph</mat-icon> Report Generation
+      </h3>
+      <p class="text-xs text-surface-on-variant m-0 mt-1">Export the currently filtered weather alerts.</p>
+    </div>
+    <div class="flex gap-2">
+      <button mat-stroked-button (click)="exportPdf()" class="text-xs !text-red-600 !border-red-200 hover:!bg-red-50" [disabled]="isLoading() || alerts().length === 0">
+        <mat-icon>picture_as_pdf</mat-icon> Export PDF
+      </button>
+      <button mat-stroked-button (click)="exportCsv()" class="text-xs !text-green-700 !border-green-200 hover:!bg-green-50" [disabled]="isLoading() || alerts().length === 0">
+        <mat-icon>table_chart</mat-icon> Export CSV
+      </button>
+    </div>
+  </div>
+
   <!-- Bulk Actions -->
   @if (hasSelected()) {
     <div class="bg-primary-50 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-3 border border-primary-100">

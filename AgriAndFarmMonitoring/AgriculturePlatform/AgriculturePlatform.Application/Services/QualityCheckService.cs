@@ -12,18 +12,24 @@ public class QualityCheckService : IQualityCheckService
 {
     private readonly IQualityCheckRepository _qualityCheckRepository;
     private readonly IHarvestRepository _harvestRepository;
+    private readonly IWorkerRepository _workerRepository;
     private readonly IAuditLogService _auditLogService;
+    private readonly INotificationService _notificationService;
     private readonly IMapper _mapper;
 
     public QualityCheckService(
         IQualityCheckRepository qualityCheckRepository,
         IHarvestRepository harvestRepository,
+        IWorkerRepository workerRepository,
         IAuditLogService auditLogService,
+        INotificationService notificationService,
         IMapper mapper)
     {
         _qualityCheckRepository = qualityCheckRepository;
         _harvestRepository = harvestRepository;
+        _workerRepository = workerRepository;
         _auditLogService = auditLogService;
+        _notificationService = notificationService;
         _mapper = mapper;
     }
 
@@ -59,6 +65,16 @@ public class QualityCheckService : IQualityCheckService
         var created = await _qualityCheckRepository.CreateAsync(qualityCheck);
         
         await _auditLogService.LogCreateAsync(farmId, adminId, "QualityCheck", created.Id, created, null, null);
+
+        var workerName = (await _workerRepository.GetByIdAsync(workerId, farmId))?.Name ?? "A worker";
+        await _notificationService.CreateAlertAggregateNotificationAsync(
+            farmId,
+            adminId,
+            "Quality Checks",
+            "NewQualityCheck",
+            "/admin/quality-checks",
+            $"/admin/quality-checks/{created.Id}"
+        );
 
         var result = _mapper.Map<QualityCheckDto>(created);
         return ApiResponse<QualityCheckDto>.Ok(result, "Quality check submitted for approval");
@@ -151,6 +167,16 @@ public class QualityCheckService : IQualityCheckService
         
         await _qualityCheckRepository.UpdateAsync(qualityCheck);
 
+        var workerName = (await _workerRepository.GetByIdAsync(workerId, farmId))?.Name ?? "A worker";
+        await _notificationService.CreateAlertAggregateNotificationAsync(
+            farmId,
+            qualityCheck.AdminId,
+            "Quality Check Updates",
+            "QualityCheckUpdated",
+            "/admin/quality-checks",
+            $"/admin/quality-checks/{qualityCheck.Id}"
+        );
+
         var result = _mapper.Map<QualityCheckDto>(qualityCheck);
         return ApiResponse<QualityCheckDto>.Ok(result, "Response submitted");
     }
@@ -230,6 +256,16 @@ public async Task<ApiResponse<QualityCheckDto>> ApproveQualityCheckAsync(int id,
     await _auditLogService.LogUpdateAsync(farmId, adminId, "QualityCheck", qualityCheck.Id, 
         new { ApprovalStatus = oldStatus }, 
         new { ApprovalStatus = approval.ApprovalStatus }, null, null);
+
+    await _notificationService.CreateNotificationAsync(
+        farmId,
+        null,
+        qualityCheck.CheckedBy,
+        "Quality Check Status Updated",
+        $"Your quality check log was marked as {approval.ApprovalStatus}.",
+        "QualityCheckStatus",
+        $"/worker/quality-checks/{qualityCheck.Id}"
+    );
 
     var result = _mapper.Map<QualityCheckDto>(updatedCheck ?? qualityCheck);
     return ApiResponse<QualityCheckDto>.Ok(result, $"Quality check {approval.ApprovalStatus.ToLower()}");

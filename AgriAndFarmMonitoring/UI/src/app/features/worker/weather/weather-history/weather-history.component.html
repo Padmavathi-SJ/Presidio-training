@@ -1,0 +1,289 @@
+<!-- Worker Weather History — Professional Layout -->
+<div class="worker-page-container">
+
+  <!-- Page Header -->
+  <div class="worker-page-header">
+    <div class="worker-page-header-content">
+      <div class="worker-page-icon">
+        <mat-icon>history</mat-icon>
+      </div>
+      <div>
+        <h1 class="worker-page-title">Weather History</h1>
+        <p class="worker-page-subtitle">View and manage historical weather data across your assigned fields</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+
+
+      <!-- Refresh -->
+      <button 
+        mat-stroked-button 
+        (click)="triggerReload()"
+        [disabled]="isLoading()"
+        class="worker-btn-refresh"
+      >
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  @if (hasData()) {
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+      <!-- Temperature Chart -->
+      <div class="worker-table-card p-4">
+        <h2 class="text-[11.5px] font-bold text-[#2d6a4f] uppercase tracking-wider mb-2 pb-2 border-b border-[#e8f0ec] flex items-center gap-2">
+          <mat-icon class="!w-4 !h-4 !text-[16px]">thermostat</mat-icon>
+          Temperature Trend
+        </h2>
+        <div class="h-40 mt-2">
+          <canvas 
+            baseChart 
+            [data]="temperatureChartData" 
+            [options]="temperatureChartOptions"
+            [type]="temperatureChartType">
+          </canvas>
+        </div>
+      </div>
+
+      <!-- Humidity Chart -->
+      <div class="worker-table-card p-4">
+        <h2 class="text-[11.5px] font-bold text-[#2d6a4f] uppercase tracking-wider mb-2 pb-2 border-b border-[#e8f0ec] flex items-center gap-2">
+          <mat-icon class="!w-4 !h-4 !text-[16px]">water_drop</mat-icon>
+          Humidity Trend
+        </h2>
+        <div class="h-40 mt-2">
+          <canvas 
+            baseChart 
+            [data]="humidityChartData" 
+            [options]="humidityChartOptions"
+            [type]="humidityChartType">
+          </canvas>
+        </div>
+      </div>
+
+      <!-- Rainfall Chart -->
+      <div class="worker-table-card p-4">
+        <h2 class="text-[11.5px] font-bold text-[#2d6a4f] uppercase tracking-wider mb-2 pb-2 border-b border-[#e8f0ec] flex items-center gap-2">
+          <mat-icon class="!w-4 !h-4 !text-[16px]">umbrella</mat-icon>
+          Rainfall Trend
+        </h2>
+        <div class="h-40 mt-2">
+          <canvas 
+            baseChart 
+            [data]="rainfallChartData" 
+            [options]="rainfallChartOptions"
+            [type]="rainfallChartType">
+          </canvas>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Filter & Table Card -->
+  <div class="worker-table-card">
+    <!-- Filter Bar -->
+    <div class="p-4 border-b border-[#d5e1da] bg-[#f8faf9] rounded-t-xl">
+      <form [formGroup]="filterForm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- Field Filter -->
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-sm">Field</mat-label>
+              <mat-select formControlName="fieldId" class="text-sm">
+                <mat-option [value]="null">All Fields</mat-option>
+                @for (field of fields; track field.fieldId) {
+                  <mat-option [value]="field.fieldId">{{ field.fieldName }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- From Date -->
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-sm">From Date</mat-label>
+              <input matInput formControlName="fromDate" [matDatepicker]="fromPicker" class="text-sm">
+              <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+              <mat-datepicker #fromPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <!-- To Date -->
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-sm">To Date</mat-label>
+              <input matInput formControlName="toDate" [matDatepicker]="toPicker" class="text-sm">
+              <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+              <mat-datepicker #toPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <!-- Search -->
+          <div>
+            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+              <mat-label class="text-gray-600 text-sm">Search</mat-label>
+              <input matInput formControlName="search" placeholder="Search by field..." class="text-sm">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="flex justify-end mt-3">
+          <button 
+            mat-button 
+            (click)="resetFilters()" 
+            class="!text-[#2d6a4f] hover:bg-[#e8f0ec]"
+          >
+            <mat-icon>clear</mat-icon>
+            Reset Filters
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Report Generation Section -->
+    <div class="bg-surface-low border-b border-outline-variant p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div>
+        <h3 class="text-sm font-bold text-surface-on flex items-center gap-2 m-0">
+          <mat-icon class="text-primary text-sm">auto_graph</mat-icon> Report Generation
+        </h3>
+        <p class="text-xs text-surface-on-variant m-0 mt-1">Export the currently filtered weather history for your assigned fields.</p>
+      </div>
+      <div class="flex gap-2">
+        <button mat-stroked-button (click)="exportPdf()" class="text-xs !text-red-600 !border-red-200 hover:!bg-red-50" [disabled]="isLoading() || weatherData().length === 0">
+          <mat-icon>picture_as_pdf</mat-icon> Export PDF
+        </button>
+        <button mat-stroked-button (click)="exportCsv()" class="text-xs !text-green-700 !border-green-200 hover:!bg-green-50" [disabled]="isLoading() || weatherData().length === 0">
+          <mat-icon>table_chart</mat-icon> Export CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="worker-loading-state">
+        <mat-spinner [diameter]="32"></mat-spinner> Loading history...
+      </div>
+    }
+
+    <!-- Table View -->
+    @if (!isLoading()) {
+      <div class="relative overflow-x-auto">
+        <table mat-table [dataSource]="weatherData()" class="worker-table">
+          
+          <!-- Select Column -->
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef class="w-10">
+              <mat-checkbox 
+                [checked]="selectedCount() === weatherData().length && hasData()"
+                [indeterminate]="selectedCount() > 0 && selectedCount() < weatherData().length"
+                (change)="toggleAllSelection()"
+              ></mat-checkbox>
+            </th>
+            <td mat-cell *matCellDef="let data">
+              <mat-checkbox 
+                [checked]="isSelected(data.id)"
+                (change)="toggleSelection(data.id)"
+              ></mat-checkbox>
+            </td>
+          </ng-container>
+
+          <!-- Field Column -->
+          <ng-container matColumnDef="fieldName">
+            <th mat-header-cell *matHeaderCellDef>Field</th>
+            <td mat-cell *matCellDef="let data" class="font-medium text-[#1a2e24]">
+              {{ data.fieldName }}
+            </td>
+          </ng-container>
+
+          <!-- Temperature Column -->
+          <ng-container matColumnDef="temperature">
+            <th mat-header-cell *matHeaderCellDef class="text-center">Temperature</th>
+            <td mat-cell *matCellDef="let data" class="text-center font-semibold text-[#1a2e24]">
+              {{ data.temperature !== null ? data.temperature + '°C' : 'N/A' }}
+            </td>
+          </ng-container>
+
+          <!-- Humidity Column -->
+          <ng-container matColumnDef="humidity">
+            <th mat-header-cell *matHeaderCellDef class="text-center">Humidity</th>
+            <td mat-cell *matCellDef="let data" class="text-center font-semibold text-[#1a2e24]">
+              {{ data.humidity !== null ? data.humidity + '%' : 'N/A' }}
+            </td>
+          </ng-container>
+
+          <!-- Wind Speed Column -->
+          <ng-container matColumnDef="windSpeed">
+            <th mat-header-cell *matHeaderCellDef class="text-center">Wind Speed</th>
+            <td mat-cell *matCellDef="let data" class="text-center font-semibold text-[#1a2e24]">
+              {{ data.windSpeed !== null ? data.windSpeed + ' m/s' : 'N/A' }}
+            </td>
+          </ng-container>
+
+          <!-- Rainfall Column -->
+          <ng-container matColumnDef="rainfallMm">
+            <th mat-header-cell *matHeaderCellDef class="text-center">Rainfall</th>
+            <td mat-cell *matCellDef="let data" class="text-center font-semibold text-[#1a2e24]">
+              {{ data.rainfallMm !== null ? data.rainfallMm + ' mm' : 'N/A' }}
+            </td>
+          </ng-container>
+
+          <!-- Condition Column -->
+          <ng-container matColumnDef="condition">
+            <th mat-header-cell *matHeaderCellDef class="text-center">Condition</th>
+            <td mat-cell *matCellDef="let data" class="text-center">
+              @if (data.condition) {
+                <span class="badge" [class]="getWeatherClass(data.condition)">
+                  <mat-icon class="text-[14px]">{{ getWeatherIcon(data.condition) }}</mat-icon>
+                  {{ data.condition }}
+                </span>
+              } @else {
+                <span class="text-[#7aab8e]">N/A</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Recorded At Column -->
+          <ng-container matColumnDef="recordedAt">
+            <th mat-header-cell *matHeaderCellDef>Recorded At</th>
+            <td mat-cell *matCellDef="let data" class="text-[#2d6a4f] font-medium">
+              {{ formatDate(data.recordedAt) }}
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+              class="hover:bg-[#e8f0ec]/30 transition-colors">
+          </tr>
+        </table>
+
+        <!-- Empty State -->
+        @if (isEmpty()) {
+          <div class="worker-empty-state">
+            <div class="worker-empty-icon">
+              <mat-icon>cloud_off</mat-icon>
+            </div>
+            <h3>No weather data found</h3>
+            <p>Try adjusting your filters or add new weather data</p>
+          </div>
+        }
+      </div>
+
+      <!-- Paginator -->
+      @if (totalCount() > 0) {
+        <mat-paginator 
+          [length]="totalCount()"
+          [pageSize]="pageSize()"
+          [pageIndex]="pageIndex()"
+          [pageSizeOptions]="[5, 10, 25, 50, 100]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons
+          class="border-t border-[#d5e1da] bg-transparent"
+        ></mat-paginator>
+      }
+    }
+  </div>
+</div>

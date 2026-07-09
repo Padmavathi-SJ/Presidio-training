@@ -42,9 +42,14 @@ public class SensorHub : Hub
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"field-{fieldId}");
     }
-    
+
     public async Task JoinFarmGroup(int farmId)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, $"farm-{farmId}");
+    }
+
+    public async Task LeaveFarmGroup(int farmId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"farm-{farmId}");
     }
 }

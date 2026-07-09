@@ -35,6 +35,7 @@ import { ChartConfiguration, ChartType, Chart, registerables } from 'chart.js';
 import { AuthService } from '../../../../core/services/auth.service';
 import { WeatherService } from '../../services/weather.service';
 import { FieldService } from '../../services/field.service';
+import { ReportGeneratorService } from '../../../../core/services/report-generator.service';
 import { WeatherData, WeatherHistoryFilter, WEATHER_CONDITIONS } from '../../models/weather.model';
 import { ManualWeatherEntryComponent } from '../manual-weather-entry/manual-weather-entry.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -81,6 +82,7 @@ export class WeatherDataHistoryComponent implements OnInit, OnDestroy {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
+  private reportService = inject(ReportGeneratorService);
 
   // State Signals
   isLoading = signal(false);
@@ -601,40 +603,50 @@ export class WeatherDataHistoryComponent implements OnInit, OnDestroy {
   // EXPORT
   // =============================================
 
-  exportData(): void {
+  exportPdf(): void {
     const data = this.weatherData();
     if (!data || data.length === 0) {
       this.showError('No data to export');
       return;
     }
+    const columns = [
+      { header: 'Recorded', dataKey: 'recordedAt' },
+      { header: 'Field', dataKey: 'fieldName' },
+      { header: 'Temperature (°C)', dataKey: 'temperature' },
+      { header: 'Humidity (%)', dataKey: 'humidity' },
+      { header: 'Wind Speed (m/s)', dataKey: 'windSpeed' },
+      { header: 'Rainfall (mm)', dataKey: 'rainfallMm' },
+      { header: 'Condition', dataKey: 'condition' }
+    ];
+    // Map status for display
+    const printData = data.map(d => ({
+      ...d,
+      temperature: d.temperature ?? 'N/A',
+      humidity: d.humidity ?? 'N/A',
+      windSpeed: d.windSpeed ?? 'N/A',
+      rainfallMm: d.rainfallMm ?? 'N/A',
+      condition: d.condition || 'N/A',
+      recordedAt: this.formatDate(d.recordedAt)
+    }));
+    this.reportService.exportToPdf(printData, columns, 'Weather Data Report', 'Weather_Data');
+  }
 
-    const headers = ['Field', 'Temperature (°C)', 'Humidity (%)', 'Wind Speed (m/s)', 'Rainfall (mm)', 'Condition', 'Recorded At'];
-    const rows = data.map(d => [
-      d.fieldName,
-      d.temperature ?? 'N/A',
-      d.humidity ?? 'N/A',
-      d.windSpeed ?? 'N/A',
-      d.rainfallMm ?? 'N/A',
-      d.condition || 'N/A',
-      this.formatDate(d.recordedAt)
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `weather_data_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-
-    this.showSuccess('Data exported successfully');
+  exportCsv(): void {
+    const data = this.weatherData();
+    if (!data || data.length === 0) {
+      this.showError('No data to export');
+      return;
+    }
+    const cleanData = data.map(d => ({
+      Recorded: this.formatDate(d.recordedAt),
+      Field: d.fieldName,
+      'Temperature (°C)': d.temperature ?? 'N/A',
+      'Humidity (%)': d.humidity ?? 'N/A',
+      'Wind Speed (m/s)': d.windSpeed ?? 'N/A',
+      'Rainfall (mm)': d.rainfallMm ?? 'N/A',
+      Condition: d.condition || 'N/A'
+    }));
+    this.reportService.exportToCsv(cleanData, 'Weather_Data');
   }
 
   ngOnDestroy(): void {

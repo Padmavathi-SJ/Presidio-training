@@ -45,4 +45,54 @@ public class NotificationRepository : INotificationRepository
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task<IEnumerable<Notification>> GetRecentByUserAsync(int farmId, int? adminId, int? workerId, int limit = 50)
+    {
+        var query = _context.Notifications
+            .Where(n => n.FarmId == farmId);
+
+        if (adminId.HasValue)
+            query = query.Where(n => n.AdminId == adminId);
+        if (workerId.HasValue)
+            query = query.Where(n => n.WorkerId == workerId);
+
+        return await query.OrderByDescending(n => n.CreatedAt).Take(limit).ToListAsync();
+    }
+
+    public async Task<Notification?> GetUnreadAggregateByTypeAsync(int farmId, int? adminId, int? workerId, string type)
+    {
+        var query = _context.Notifications
+            .Where(n => n.FarmId == farmId && !n.IsRead && n.Type == type);
+
+        if (adminId.HasValue)
+            query = query.Where(n => n.AdminId == adminId);
+        if (workerId.HasValue)
+            query = query.Where(n => n.WorkerId == workerId);
+
+        return await query.OrderByDescending(n => n.CreatedAt).FirstOrDefaultAsync();
+    }
+
+    public async Task MarkAllAsReadAsync(int farmId, int? adminId, int? workerId)
+    {
+        var query = _context.Notifications
+            .Where(n => n.FarmId == farmId && !n.IsRead);
+
+        if (adminId.HasValue)
+            query = query.Where(n => n.AdminId == adminId);
+        if (workerId.HasValue)
+            query = query.Where(n => n.WorkerId == workerId);
+
+        var unread = await query.ToListAsync();
+        foreach (var n in unread)
+        {
+            n.IsRead = true;
+        }
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(Notification notification)
+    {
+        _context.Notifications.Update(notification);
+        await _context.SaveChangesAsync();
+    }
 }

@@ -22,6 +22,7 @@ public class TaskServiceTests
     private readonly Mock<ICropCycleRepository> _cropCycleRepositoryMock;
     private readonly Mock<IAuditLogService> _auditLogServiceMock;
     private readonly Mock<IExcelTaskService> _excelTaskServiceMock;
+    private readonly Mock<INotificationService> _notificationServiceMock;
     private readonly TaskService _taskService;
 
     public TaskServiceTests()
@@ -32,6 +33,7 @@ public class TaskServiceTests
         _cropCycleRepositoryMock = new Mock<ICropCycleRepository>();
         _auditLogServiceMock = new Mock<IAuditLogService>();
         _excelTaskServiceMock = new Mock<IExcelTaskService>();
+        _notificationServiceMock = new Mock<INotificationService>();
         
         var mapper = MapperHelper.CreateMapper();
         
@@ -42,6 +44,7 @@ public class TaskServiceTests
             _cropCycleRepositoryMock.Object,
             _auditLogServiceMock.Object,
             _excelTaskServiceMock.Object,
+            _notificationServiceMock.Object,
             mapper);
     }
 

@@ -21,6 +21,8 @@ public class WeatherServiceTests
     private readonly Mock<IFieldRepository> _fieldRepositoryMock;
     private readonly Mock<IAdminRepository> _adminRepositoryMock;
     private readonly Mock<IWeatherApiService> _weatherApiServiceMock;
+    private readonly Mock<IWorkerFieldAssignmentRepository> _assignmentRepositoryMock;
+    private readonly Mock<INotificationService> _notificationServiceMock;
     private readonly Mock<IAuditLogService> _auditLogServiceMock;
     private readonly Mock<ILogger<WeatherService>> _loggerMock;
     private readonly IMapper _mapper;
@@ -33,6 +35,8 @@ public class WeatherServiceTests
         _fieldRepositoryMock = new Mock<IFieldRepository>();
         _adminRepositoryMock = new Mock<IAdminRepository>(); 
         _weatherApiServiceMock = new Mock<IWeatherApiService>();
+        _assignmentRepositoryMock = new Mock<IWorkerFieldAssignmentRepository>();
+        _notificationServiceMock = new Mock<INotificationService>();
         _auditLogServiceMock = new Mock<IAuditLogService>();
         _loggerMock = new Mock<ILogger<WeatherService>>();
         
@@ -44,6 +48,8 @@ public class WeatherServiceTests
             _fieldRepositoryMock.Object,
             _adminRepositoryMock.Object,
             _weatherApiServiceMock.Object,
+            _assignmentRepositoryMock.Object,
+            _notificationServiceMock.Object,
             _auditLogServiceMock.Object,
             _mapper,
             _loggerMock.Object);
@@ -157,28 +163,32 @@ public class WeatherServiceTests
     {
         // Arrange
         int farmId = 1;
-        var fields = new List<Field> 
-        { 
-            TestHelper.CreateTestField(1, farmId, 1) 
-        };
-        var alerts = new List<WeatherAlertDto>
+        var field = TestHelper.CreateTestField(1, farmId, 1);
+        field.Latitude = 40.0;
+        field.Longitude = -70.0;
+        var fields = new List<Field> { field };
+        var alerts = new List<WeatherAlert>
         {
-            new WeatherAlertDto
+            new WeatherAlert
             {
-                AlertType = "HEAT_WAVE",
-                Severity = "WARNING",
+                Id = 1,
+                FarmId = farmId,
+                FieldId = 1,
+                AlertType = WeatherAlertTypeEnum.HEAT_WAVE,
+                Severity = WeatherAlertSeverityEnum.WARNING,
                 Title = "Test Alert",
                 Message = "Test message",
-                AlertTime = DateTime.UtcNow
+                AlertTime = DateTime.UtcNow,
+                IsAcknowledged = false
             }
         };
 
         _fieldRepositoryMock
-            .Setup(r => r.GetAllAsync(It.IsAny<int>(), It.IsAny<bool>()))
-            .ReturnsAsync(fields);
+            .Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+            .ReturnsAsync(field);
         
-        _weatherApiServiceMock
-            .Setup(r => r.GetWeatherAlertsAsync(It.IsAny<double>(), It.IsAny<double>()))
+        _weatherAlertRepositoryMock
+            .Setup(r => r.GetActiveAlertsAsync(It.IsAny<int>(), It.IsAny<List<int>?>()))
             .ReturnsAsync(alerts);
 
         // Act

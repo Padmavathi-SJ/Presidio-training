@@ -14,6 +14,7 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
     private readonly IFieldRepository _fieldRepository;
     private readonly ICropCycleRepository _cropCycleRepository;
     private readonly IAuditLogService _auditLogService;
+    private readonly INotificationService _notificationService;
     private readonly IMapper _mapper;
 
     public WorkerFieldAssignmentService(
@@ -22,6 +23,7 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
         IFieldRepository fieldRepository,
         ICropCycleRepository cropCycleRepository,
         IAuditLogService auditLogService,
+        INotificationService notificationService,
         IMapper mapper)
     {
         _assignmentRepository = assignmentRepository;
@@ -29,6 +31,7 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
         _fieldRepository = fieldRepository;
         _cropCycleRepository = cropCycleRepository;
         _auditLogService = auditLogService;
+        _notificationService = notificationService;
         _mapper = mapper;
     }
 
@@ -73,6 +76,20 @@ public class WorkerFieldAssignmentService : IWorkerFieldAssignmentService
         var created = await _assignmentRepository.CreateAsync(assignment);
 
         await _auditLogService.LogCreateAsync(farmId, adminId, "WorkerFieldAssignment", created.Id, created, ipAddress, userAgent);
+
+        var dateRangeStr = created.EndDate.HasValue 
+            ? $"from {created.AssignedDate:MMM dd, yyyy} to {created.EndDate.Value:MMM dd, yyyy}" 
+            : $"starting {created.AssignedDate:MMM dd, yyyy}";
+            
+        await _notificationService.CreateNotificationAsync(
+            farmId, 
+            null, 
+            dto.WorkerId, 
+            "New Field Assigned", 
+            $"You have been assigned to field '{field.FieldName}' {dateRangeStr}.", 
+            "FieldAssignment",
+            "/worker/fields"
+        );
 
         var result = _mapper.Map<WorkerFieldAssignmentDto>(created);
         return ApiResponse<WorkerFieldAssignmentDto>.Ok(result, "Field assigned to worker successfully");

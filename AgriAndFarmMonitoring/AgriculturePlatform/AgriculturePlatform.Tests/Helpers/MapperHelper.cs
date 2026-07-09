@@ -17,6 +17,7 @@ public static class MapperHelper
             cfg.AddProfile<WorkerFieldAssignmentMappingProfile>();
             cfg.AddProfile<WorkerFieldMappingProfile>();
             cfg.AddProfile<WeatherMappingProfile>();
+            cfg.AddProfile<WeatherAlertMappingProfile>();
             cfg.AddProfile<TaskMappingProfile>(); 
             cfg.AddProfile<WorkerTaskMappingProfile>();
             cfg.AddProfile<SensorMappingProfile>();

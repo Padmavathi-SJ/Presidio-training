@@ -1,0 +1,302 @@
+<!-- src/app/features/admin/sensors/sensor-statistics/sensor-statistics.component.html -->
+<div class="p-4 sm:p-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Sensor Statistics</h1>
+      <p class="text-sm text-gray-500">Analytics and trends for sensor data across your farm</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button 
+        mat-stroked-button 
+        (click)="refreshData()"
+        [disabled]="isLoading()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <mat-card class="mb-4 p-4 shadow-sm border border-gray-100 rounded-xl">
+    <form [formGroup]="filterForm">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- Field Filter -->
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">Field</mat-label>
+            <mat-select formControlName="fieldId" class="text-sm">
+              <mat-option [value]="null">All Fields</mat-option>
+              @for (field of fields; track field.fieldId) {
+                <mat-option [value]="field.fieldId">{{ field.fieldName }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Group By -->
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">Group By</mat-label>
+            <mat-select formControlName="groupBy" class="text-sm">
+              @for (option of groupOptions; track option.value) {
+                <mat-option [value]="option.value">{{ option.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- From Date -->
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">From Date</mat-label>
+            <input matInput formControlName="fromDate" [matDatepicker]="fromPicker" class="text-sm">
+            <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+            <mat-datepicker #fromPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- To Date -->
+        <div>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-sm">To Date</mat-label>
+            <input matInput formControlName="toDate" [matDatepicker]="toPicker" class="text-sm">
+            <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+            <mat-datepicker #toPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="flex justify-end mt-2">
+        <button 
+          mat-button 
+          (click)="resetFilters()" 
+          class="!text-gray-600"
+        >
+          <mat-icon>clear</mat-icon>
+          Reset Filters
+        </button>
+      </div>
+    </form>
+  </mat-card>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-12">
+      <mat-spinner [diameter]="40"></mat-spinner>
+    </div>
+  }
+
+  <!-- Charts Section -->
+  @if (!isLoading() && statistics()) {
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <!-- Soil Moisture Chart -->
+      <mat-card class="rounded-xl shadow-sm border border-gray-100">
+        <mat-card-header class="!pb-2">
+          <mat-card-title class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <mat-icon class="text-primary-600 text-sm">water_drop</mat-icon>
+            Soil Moisture Trend
+          </mat-card-title>
+          <mat-card-subtitle class="text-xs text-gray-400">
+            Average soil moisture over time
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="h-56">
+            <canvas 
+              baseChart 
+              [data]="soilMoistureChartData" 
+              [options]="soilMoistureChartOptions"
+              [type]="soilMoistureChartType">
+            </canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Temperature Chart -->
+      <mat-card class="rounded-xl shadow-sm border border-gray-100">
+        <mat-card-header class="!pb-2">
+          <mat-card-title class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <mat-icon class="text-secondary-600 text-sm">thermostat</mat-icon>
+            Temperature Trends
+          </mat-card-title>
+          <mat-card-subtitle class="text-xs text-gray-400">
+            Soil vs Air temperature comparison
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="h-56">
+            <canvas 
+              baseChart 
+              [data]="temperatureChartData" 
+              [options]="temperatureChartOptions"
+              [type]="temperatureChartType">
+            </canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Humidity Chart -->
+      <mat-card class="rounded-xl shadow-sm border border-gray-100">
+        <mat-card-header class="!pb-2">
+          <mat-card-title class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <mat-icon class="text-blue-600 text-sm">humidity</mat-icon>
+            Humidity Trend
+          </mat-card-title>
+          <mat-card-subtitle class="text-xs text-gray-400">
+            Average humidity levels over time
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="h-56">
+            <canvas 
+              baseChart 
+              [data]="humidityChartData" 
+              [options]="humidityChartOptions"
+              [type]="humidityChartType">
+            </canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Alert Chart -->
+      <mat-card class="rounded-xl shadow-sm border border-gray-100">
+        <mat-card-header class="!pb-2">
+          <mat-card-title class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <mat-icon class="text-red-600 text-sm">notifications_active</mat-icon>
+            Alert Trends
+          </mat-card-title>
+          <mat-card-subtitle class="text-xs text-gray-400">
+            Number of alerts generated over time
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="h-56">
+            <canvas 
+              baseChart 
+              [data]="alertChartData" 
+              [options]="alertChartOptions"
+              [type]="alertChartType">
+            </canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Statistics Summary Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-primary-600 text-sm">water_drop</mat-icon>
+          <span class="text-xs text-gray-500">Avg Soil Moisture</span>
+        </div>
+        <div class="text-2xl font-bold text-gray-800 mt-1">
+          {{ getDailyStatsArray()[getDailyStatsArray().length - 1]?.value?.avgSoilMoisture?.toFixed(1) || '--' }}%
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-secondary-600 text-sm">thermostat</mat-icon>
+          <span class="text-xs text-gray-500">Avg Soil Temp</span>
+        </div>
+        <div class="text-2xl font-bold text-gray-800 mt-1">
+          {{ getDailyStatsArray()[getDailyStatsArray().length - 1]?.value?.avgSoilTemp?.toFixed(1) || '--' }}°C
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-blue-600 text-sm">humidity</mat-icon>
+          <span class="text-xs text-gray-500">Avg Humidity</span>
+        </div>
+        <div class="text-2xl font-bold text-gray-800 mt-1">
+          {{ getDailyStatsArray()[getDailyStatsArray().length - 1]?.value?.avgHumidity?.toFixed(1) || '--' }}%
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-red-600 text-sm">notifications_active</mat-icon>
+          <span class="text-xs text-gray-500">Total Alerts</span>
+        </div>
+        <div class="text-2xl font-bold text-gray-800 mt-1">
+          {{ getDailyStatsArray().reduce((sum, item) => sum + (item.value.alertCount || 0), 0) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Data Table -->
+    <mat-card class="rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <mat-card-header class="!pb-2">
+        <mat-card-title class="text-sm font-semibold text-gray-700">Detailed Statistics</mat-card-title>
+        <mat-card-subtitle class="text-xs text-gray-400">
+          Daily breakdown of sensor readings and alerts
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
+                <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Soil Moisture</th>
+                <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Soil Temp</th>
+                <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Air Temp</th>
+                <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Humidity</th>
+                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Readings</th>
+                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Alerts</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (stat of getPaginatedStats(); track stat.key) {
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td class="px-4 py-2 text-gray-700">{{ formatDate(stat.key) }}</td>
+                  <td class="px-4 py-2 text-right font-medium tabular-nums">
+                    {{ stat.value.avgSoilMoisture?.toFixed(1) || '--' }}%
+                  </td>
+                  <td class="px-4 py-2 text-right font-medium tabular-nums">
+                    {{ stat.value.avgSoilTemp?.toFixed(1) || '--' }}°C
+                  </td>
+                  <td class="px-4 py-2 text-right font-medium tabular-nums">
+                    {{ stat.value.avgAirTemp?.toFixed(1) || '--' }}°C
+                  </td>
+                  <td class="px-4 py-2 text-right font-medium tabular-nums">
+                    {{ stat.value.avgHumidity?.toFixed(1) || '--' }}%
+                  </td>
+                  <td class="px-4 py-2 text-center text-gray-600">{{ stat.value.readingsCount }}</td>
+                  <td class="px-4 py-2 text-center">
+                    @if (stat.value.alertCount > 0) {
+                      <span class="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
+                        {{ stat.value.alertCount }}
+                      </span>
+                    } @else {
+                      <span class="text-xs text-gray-400">0</span>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="text-center py-8">
+                    <mat-icon class="text-3xl text-gray-300">analytics</mat-icon>
+                    <p class="text-gray-500 mt-2">No statistics data available for the selected criteria</p>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <!-- Paginator -->
+        <mat-paginator 
+          [length]="getDailyStatsArray().length"
+          [pageSize]="pageSize()"
+          [pageIndex]="pageIndex()"
+          [pageSizeOptions]="[10, 25, 50]"
+          (page)="handlePageEvent($event)"
+          aria-label="Select page">
+        </mat-paginator>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

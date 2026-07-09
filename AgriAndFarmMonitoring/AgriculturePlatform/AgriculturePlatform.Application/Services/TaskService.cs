@@ -16,6 +16,7 @@ public class TaskService : ITaskService
     private readonly ICropCycleRepository _cropCycleRepository;
     private readonly IAuditLogService _auditLogService;
     private readonly IExcelTaskService _excelTaskService;
+    private readonly INotificationService _notificationService;
     private readonly IMapper _mapper;
 
     public TaskService(
@@ -25,6 +26,7 @@ public class TaskService : ITaskService
         ICropCycleRepository cropCycleRepository,
         IAuditLogService auditLogService,
         IExcelTaskService excelTaskService,
+        INotificationService notificationService,
         IMapper mapper)
     {
         _taskRepository = taskRepository;
@@ -33,6 +35,7 @@ public class TaskService : ITaskService
         _cropCycleRepository = cropCycleRepository;
         _auditLogService = auditLogService;
         _excelTaskService = excelTaskService;
+        _notificationService = notificationService;
         _mapper = mapper;
     }
 
@@ -87,6 +90,16 @@ public class TaskService : ITaskService
 
         var created = await _taskRepository.CreateAsync(task);
         await _auditLogService.LogCreateAsync(farmId, adminId, "Task", created.Id, created, null, null);
+
+        await _notificationService.CreateNotificationAsync(
+            farmId,
+            null,
+            dto.WorkerId,
+            "New Task Assigned",
+            $"You have been assigned a new task: {created.TaskName}",
+            "TaskAssigned",
+            "/worker/tasks"
+        );
 
         var result = _mapper.Map<TaskDto>(created);
         result.WorkerName = worker.Name;
@@ -296,6 +309,16 @@ public class TaskService : ITaskService
 
         await _taskRepository.UpdateAsync(task);
         await _auditLogService.LogUpdateAsync(farmId, adminId, "Task", task.Id, new { WorkerId = oldWorkerId }, new { WorkerId = newWorkerId }, null, null);
+
+        await _notificationService.CreateNotificationAsync(
+            farmId,
+            null,
+            newWorkerId,
+            "New Task Assigned",
+            $"A task has been reassigned to you: {task.TaskName}",
+            "TaskAssigned",
+            "/worker/tasks"
+        );
 
         var result = _mapper.Map<TaskDto>(task);
         result.WorkerName = newWorker.Name;

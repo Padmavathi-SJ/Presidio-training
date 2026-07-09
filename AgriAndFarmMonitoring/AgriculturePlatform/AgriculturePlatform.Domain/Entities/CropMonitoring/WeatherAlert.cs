@@ -22,10 +22,13 @@ public class WeatherAlert : BaseEntity
     public int? AcknowledgedBy { get; set; }
     public DateTime AlertTime { get; set; } = DateTime.UtcNow;
     public DateTime? ExpiresAt { get; set; }
+    public string? ResolutionNotes { get; set; }
+    public int? ResolvedByWorkerId { get; set; }
     
     // Navigation properties
     public virtual Farm? Farm { get; set; }
     public virtual Admin? Admin { get; set; }
     public virtual Field? Field { get; set; }
     public virtual Admin? Acknowledger { get; set; }
+    public virtual WorkerManagement.Worker? ResolvedByWorker { get; set; }
 }

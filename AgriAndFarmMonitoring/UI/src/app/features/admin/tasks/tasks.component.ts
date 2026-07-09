@@ -25,6 +25,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { finalize, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { ReportGeneratorService } from '../../../core/services/report-generator.service';
 import { TaskService } from '../services/task.service';
 import { WorkerService } from '../services/worker.service';
 import { FieldService } from '../services/field.service';
@@ -88,6 +89,7 @@ export class TasksComponent implements OnInit {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
+  private reportService = inject(ReportGeneratorService);
 
   // State Signals
   isLoading = signal(false);
@@ -706,6 +708,30 @@ formatDate(date: string | null): string {
       duration: 5000,
       panelClass: ['error-snackbar']
     });
+  }
+
+  exportPdf(): void {
+    if (!this.hasTasks()) {
+      this.showWarning('No data to export');
+      return;
+    }
+    const columns = [
+      { header: 'Task Name', dataKey: 'taskName' },
+      { header: 'Worker', dataKey: 'workerName' },
+      { header: 'Field', dataKey: 'fieldName' },
+      { header: 'Priority', dataKey: 'priority' },
+      { header: 'Status', dataKey: 'status' },
+      { header: 'Due Date', dataKey: 'dueDate' }
+    ];
+    this.reportService.exportToPdf(this.tasks(), columns, 'Tasks Report', 'tasks');
+  }
+
+  exportCsv(): void {
+    if (!this.hasTasks()) {
+      this.showWarning('No data to export');
+      return;
+    }
+    this.reportService.exportToCsv(this.tasks(), 'tasks');
   }
 
   ngOnDestroy(): void {

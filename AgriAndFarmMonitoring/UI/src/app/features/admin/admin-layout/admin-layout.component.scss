@@ -1,72 +1,335 @@
-// src/app/features/admin/admin-layout/admin-layout.component.scss
-.sidenav-container {
+// =============================================================
+// Admin Layout — Professional Agriculture Theme
+// Sticky topbar + collapsible sidebar + scrollable content
+// =============================================================
+
+:host {
+  display: flex;
+  flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+  background: #f5f8f5;
 }
 
-.mat-sidenav {
-  &::-webkit-scrollbar {
-    width: 4px;
+// ─── Top Navigation Bar ──────────────────────────────────────
+.admin-topbar {
+  height: 58px;
+  background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%);
+  box-shadow: 0 2px 8px rgba(27, 67, 50, 0.35);
+  display: flex;
+  align-items: center;
+  padding: 0 12px 0 8px;
+  gap: 0;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  text-decoration: none;
+  min-width: 0;
+
+  .brand-emoji {
+    font-size: 22px;
+    line-height: 1;
+    flex-shrink: 0;
   }
 
-  &::-webkit-scrollbar-track {
-    background: transparent;
+  .brand-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
   }
 
-  &::-webkit-scrollbar-thumb {
-    background: #d1d5db;
-    border-radius: 4px;
+  .brand-badge {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.9);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
   }
 }
 
-.nav-item {
-  height: 44px !important;
+.topbar-spacer { flex: 1; }
+
+.topbar-route-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+
+  @media (max-width: 768px) { display: none; }
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.topbar-user-name {
+  font-size: 13px;
+  color: rgba(255,255,255,0.88);
+  font-weight: 500;
+  margin-right: 4px;
+
+  @media (max-width: 768px) { display: none; }
+}
+
+// ─── Sidebar ─────────────────────────────────────────────────
+.admin-sidebar {
+  width: 252px;
+  background: white;
+  border-right: 1px solid #d5e1da;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+
+  &.collapsed { width: 64px; }
+
+  @media (max-width: 768px) {
+    position: fixed;
+    top: 58px;
+    left: 0;
+    height: calc(100vh - 58px);
+    z-index: 999;
+    box-shadow: 4px 0 16px rgba(0,0,0,0.12);
+    transform: translateX(0);
+    transition: transform 0.25s ease, width 0.25s ease;
+
+    &.mobile-hidden { transform: translateX(-100%); }
+  }
+}
+
+// Sidebar Farm Header
+.sidebar-farm-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 12px 10px;
+  border-bottom: 1px solid #e8f0ec;
+  flex-shrink: 0;
+
+  .farm-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, rgba(45,106,79,0.15), rgba(64,145,108,0.1));
+    border: 1.5px solid rgba(45,106,79,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; color: #2d6a4f; }
+  }
+
+  .farm-info {
+    overflow: hidden;
+    flex: 1;
+    transition: opacity 0.2s ease, max-width 0.25s ease;
+
+    &.hidden { opacity: 0; max-width: 0; overflow: hidden; }
+
+    .farm-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a2e24;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .farm-role {
+      font-size: 10.5px;
+      color: #5a7a6a;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  }
+}
+
+// Sidebar Section Label
+.sidebar-section-label {
+  padding: 10px 14px 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9ab5a8;
+  white-space: nowrap;
+  overflow: hidden;
+
+  .collapsed & { opacity: 0; }
+}
+
+// Sidebar Nav Items
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 8px 12px;
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: #c8d8cf; border-radius: 3px; }
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  text-decoration: none;
+  color: #3a5a49;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
   cursor: pointer;
-  transition: all 0.15s ease;
-  padding: 0 12px !important;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-bottom: 2px;
+
+  mat-icon {
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+    color: #7aab8e;
+    transition: color 0.15s ease;
+  }
+
+  .nav-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity 0.2s ease, max-width 0.25s ease;
+    max-width: 160px;
+  }
 
   &:hover {
-    background-color: #f3f4f6;
-  }
-
-  &.active {
-    background-color: #e8f5e9;
+    background: rgba(45,106,79,0.07);
     color: #2d6a4f;
-
-    .mat-icon {
-      color: #2d6a4f !important;
-    }
-
-    .text-gray-700 {
-      color: #2d6a4f !important;
-    }
+    mat-icon { color: #2d6a4f; }
   }
 
-  .mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-    color: #6b7280;
+  &.active-link {
+    background: linear-gradient(135deg, rgba(45,106,79,0.13), rgba(64,145,108,0.08));
+    color: #1b4332;
+    font-weight: 700;
+    border: 1px solid rgba(45,106,79,0.18);
+
+    mat-icon { color: #2d6a4f; }
+  }
+
+  // When sidebar collapsed — hide labels
+  .admin-sidebar.collapsed & .nav-label {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
   }
 }
 
-.mobile-sidenav {
-  width: 280px !important;
+// Sidebar Footer (Profile / Logout quick links)
+.sidebar-footer {
+  border-top: 1px solid #e8f0ec;
+  padding: 8px;
+  flex-shrink: 0;
 }
 
-// Responsive adjustments
-@media (max-width: 640px) {
-  .mat-toolbar {
-    padding: 0 12px !important;
+.sidebar-footer-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: #5a7a6a;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+
+  &:hover { background: #f0f7f3; color: #2d6a4f; }
+
+  &.danger { color: #b91c1c; }
+  &.danger:hover { background: #fef2f2; }
+
+  .admin-sidebar.collapsed & span {
+    display: none;
+  }
+}
+
+// ─── Main Content Area ───────────────────────────────────────
+.admin-content-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #f5f8f5;
+  padding: 0;
+
+  // Thin green top accent line
+  &::before {
+    content: '';
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, #2d6a4f, #40916c, transparent);
+    opacity: 0.5;
+  }
+}
+
+.admin-content-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 16px 20px 24px;
+
+  @media (max-width: 768px) { padding: 12px 12px 20px; }
+  @media (max-width: 480px) { padding: 8px 8px 16px; }
+}
+
+// ─── Mobile Overlay ──────────────────────────────────────────
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 998;
+  backdrop-filter: blur(2px);
+
+  @media (max-width: 768px) {
+    &.visible { display: block; }
+  }
+}
+
+// ─── Material overrides in layout context ─────────────────────
+::ng-deep {
+  // Menu panel
+  .mat-mdc-menu-panel {
+    border-radius: 10px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+    border: 1px solid #e8f0ec !important;
+    overflow: hidden !important;
   }
 
-  .nav-item {
-    height: 40px !important;
-    font-size: 13px;
-
-    .mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-    }
+  .mat-mdc-menu-item {
+    font-size: 13.5px !important;
+    min-height: 40px !important;
   }
 }

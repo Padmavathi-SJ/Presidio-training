@@ -28,100 +28,53 @@ import { WeatherAlert } from '../models/weather.model';
   ],
   template: `
     <div class="weather-module">
-      <!-- Sub-header with tabs -->
-      <div class="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div class="container-fluid px-4 sm:px-6">
-          <nav mat-tab-nav-bar [tabPanel]="tabPanel" class="!border-b-0">
-            <a mat-tab-link
-               [routerLink]="'dashboard'"
-               routerLinkActive #rla1="routerLinkActive"
-               [active]="rla1.isActive"
-               class="flex items-center gap-2">
-              <mat-icon class="text-sm">dashboard</mat-icon>
-              Dashboard
-            </a>
-            <a mat-tab-link
-               [routerLink]="'alerts'"
-               routerLinkActive #rla2="routerLinkActive"
-               [active]="rla2.isActive"
-               class="flex items-center gap-2">
-              <mat-icon class="text-sm">notifications_active</mat-icon>
-              Alerts
-              @if (unreadAlertCount() > 0) {
-                <span class="ml-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center">
-                  {{ unreadAlertCount() }}
-                </span>
-              }
-            </a>
-            <a mat-tab-link
-               [routerLink]="'history'"
-               routerLinkActive #rla3="routerLinkActive"
-               [active]="rla3.isActive"
-               class="flex items-center gap-2">
-              <mat-icon class="text-sm">history</mat-icon>
-              History
-            </a>
-            <!-- ✅ Settings tab removed -->
-          </nav>
-        </div>
+      <div class="weather-subnav">
+        <nav mat-tab-nav-bar [tabPanel]="tabPanel" class="!border-b-0">
+          <a mat-tab-link [routerLink]="'dashboard'" routerLinkActive #rla1="routerLinkActive" [active]="rla1.isActive">
+            <mat-icon class="tab-icon">cloud</mat-icon>Dashboard
+          </a>
+          <a mat-tab-link [routerLink]="'alerts'" routerLinkActive #rla2="routerLinkActive" [active]="rla2.isActive">
+            <mat-icon class="tab-icon">warning_amber</mat-icon>
+            Alerts
+            @if (unreadAlertCount() > 0) {
+              <span class="alert-badge">{{ unreadAlertCount() }}</span>
+            }
+          </a>
+          <a mat-tab-link [routerLink]="'history'" routerLinkActive #rla3="routerLinkActive" [active]="rla3.isActive">
+            <mat-icon class="tab-icon">history</mat-icon>History
+          </a>
+        </nav>
       </div>
-
-      <!-- Tab Content -->
       <mat-tab-nav-panel #tabPanel class="block">
         <router-outlet></router-outlet>
       </mat-tab-nav-panel>
     </div>
   `,
   styles: [`
-    .weather-module {
-      min-height: calc(100vh - 64px);
-      background-color: #f8f9fa;
+    .weather-module { min-height: calc(100vh - 58px); background: #f5f8f5; }
+    .weather-subnav {
+      background: white; border-bottom: 1.5px solid #d5e1da;
+      padding: 0 16px; position: sticky; top: 0; z-index: 10;
+      box-shadow: 0 1px 4px rgba(45,106,79,0.06);
     }
-
+    .tab-icon { font-size: 16px; width: 16px; height: 16px; margin-right: 5px; vertical-align: middle; }
+    .alert-badge {
+      margin-left: 6px; background: #ef4444; color: white; font-size: 11px; font-weight: 700;
+      border-radius: 9999px; padding: 1px 7px; min-width: 20px; text-align: center;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
     ::ng-deep {
-      .mat-mdc-tab-nav-bar {
-        .mat-mdc-tab-link {
-          height: 56px;
-          font-size: 14px;
-          font-weight: 500;
-          color: #6b7280;
-          opacity: 1;
-          min-width: auto;
-          padding: 0 20px;
-
-          &:hover {
-            color: #2d6a4f;
-          }
-
-          &.mdc-tab--active {
-            color: #2d6a4f;
-            font-weight: 600;
-          }
-
-          .mat-icon {
-            margin-right: 4px;
-          }
-        }
-
-        .mdc-tab-indicator {
-          .mdc-tab-indicator__content {
-            border-color: #2d6a4f;
-          }
-        }
+      .mat-mdc-tab-nav-bar .mat-mdc-tab-link {
+        height: 48px; font-size: 13px; font-weight: 500; color: #5a7a6a; opacity: 1;
+        min-width: auto; padding: 0 16px; transition: color 0.15s ease;
+        &:hover { color: #2d6a4f; }
+        &.mdc-tab--active { color: #2d6a4f; font-weight: 700; }
       }
+      .mdc-tab-indicator .mdc-tab-indicator__content { border-color: #2d6a4f !important; }
     }
-
     @media (max-width: 640px) {
-      ::ng-deep .mat-mdc-tab-nav-bar .mat-mdc-tab-link {
-        padding: 0 12px;
-        font-size: 12px;
-        
-        .mat-icon {
-          font-size: 18px;
-          width: 18px;
-          height: 18px;
-        }
-      }
+      ::ng-deep .mat-mdc-tab-nav-bar .mat-mdc-tab-link { padding: 0 10px; font-size: 12px; }
+      .tab-icon { display: none; }
     }
   `]
 })

@@ -17,6 +17,8 @@ public class WeatherService : IWeatherService
     private readonly IFieldRepository _fieldRepository;
     private readonly IAdminRepository _adminRepository;  
     private readonly IWeatherApiService _weatherApiService;
+    private readonly IWorkerFieldAssignmentRepository _assignmentRepository;
+    private readonly INotificationService _notificationService;
     private readonly IAuditLogService _auditLogService;
     private readonly IMapper _mapper;
     private readonly ILogger<WeatherService> _logger;
@@ -28,6 +30,8 @@ public class WeatherService : IWeatherService
         IFieldRepository fieldRepository,
         IAdminRepository adminRepository, 
         IWeatherApiService weatherApiService,
+        IWorkerFieldAssignmentRepository assignmentRepository,
+        INotificationService notificationService,
         IAuditLogService auditLogService,
         IMapper mapper,
         ILogger<WeatherService> logger
@@ -38,10 +42,11 @@ public class WeatherService : IWeatherService
         _fieldRepository = fieldRepository;
         _adminRepository = adminRepository;  
         _weatherApiService = weatherApiService;
+        _assignmentRepository = assignmentRepository;
+        _notificationService = notificationService;
         _auditLogService = auditLogService;
         _mapper = mapper;
         _logger = logger;
-      
     }
 
     // =============================================
@@ -63,7 +68,8 @@ public class WeatherService : IWeatherService
             filter.FieldId,
             filter.Severity,
             filter.IsAcknowledged,
-            paginationParams);
+            paginationParams,
+            filter.AllowedFieldIds);
 
         var dtos = _mapper.Map<List<WeatherAlertDto>>(pagedResult.Items);
 
@@ -108,6 +114,35 @@ public class WeatherService : IWeatherService
         var created = await _weatherAlertRepository.CreateAsync(alert);
         var result = _mapper.Map<WeatherAlertDto>(created);
         result.FieldName = field.FieldName;
+
+        // Notify admins and workers
+        var admins = await _adminRepository.GetByFarmIdAsync(farmId);
+        foreach (var a in admins)
+        {
+            await _notificationService.CreateNotificationAsync(
+                farmId,
+                a.Id,
+                null,
+                "Weather Alert",
+                $"[{alert.Severity}] {alert.Title} (Field: {field.FieldName})",
+                "WeatherAlert",
+                $"/admin/weather/alerts?fieldId={field.Id}"
+            );
+        }
+
+        var assignments = await _assignmentRepository.GetWorkerFieldAssignmentsByFieldAsync(field.Id, farmId);
+        foreach (var assignment in assignments)
+        {
+            await _notificationService.CreateNotificationAsync(
+                farmId,
+                null,
+                assignment.WorkerId,
+                "Weather Alert",
+                $"[{alert.Severity}] {alert.Title} (Field: {field.FieldName})",
+                "WeatherAlert",
+                $"/worker/weather/alerts?fieldId={field.Id}"
+            );
+        }
 
         return ApiResponse<WeatherAlertDto>.Ok(result, "Weather alert created successfully");
     }
@@ -156,6 +191,24 @@ public class WeatherService : IWeatherService
     {
         var result = await _weatherAlertRepository.AcknowledgeAllByFieldAsync(fieldId, adminId, farmId);
         return ApiResponse<bool>.Ok(true, $"Acknowledged {result} weather alerts");
+    }
+
+    public async Task<ApiResponse<bool>> ResolveWeatherAlertAsync(int id, ResolveWeatherAlertDto dto, int farmId, int workerId)
+    {
+        var alert = await _weatherAlertRepository.GetByIdAsync(id, farmId);
+        if (alert == null)
+        {
+            return ApiResponse<bool>.Fail($"Weather alert with ID {id} not found");
+        }
+
+        alert.IsAcknowledged = true;
+        alert.AcknowledgedAt = DateTime.UtcNow;
+        alert.ResolvedByWorkerId = workerId;
+        alert.ResolutionNotes = dto.ResolutionNotes;
+        alert.UpdatedAt = DateTime.UtcNow;
+
+        await _weatherAlertRepository.UpdateAsync(alert);
+        return ApiResponse<bool>.Ok(true, "Weather alert resolved successfully");
     }
 
     // =============================================
@@ -262,7 +315,7 @@ public class WeatherService : IWeatherService
         };
 
         var pagedResult = await _weatherRepository.GetPagedHistoryAsync(
-            farmId, filter.FieldId, filter.FromDate, filter.ToDate, paginationParams);
+            farmId, filter.FieldId, filter.FromDate, filter.ToDate, paginationParams, filter.AllowedFieldIds);
 
         var dtos = _mapper.Map<List<WeatherDataDto>>(pagedResult.Items);
         
@@ -538,21 +591,53 @@ public async Task<ApiResponse<List<WeatherAlertDto>>> GetActiveWeatherAlertsAsyn
             });
         }
 
-        // Save alerts if any
-foreach (var alert in alerts)
-{
-    try
-    {
-        await _weatherAlertRepository.CreateAsync(alert);
-        _logger.LogInformation($"Created weather alert: {alert.Title} for field {weather.FieldId}");
-        
-    }
-       
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, $"Failed to create weather alert for field {weather.FieldId}");
-    }
-}
+// Save alerts if any
+        if (alerts.Any())
+        {
+            var field = await _fieldRepository.GetByIdAsync(weather.FieldId, farmId);
+            var fieldName = field?.FieldName ?? "Unknown Field";
+            var admins = await _adminRepository.GetByFarmIdAsync(farmId);
+            var assignments = await _assignmentRepository.GetWorkerFieldAssignmentsByFieldAsync(weather.FieldId, farmId);
+
+            foreach (var alert in alerts)
+            {
+                try
+                {
+                    await _weatherAlertRepository.CreateAsync(alert);
+                    _logger.LogInformation($"Created weather alert: {alert.Title} for field {weather.FieldId}");
+
+                    foreach (var a in admins)
+                    {
+                        await _notificationService.CreateNotificationAsync(
+                            farmId,
+                            a.Id,
+                            null,
+                            "Weather Alert",
+                            $"[{alert.Severity}] {alert.Title} (Field: {fieldName})",
+                            "WeatherAlert",
+                            $"/admin/weather/alerts?fieldId={weather.FieldId}"
+                        );
+                    }
+
+                    foreach (var assignment in assignments)
+                    {
+                        await _notificationService.CreateNotificationAsync(
+                            farmId,
+                            null,
+                            assignment.WorkerId,
+                            "Weather Alert",
+                            $"[{alert.Severity}] {alert.Title} (Field: {fieldName})",
+                            "WeatherAlert",
+                            $"/worker/weather/alerts?fieldId={weather.FieldId}"
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Failed to create weather alert for field {weather.FieldId}");
+                }
+            }
+        }
     }
 
 

@@ -22,6 +22,7 @@ import { FieldService } from '../services/field.service';
 import { WorkerService } from '../services/worker.service';
 import { CropCycleService } from '../services/crop-cycle.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ReportGeneratorService } from '../../../core/services/report-generator.service';
 import { 
   ObservationDto, 
   ObservationFilterDto, 
@@ -60,6 +61,7 @@ export class Observations implements OnInit {
   private workerService = inject(WorkerService);
   private cropCycleService = inject(CropCycleService);
   private authService = inject(AuthService);
+  private reportService = inject(ReportGeneratorService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
@@ -298,6 +300,41 @@ export class Observations implements OnInit {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
     this.loadObservations();
+  }
+
+  exportPdf(): void {
+    const data = this.observations.data;
+    if (!data.length) {
+      this.snackBar.open('No data to export', 'Close', { duration: 3000 });
+      return;
+    }
+    const columns = [
+      { header: 'Date', dataKey: 'observationDate' },
+      { header: 'Field', dataKey: 'fieldName' },
+      { header: 'Worker', dataKey: 'workerName' },
+      { header: 'Health', dataKey: 'cropHealth' },
+      { header: 'Pest/Disease', dataKey: 'pestType' },
+      { header: 'Status', dataKey: 'validationStatus' }
+    ];
+    this.reportService.exportToPdf(data, columns, 'Farm Observations Report', 'Farm_Observations');
+  }
+
+  exportCsv(): void {
+    const data = this.observations.data;
+    if (!data.length) {
+      this.snackBar.open('No data to export', 'Close', { duration: 3000 });
+      return;
+    }
+    const cleanData = data.map(d => ({
+      Date: d.observationDate,
+      Field: d.fieldName,
+      Worker: d.workerName,
+      Health: d.cropHealth,
+      Pest_Disease: d.pestType || 'None',
+      Status: d.validationStatus,
+      Notes: d.notes || ''
+    }));
+    this.reportService.exportToCsv(cleanData, 'Farm_Observations');
   }
 
   viewDetails(obs: ObservationDto): void {

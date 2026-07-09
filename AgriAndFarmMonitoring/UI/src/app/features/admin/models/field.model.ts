@@ -15,6 +15,12 @@ export interface Field {
   deletedAt: string | null;
   latitude: number | null;
   longitude: number | null;
+  
+  // Image attachments
+  imagePath?: string;
+  thumbnailPath?: string;
+  imageCaption?: string;
+  additionalImagePaths?: string[];
 }
 
 export interface CreateFieldDto {
@@ -25,6 +31,12 @@ export interface CreateFieldDto {
   status?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  
+  // Image attachments
+  imagePath?: string;
+  thumbnailPath?: string;
+  imageCaption?: string;
+  additionalImagePaths?: string[];
 }
 
 export interface UpdateFieldDto {
@@ -35,11 +47,15 @@ export interface UpdateFieldDto {
   status?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  imagePath?: string;
+  thumbnailPath?: string;
+  imageCaption?: string;
+  additionalImagePaths?: string[];
 }
 
 export interface UpdateLocationDto {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface FieldFilterDto {

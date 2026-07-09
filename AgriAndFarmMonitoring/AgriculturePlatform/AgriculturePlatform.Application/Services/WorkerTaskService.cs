@@ -13,17 +13,20 @@ public class WorkerTaskService : IWorkerTaskService
     private readonly ITaskRepository _taskRepository;
     private readonly IWorkerRepository _workerRepository;
     private readonly IAuditLogService _auditLogService;
+    private readonly INotificationService _notificationService;
     private readonly IMapper _mapper;
 
     public WorkerTaskService(
         ITaskRepository taskRepository,
         IWorkerRepository workerRepository,
         IAuditLogService auditLogService,
+        INotificationService notificationService,
         IMapper mapper)
     {
         _taskRepository = taskRepository;
         _workerRepository = workerRepository;
         _auditLogService = auditLogService;
+        _notificationService = notificationService;
         _mapper = mapper;
     }
 
@@ -145,6 +148,15 @@ public class WorkerTaskService : IWorkerTaskService
         // Audit log
         await _auditLogService.LogAsync(farmId, null, workerId, "UPDATE_TASK_STATUS", "Task", task.Id, 
             new { Status = oldStatus }, new { Status = newStatus.ToString() }, null, null);
+
+        var workerName = task.Worker?.Name ?? "A worker";
+        await _notificationService.CreateAlertAggregateNotificationAsync(
+            farmId,
+            task.AdminId,
+            "Task Updates",
+            "TaskUpdated",
+            "/admin/tasks"
+        );
 
         var result = _mapper.Map<WorkerTaskDto>(task);
         result.IsOverdue = task.DueDate < DateTime.UtcNow && task.Status != TaskStatusEnum.COMPLETED;

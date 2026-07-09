@@ -21,8 +21,9 @@ public class HarvestServiceTests
     private readonly Mock<ICropCycleRepository> _cropCycleRepositoryMock;
     private readonly Mock<IWorkerRepository> _workerRepositoryMock;
     private readonly Mock<IAuditLogService> _auditLogServiceMock;
-    private readonly Mock<IFileStorageService> _fileStorageServiceMock; // ✅ Added
-    private readonly IMapper _mapper; // ✅ Added
+    private readonly Mock<IFileStorageService> _fileStorageServiceMock;
+    private readonly Mock<INotificationService> _notificationServiceMock;
+    private readonly IMapper _mapper;
     private readonly HarvestService _harvestService;
 
     public HarvestServiceTests()
@@ -32,9 +33,10 @@ public class HarvestServiceTests
         _cropCycleRepositoryMock = new Mock<ICropCycleRepository>();
         _workerRepositoryMock = new Mock<IWorkerRepository>();
         _auditLogServiceMock = new Mock<IAuditLogService>();
-        _fileStorageServiceMock = new Mock<IFileStorageService>(); // ✅ Added
+        _fileStorageServiceMock = new Mock<IFileStorageService>();
+        _notificationServiceMock = new Mock<INotificationService>();
         
-        _mapper = MapperHelper.CreateMapper(); // ✅ Use the mapper from helper
+        _mapper = MapperHelper.CreateMapper();
         
         _harvestService = new HarvestService(
             _harvestRepositoryMock.Object,
@@ -42,8 +44,9 @@ public class HarvestServiceTests
             _cropCycleRepositoryMock.Object,
             _workerRepositoryMock.Object,
             _auditLogServiceMock.Object,
-            _fileStorageServiceMock.Object, // ✅ Added
-            _mapper); // ✅ Added
+            _fileStorageServiceMock.Object,
+            _notificationServiceMock.Object,
+            _mapper);
     }
 
     // =============================================

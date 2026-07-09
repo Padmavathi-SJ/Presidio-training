@@ -90,4 +90,11 @@ export class FieldService {
   downloadTemplate(farmId: number): Observable<Blob> {
     return this.http.get(`${this.API_URL}/farms/${farmId}/fields/template`, { responseType: 'blob' });
   }
+
+  // Upload field image
+  uploadImage(farmId: number, file: File): Observable<ApiResponse<{ fileName: string, fileUrl: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ApiResponse<{ fileName: string, fileUrl: string }>>(`${this.API_URL}/farms/${farmId}/fields/upload-image`, formData);
+  }
 }

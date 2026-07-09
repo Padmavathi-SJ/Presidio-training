@@ -1,0 +1,69 @@
+// Weather Dashboard — Professional Agriculture Theme
+:host { display: block; }
+
+.weather-dashboard {
+  animation: fadeIn 0.25s ease-out;
+
+  // ── Weather Metric Cards ──
+  .weather-metric-card {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border: 1px solid #d5e1da;
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 4px rgba(45,106,79,0.05);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+    &:hover { box-shadow: 0 4px 14px rgba(45,106,79,0.1); transform: translateY(-1px); }
+  }
+
+  // ── Forecast Cards ──
+  .forecast-card {
+    background: white;
+    border: 1px solid #d5e1da;
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+    transition: box-shadow 0.2s ease;
+
+    &:hover { box-shadow: 0 4px 10px rgba(45,106,79,0.08); }
+  }
+
+  // ── Alert Severity Borders ──
+  .border-l-4 {
+    &.border-yellow-400 { border-left-color: #fbbf24 !important; }
+    &.border-orange-400 { border-left-color: #fb923c !important; }
+    &.border-red-400    { border-left-color: #f87171 !important; }
+    &.border-red-600    { border-left-color: #dc2626 !important; }
+  }
+
+  // ── Chart Canvas ──
+  canvas { width: 100% !important; height: 100% !important; }
+
+  // ── Scrollable alert list ──
+  .alerts-scroll {
+    max-height: 360px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-track { background: #f1f5f1; border-radius: 8px; }
+    &::-webkit-scrollbar-thumb { background: #b0c4b8; border-radius: 8px; }
+  }
+}
+
+// Snackbar overrides
+::ng-deep {
+  .alert-snackbar {
+    &.alert-advisory  { background: #fef3c7 !important; color: #92400e !important; border-left: 4px solid #fbbf24; }
+    &.alert-watch     { background: #ffedd5 !important; color: #9a3412 !important; border-left: 4px solid #fb923c; }
+    &.alert-warning   { background: #fee2e2 !important; color: #991b1b !important; border-left: 4px solid #f87171; }
+    &.alert-emergency { background: #7f1d1d !important; color: #fecaca !important; border-left: 4px solid #dc2626; }
+  }
+  .mat-mdc-card-content { padding: 14px !important; }
+}
+
+// Responsive
+@media (max-width: 640px) {
+  .weather-dashboard .text-6xl { font-size: 2rem !important; }
+}

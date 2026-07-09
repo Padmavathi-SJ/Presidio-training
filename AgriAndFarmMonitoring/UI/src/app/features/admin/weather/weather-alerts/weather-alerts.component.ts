@@ -33,6 +33,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { WeatherService } from '../../services/weather.service';
 import { WeatherSignalRService } from '../../services/weather-signalr.service';
 import { FieldService } from '../../services/field.service';
+import { ReportGeneratorService } from '../../../../core/services/report-generator.service';
 import { 
   WeatherAlert, 
   WeatherAlertFilter,
@@ -83,6 +84,7 @@ export class WeatherAlertsComponent implements OnInit, OnDestroy {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
+  private reportService = inject(ReportGeneratorService);
 
   // State Signals
   isLoading = signal(false);
@@ -602,6 +604,51 @@ export class WeatherAlertsComponent implements OnInit, OnDestroy {
       duration: 5000,
       panelClass: ['error-snackbar']
     });
+  }
+
+  // =============================================
+  // EXPORT
+  // =============================================
+
+  exportPdf(): void {
+    const data = this.alerts();
+    if (!data || data.length === 0) {
+      this.showError('No data to export');
+      return;
+    }
+    const columns = [
+      { header: 'Alert Time', dataKey: 'alertTime' },
+      { header: 'Severity', dataKey: 'severity' },
+      { header: 'Type', dataKey: 'alertType' },
+      { header: 'Title', dataKey: 'title' },
+      { header: 'Field', dataKey: 'fieldName' },
+      { header: 'Acknowledged', dataKey: 'isAcknowledged' }
+    ];
+    // Map status for display
+    const printData = data.map(d => ({
+      ...d,
+      alertTime: this.formatDate(d.alertTime),
+      isAcknowledged: d.isAcknowledged ? 'Yes' : 'No',
+      fieldName: d.fieldName || 'All Fields'
+    }));
+    this.reportService.exportToPdf(printData, columns, 'Weather Alerts Report', 'Weather_Alerts');
+  }
+
+  exportCsv(): void {
+    const data = this.alerts();
+    if (!data || data.length === 0) {
+      this.showError('No data to export');
+      return;
+    }
+    const cleanData = data.map(d => ({
+      'Alert Time': this.formatDate(d.alertTime),
+      Severity: d.severity,
+      Type: d.alertType,
+      Title: d.title,
+      Field: d.fieldName || 'All Fields',
+      Acknowledged: d.isAcknowledged ? 'Yes' : 'No'
+    }));
+    this.reportService.exportToCsv(cleanData, 'Weather_Alerts');
   }
 
   ngOnDestroy(): void {

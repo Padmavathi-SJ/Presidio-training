@@ -22,7 +22,9 @@ import { AdminHarvestStateService } from '../services/admin-harvest-state.servic
 import { FieldService } from '../../services/field.service';
 import { CropCycleService } from '../../services/crop-cycle.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ReportGeneratorService } from '../../../../core/services/report-generator.service';
 import { HarvestDto } from '../models/admin-harvest.model';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { HarvestDetailsComponent } from '../harvest-details/harvest-details.component';
 import { HarvestFormComponent } from '../harvest-form/harvest-form.component';
@@ -48,6 +50,8 @@ export class HarvestListComponent implements OnInit, AfterViewInit, OnDestroy {
   private cropCycleService = inject(CropCycleService);
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+  private reportService = inject(ReportGeneratorService);
+  private snackBar = inject(MatSnackBar);
   public dialog = inject(MatDialog);
   
   private destroy$ = new Subject<void>();
@@ -222,5 +226,41 @@ export class HarvestListComponent implements OnInit, AfterViewInit, OnDestroy {
     if (confirm(`Are you sure you want to delete this harvest record?`)) {
       // Not implemented in this subagent code directly, but typically you call a service
     }
+  }
+
+  exportPdf(): void {
+    const data = this.harvests();
+    if (!data.length) {
+      this.snackBar.open('No data to export', 'Close', { duration: 3000 });
+      return;
+    }
+    const columns = [
+      { header: 'Date', dataKey: 'harvestDate' },
+      { header: 'Field', dataKey: 'fieldName' },
+      { header: 'Crop', dataKey: 'cropType' },
+      { header: 'Qty (Kg)', dataKey: 'quantityKg' },
+      { header: 'Grade', dataKey: 'qualityGrade' },
+      { header: 'Status', dataKey: 'approvalStatus' }
+    ];
+    this.reportService.exportToPdf(data, columns, 'Farm Harvests Report', 'Farm_Harvests');
+  }
+
+  exportCsv(): void {
+    const data = this.harvests();
+    if (!data.length) {
+      this.snackBar.open('No data to export', 'Close', { duration: 3000 });
+      return;
+    }
+    const cleanData = data.map(d => ({
+      Date: d.harvestDate,
+      Field: d.fieldName,
+      Crop: d.cropType,
+      Quantity_Kg: d.quantityKg,
+      Grade: d.qualityGrade,
+      Submitter: d.submitterName,
+      Status: d.approvalStatus,
+      Notes: d.notes || ''
+    }));
+    this.reportService.exportToCsv(cleanData, 'Farm_Harvests');
   }
 }

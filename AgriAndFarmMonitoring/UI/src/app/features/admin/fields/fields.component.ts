@@ -23,6 +23,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { finalize, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { ReportGeneratorService } from '../../../core/services/report-generator.service';
 import { FieldService } from '../services/field.service';
 import { Field, FieldFilterDto, FIELD_STATUS_OPTIONS, SOIL_TYPE_OPTIONS, STATUS_COLORS, SOIL_TYPE_COLORS } from '../models/field.model';
 import { FieldFormComponent } from '../field-form/field-form.component';
@@ -66,6 +67,7 @@ export class FieldsComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private reportService = inject(ReportGeneratorService);
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -97,6 +99,7 @@ export class FieldsComponent implements OnInit {
   // ✅ Table columns
   displayedColumns = [
     'select',
+    'image',
     'fieldName',
     'location',
     'areaHectares',
@@ -574,6 +577,29 @@ export class FieldsComponent implements OnInit {
       duration: 5000,
       panelClass: ['bg-yellow-600', 'text-white']
     });
+  }
+
+  exportPdf(): void {
+    if (!this.hasFields()) {
+      this.showWarning('No data to export');
+      return;
+    }
+    const columns = [
+      { header: 'Field Name', dataKey: 'fieldName' },
+      { header: 'Location', dataKey: 'location' },
+      { header: 'Area (Hectares)', dataKey: 'areaHectares' },
+      { header: 'Soil Type', dataKey: 'soilType' },
+      { header: 'Status', dataKey: 'status' }
+    ];
+    this.reportService.exportToPdf(this.fields(), columns, 'Fields Report', 'fields');
+  }
+
+  exportCsv(): void {
+    if (!this.hasFields()) {
+      this.showWarning('No data to export');
+      return;
+    }
+    this.reportService.exportToCsv(this.fields(), 'fields');
   }
 
   ngOnDestroy(): void {

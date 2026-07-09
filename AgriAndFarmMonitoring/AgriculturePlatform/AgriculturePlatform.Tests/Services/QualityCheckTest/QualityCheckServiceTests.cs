@@ -16,21 +16,27 @@ public class QualityCheckServiceTests
 {
     private readonly Mock<IQualityCheckRepository> _qualityCheckRepositoryMock;
     private readonly Mock<IHarvestRepository> _harvestRepositoryMock;
+    private readonly Mock<IWorkerRepository> _workerRepositoryMock;
     private readonly Mock<IAuditLogService> _auditLogServiceMock;
+    private readonly Mock<INotificationService> _notificationServiceMock;
     private readonly QualityCheckService _qualityCheckService;
 
     public QualityCheckServiceTests()
     {
         _qualityCheckRepositoryMock = new Mock<IQualityCheckRepository>();
         _harvestRepositoryMock = new Mock<IHarvestRepository>();
+        _workerRepositoryMock = new Mock<IWorkerRepository>();
         _auditLogServiceMock = new Mock<IAuditLogService>();
+        _notificationServiceMock = new Mock<INotificationService>();
         
         var mapper = MapperHelper.CreateMapper();
         
         _qualityCheckService = new QualityCheckService(
             _qualityCheckRepositoryMock.Object,
             _harvestRepositoryMock.Object,
+            _workerRepositoryMock.Object,
             _auditLogServiceMock.Object,
+            _notificationServiceMock.Object,
             mapper);
     }
 

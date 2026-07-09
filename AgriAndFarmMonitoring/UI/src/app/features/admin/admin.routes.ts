@@ -136,6 +136,7 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./settings/settings.component')
           .then(c => c.Settings)
       },
+
       {
         path: '',
         redirectTo: 'dashboard',

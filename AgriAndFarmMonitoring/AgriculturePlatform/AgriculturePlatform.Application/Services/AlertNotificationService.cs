@@ -17,6 +17,7 @@ public class AlertNotificationService : IAlertNotificationService
     private readonly IFieldRepository _fieldRepository;
     private readonly ICropCycleRepository _cropCycleRepository;
     private readonly IWorkerFieldAssignmentRepository _assignmentRepository;
+    private readonly INotificationService _inAppNotificationService;
     private readonly ILogger<AlertNotificationService> _logger;
     private readonly Dictionary<string, DateTime> _lastNotificationSent = new();
 
@@ -27,6 +28,7 @@ public class AlertNotificationService : IAlertNotificationService
         IFieldRepository fieldRepository,
         ICropCycleRepository cropCycleRepository,
         IWorkerFieldAssignmentRepository assignmentRepository,
+        INotificationService inAppNotificationService,
         ILogger<AlertNotificationService> logger)
     {
         _emailService = emailService;
@@ -35,6 +37,7 @@ public class AlertNotificationService : IAlertNotificationService
         _fieldRepository = fieldRepository;
         _cropCycleRepository = cropCycleRepository;
         _assignmentRepository = assignmentRepository;
+        _inAppNotificationService = inAppNotificationService;
         _logger = logger;
     }
 
@@ -121,6 +124,32 @@ public class AlertNotificationService : IAlertNotificationService
             await _emailService.SendBulkSensorAlertEmailsAsync(emailAlert, recipients);
             _lastNotificationSent[notificationKey] = DateTime.UtcNow;
             _logger.LogInformation($"Sent {recipients.Count} alert notifications for field {alert.FieldId}");
+        }
+
+        // Send In-App Notifications
+        foreach (var admin in admins)
+        {
+            await _inAppNotificationService.CreateAlertAggregateNotificationAsync(
+                farmId,
+                admin.Id,
+                "Sensor Alerts",
+                "SensorAlert",
+                "/admin/sensors/alerts",
+                $"/admin/sensors/alerts?fieldId={alert.FieldId}"
+            );
+        }
+
+        foreach (var worker in assignedWorkers)
+        {
+            await _inAppNotificationService.CreateNotificationAsync(
+                farmId,
+                null,
+                worker.Id,
+                "Sensor Alert",
+                $"[{alert.Severity}] {alert.Message} (Field: {field?.FieldName})",
+                "SensorAlert",
+                $"/worker/sensors/alerts?fieldId={alert.FieldId}"
+            );
         }
     }
 

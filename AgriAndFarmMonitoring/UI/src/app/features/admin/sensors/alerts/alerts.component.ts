@@ -33,6 +33,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { SensorService } from '../../services/sensor.service';
 import { SensorSignalRService } from '../../services/sensor-signalr.service';
 import { FieldService } from '../../services/field.service';
+import { ReportGeneratorService } from '../../../../core/services/report-generator.service';
 import {
   Alert,
   AlertFilter,
@@ -85,6 +86,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
+  private reportService = inject(ReportGeneratorService);
 
   // State Signals
   isLoading = signal(false);
@@ -474,6 +476,53 @@ export class AlertsComponent implements OnInit, OnDestroy {
           this.showError('Error triggering alert simulation');
         }
       });
+  }
+
+  // =============================================
+  // EXPORTS
+  // =============================================
+
+  exportPdf(): void {
+    const data = this.alerts();
+    if (!data.length) {
+      this.showError('No data to export');
+      return;
+    }
+    const columns = [
+      { header: 'Created At', dataKey: 'createdAt' },
+      { header: 'Severity', dataKey: 'severity' },
+      { header: 'Type', dataKey: 'alertType' },
+      { header: 'Field', dataKey: 'fieldName' },
+      { header: 'Message', dataKey: 'message' },
+      { header: 'Status', dataKey: 'status' }
+    ];
+    // Map status for display
+    const printData = data.map(d => ({
+      ...d,
+      alertType: this.getAlertTypeLabel(d.alertType),
+      status: d.isResolved ? 'Resolved' : 'Unresolved',
+      createdAt: this.formatDate(d.createdAt)
+    }));
+    this.reportService.exportToPdf(printData, columns, 'Sensor Alerts Report', 'Sensor_Alerts');
+  }
+
+  exportCsv(): void {
+    const data = this.alerts();
+    if (!data.length) {
+      this.showError('No data to export');
+      return;
+    }
+    const cleanData = data.map(d => ({
+      Created_At: this.formatDate(d.createdAt),
+      Severity: d.severity,
+      Type: this.getAlertTypeLabel(d.alertType),
+      Field: d.fieldName,
+      Message: d.message,
+      Value: d.sensorValue || 'N/A',
+      Status: d.isResolved ? 'Resolved' : 'Unresolved',
+      Resolved_At: d.resolvedAt ? this.formatDate(d.resolvedAt) : 'N/A'
+    }));
+    this.reportService.exportToCsv(cleanData, 'Sensor_Alerts');
   }
 
   // =============================================

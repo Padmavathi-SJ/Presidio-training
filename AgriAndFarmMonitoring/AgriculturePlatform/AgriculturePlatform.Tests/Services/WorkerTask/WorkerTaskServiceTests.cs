@@ -19,6 +19,7 @@ public class WorkerTaskServiceTests
     private readonly Mock<ITaskRepository> _taskRepositoryMock;
     private readonly Mock<IWorkerRepository> _workerRepositoryMock;
     private readonly Mock<IAuditLogService> _auditLogServiceMock;
+    private readonly Mock<INotificationService> _notificationServiceMock;
     private readonly WorkerTaskService _workerTaskService;
 
     public WorkerTaskServiceTests()
@@ -26,6 +27,7 @@ public class WorkerTaskServiceTests
         _taskRepositoryMock = new Mock<ITaskRepository>();
         _workerRepositoryMock = new Mock<IWorkerRepository>();
         _auditLogServiceMock = new Mock<IAuditLogService>();
+        _notificationServiceMock = new Mock<INotificationService>();
         
         var mapper = MapperHelper.CreateMapper();
         
@@ -33,6 +35,7 @@ public class WorkerTaskServiceTests
             _taskRepositoryMock.Object,
             _workerRepositoryMock.Object,
             _auditLogServiceMock.Object,
+            _notificationServiceMock.Object,
             mapper);
     }
 

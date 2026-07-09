@@ -40,11 +40,14 @@ public class WeatherRepository : IWeatherRepository
             .ToListAsync();
     }
 
-    public async Task<PagedResult<WeatherData>> GetPagedHistoryAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate, PaginationParams paginationParams)
+    public async Task<PagedResult<WeatherData>> GetPagedHistoryAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate, PaginationParams paginationParams, List<int>? allowedFieldIds = null)
     {
         var query = _context.WeatherData
             .Include(w => w.Field)
             .Where(w => w.FarmId == farmId);
+
+        if (allowedFieldIds != null && allowedFieldIds.Any())
+            query = query.Where(w => allowedFieldIds.Contains(w.FieldId));
 
         if (fieldId.HasValue)
             query = query.Where(w => w.FieldId == fieldId.Value);

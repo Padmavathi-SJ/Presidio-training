@@ -185,9 +185,10 @@ builder.Services.AddScoped<IAlertThresholdService, AlertThresholdService>();
 builder.Services.AddScoped<IIoTSimulatorService, IoTSimulatorService>();
 builder.Services.AddScoped<AgriculturePlatform.Application.Services.AlertNotificationService>();
 builder.Services.AddScoped<IAlertNotificationService, AgriculturePlatform.API.Services.AlertNotificationService>();
+builder.Services.AddScoped<AgriculturePlatform.Application.Services.NotificationService>();
+builder.Services.AddScoped<INotificationService, AgriculturePlatform.API.Services.NotificationService>();
 builder.Services.AddScoped<IObservationService, ObservationService>();
 builder.Services.AddScoped<IHarvestService, HarvestService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IQualityCheckService, QualityCheckService>();
 builder.Services.AddScoped<IYieldReportService, YieldReportService>();
         var storageProvider = builder.Configuration["FileStorage:Provider"] ?? "Local";
@@ -233,7 +234,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             },
             OnTokenValidated = context =>
             {
-                Console.WriteLine("Token validated successfully");
+                // Console.WriteLine("Token validated successfully");
+                return Task.CompletedTask;
+            },
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
                 return Task.CompletedTask;
             },
             OnChallenge = context =>
@@ -277,6 +288,7 @@ app.UseAuthorization();
 app.MapHub<MonitoringHub>("/monitoringHub");
 app.MapHub<SensorHub>("/sensorHub");
 app.MapHub<WeatherHub>("/weatherHub");
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.MapControllers();
 

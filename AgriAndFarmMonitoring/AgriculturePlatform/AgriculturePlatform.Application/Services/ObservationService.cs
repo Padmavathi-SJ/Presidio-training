@@ -16,6 +16,7 @@ public class ObservationService : IObservationService
     private readonly IWorkerRepository _workerRepository;
     private readonly IAuditLogService _auditLogService;
     private readonly IFileStorageService _fileStorageService; // ✅ Added
+    private readonly INotificationService _notificationService;
     private readonly IMapper _mapper;
 
     // ✅ Updated constructor with IFileStorageService
@@ -26,6 +27,7 @@ public class ObservationService : IObservationService
         IWorkerRepository workerRepository,
         IAuditLogService auditLogService,
         IFileStorageService fileStorageService, // ✅ Added
+        INotificationService notificationService,
         IMapper mapper)
     {
         _observationRepository = observationRepository;
@@ -34,6 +36,7 @@ public class ObservationService : IObservationService
         _workerRepository = workerRepository;
         _auditLogService = auditLogService;
         _fileStorageService = fileStorageService; // ✅ Added
+        _notificationService = notificationService;
         _mapper = mapper;
     }
 
@@ -115,6 +118,16 @@ public class ObservationService : IObservationService
         var created = await _observationRepository.CreateAsync(observation);
         
         await _auditLogService.LogCreateAsync(farmId, adminId, "Observation", created.Id, created, null, null);
+
+        var workerName = (await _workerRepository.GetByIdAsync(workerId, farmId))?.Name ?? "A worker";
+        await _notificationService.CreateAlertAggregateNotificationAsync(
+            farmId,
+            adminId,
+            "Observations",
+            "NewObservation",
+            "/admin/observations",
+            $"/admin/observations/{created.Id}"
+        );
 
         var result = _mapper.Map<ObservationDto>(created);
         result.FieldName = field.FieldName;
@@ -413,6 +426,16 @@ public class ObservationService : IObservationService
             new { ValidationStatus = "questioned" }, 
             new { ValidationStatus = "pending" }, null, null);
         
+        var workerName = (await _workerRepository.GetByIdAsync(workerId, farmId))?.Name ?? "A worker";
+        await _notificationService.CreateAlertAggregateNotificationAsync(
+            farmId,
+            observation.AdminId,
+            "Observation Updates",
+            "ObservationUpdated",
+            "/admin/observations",
+            $"/admin/observations/{observation.Id}"
+        );
+
         var result = _mapper.Map<ObservationDto>(observation);
         
         // ✅ Transform image URLs
@@ -550,6 +573,16 @@ public class ObservationService : IObservationService
             new { ValidationStatus = oldStatus }, 
             new { ValidationStatus = validation.ValidationStatus }, null, null);
         
+        await _notificationService.CreateNotificationAsync(
+            farmId,
+            null,
+            observation.WorkerId,
+            "Observation Status Updated",
+            $"Your observation was marked as {validation.ValidationStatus}.",
+            "ObservationStatus",
+            $"/worker/observations/{observation.Id}"
+        );
+
         var result = _mapper.Map<ObservationDto>(observation);
         
         // ✅ Transform image URLs

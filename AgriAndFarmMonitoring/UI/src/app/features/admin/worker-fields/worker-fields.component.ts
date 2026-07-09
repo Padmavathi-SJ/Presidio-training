@@ -28,6 +28,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { WorkerFieldService } from '../services/worker-field.service';
 import { WorkerService } from '../services/worker.service';
 import { FieldService } from '../services/field.service';
+import { ReportGeneratorService } from '../../../core/services/report-generator.service';
 import { WorkerFieldAssignment, WorkerFieldFilterDto, ASSIGNMENT_STATUS_COLORS } from '../models/worker-field.model';
 import { AssignFieldDialogComponent } from '../assign-field-dialog/assign-field-dialog.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -70,6 +71,7 @@ export class WorkerFieldsComponent implements OnInit {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
+  private reportService = inject(ReportGeneratorService);
 
   // State Signals
   isLoading = signal(false);
@@ -444,6 +446,47 @@ export class WorkerFieldsComponent implements OnInit {
       duration: 3000,
       panelClass: ['bg-yellow-600', 'text-white']
     });
+  }
+
+  exportPdf(): void {
+    const data = this.assignments();
+    if (!data.length) {
+      this.showWarning('No data to export');
+      return;
+    }
+    const columns = [
+      { header: 'Assigned Date', dataKey: 'assignedDate' },
+      { header: 'End Date', dataKey: 'endDate' },
+      { header: 'Worker', dataKey: 'workerName' },
+      { header: 'Field', dataKey: 'fieldName' },
+      { header: 'Location', dataKey: 'fieldLocation' },
+      { header: 'Status', dataKey: 'status' }
+    ];
+    // Map status for display
+    const printData = data.map(d => ({
+      ...d,
+      status: d.isActive ? 'Active' : 'Inactive',
+      assignedDate: this.formatDate(d.assignedDate),
+      endDate: d.endDate ? this.formatDate(d.endDate) : '-'
+    }));
+    this.reportService.exportToPdf(printData, columns, 'Worker Field Assignments Report', 'Worker_Assignments');
+  }
+
+  exportCsv(): void {
+    const data = this.assignments();
+    if (!data.length) {
+      this.showWarning('No data to export');
+      return;
+    }
+    const cleanData = data.map(d => ({
+      Assigned_Date: this.formatDate(d.assignedDate),
+      End_Date: d.endDate ? this.formatDate(d.endDate) : 'N/A',
+      Worker: d.workerName,
+      Field: d.fieldName,
+      Location: d.fieldLocation || 'N/A',
+      Status: d.isActive ? 'Active' : 'Inactive'
+    }));
+    this.reportService.exportToCsv(cleanData, 'Worker_Assignments');
   }
 
   ngOnDestroy(): void {

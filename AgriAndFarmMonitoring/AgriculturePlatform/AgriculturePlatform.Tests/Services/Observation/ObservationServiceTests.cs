@@ -21,6 +21,7 @@ public class ObservationServiceTests
     private readonly Mock<IWorkerRepository> _workerRepositoryMock;
     private readonly Mock<IAuditLogService> _auditLogServiceMock;
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
+    private readonly Mock<INotificationService> _notificationServiceMock;
     private readonly ObservationService _observationService;
 
     public ObservationServiceTests()
@@ -31,6 +32,7 @@ public class ObservationServiceTests
         _workerRepositoryMock = new Mock<IWorkerRepository>();
         _auditLogServiceMock = new Mock<IAuditLogService>();
         _fileStorageServiceMock = new Mock<IFileStorageService>();
+        _notificationServiceMock = new Mock<INotificationService>();
         
         var mapper = MapperHelper.CreateMapper();
         
@@ -41,6 +43,7 @@ public class ObservationServiceTests
             _workerRepositoryMock.Object,
             _auditLogServiceMock.Object,
             _fileStorageServiceMock.Object,
+            _notificationServiceMock.Object,
             mapper);
     }
 

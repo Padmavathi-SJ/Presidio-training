@@ -14,4 +14,5 @@ public class AlertFilterDto
     public int? PageSize { get; set; } = 20;
     public string? SortBy { get; set; } = "CreatedAt";
     public bool IsDescending { get; set; } = true;
+    public List<int>? AllowedFieldIds { get; set; }
 }

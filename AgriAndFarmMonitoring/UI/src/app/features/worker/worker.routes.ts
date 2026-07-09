@@ -31,12 +31,62 @@ export const WORKER_ROUTES: Routes = [
       {
         path: 'weather',
         loadComponent: () => import('./weather/weather.component')
-          .then(c => c.Weather)
+          .then(c => c.WorkerWeatherComponent),
+        children: [
+          {
+            path: 'dashboard',
+            loadComponent: () => import('./weather/weather-dashboard/weather-dashboard.component')
+              .then(c => c.WorkerWeatherDashboardComponent)
+          },
+          {
+            path: 'alerts',
+            loadComponent: () => import('./weather/weather-alerts/weather-alerts.component')
+              .then(c => c.WorkerWeatherAlertsComponent)
+          },
+          {
+            path: 'history',
+            loadComponent: () => import('./weather/weather-history/weather-history.component')
+              .then(c => c.WorkerWeatherHistoryComponent)
+          },
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+        ]
       },
       {
         path: 'sensors',
         loadComponent: () => import('./sensors/sensors.component')
-          .then(c => c.Sensors)
+          .then(c => c.SensorsComponent),
+        children: [
+          {
+            path: 'dashboard',
+            loadComponent: () => import('./sensors/sensor-dashboard/sensor-dashboard.component')
+              .then(c => c.SensorDashboardComponent)
+          },
+          {
+            path: 'readings',
+            loadComponent: () => import('./sensors/sensor-readings/sensor-readings.component')
+              .then(c => c.SensorReadingsComponent)
+          },
+          {
+            path: 'statistics',
+            loadComponent: () => import('./sensors/sensor-statistics/sensor-statistics.component')
+              .then(c => c.SensorStatisticsComponent)
+          },
+          {
+            path: 'alerts',
+            loadComponent: () => import('./sensors/sensor-alerts/sensor-alerts.component')
+              .then(c => c.SensorAlertsComponent)
+          },
+          {
+            path: 'thresholds',
+            loadComponent: () => import('./sensors/sensor-thresholds/sensor-thresholds.component')
+              .then(c => c.SensorThresholdsComponent)
+          },
+          {
+            path: '',
+            redirectTo: 'dashboard',
+            pathMatch: 'full'
+          }
+        ]
       },
       {
         path: 'harvests',
@@ -56,8 +106,9 @@ export const WORKER_ROUTES: Routes = [
       {
         path: 'profile',
         loadComponent: () => import('./profile/profile.component')
-          .then(c => c.Profile)
+          .then(c => c.ProfileComponent)
       },
+
       {
         path: 'settings',
         loadComponent: () => import('./settings/settings.component')

@@ -16,6 +16,7 @@ public class SensorReadingServiceTests
     private readonly Mock<ISensorReadingRepository> _sensorRepositoryMock;
     private readonly Mock<IFieldRepository> _fieldRepositoryMock;
     private readonly Mock<IAlertService> _alertServiceMock;
+    private readonly Mock<IAlertNotificationService> _notificationServiceMock;
     private readonly SensorReadingService _sensorService;
 
     public SensorReadingServiceTests()
@@ -23,6 +24,7 @@ public class SensorReadingServiceTests
         _sensorRepositoryMock = new Mock<ISensorReadingRepository>();
         _fieldRepositoryMock = new Mock<IFieldRepository>();
         _alertServiceMock = new Mock<IAlertService>();
+        _notificationServiceMock = new Mock<IAlertNotificationService>();
         
         var mapper = MapperHelper.CreateMapper();
         
@@ -30,6 +32,7 @@ public class SensorReadingServiceTests
             _sensorRepositoryMock.Object,
             _fieldRepositoryMock.Object,
             _alertServiceMock.Object,
+            _notificationServiceMock.Object,
             mapper);
     }
 
@@ -60,13 +63,8 @@ public class SensorReadingServiceTests
         
         // ✅ Fix: Pass SensorTypeEnum? instead of string
         _sensorRepositoryMock.Setup(r => r.GetPagedAsync(
-            farmId, 
-            filter.FieldId, 
-            filter.CropCycleId, 
-            It.IsAny<SensorTypeEnum?>(),  // ✅ Use It.IsAny for enum
-            filter.FromDate, 
-            filter.ToDate, 
-            It.IsAny<PaginationParams>()))
+            farmId, filter.FieldId, filter.CropCycleId, It.IsAny<SensorTypeEnum?>(),
+            filter.FromDate, filter.ToDate, It.IsAny<PaginationParams>(), It.IsAny<List<int>>()))
             .ReturnsAsync(pagedResult);
 
         // Act
@@ -110,7 +108,7 @@ public class SensorReadingServiceTests
             SensorTypeEnum.SOIL_MOISTURE,  // ✅ Pass specific enum value
             filter.FromDate, 
             filter.ToDate, 
-            It.IsAny<PaginationParams>()))
+            It.IsAny<PaginationParams>(), It.IsAny<List<int>>()))
             .ReturnsAsync(pagedResult);
 
         // Act
@@ -150,13 +148,8 @@ public class SensorReadingServiceTests
         
         // ✅ When invalid sensor type is provided, null should be passed
         _sensorRepositoryMock.Setup(r => r.GetPagedAsync(
-            farmId, 
-            filter.FieldId, 
-            filter.CropCycleId, 
-            null,  // ✅ Null because invalid sensor type
-            filter.FromDate, 
-            filter.ToDate, 
-            It.IsAny<PaginationParams>()))
+            farmId, filter.FieldId, filter.CropCycleId, null,
+            filter.FromDate, filter.ToDate, It.IsAny<PaginationParams>(), It.IsAny<List<int>>()))
             .ReturnsAsync(pagedResult);
 
         // Act
@@ -178,7 +171,7 @@ public class SensorReadingServiceTests
             new SensorReading { Id = 1, FieldId = 1, Value = 25.5m, SensorType = SensorTypeEnum.SOIL_MOISTURE, RecordedAt = DateTime.UtcNow }
         };
         
-        _sensorRepositoryMock.Setup(r => r.GetLatestPerFieldAsync(farmId))
+        _sensorRepositoryMock.Setup(r => r.GetLatestPerFieldAsync(farmId, It.IsAny<List<int>>()))
             .ReturnsAsync(readings);
 
         // Act
@@ -226,7 +219,7 @@ public class SensorReadingServiceTests
             new SensorReading { Id = 1, Value = 12m, SensorType = SensorTypeEnum.SOIL_MOISTURE }
         };
         
-        _sensorRepositoryMock.Setup(r => r.GetThresholdViolationsAsync(farmId, null, null))
+        _sensorRepositoryMock.Setup(r => r.GetThresholdViolationsAsync(farmId, null, null, It.IsAny<List<int>>()))
             .ReturnsAsync(violations);
 
         // Act
@@ -245,7 +238,7 @@ public class SensorReadingServiceTests
         int farmId = 1;
         var excelData = new byte[] { 1, 2, 3, 4 };
         
-        _sensorRepositoryMock.Setup(r => r.ExportToExcelAsync(farmId, null, null, null))
+        _sensorRepositoryMock.Setup(r => r.ExportToExcelAsync(farmId, null, null, null, It.IsAny<List<int>>()))
             .ReturnsAsync(excelData);
 
         // Act
@@ -266,7 +259,7 @@ public class SensorReadingServiceTests
         string groupBy = "day";
         var stats = new SensorStatisticsDto { Period = "day" };
         
-        _sensorRepositoryMock.Setup(r => r.GetAverageReadingsAsync(farmId, groupBy, null, null))
+        _sensorRepositoryMock.Setup(r => r.GetAverageReadingsAsync(farmId, groupBy, null, null, It.IsAny<List<int>>()))
             .ReturnsAsync(stats);
 
         // Act

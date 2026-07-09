@@ -14,4 +14,5 @@ public class SensorReadingFilterDto
     public int? PageSize { get; set; } = 50;
     public string? SortBy { get; set; } = "RecordedAt";
     public bool IsDescending { get; set; } = true;
+    public List<int>? AllowedFieldIds { get; set; }
 }

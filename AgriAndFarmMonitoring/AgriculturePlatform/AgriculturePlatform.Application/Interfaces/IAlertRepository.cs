@@ -13,7 +13,7 @@ public interface IAlertRepository
     Task<PagedResult<Alert>> GetPagedAsync(
         int farmId, int? fieldId, int? cropCycleId, string? alertType,
         string? severity, bool? isResolved, DateTime? fromDate, DateTime? toDate,
-        PaginationParams paginationParams);
+        PaginationParams paginationParams, List<int>? allowedFieldIds = null);
     
     Task<int> GetUnresolvedCountAsync(int farmId);
     Task<AlertStatisticsDto> GetStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate);

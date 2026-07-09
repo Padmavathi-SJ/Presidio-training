@@ -53,12 +53,16 @@ public async Task<PagedResult<SensorReading>> GetPagedAsync(
     SensorTypeEnum? sensorType,  // ✅ Changed to SensorTypeEnum?
     DateTime? fromDate, 
     DateTime? toDate, 
-    PaginationParams paginationParams)
+    PaginationParams paginationParams,
+    List<int>? allowedFieldIds = null)
 {
     var query = _context.SensorReadings
         .Include(s => s.Field)
         .Include(s => s.CropCycle)
         .Where(s => s.FarmId == farmId);
+
+    if (allowedFieldIds != null && allowedFieldIds.Any())
+        query = query.Where(s => allowedFieldIds.Contains(s.FieldId));
 
     if (fieldId.HasValue)
         query = query.Where(s => s.FieldId == fieldId.Value);
@@ -89,11 +93,16 @@ public async Task<PagedResult<SensorReading>> GetPagedAsync(
 }
 
 
-public async Task<IEnumerable<SensorReading>> GetLatestPerFieldAsync(int farmId)
+public async Task<IEnumerable<SensorReading>> GetLatestPerFieldAsync(int farmId, List<int>? allowedFieldIds = null)
 {
-    return await _context.SensorReadings
+    var query = _context.SensorReadings
         .Include(s => s.Field)
-        .Where(s => s.FarmId == farmId)
+        .Where(s => s.FarmId == farmId);
+        
+    if (allowedFieldIds != null && allowedFieldIds.Any())
+        query = query.Where(s => allowedFieldIds.Contains(s.FieldId));
+        
+    return await query
         .GroupBy(s => new { s.FieldId, s.SensorType })
         .Select(g => g.OrderByDescending(s => s.RecordedAt).FirstOrDefault())
         .ToListAsync();
@@ -116,12 +125,15 @@ public async Task<IEnumerable<SensorReading>> GetByFieldAndDateRangeAsync(
 }
 
     public async Task<IEnumerable<SensorReading>> GetThresholdViolationsAsync(
-        int farmId, DateTime? fromDate, DateTime? toDate)
+        int farmId, DateTime? fromDate, DateTime? toDate, List<int>? allowedFieldIds = null)
     {
         var query = _context.SensorReadings
             .Include(s => s.Field)
             .Include(s => s.Alerts)
             .Where(s => s.FarmId == farmId && s.Alerts.Any());
+
+        if (allowedFieldIds != null && allowedFieldIds.Any())
+            query = query.Where(s => allowedFieldIds.Contains(s.FieldId));
 
         if (fromDate.HasValue)
             query = query.Where(s => s.RecordedAt >= fromDate.Value);
@@ -131,11 +143,14 @@ public async Task<IEnumerable<SensorReading>> GetByFieldAndDateRangeAsync(
         return await query.ToListAsync();
     }
 
-    public async Task<byte[]> ExportToExcelAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate)
+    public async Task<byte[]> ExportToExcelAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate, List<int>? allowedFieldIds = null)
     {
         var query = _context.SensorReadings
             .Include(s => s.Field)
             .Where(s => s.FarmId == farmId);
+
+        if (allowedFieldIds != null && allowedFieldIds.Any())
+            query = query.Where(s => allowedFieldIds.Contains(s.FieldId));
 
         if (fieldId.HasValue)
             query = query.Where(s => s.FieldId == fieldId.Value);
@@ -174,10 +189,13 @@ public async Task<IEnumerable<SensorReading>> GetByFieldAndDateRangeAsync(
     }
 
     public async Task<SensorStatisticsDto> GetAverageReadingsAsync(
-        int farmId, string groupBy, DateTime? fromDate, DateTime? toDate)
+        int farmId, string groupBy, DateTime? fromDate, DateTime? toDate, List<int>? allowedFieldIds = null)
     {
         var query = _context.SensorReadings.Where(s => s.FarmId == farmId);
         
+        if (allowedFieldIds != null && allowedFieldIds.Any())
+            query = query.Where(s => allowedFieldIds.Contains(s.FieldId));
+            
         if (fromDate.HasValue)
             query = query.Where(s => s.RecordedAt >= fromDate.Value);
         if (toDate.HasValue)

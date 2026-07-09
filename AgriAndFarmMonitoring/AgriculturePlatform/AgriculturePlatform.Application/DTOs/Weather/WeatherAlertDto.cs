@@ -17,6 +17,8 @@ public class WeatherAlertDto
     public DateTime AlertTime { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? ResolutionNotes { get; set; }
+    public int? ResolvedByWorkerId { get; set; }
 }
 
 // Keep ONLY ONE version - remove the duplicate

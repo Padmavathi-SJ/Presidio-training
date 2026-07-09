@@ -32,6 +32,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { SensorService } from '../../services/sensor.service';
 import { SensorSignalRService } from '../../services/sensor-signalr.service';
 import { FieldService } from '../../services/field.service';
+import { ReportGeneratorService } from '../../../../core/services/report-generator.service';
 import {
   SensorReading,
   SensorReadingFilter,
@@ -82,6 +83,7 @@ export class SensorReadingsComponent implements OnInit, OnDestroy {
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private reportService = inject(ReportGeneratorService);
 
   // State Signals
   isLoading = signal(false);
@@ -303,36 +305,46 @@ export class SensorReadingsComponent implements OnInit, OnDestroy {
   // EXPORT
   // =============================================
 
-  exportData(): void {
-    const farmId = this.authService.getFarmId();
-    if (!farmId) return;
+  exportPdf(): void {
+    const data = this.readings();
+    if (!data.length) {
+      this.showWarning('No data to export');
+      return;
+    }
+    const columns = [
+      { header: 'Recorded', dataKey: 'recordedAt' },
+      { header: 'Field', dataKey: 'fieldName' },
+      { header: 'Sensor', dataKey: 'sensorType' },
+      { header: 'Value', dataKey: 'value' },
+      { header: 'Unit', dataKey: 'unit' },
+      { header: 'Status', dataKey: 'status' }
+    ];
+    // Map status for display
+    const printData = data.map(d => ({
+      ...d,
+      sensorType: this.getSensorTypeLabel(d.sensorType),
+      status: this.getStatusLabel(d.value, d.sensorType),
+      recordedAt: this.formatDate(d.recordedAt)
+    }));
+    this.reportService.exportToPdf(printData, columns, 'Sensor Readings Report', 'Sensor_Readings');
+  }
 
-    const filterValues = this.filterForm.value;
-    const fromDate = filterValues.fromDate ? new Date(filterValues.fromDate).toISOString() : undefined;
-  const toDate = filterValues.toDate ? new Date(filterValues.toDate).toISOString() : undefined;
-  
-    
-  this.isExporting.set(true);
-  this.sensorService.exportSensorData(farmId, filterValues.fieldId, fromDate, toDate)
-    .pipe(finalize(() => this.isExporting.set(false)))
-    .subscribe({
-      next: (blob: Blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `sensor_readings_${new Date().toISOString().split('T')[0]}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        this.showSuccess('Data exported successfully');
-      },
-      error: (error: any) => {
-        console.error('Error exporting data:', error);
-        this.showError('Failed to export data');
-      }
-    });
-}
+  exportCsv(): void {
+    const data = this.readings();
+    if (!data.length) {
+      this.showWarning('No data to export');
+      return;
+    }
+    const cleanData = data.map(d => ({
+      Recorded: this.formatDate(d.recordedAt),
+      Field: this.getFieldName(d.fieldId),
+      Sensor: this.getSensorTypeLabel(d.sensorType),
+      Value: d.value,
+      Unit: d.unit,
+      Status: this.getStatusLabel(d.value, d.sensorType)
+    }));
+    this.reportService.exportToCsv(cleanData, 'Sensor_Readings');
+  }
 
   // =============================================
   // NAVIGATION

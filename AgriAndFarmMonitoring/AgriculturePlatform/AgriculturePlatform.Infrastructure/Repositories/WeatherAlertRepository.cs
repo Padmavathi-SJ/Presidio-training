@@ -26,14 +26,19 @@ public class WeatherAlertRepository : IWeatherAlertRepository
             .FirstOrDefaultAsync(w => w.Id == id && w.FarmId == farmId);
     }
 
-    public async Task<List<WeatherAlert>> GetActiveAlertsAsync(int farmId)
+    public async Task<List<WeatherAlert>> GetActiveAlertsAsync(int farmId, List<int>? allowedFieldIds = null)
     {
         var now = DateTime.UtcNow;
-        return await _context.WeatherAlerts
+        var query = _context.WeatherAlerts
             .Include(w => w.Field)
             .Where(w => w.FarmId == farmId 
                         && !w.IsAcknowledged 
-                        && (w.ExpiresAt == null || w.ExpiresAt > now))
+                        && (w.ExpiresAt == null || w.ExpiresAt > now));
+                        
+        if (allowedFieldIds != null && allowedFieldIds.Any())
+            query = query.Where(w => allowedFieldIds.Contains(w.FieldId));
+            
+        return await query
             .OrderByDescending(w => w.Severity)
             .ThenByDescending(w => w.AlertTime)
             .ToListAsync();
@@ -63,11 +68,15 @@ public class WeatherAlertRepository : IWeatherAlertRepository
         int? fieldId, 
         string? severity, 
         bool? isAcknowledged, 
-        PaginationParams paginationParams)
+        PaginationParams paginationParams,
+        List<int>? allowedFieldIds = null)
     {
         var query = _context.WeatherAlerts
             .Include(w => w.Field)
             .Where(w => w.FarmId == farmId);
+
+        if (allowedFieldIds != null && allowedFieldIds.Any())
+            query = query.Where(w => allowedFieldIds.Contains(w.FieldId));
 
         if (fieldId.HasValue)
             query = query.Where(w => w.FieldId == fieldId.Value);

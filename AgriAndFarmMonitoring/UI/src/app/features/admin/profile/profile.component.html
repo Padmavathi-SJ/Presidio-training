@@ -1,1 +1,105 @@
-<p>profile works!</p>
+<div class="profile-container p-6 max-w-4xl mx-auto">
+  <div class="header mb-6">
+    <h1 class="text-2xl font-semibold text-gray-800">Admin Profile</h1>
+    <p class="text-sm text-gray-600">Manage your farm platform credentials and details.</p>
+  </div>
+
+  <div *ngIf="isLoading()" class="flex justify-center p-12">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="!isLoading()" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <!-- Profile & Farm Info Card -->
+    <mat-card class="shadow-sm border border-gray-100">
+      <mat-card-header class="pb-4">
+        <mat-icon mat-card-avatar class="text-4xl text-green-600 w-10 h-10 flex items-center justify-center bg-green-50 rounded-full">admin_panel_settings</mat-icon>
+        <mat-card-title class="text-lg mt-1">Administrator Details</mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content class="pt-4">
+        <div class="flex flex-col gap-4">
+          <div class="info-group">
+            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Name</label>
+            <p class="text-gray-800 font-medium text-lg">{{ user()?.name || 'Administrator' }}</p>
+          </div>
+          
+          <mat-divider></mat-divider>
+
+          <div class="info-group">
+            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Email Address / Login ID</label>
+            <p class="text-gray-800">{{ user()?.email || 'N/A' }}</p>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <div class="info-group">
+            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Role</label>
+            <div class="mt-1">
+              <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
+                ADMINISTRATOR
+              </span>
+            </div>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <div class="info-group">
+            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Farm Management</label>
+            <p class="text-gray-800" *ngIf="farmStats()">
+              Currently managing <strong>{{ farmStats().totalFields }}</strong> fields 
+              ({{ farmStats().activeCrops }} active crop cycles).
+            </p>
+            <p class="text-gray-500 text-sm" *ngIf="!farmStats()">
+              Managing Farm ID: {{ user()?.farmId || 'N/A' }}
+            </p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Password Reset Card -->
+    <mat-card class="shadow-sm border border-gray-100">
+      <mat-card-header class="pb-4">
+        <mat-icon mat-card-avatar class="text-4xl text-blue-600 w-10 h-10 flex items-center justify-center bg-blue-50 rounded-full">security</mat-icon>
+        <mat-card-title class="text-lg mt-1">Change Password</mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content class="pt-4">
+        <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()" class="flex flex-col gap-3">
+          
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Current Password</mat-label>
+            <input matInput type="password" formControlName="currentPassword" placeholder="Enter current password">
+            <mat-error *ngIf="passwordForm.get('currentPassword')?.hasError('required')">Current password is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>New Password</mat-label>
+            <input matInput type="password" formControlName="newPassword" placeholder="Enter new password (min 6 chars)">
+            <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('required')">New password is required</mat-error>
+            <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('minlength')">Must be at least 6 characters</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Confirm New Password</mat-label>
+            <input matInput type="password" formControlName="confirmNewPassword" placeholder="Confirm your new password">
+            <mat-error *ngIf="passwordForm.get('confirmNewPassword')?.hasError('required')">Please confirm your new password</mat-error>
+            <mat-error *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirmNewPassword')?.touched">
+              Passwords do not match
+            </mat-error>
+          </mat-form-field>
+
+          <div class="mt-2 text-right">
+            <button mat-flat-button color="primary" type="submit" [disabled]="passwordForm.invalid || isSaving()">
+              <mat-icon *ngIf="!isSaving()">save</mat-icon>
+              <mat-spinner *ngIf="isSaving()" diameter="20" class="inline-block mr-2"></mat-spinner>
+              Update Password
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+</div>

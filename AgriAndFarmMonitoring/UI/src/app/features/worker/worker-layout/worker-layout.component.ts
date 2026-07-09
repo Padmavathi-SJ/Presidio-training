@@ -11,7 +11,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { NotificationMenuComponent } from '../../../shared/components/notification-menu/notification-menu.component';
 
 @Component({
   selector: 'app-worker-layout',
@@ -26,18 +29,23 @@ import { AuthService } from '../../../core/services/auth.service';
     MatButtonModule,
     MatMenuModule,
     MatBadgeModule,
-    MatDividerModule
+    MatDividerModule,
+    MatTooltipModule,
+    NotificationMenuComponent
   ],
   templateUrl: './worker-layout.component.html',
-  // No styleUrls needed - using Tailwind
+  styleUrls: ['./worker-layout.component.scss'],
 })
 export class WorkerLayoutComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
+  private notificationService = inject(NotificationService);
   
   user = this.authService.getCurrentUser();
   isSidebarOpen = signal(true);
+  // Track screen width for mobile behaviour
+  private isSmallScreen = signal(window.innerWidth < 769);
   currentRoute = signal('Dashboard');
   currentRouteIcon = signal('dashboard');
 
@@ -50,7 +58,7 @@ export class WorkerLayoutComponent implements OnInit {
     { label: 'Sensor Data', icon: 'sensors', route: '/worker/sensors' },
     { label: 'Harvests', icon: 'inventory_2', route: '/worker/harvests' },
     { label: 'Quality Checks', icon: 'verified', route: '/worker/quality-checks' },
-    { label: 'Yield Reports', icon: 'analytics', route: '/worker/yield-reports' }
+    { label: 'Yield Reports', icon: 'insights', route: '/worker/yield-reports' }
   ];
 
   ngOnInit(): void {
@@ -65,6 +73,9 @@ export class WorkerLayoutComponent implements OnInit {
     }
     
     this.user = this.authService.getCurrentUser();
+    
+    // Initialize notifications
+    this.notificationService.initializeSignalR();
     
     // Sync title on initial load and route changes
     this.syncRouteTitle(this.router.url);
@@ -96,7 +107,18 @@ export class WorkerLayoutComponent implements OnInit {
     this.isSidebarOpen.update(value => !value);
   }
 
+  // Mobile overlay is visible when sidebar is open on small screen
+  isMobileOverlayVisible(): boolean {
+    return this.isSidebarOpen() && this.isSmallScreen();
+  }
+
+  // Sidebar is hidden off-screen on mobile when closed
+  isMobileHidden(): boolean {
+    return this.isSmallScreen() && !this.isSidebarOpen();
+  }
+
   logout(): void {
+    this.notificationService.stopSignalR();
     this.authService.logout(true).subscribe({
       next: () => {
         this.router.navigate(['/auth/login']);

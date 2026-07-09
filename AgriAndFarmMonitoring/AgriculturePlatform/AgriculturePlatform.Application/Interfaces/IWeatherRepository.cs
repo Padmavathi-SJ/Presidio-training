@@ -9,7 +9,7 @@ public interface IWeatherRepository
     // Read operations
     Task<WeatherData?> GetLatestByFieldAsync(int fieldId, int farmId);
     Task<List<WeatherData>> GetHistoryByFieldAsync(int fieldId, int farmId, DateTime? fromDate, DateTime? toDate);
-    Task<PagedResult<WeatherData>> GetPagedHistoryAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate, PaginationParams paginationParams);
+    Task<PagedResult<WeatherData>> GetPagedHistoryAsync(int farmId, int? fieldId, DateTime? fromDate, DateTime? toDate, PaginationParams paginationParams, List<int>? allowedFieldIds = null);
     Task<List<WeatherData>> GetWeatherForAllFieldsAsync(int farmId);
     Task<WeatherData?> GetByIdAsync(int id, int farmId);
     

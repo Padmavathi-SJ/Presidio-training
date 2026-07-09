@@ -29,11 +29,9 @@ export class SensorSignalRService {
 
   private startConnection(): void {
     const baseUrl = this.API_URL.replace('/api', '');
-    const token = localStorage.getItem('token');
-    
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(`${baseUrl}/monitoringHub`, {
-        accessTokenFactory: () => token || ''
+        accessTokenFactory: () => localStorage.getItem('token') || ''
       })
       .withAutomaticReconnect()
       .build();
