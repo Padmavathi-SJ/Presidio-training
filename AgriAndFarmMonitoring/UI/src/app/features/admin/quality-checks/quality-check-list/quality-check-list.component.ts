@@ -19,10 +19,12 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subject, takeUntil, debounceTime } from 'rxjs';
 
 import { AdminQualityCheckStateService } from '../services/admin-quality-check-state.service';
-import { QualityCheckDto } from '../models/admin-quality-check.model';
+import { AdminQualityCheckService } from '../services/admin-quality-check.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { ReportGeneratorService } from '../../../../core/services/report-generator.service';
+import { QualityCheckDto, QualityCheckFilterDto } from '../models/admin-quality-check.model';
 import { QualityCheckDetailsComponent } from '../quality-check-details/quality-check-details.component';
 import { QualityCheckApprovalComponent } from '../quality-check-approval/quality-check-approval.component';
-import { ReportGeneratorService } from '../../../../core/services/report-generator.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
@@ -40,6 +42,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class QualityCheckListComponent implements OnInit, AfterViewInit, OnDestroy {
   private qualityState = inject(AdminQualityCheckStateService);
+  private authService = inject(AuthService);
+  private adminQualityCheckService = inject(AdminQualityCheckService);
   private fb = inject(FormBuilder);
   private reportService = inject(ReportGeneratorService);
   private snackBar = inject(MatSnackBar);
@@ -159,40 +163,74 @@ export class QualityCheckListComponent implements OnInit, AfterViewInit, OnDestr
     });
   }
 
+  private getExportFilter(): QualityCheckFilterDto {
+    const val = this.filterForm.value;
+    return {
+      ...this.currentFilter(),
+      finalGrade: val.finalGrade || (undefined as any),
+      fromDate: val.fromDate ? new Date(val.fromDate).toISOString() : (undefined as any),
+      toDate: val.toDate ? new Date(val.toDate).toISOString() : (undefined as any),
+      page: 1,
+      pageSize: this.totalCount() || 100000
+    };
+  }
+
   exportPdf(): void {
-    const data = this.checks();
-    if (!data.length) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.checks().length) {
       this.snackBar.open('No data to export', 'Close', { duration: 3000 });
       return;
     }
-    const columns = [
-      { header: 'Date', dataKey: 'checkDate' },
-      { header: 'Batch', dataKey: 'harvestBatchNumber' },
-      { header: 'Checker', dataKey: 'checkerName' },
-      { header: 'Moisture %', dataKey: 'moisturePct' },
-      { header: 'Defects %', dataKey: 'defectPct' },
-      { header: 'Grade', dataKey: 'finalGrade' },
-      { header: 'Status', dataKey: 'approvalStatus' }
-    ];
-    this.reportService.exportToPdf(data, columns, 'Farm Quality Checks Report', 'Farm_QualityChecks');
+    this.adminQualityCheckService.getAll(this.getExportFilter())
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Date', dataKey: 'checkDate' },
+              { header: 'Batch', dataKey: 'harvestBatchNumber' },
+              { header: 'Checker', dataKey: 'checkerName' },
+              { header: 'Moisture %', dataKey: 'moisturePct' },
+              { header: 'Defects %', dataKey: 'defectPct' },
+              { header: 'Grade', dataKey: 'finalGrade' },
+              { header: 'Status', dataKey: 'approvalStatus' }
+            ];
+            this.reportService.exportToPdf(items, columns, 'Farm Quality Checks Report', 'Farm_QualityChecks');
+          } else {
+            this.snackBar.open('Failed to fetch data for export', 'Close', { duration: 3000 });
+          }
+        },
+        error: () => this.snackBar.open('Failed to fetch data for export', 'Close', { duration: 3000 })
+      });
   }
 
   exportCsv(): void {
-    const data = this.checks();
-    if (!data.length) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.checks().length) {
       this.snackBar.open('No data to export', 'Close', { duration: 3000 });
       return;
     }
-    const cleanData = data.map(d => ({
-      Date: d.checkDate,
-      Batch: d.harvestBatchNumber,
-      Checker: d.checkerName,
-      Moisture_Pct: d.moisturePct,
-      Defect_Pct: d.defectPct,
-      Grade: d.finalGrade,
-      Status: d.approvalStatus,
-      Notes: d.notes || ''
-    }));
-    this.reportService.exportToCsv(cleanData, 'Farm_QualityChecks');
+    this.adminQualityCheckService.getAll(this.getExportFilter())
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const cleanData = items.map((d: any) => ({
+              Date: d.checkDate,
+              Batch: d.harvestBatchNumber,
+              Checker: d.checkerName,
+              Moisture_Pct: d.moisturePct,
+              Defect_Pct: d.defectPct,
+              Grade: d.finalGrade,
+              Status: d.approvalStatus,
+              Notes: d.notes || ''
+            }));
+            this.reportService.exportToCsv(cleanData, 'Farm_QualityChecks');
+          } else {
+            this.snackBar.open('Failed to fetch data for export', 'Close', { duration: 3000 });
+          }
+        },
+        error: () => this.snackBar.open('Failed to fetch data for export', 'Close', { duration: 3000 })
+      });
   }
 }

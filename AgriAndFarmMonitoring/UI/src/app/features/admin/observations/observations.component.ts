@@ -302,39 +302,83 @@ export class Observations implements OnInit {
     this.loadObservations();
   }
 
+  private getExportFilter(): ObservationFilterDto {
+    const rawFilters = this.filterForm.value;
+    return {
+      page: 1,
+      pageSize: this.totalObservations || 100000,
+      sortBy: this.sort?.active || 'observationDate',
+      isDescending: this.sort?.direction === 'desc',
+      fieldId: rawFilters.fieldId ? parseInt(rawFilters.fieldId, 10) : undefined,
+      cropCycleId: rawFilters.cropCycleId ? parseInt(rawFilters.cropCycleId, 10) : undefined,
+      workerId: rawFilters.workerId ? parseInt(rawFilters.workerId, 10) : undefined,
+      validationStatus: rawFilters.validationStatus || undefined,
+      cropHealth: rawFilters.cropHealth || undefined,
+      includeDeleted: rawFilters.includeDeleted,
+      fromDate: rawFilters.fromDate ? new Date(rawFilters.fromDate).toISOString() : undefined,
+      toDate: rawFilters.toDate ? new Date(rawFilters.toDate).toISOString() : undefined
+    };
+  }
+
   exportPdf(): void {
-    const data = this.observations.data;
-    if (!data.length) {
+    if (!this.observations.data.length) {
       this.snackBar.open('No data to export', 'Close', { duration: 3000 });
       return;
     }
-    const columns = [
-      { header: 'Date', dataKey: 'observationDate' },
-      { header: 'Field', dataKey: 'fieldName' },
-      { header: 'Worker', dataKey: 'workerName' },
-      { header: 'Health', dataKey: 'cropHealth' },
-      { header: 'Pest/Disease', dataKey: 'pestType' },
-      { header: 'Status', dataKey: 'validationStatus' }
-    ];
-    this.reportService.exportToPdf(data, columns, 'Farm Observations Report', 'Farm_Observations');
+    this.isLoading = true;
+    this.observationService.getObservations(this.farmId, this.getExportFilter())
+      .pipe(finalize(() => { this.isLoading = false; this.cdr.detectChanges(); }))
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            const columns = [
+              { header: 'Date', dataKey: 'observationDate' },
+              { header: 'Field', dataKey: 'fieldName' },
+              { header: 'Worker', dataKey: 'workerName' },
+              { header: 'Health', dataKey: 'cropHealth' },
+              { header: 'Pest/Disease', dataKey: 'pestType' },
+              { header: 'Status', dataKey: 'validationStatus' }
+            ];
+            this.reportService.exportToPdf(res.data.items, columns, 'Farm Observations Report', 'Farm_Observations');
+          } else {
+            this.snackBar.open('Error loading data for export', 'Close', { duration: 3000 });
+          }
+        },
+        error: (err) => {
+          this.snackBar.open('Error loading data for export', 'Close', { duration: 3000 });
+        }
+      });
   }
 
   exportCsv(): void {
-    const data = this.observations.data;
-    if (!data.length) {
+    if (!this.observations.data.length) {
       this.snackBar.open('No data to export', 'Close', { duration: 3000 });
       return;
     }
-    const cleanData = data.map(d => ({
-      Date: d.observationDate,
-      Field: d.fieldName,
-      Worker: d.workerName,
-      Health: d.cropHealth,
-      Pest_Disease: d.pestType || 'None',
-      Status: d.validationStatus,
-      Notes: d.notes || ''
-    }));
-    this.reportService.exportToCsv(cleanData, 'Farm_Observations');
+    this.isLoading = true;
+    this.observationService.getObservations(this.farmId, this.getExportFilter())
+      .pipe(finalize(() => { this.isLoading = false; this.cdr.detectChanges(); }))
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            const cleanData = res.data.items.map((d: any) => ({
+              Date: d.observationDate,
+              Field: d.fieldName,
+              Worker: d.workerName,
+              Health: d.cropHealth,
+              Pest_Disease: d.pestType || 'None',
+              Status: d.validationStatus,
+              Notes: d.notes || ''
+            }));
+            this.reportService.exportToCsv(cleanData, 'Farm_Observations');
+          } else {
+            this.snackBar.open('Error loading data for export', 'Close', { duration: 3000 });
+          }
+        },
+        error: (err) => {
+          this.snackBar.open('Error loading data for export', 'Close', { duration: 3000 });
+        }
+      });
   }
 
   viewDetails(obs: ObservationDto): void {

@@ -484,26 +484,52 @@ export class WorkerWeatherHistoryComponent implements OnInit, OnDestroy {
   // EXPORT
   // =============================================
 
+  private getExportFilter(): WeatherHistoryFilter {
+    const filterValues = this.filterForm.value;
+    const fromDate = filterValues.fromDate ? new Date(filterValues.fromDate).toISOString() : null;
+    const toDate = filterValues.toDate ? new Date(filterValues.toDate).toISOString() : null;
+    return {
+      fieldId: filterValues.fieldId || null,
+      fromDate: fromDate,
+      toDate: toDate,
+      page: 1,
+      pageSize: this.totalCount() || 100000
+    };
+  }
+
   exportPdf(): void {
     if (!this.hasData()) {
       this.showWarning('No data to export');
       return;
     }
-    const columns = [
-      { header: 'Field Name', dataKey: 'fieldName' },
-      { header: 'Temperature', dataKey: 'tempFormatted' },
-      { header: 'Humidity', dataKey: 'humidityFormatted' },
-      { header: 'Condition', dataKey: 'condition' },
-      { header: 'Recorded At', dataKey: 'recordedAtFormatted' }
-    ];
-    const data = this.weatherData().map(d => ({
-      ...d,
-      fieldName: d.fieldName || this.getFieldName(d.fieldId),
-      tempFormatted: `${d.temperature ?? 'N/A'} °C`,
-      humidityFormatted: `${d.humidity ?? 'N/A'} %`,
-      recordedAtFormatted: this.formatDate(d.recordedAt)
-    }));
-    this.reportService.exportToPdf(data, columns, 'Weather History Report', 'weather_history');
+    this.isLoading.set(true);
+    this.weatherService.getWeatherHistory(this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Field Name', dataKey: 'fieldName' },
+              { header: 'Temperature', dataKey: 'tempFormatted' },
+              { header: 'Humidity', dataKey: 'humidityFormatted' },
+              { header: 'Condition', dataKey: 'condition' },
+              { header: 'Recorded At', dataKey: 'recordedAtFormatted' }
+            ];
+            const data = items.map((d: any) => ({
+              ...d,
+              fieldName: d.fieldName || this.getFieldName(d.fieldId),
+              tempFormatted: `${d.temperature ?? 'N/A'} °C`,
+              humidityFormatted: `${d.humidity ?? 'N/A'} %`,
+              recordedAtFormatted: this.formatDate(d.recordedAt)
+            }));
+            this.reportService.exportToPdf(data, columns, 'Weather History Report', 'weather_history');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   exportCsv(): void {
@@ -511,16 +537,29 @@ export class WorkerWeatherHistoryComponent implements OnInit, OnDestroy {
       this.showWarning('No data to export');
       return;
     }
-    const data = this.weatherData().map(d => ({
-      'Field Name': d.fieldName || this.getFieldName(d.fieldId),
-      'Temperature (°C)': d.temperature,
-      'Humidity (%)': d.humidity,
-      'Wind Speed (m/s)': d.windSpeed,
-      'Rainfall (mm)': d.rainfallMm,
-      Condition: d.condition,
-      'Recorded At': this.formatDate(d.recordedAt)
-    }));
-    this.reportService.exportToCsv(data, 'weather_history');
+    this.isLoading.set(true);
+    this.weatherService.getWeatherHistory(this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const data = items.map((d: any) => ({
+              'Field Name': d.fieldName || this.getFieldName(d.fieldId),
+              'Temperature (°C)': d.temperature,
+              'Humidity (%)': d.humidity,
+              'Wind Speed (m/s)': d.windSpeed,
+              'Rainfall (mm)': d.rainfallMm,
+              Condition: d.condition,
+              'Recorded At': this.formatDate(d.recordedAt)
+            }));
+            this.reportService.exportToCsv(data, 'weather_history');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   ngOnDestroy(): void {

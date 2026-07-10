@@ -369,27 +369,56 @@ export class SensorAlertsComponent implements OnInit, OnDestroy {
     });
   }
 
+  private getExportFilter(): AlertFilter {
+    const filterValues = this.filterForm.value;
+    return {
+      fieldId: filterValues.fieldId || null,
+      alertType: filterValues.alertType || null,
+      severity: filterValues.severity || null,
+      isResolved: filterValues.isResolved !== null ? filterValues.isResolved : null,
+      fromDate: filterValues.fromDate ? new Date(filterValues.fromDate).toISOString() : null,
+      toDate: filterValues.toDate ? new Date(filterValues.toDate).toISOString() : null,
+      page: 1,
+      pageSize: this.totalCount() || 100000,
+      sortBy: this.sortField(),
+      isDescending: this.sortDirection() === 'desc'
+    };
+  }
+
   exportPdf(): void {
     if (!this.hasAlerts()) {
       this.showWarning('No data to export');
       return;
     }
-    const columns = [
-      { header: 'Severity', dataKey: 'severity' },
-      { header: 'Alert Type', dataKey: 'alertTypeLabel' },
-      { header: 'Field', dataKey: 'fieldName' },
-      { header: 'Message', dataKey: 'message' },
-      { header: 'Status', dataKey: 'status' },
-      { header: 'Created At', dataKey: 'createdAtFormatted' }
-    ];
-    const data = this.alerts().map(a => ({
-      ...a,
-      alertTypeLabel: this.getAlertTypeLabel(a.alertType || ''),
-      fieldName: this.getFieldName(a.fieldId),
-      status: a.isResolved ? 'Resolved' : 'Active',
-      createdAtFormatted: this.formatDate(a.createdAt)
-    }));
-    this.reportService.exportToPdf(data, columns, 'Sensor Alerts Report', 'sensor_alerts');
+    this.isLoading.set(true);
+    this.workerSensorService.getAlerts(this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Severity', dataKey: 'severity' },
+              { header: 'Alert Type', dataKey: 'alertTypeLabel' },
+              { header: 'Field', dataKey: 'fieldName' },
+              { header: 'Message', dataKey: 'message' },
+              { header: 'Status', dataKey: 'status' },
+              { header: 'Created At', dataKey: 'createdAtFormatted' }
+            ];
+            const data = items.map((a: any) => ({
+              ...a,
+              alertTypeLabel: this.getAlertTypeLabel(a.alertType || ''),
+              fieldName: this.getFieldName(a.fieldId),
+              status: a.isResolved ? 'Resolved' : 'Active',
+              createdAtFormatted: this.formatDate(a.createdAt)
+            }));
+            this.reportService.exportToPdf(data, columns, 'Sensor Alerts Report', 'sensor_alerts');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   exportCsv(): void {
@@ -397,16 +426,29 @@ export class SensorAlertsComponent implements OnInit, OnDestroy {
       this.showWarning('No data to export');
       return;
     }
-    const data = this.alerts().map(a => ({
-      Severity: a.severity,
-      'Alert Type': this.getAlertTypeLabel(a.alertType || ''),
-      Field: this.getFieldName(a.fieldId),
-      Message: a.message,
-      'Sensor Value': a.sensorValue,
-      Status: a.isResolved ? 'Resolved' : 'Active',
-      'Created At': this.formatDate(a.createdAt)
-    }));
-    this.reportService.exportToCsv(data, 'sensor_alerts');
+    this.isLoading.set(true);
+    this.workerSensorService.getAlerts(this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const data = items.map((a: any) => ({
+              Severity: a.severity,
+              'Alert Type': this.getAlertTypeLabel(a.alertType || ''),
+              Field: this.getFieldName(a.fieldId),
+              Message: a.message,
+              'Sensor Value': a.sensorValue,
+              Status: a.isResolved ? 'Resolved' : 'Active',
+              'Created At': this.formatDate(a.createdAt)
+            }));
+            this.reportService.exportToCsv(data, 'sensor_alerts');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   ngOnDestroy(): void {

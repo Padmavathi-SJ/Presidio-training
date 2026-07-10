@@ -579,27 +579,77 @@ export class FieldsComponent implements OnInit {
     });
   }
 
+  private getExportFilter(): FieldFilterDto {
+    const filterValues = this.filterForm.value;
+    return {
+      fieldName: filterValues.fieldName || null,
+      location: filterValues.location || null,
+      soilType: filterValues.soilType || null,
+      status: filterValues.status || null,
+      includeDeleted: false,
+      page: 1,
+      pageSize: this.totalCount() || 100000,
+      sortBy: this.sortField(),
+      isDescending: this.sortDirection() === 'desc'
+    };
+  }
+
   exportPdf(): void {
-    if (!this.hasFields()) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.hasFields()) {
       this.showWarning('No data to export');
       return;
     }
-    const columns = [
-      { header: 'Field Name', dataKey: 'fieldName' },
-      { header: 'Location', dataKey: 'location' },
-      { header: 'Area (Hectares)', dataKey: 'areaHectares' },
-      { header: 'Soil Type', dataKey: 'soilType' },
-      { header: 'Status', dataKey: 'status' }
-    ];
-    this.reportService.exportToPdf(this.fields(), columns, 'Fields Report', 'fields');
+    this.isLoading.set(true);
+    this.fieldService.getFields(farmId, this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Field Name', dataKey: 'fieldName' },
+              { header: 'Location', dataKey: 'location' },
+              { header: 'Area (Hectares)', dataKey: 'areaHectares' },
+              { header: 'Soil Type', dataKey: 'soilType' },
+              { header: 'Status', dataKey: 'status' }
+            ];
+            this.reportService.exportToPdf(items, columns, 'Fields Report', 'fields');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   exportCsv(): void {
-    if (!this.hasFields()) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.hasFields()) {
       this.showWarning('No data to export');
       return;
     }
-    this.reportService.exportToCsv(this.fields(), 'fields');
+    this.isLoading.set(true);
+    this.fieldService.getFields(farmId, this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const data = items.map((f: any) => ({
+              'Field Name': f.fieldName,
+              Location: f.location,
+              'Area (Hectares)': f.areaHectares,
+              'Soil Type': f.soilType,
+              Status: f.status
+            }));
+            this.reportService.exportToCsv(data, 'fields');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   ngOnDestroy(): void {

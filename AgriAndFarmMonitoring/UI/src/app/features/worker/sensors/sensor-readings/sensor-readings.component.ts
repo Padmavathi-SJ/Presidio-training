@@ -341,27 +341,58 @@ export class SensorReadingsComponent implements OnInit, OnDestroy {
     });
   }
 
+  private getExportFilter(): SensorReadingFilter {
+    const filterValues = this.filterForm.value;
+    const fromDate = filterValues.fromDate ? new Date(filterValues.fromDate).toISOString() : undefined;
+    const toDate = filterValues.toDate ? new Date(filterValues.toDate).toISOString() : undefined;
+
+    return {
+      fieldId: filterValues.fieldId || null,
+      sensorType: filterValues.sensorType || null,
+      fromDate: fromDate,
+      toDate: toDate,
+      latestOnly: filterValues.latestOnly || null,
+      page: 1,
+      pageSize: this.totalCount() || 100000,
+      sortBy: this.sortField(),
+      isDescending: this.sortDirection() === 'desc'
+    };
+  }
+
   exportPdf(): void {
     if (!this.hasReadings()) {
       this.showWarning('No data to export');
       return;
     }
-    const columns = [
-      { header: 'Field', dataKey: 'fieldName' },
-      { header: 'Sensor Type', dataKey: 'sensorType' },
-      { header: 'Value', dataKey: 'value' },
-      { header: 'Status', dataKey: 'statusLabel' },
-      { header: 'Recorded At', dataKey: 'recordedAtFormatted' }
-    ];
-    const data = this.readings().map(r => ({
-      ...r,
-      fieldName: this.getFieldName(r.fieldId),
-      sensorType: this.getSensorTypeLabel(r.sensorType),
-      value: `${r.value} ${this.getSensorTypeUnit(r.sensorType)}`,
-      statusLabel: this.getStatusLabel(r.value, r.sensorType),
-      recordedAtFormatted: this.formatDate(r.recordedAt)
-    }));
-    this.reportService.exportToPdf(data, columns, 'Sensor Readings Report', 'sensor_readings');
+    this.isLoading.set(true);
+    this.workerSensorService.getAllReadings(this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Field', dataKey: 'fieldName' },
+              { header: 'Sensor Type', dataKey: 'sensorType' },
+              { header: 'Value', dataKey: 'value' },
+              { header: 'Status', dataKey: 'statusLabel' },
+              { header: 'Recorded At', dataKey: 'recordedAtFormatted' }
+            ];
+            const data = items.map((r: any) => ({
+              ...r,
+              fieldName: this.getFieldName(r.fieldId),
+              sensorType: this.getSensorTypeLabel(r.sensorType),
+              value: `${r.value} ${this.getSensorTypeUnit(r.sensorType)}`,
+              statusLabel: this.getStatusLabel(r.value, r.sensorType),
+              recordedAtFormatted: this.formatDate(r.recordedAt)
+            }));
+            this.reportService.exportToPdf(data, columns, 'Sensor Readings Report', 'sensor_readings');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   exportCsv(): void {
@@ -369,15 +400,28 @@ export class SensorReadingsComponent implements OnInit, OnDestroy {
       this.showWarning('No data to export');
       return;
     }
-    const data = this.readings().map(r => ({
-      Field: this.getFieldName(r.fieldId),
-      'Sensor Type': this.getSensorTypeLabel(r.sensorType),
-      Value: r.value,
-      Unit: this.getSensorTypeUnit(r.sensorType),
-      Status: this.getStatusLabel(r.value, r.sensorType),
-      'Recorded At': this.formatDate(r.recordedAt)
-    }));
-    this.reportService.exportToCsv(data, 'sensor_readings');
+    this.isLoading.set(true);
+    this.workerSensorService.getAllReadings(this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const data = items.map((r: any) => ({
+              Field: this.getFieldName(r.fieldId),
+              'Sensor Type': this.getSensorTypeLabel(r.sensorType),
+              Value: r.value,
+              Unit: this.getSensorTypeUnit(r.sensorType),
+              Status: this.getStatusLabel(r.value, r.sensorType),
+              'Recorded At': this.formatDate(r.recordedAt)
+            }));
+            this.reportService.exportToCsv(data, 'sensor_readings');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   ngOnDestroy(): void {

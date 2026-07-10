@@ -710,28 +710,97 @@ formatDate(date: string | null): string {
     });
   }
 
+  private getExportFilter(): TaskFilterDto {
+    const filterValues = this.filterForm.value;
+    const assignedDateFrom = filterValues.assignedDateFrom ? new Date(filterValues.assignedDateFrom).toISOString() : null;
+    const assignedDateTo = filterValues.assignedDateTo ? new Date(filterValues.assignedDateTo).toISOString() : null;
+    const dueDateFrom = filterValues.dueDateFrom ? new Date(filterValues.dueDateFrom).toISOString() : null;
+    const dueDateTo = filterValues.dueDateTo ? new Date(filterValues.dueDateTo).toISOString() : null;
+    return {
+      workerId: filterValues.workerId || null,
+      fieldId: filterValues.fieldId || null,
+      status: filterValues.status || null,
+      priority: filterValues.priority || null,
+      taskName: filterValues.taskName || null,
+      assignedDateFrom: assignedDateFrom,
+      assignedDateTo: assignedDateTo,
+      dueDateFrom: dueDateFrom,
+      dueDateTo: dueDateTo,
+      isOverdue: filterValues.isOverdue !== '' ? filterValues.isOverdue : null,
+      activeOnly: filterValues.activeOnly !== '' ? filterValues.activeOnly : null,
+      page: 1,
+      pageSize: this.totalCount() || 100000,
+      sortBy: this.sortField(),
+      isDescending: this.sortDirection() === 'desc'
+    };
+  }
+
   exportPdf(): void {
-    if (!this.hasTasks()) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.hasTasks()) {
       this.showWarning('No data to export');
       return;
     }
-    const columns = [
-      { header: 'Task Name', dataKey: 'taskName' },
-      { header: 'Worker', dataKey: 'workerName' },
-      { header: 'Field', dataKey: 'fieldName' },
-      { header: 'Priority', dataKey: 'priority' },
-      { header: 'Status', dataKey: 'status' },
-      { header: 'Due Date', dataKey: 'dueDate' }
-    ];
-    this.reportService.exportToPdf(this.tasks(), columns, 'Tasks Report', 'tasks');
+    this.isLoading.set(true);
+    this.taskService.getTasks(farmId, this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Task Name', dataKey: 'taskName' },
+              { header: 'Worker', dataKey: 'workerName' },
+              { header: 'Field', dataKey: 'fieldName' },
+              { header: 'Priority', dataKey: 'priority' },
+              { header: 'Status', dataKey: 'status' },
+              { header: 'Due Date', dataKey: 'dueDate' }
+            ];
+            const data = items.map((t: any) => ({
+              ...t,
+              workerName: t.workerName || 'Unassigned',
+              fieldName: t.fieldName || 'No Field',
+              dueDate: this.formatDate(t.dueDate)
+            }));
+            this.reportService.exportToPdf(data, columns, 'Tasks Report', 'tasks');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   exportCsv(): void {
-    if (!this.hasTasks()) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.hasTasks()) {
       this.showWarning('No data to export');
       return;
     }
-    this.reportService.exportToCsv(this.tasks(), 'tasks');
+    this.isLoading.set(true);
+    this.taskService.getTasks(farmId, this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const data = items.map((t: any) => ({
+              'Task Name': t.taskName,
+              Description: t.description,
+              Worker: t.workerName || 'Unassigned',
+              Field: t.fieldName || 'No Field',
+              Priority: t.priority,
+              Status: t.status,
+              'Due Date': this.formatDate(t.dueDate),
+              'Assigned Date': this.formatDate(t.assignedDate)
+            }));
+            this.reportService.exportToCsv(data, 'tasks');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   ngOnDestroy(): void {

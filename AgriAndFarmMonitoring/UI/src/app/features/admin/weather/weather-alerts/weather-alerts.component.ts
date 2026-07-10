@@ -610,45 +610,92 @@ export class WeatherAlertsComponent implements OnInit, OnDestroy {
   // EXPORT
   // =============================================
 
+  private getExportFilter(): WeatherAlertFilter {
+    const filterValues = this.filterForm.value;
+    const fromDate = filterValues.fromDate ? new Date(filterValues.fromDate).toISOString() : null;
+    const toDate = filterValues.toDate ? new Date(filterValues.toDate).toISOString() : null;
+    return {
+      fieldId: filterValues.fieldId || null,
+      severity: filterValues.severity || null,
+      isAcknowledged: filterValues.isAcknowledged !== '' ? filterValues.isAcknowledged : null,
+      isActive: filterValues.isActive !== '' ? filterValues.isActive : null,
+      fromDate: fromDate,
+      toDate: toDate,
+      page: 1,
+      pageSize: this.totalCount() || 100000,
+      sortBy: this.sortField(),
+      isDescending: this.sortDirection() === 'desc'
+    };
+  }
+
   exportPdf(): void {
-    const data = this.alerts();
-    if (!data || data.length === 0) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.alerts().length) {
       this.showError('No data to export');
       return;
     }
-    const columns = [
-      { header: 'Alert Time', dataKey: 'alertTime' },
-      { header: 'Severity', dataKey: 'severity' },
-      { header: 'Type', dataKey: 'alertType' },
-      { header: 'Title', dataKey: 'title' },
-      { header: 'Field', dataKey: 'fieldName' },
-      { header: 'Acknowledged', dataKey: 'isAcknowledged' }
-    ];
-    // Map status for display
-    const printData = data.map(d => ({
-      ...d,
-      alertTime: this.formatDate(d.alertTime),
-      isAcknowledged: d.isAcknowledged ? 'Yes' : 'No',
-      fieldName: d.fieldName || 'All Fields'
-    }));
-    this.reportService.exportToPdf(printData, columns, 'Weather Alerts Report', 'Weather_Alerts');
+    this.isLoading.set(true);
+    this.weatherService.getWeatherAlerts(farmId, this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Alert Time', dataKey: 'alertTime' },
+              { header: 'Severity', dataKey: 'severity' },
+              { header: 'Type', dataKey: 'alertType' },
+              { header: 'Title', dataKey: 'title' },
+              { header: 'Field', dataKey: 'fieldName' },
+              { header: 'Acknowledged', dataKey: 'isAcknowledged' }
+            ];
+            const printData = items.map((d: any) => ({
+              ...d,
+              alertTime: this.formatDate(d.alertTime),
+              isAcknowledged: d.isAcknowledged ? 'Yes' : 'No',
+              fieldName: d.fieldName || 'All Fields'
+            }));
+            this.reportService.exportToPdf(printData, columns, 'Weather Alerts Report', 'Weather_Alerts');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   exportCsv(): void {
-    const data = this.alerts();
-    if (!data || data.length === 0) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.alerts().length) {
       this.showError('No data to export');
       return;
     }
-    const cleanData = data.map(d => ({
-      'Alert Time': this.formatDate(d.alertTime),
-      Severity: d.severity,
-      Type: d.alertType,
-      Title: d.title,
-      Field: d.fieldName || 'All Fields',
-      Acknowledged: d.isAcknowledged ? 'Yes' : 'No'
-    }));
-    this.reportService.exportToCsv(cleanData, 'Weather_Alerts');
+    this.isLoading.set(true);
+    this.weatherService.getWeatherAlerts(farmId, this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            const items = response.data.items || [];
+            const cleanData = items.map((d: any) => ({
+              Alert_Time: this.formatDate(d.alertTime),
+              Severity: d.severity,
+              Type: d.alertType,
+              Title: d.title,
+              Field: d.fieldName || 'All Fields',
+              Message: d.message,
+              Status: d.isActive ? 'Active' : 'Inactive',
+              Acknowledged: d.isAcknowledged ? 'Yes' : 'No',
+              Acknowledged_By: d.acknowledgedByName || 'N/A',
+              Acknowledged_At: d.acknowledgedAt ? this.formatDate(d.acknowledgedAt) : 'N/A'
+            }));
+            this.reportService.exportToCsv(cleanData, 'Weather_Alerts');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   ngOnDestroy(): void {

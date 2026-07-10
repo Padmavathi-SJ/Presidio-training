@@ -426,26 +426,58 @@ export class WorkerWeatherAlertsComponent implements OnInit, OnDestroy {
     });
   }
 
+  private getExportFilter(): WeatherAlertFilter {
+    const filterValues = this.filterForm.value;
+    const fromDate = filterValues.fromDate ? new Date(filterValues.fromDate).toISOString() : null;
+    const toDate = filterValues.toDate ? new Date(filterValues.toDate).toISOString() : null;
+
+    return {
+      fieldId: filterValues.fieldId || null,
+      severity: filterValues.severity || null,
+      isAcknowledged: filterValues.isAcknowledged !== '' ? filterValues.isAcknowledged : null,
+      isActive: filterValues.isActive !== '' ? filterValues.isActive : null,
+      fromDate: fromDate,
+      toDate: toDate,
+      page: 1,
+      pageSize: this.totalCount() || 100000,
+      sortBy: this.sortField(),
+      isDescending: this.sortDirection() === 'desc'
+    };
+  }
+
   exportPdf(): void {
     if (!this.hasAlerts()) {
       this.showWarning('No data to export');
       return;
     }
-    const columns = [
-      { header: 'Severity', dataKey: 'severity' },
-      { header: 'Alert Type', dataKey: 'alertType' },
-      { header: 'Title', dataKey: 'title' },
-      { header: 'Field', dataKey: 'fieldName' },
-      { header: 'Status', dataKey: 'status' },
-      { header: 'Alert Time', dataKey: 'alertTimeFormatted' }
-    ];
-    const data = this.alerts().map(a => ({
-      ...a,
-      fieldName: this.getFieldName(a.fieldId),
-      status: a.isAcknowledged ? 'Resolved' : 'Active',
-      alertTimeFormatted: this.formatDate(a.alertTime)
-    }));
-    this.reportService.exportToPdf(data, columns, 'Weather Alerts Report', 'weather_alerts');
+    this.isLoading.set(true);
+    this.weatherService.getWeatherAlerts(this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Severity', dataKey: 'severity' },
+              { header: 'Alert Type', dataKey: 'alertType' },
+              { header: 'Title', dataKey: 'title' },
+              { header: 'Field', dataKey: 'fieldName' },
+              { header: 'Status', dataKey: 'status' },
+              { header: 'Alert Time', dataKey: 'alertTimeFormatted' }
+            ];
+            const data = items.map((a: any) => ({
+              ...a,
+              fieldName: this.getFieldName(a.fieldId),
+              status: a.isAcknowledged ? 'Resolved' : 'Active',
+              alertTimeFormatted: this.formatDate(a.alertTime)
+            }));
+            this.reportService.exportToPdf(data, columns, 'Weather Alerts Report', 'weather_alerts');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   exportCsv(): void {
@@ -453,16 +485,29 @@ export class WorkerWeatherAlertsComponent implements OnInit, OnDestroy {
       this.showWarning('No data to export');
       return;
     }
-    const data = this.alerts().map(a => ({
-      Severity: a.severity,
-      'Alert Type': a.alertType,
-      Title: a.title,
-      Field: this.getFieldName(a.fieldId),
-      Message: a.message,
-      Status: a.isAcknowledged ? 'Resolved' : 'Active',
-      'Alert Time': this.formatDate(a.alertTime)
-    }));
-    this.reportService.exportToCsv(data, 'weather_alerts');
+    this.isLoading.set(true);
+    this.weatherService.getWeatherAlerts(this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const data = items.map((a: any) => ({
+              Severity: a.severity,
+              'Alert Type': a.alertType,
+              Title: a.title,
+              Field: this.getFieldName(a.fieldId),
+              Message: a.message,
+              Status: a.isAcknowledged ? 'Resolved' : 'Active',
+              'Alert Time': this.formatDate(a.alertTime)
+            }));
+            this.reportService.exportToCsv(data, 'weather_alerts');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   ngOnDestroy(): void {

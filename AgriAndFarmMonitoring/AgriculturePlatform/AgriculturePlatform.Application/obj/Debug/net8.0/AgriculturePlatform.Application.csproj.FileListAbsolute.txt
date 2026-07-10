@@ -13,4 +13,3 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/obj/Debug/net8.0/refint/AgriculturePlatform.Application.dll
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/obj/Debug/net8.0/AgriculturePlatform.Application.pdb
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/obj/Debug/net8.0/ref/AgriculturePlatform.Application.dll
-/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/obj/Debug/net8.0/AgriculturePlatform.Application.sourcelink.json

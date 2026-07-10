@@ -1,97 +1,328 @@
-<!-- src/app/features/admin/dashboard/dashboard.component.html -->
-<div class="dashboard-container">
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="loading-container">
-    <div class="loading-spinner"></div>
-    <p class="loading-text">Loading dashboard...</p>
+<div class="dashboard-container relative max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6 bg-slate-50/50 min-h-screen">
+
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between mb-2">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Farm Overview</h1>
+      <p class="text-slate-500 mt-1">Welcome back, {{ userName }} ({{ farmName }})</p>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="flex gap-2 mt-4 md:mt-0">
+      <button mat-flat-button class="!bg-emerald-600 !text-white !rounded-xl" (click)="quickAction('addField')">
+        <mat-icon>add</mat-icon> Add Field
+      </button>
+      <button mat-stroked-button class="!rounded-xl !border-slate-200" [matMenuTriggerFor]="actionMenu">
+        More Actions <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+      </button>
+      <mat-menu #actionMenu="matMenu" class="!rounded-xl !mt-2">
+        <button mat-menu-item (click)="quickAction('addWorker')"><mat-icon class="text-blue-500">person_add</mat-icon> Assign Worker</button>
+        <button mat-menu-item (click)="quickAction('assignTask')"><mat-icon class="text-amber-500">assignment</mat-icon> Create Task</button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="quickAction('reports')"><mat-icon class="text-purple-500">download</mat-icon> Generate Reports</button>
+      </mat-menu>
+    </div>
+  </div>
+
+  <!-- Loading Skeleton -->
+  <div *ngIf="isLoading" class="space-y-6 animate-pulse mt-8">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div *ngFor="let i of [1,2,3,4,5,6]" class="h-28 bg-slate-200 rounded-2xl"></div>
+    </div>
+    <div class="grid lg:grid-cols-2 gap-6">
+      <div class="h-[350px] bg-slate-200 rounded-2xl"></div>
+      <div class="h-[350px] bg-slate-200 rounded-2xl"></div>
+    </div>
   </div>
 
   <!-- Dashboard Content -->
-  <div *ngIf="!isLoading" class="dashboard-content">
-    <!-- Welcome Section -->
-    <div class="welcome-section">
-      <div>
-        <h1 class="welcome-title">Welcome back, {{ userName }}!</h1>
-        <p class="welcome-subtitle">{{ farmName }} - {{ currentDate | date:'fullDate' }}</p>
+  <ng-container *ngIf="!isLoading">
+
+    <!-- 1. Quick Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      
+      <!-- Revenue -->
+      <div class="stat-card">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-sm font-medium text-slate-500">Monthly Rev</p>
+            <h3 class="text-2xl font-bold text-slate-800 mt-1">${{ stats.monthlyRevenue | number:'1.0-0' }}</h3>
+          </div>
+          <div class="stat-icon-wrapper bg-emerald-50 text-emerald-600">
+            <mat-icon>payments</mat-icon>
+          </div>
+        </div>
       </div>
-      <button mat-raised-button color="primary">
-        <mat-icon>add</mat-icon>
-        Add Field
-      </button>
+
+      <!-- Pending Approvals -->
+      <div class="stat-card" [class.!border-amber-300]="stats.pendingApprovals > 0" [class.!bg-amber-50]="stats.pendingApprovals > 0">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-sm font-medium text-slate-500" [class.!text-amber-700]="stats.pendingApprovals > 0">Pending Approvals</p>
+            <h3 class="text-2xl font-bold text-slate-800 mt-1">{{ stats.pendingApprovals }}</h3>
+          </div>
+          <div class="stat-icon-wrapper bg-amber-100 text-amber-600">
+            <mat-icon>pending_actions</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Alerts -->
+      <div class="stat-card" [class.!border-red-300]="stats.activeAlerts > 0" [class.!bg-red-50]="stats.activeAlerts > 0">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-sm font-medium text-slate-500" [class.!text-red-700]="stats.activeAlerts > 0">Active Alerts</p>
+            <h3 class="text-2xl font-bold text-slate-800 mt-1">{{ stats.activeAlerts }}</h3>
+          </div>
+          <div class="stat-icon-wrapper bg-red-100 text-red-600">
+            <mat-icon>notification_important</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Fields -->
+      <div class="stat-card">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-sm font-medium text-slate-500">Total Fields</p>
+            <h3 class="text-2xl font-bold text-slate-800 mt-1">{{ stats.totalFields }}</h3>
+          </div>
+          <div class="stat-icon-wrapper bg-blue-50 text-blue-600">
+            <mat-icon>landscape</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Crops -->
+      <div class="stat-card">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-sm font-medium text-slate-500">Active Crops</p>
+            <h3 class="text-2xl font-bold text-slate-800 mt-1">{{ stats.activeCrops }}</h3>
+          </div>
+          <div class="stat-icon-wrapper bg-green-50 text-green-600">
+            <mat-icon>grass</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Workers -->
+      <div class="stat-card">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-sm font-medium text-slate-500">Active Workers</p>
+            <h3 class="text-2xl font-bold text-slate-800 mt-1">{{ stats.activeWorkers }}</h3>
+          </div>
+          <div class="stat-icon-wrapper bg-indigo-50 text-indigo-600">
+            <mat-icon>group</mat-icon>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Stats Cards - Empty, ready for data -->
-    <div class="stats-grid">
-      <mat-card class="stat-card">
-        <div class="stat-content">
-          <div>
-            <p class="stat-label">Total Fields</p>
-            <h3 class="stat-value">{{ stats.totalFields }}</h3>
-          </div>
-          <div class="stat-icon-wrapper">
-            <mat-icon class="stat-icon">agriculture</mat-icon>
-          </div>
+    <!-- 2 & 3. Performance Charts (Revenue & Tasks) -->
+    <div class="grid lg:grid-cols-2 gap-6">
+      <div class="panel-card">
+        <h2 class="panel-title">
+          <mat-icon class="text-emerald-500">trending_up</mat-icon>
+          Revenue & Yield Overview (6 Months)
+        </h2>
+        <div class="chart-container">
+          <canvas baseChart
+            [data]="revenueChartData"
+            [options]="revenueChartOptions"
+            [type]="'line'">
+          </canvas>
         </div>
-      </mat-card>
+      </div>
 
-      <mat-card class="stat-card">
-        <div class="stat-content">
-          <div>
-            <p class="stat-label">Active Crop Cycles</p>
-            <h3 class="stat-value">{{ stats.activeCropCycles }}</h3>
-          </div>
-          <div class="stat-icon-wrapper">
-            <mat-icon class="stat-icon">grass</mat-icon>
-          </div>
+      <div class="panel-card">
+        <h2 class="panel-title">
+          <mat-icon class="text-blue-500">task_alt</mat-icon>
+          Task Completion Trends (7 Days)
+        </h2>
+        <div class="chart-container">
+          <canvas baseChart
+            [data]="taskChartData"
+            [options]="taskChartOptions"
+            [type]="'line'">
+          </canvas>
         </div>
-      </mat-card>
-
-      <mat-card class="stat-card">
-        <div class="stat-content">
-          <div>
-            <p class="stat-label">Critical Alerts</p>
-            <h3 class="stat-value">{{ stats.criticalAlerts }}</h3>
-          </div>
-          <div class="stat-icon-wrapper">
-            <mat-icon class="stat-icon">notifications_active</mat-icon>
-          </div>
-        </div>
-      </mat-card>
-
-      <mat-card class="stat-card">
-        <div class="stat-content">
-          <div>
-            <p class="stat-label">Today's Tasks</p>
-            <h3 class="stat-value">{{ stats.todayTasks }}</h3>
-          </div>
-          <div class="stat-icon-wrapper">
-            <mat-icon class="stat-icon">assignment</mat-icon>
-          </div>
-        </div>
-      </mat-card>
+      </div>
     </div>
 
-    <!-- Placeholder for Recent Activity -->
-    <mat-card class="activity-card">
-      <div class="activity-header">
-        <h3 class="activity-title">Recent Activity</h3>
-        <button mat-button color="primary">
-          View All
-          <mat-icon>arrow_forward</mat-icon>
-        </button>
+    <!-- 4. Priority Queue & Alerts -->
+    <div class="grid lg:grid-cols-2 gap-6">
+      
+      <!-- Priority Action Panel (Pending Approvals) -->
+      <div class="panel-card flex flex-col max-h-[400px]">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="panel-title !mb-0">
+            <mat-icon class="text-amber-500">playlist_add_check</mat-icon>
+            Priority Approvals
+          </h2>
+          <span class="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-full">{{ stats.pendingApprovals }} Pending</span>
+        </div>
+        
+        <div class="scrollable-list flex-1" *ngIf="pendingApprovalsList.length > 0">
+          <div *ngFor="let item of pendingApprovalsList" class="flex items-center justify-between p-3 mb-2 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                <mat-icon>{{ item.type === 'Harvest' ? 'agriculture' : 'fact_check' }}</mat-icon>
+              </div>
+              <div>
+                <p class="font-medium text-slate-800 text-sm">{{ item.type }} Review: {{ item.fieldName }}</p>
+                <p class="text-xs text-slate-500">{{ (item.createdAt || item.recordedAt || item.harvestDate) | date:'mediumDate' }} • By Worker #{{ item.workerId }}</p>
+              </div>
+            </div>
+            <button mat-icon-button class="text-emerald-600" (click)="approveItem(item)" matTooltip="Review Item">
+              <mat-icon>launch</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div *ngIf="pendingApprovalsList.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400 py-8">
+          <mat-icon class="text-4xl mb-2 opacity-50">done_all</mat-icon>
+          <p>You're all caught up!</p>
+        </div>
       </div>
 
-      <!-- Empty State -->
-      <div *ngIf="recentActivities.length === 0" class="empty-state">
-        <mat-icon class="empty-icon">inbox</mat-icon>
-        <p class="empty-text">No recent activity</p>
-        <p class="empty-subtext">Activities will appear here once you start using the platform</p>
+      <!-- Critical Alerts -->
+      <div class="panel-card flex flex-col max-h-[400px]">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="panel-title !mb-0 text-red-600">
+            <mat-icon>warning</mat-icon>
+            Critical Alerts
+          </h2>
+          <a routerLink="/admin/sensors/alerts" class="text-sm font-medium text-red-600 hover:underline">View All</a>
+        </div>
+
+        <div class="scrollable-list flex-1" *ngIf="criticalAlerts.length > 0">
+          <div *ngFor="let alert of criticalAlerts" class="flex items-center justify-between p-3 mb-2 rounded-xl bg-red-50 border border-red-100">
+            <div class="flex items-center gap-3">
+              <mat-icon class="text-red-500 shrink-0">error</mat-icon>
+              <div>
+                <p class="font-medium text-red-800 text-sm">{{ alert.alertType }} • {{ alert.fieldName }}</p>
+                <p class="text-xs text-red-600">{{ alert.message }}</p>
+              </div>
+            </div>
+            <button mat-icon-button class="text-red-700" (click)="resolveAlert(alert)" matTooltip="Resolve">
+              <mat-icon>arrow_forward_ios</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div *ngIf="criticalAlerts.length === 0" class="flex-1 flex flex-col items-center justify-center text-emerald-500 py-8">
+          <mat-icon class="text-4xl mb-2 opacity-50">verified_user</mat-icon>
+          <p>No critical alerts right now.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Active Crops & Field Insights -->
+    <div class="grid lg:grid-cols-2 gap-6">
+      
+      <!-- Crop Cycle Monitoring -->
+      <div class="panel-card">
+        <h2 class="panel-title">
+          <mat-icon class="text-green-600">eco</mat-icon>
+          Crop Cycle Monitoring
+        </h2>
+        <div class="space-y-4 mt-4" *ngIf="activeCropCycles.length > 0">
+          <div *ngFor="let crop of activeCropCycles" class="group">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-medium text-sm text-slate-800">{{ crop.cropName }} <span class="text-slate-500 font-normal">({{ crop.fieldName }})</span></span>
+              <span class="text-xs font-bold" [ngClass]="crop.progress >= 90 ? 'text-amber-500' : 'text-green-600'">{{ crop.progress }}%</span>
+            </div>
+            <mat-progress-bar 
+              mode="determinate" 
+              [value]="crop.progress" 
+              class="rounded-full h-2"
+              [color]="crop.progress >= 90 ? 'accent' : 'primary'">
+            </mat-progress-bar>
+            <p class="text-[11px] text-slate-400 mt-1">Est. Harvest: {{ crop.estimatedHarvestDate | date:'mediumDate' }}</p>
+          </div>
+        </div>
+        <div *ngIf="activeCropCycles.length === 0" class="text-center text-slate-400 py-6">
+          No active crop cycles found.
+        </div>
       </div>
 
-      <!-- Activity Items - Ready for data -->
-      <div *ngFor="let activity of recentActivities" class="activity-item">
-        <!-- Activity content will go here -->
+      <!-- Field Health Overview -->
+      <div class="panel-card">
+        <h2 class="panel-title">
+          <mat-icon class="text-indigo-500">analytics</mat-icon>
+          Field Health Observations
+        </h2>
+        <div class="grid grid-cols-2 gap-4 mt-4" *ngIf="fieldHealthList.length > 0">
+          <div *ngFor="let field of fieldHealthList" class="p-4 rounded-xl border border-slate-100 bg-slate-50 flex flex-col items-center justify-center text-center">
+            <span class="text-sm font-medium text-slate-700 mb-2 truncate w-full">{{ field.name }}</span>
+            <span class="px-3 py-1 rounded-full text-xs font-bold tracking-wide" [ngClass]="getHealthColor(field.health)">
+              {{ field.health }}
+            </span>
+          </div>
+        </div>
+        <div *ngIf="fieldHealthList.length === 0" class="text-center text-slate-400 py-6">
+          No recent field observations.
+        </div>
       </div>
-    </mat-card>
-  </div>
+    </div>
+
+    <!-- 6. Workforce & Recent Activity -->
+    <div class="grid lg:grid-cols-2 gap-6">
+      
+      <!-- Worker Leaderboard -->
+      <div class="panel-card">
+        <h2 class="panel-title">
+          <mat-icon class="text-orange-500">emoji_events</mat-icon>
+          Top Performers (All-Time)
+        </h2>
+        <div class="space-y-3 mt-4">
+          <div *ngFor="let worker of topWorkers; let i = index" class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0" 
+                 [ngClass]="i === 0 ? 'bg-amber-100 text-amber-600' : (i === 1 ? 'bg-slate-200 text-slate-600' : (i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-500'))">
+              #{{ i + 1 }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-sm text-slate-800 truncate">{{ worker.name }}</p>
+              <p class="text-xs text-slate-500 truncate">{{ worker.role }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-bold text-slate-700">{{ worker.completed }}</p>
+              <p class="text-[10px] uppercase text-slate-400 tracking-wider">Tasks</p>
+            </div>
+          </div>
+          <div *ngIf="topWorkers.length === 0" class="text-center text-slate-400 py-6">
+            No completed tasks found.
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity Feed -->
+      <div class="panel-card relative overflow-hidden">
+        <h2 class="panel-title">
+          <mat-icon class="text-purple-500">history</mat-icon>
+          Recent Activity Feed
+        </h2>
+        <div class="mt-4 relative before:absolute before:inset-y-0 before:left-[19px] before:w-[2px] before:bg-slate-100">
+          <div *ngFor="let activity of recentActivities" class="relative flex gap-4 mb-5 last:mb-0">
+            <div class="feed-item-icon {{ activity.bg }} {{ activity.color }}">
+              <mat-icon class="scale-75">{{ activity.icon }}</mat-icon>
+            </div>
+            <div class="flex-1 pt-1">
+              <div class="flex justify-between items-start mb-0.5">
+                <span class="text-sm font-semibold text-slate-800">{{ activity.title }}</span>
+                <span class="text-[11px] text-slate-400 font-medium bg-slate-50 px-2 py-0.5 rounded-full">{{ activity.date | date:'MMM d, h:mm a' }}</span>
+              </div>
+              <p class="text-sm text-slate-500">{{ activity.desc }}</p>
+            </div>
+          </div>
+          <div *ngIf="recentActivities.length === 0" class="text-center text-slate-400 py-6 pl-10">
+            No recent activity across the farm.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </ng-container>
 </div>

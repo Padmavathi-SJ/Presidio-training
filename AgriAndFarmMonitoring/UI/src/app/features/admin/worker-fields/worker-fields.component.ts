@@ -448,45 +448,87 @@ export class WorkerFieldsComponent implements OnInit {
     });
   }
 
+  private getExportFilter(): WorkerFieldFilterDto {
+    const filterValues = this.filterForm.value;
+    return {
+      workerId: filterValues.workerId || null,
+      fieldId: filterValues.fieldId || null,
+      isActive: filterValues.isActive !== '' ? filterValues.isActive : null,
+      assignedDateFrom: filterValues.assignedDateFrom ? new Date(filterValues.assignedDateFrom).toISOString() : null,
+      assignedDateTo: filterValues.assignedDateTo ? new Date(filterValues.assignedDateTo).toISOString() : null,
+      endDateFrom: filterValues.endDateFrom ? new Date(filterValues.endDateFrom).toISOString() : null,
+      endDateTo: filterValues.endDateTo ? new Date(filterValues.endDateTo).toISOString() : null,
+      page: 1,
+      pageSize: this.totalCount() || 100000,
+      sortBy: this.sortField(),
+      isDescending: this.sortDirection() === 'desc'
+    };
+  }
+
   exportPdf(): void {
-    const data = this.assignments();
-    if (!data.length) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.hasAssignments()) {
       this.showWarning('No data to export');
       return;
     }
-    const columns = [
-      { header: 'Assigned Date', dataKey: 'assignedDate' },
-      { header: 'End Date', dataKey: 'endDate' },
-      { header: 'Worker', dataKey: 'workerName' },
-      { header: 'Field', dataKey: 'fieldName' },
-      { header: 'Location', dataKey: 'fieldLocation' },
-      { header: 'Status', dataKey: 'status' }
-    ];
-    // Map status for display
-    const printData = data.map(d => ({
-      ...d,
-      status: d.isActive ? 'Active' : 'Inactive',
-      assignedDate: this.formatDate(d.assignedDate),
-      endDate: d.endDate ? this.formatDate(d.endDate) : '-'
-    }));
-    this.reportService.exportToPdf(printData, columns, 'Worker Field Assignments Report', 'Worker_Assignments');
+    this.isLoading.set(true);
+    this.workerFieldService.getAssignments(farmId, this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Assigned Date', dataKey: 'assignedDate' },
+              { header: 'End Date', dataKey: 'endDate' },
+              { header: 'Worker', dataKey: 'workerName' },
+              { header: 'Field', dataKey: 'fieldName' },
+              { header: 'Location', dataKey: 'fieldLocation' },
+              { header: 'Status', dataKey: 'status' }
+            ];
+            const printData = items.map((d: any) => ({
+              ...d,
+              status: d.isActive ? 'Active' : 'Inactive',
+              assignedDate: this.formatDate(d.assignedDate),
+              endDate: d.endDate ? this.formatDate(d.endDate) : '-'
+            }));
+            this.reportService.exportToPdf(printData, columns, 'Worker Field Assignments Report', 'Worker_Assignments');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   exportCsv(): void {
-    const data = this.assignments();
-    if (!data.length) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.hasAssignments()) {
       this.showWarning('No data to export');
       return;
     }
-    const cleanData = data.map(d => ({
-      Assigned_Date: this.formatDate(d.assignedDate),
-      End_Date: d.endDate ? this.formatDate(d.endDate) : 'N/A',
-      Worker: d.workerName,
-      Field: d.fieldName,
-      Location: d.fieldLocation || 'N/A',
-      Status: d.isActive ? 'Active' : 'Inactive'
-    }));
-    this.reportService.exportToCsv(cleanData, 'Worker_Assignments');
+    this.isLoading.set(true);
+    this.workerFieldService.getAssignments(farmId, this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const cleanData = items.map((d: any) => ({
+              Assigned_Date: this.formatDate(d.assignedDate),
+              End_Date: d.endDate ? this.formatDate(d.endDate) : 'N/A',
+              Worker: d.workerName,
+              Field: d.fieldName,
+              Location: d.fieldLocation || 'N/A',
+              Status: d.isActive ? 'Active' : 'Inactive'
+            }));
+            this.reportService.exportToCsv(cleanData, 'Worker_Assignments');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   ngOnDestroy(): void {

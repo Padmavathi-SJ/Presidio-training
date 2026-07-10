@@ -603,50 +603,88 @@ export class WeatherDataHistoryComponent implements OnInit, OnDestroy {
   // EXPORT
   // =============================================
 
+  private getExportFilter(): WeatherHistoryFilter {
+    const filterValues = this.filterForm.value;
+    const fromDate = filterValues.fromDate ? new Date(filterValues.fromDate).toISOString() : null;
+    const toDate = filterValues.toDate ? new Date(filterValues.toDate).toISOString() : null;
+    return {
+      fieldId: filterValues.fieldId || null,
+      fromDate: fromDate,
+      toDate: toDate,
+      page: 1,
+      pageSize: this.totalCount() || 100000
+    };
+  }
+
   exportPdf(): void {
-    const data = this.weatherData();
-    if (!data || data.length === 0) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.weatherData().length) {
       this.showError('No data to export');
       return;
     }
-    const columns = [
-      { header: 'Recorded', dataKey: 'recordedAt' },
-      { header: 'Field', dataKey: 'fieldName' },
-      { header: 'Temperature (°C)', dataKey: 'temperature' },
-      { header: 'Humidity (%)', dataKey: 'humidity' },
-      { header: 'Wind Speed (m/s)', dataKey: 'windSpeed' },
-      { header: 'Rainfall (mm)', dataKey: 'rainfallMm' },
-      { header: 'Condition', dataKey: 'condition' }
-    ];
-    // Map status for display
-    const printData = data.map(d => ({
-      ...d,
-      temperature: d.temperature ?? 'N/A',
-      humidity: d.humidity ?? 'N/A',
-      windSpeed: d.windSpeed ?? 'N/A',
-      rainfallMm: d.rainfallMm ?? 'N/A',
-      condition: d.condition || 'N/A',
-      recordedAt: this.formatDate(d.recordedAt)
-    }));
-    this.reportService.exportToPdf(printData, columns, 'Weather Data Report', 'Weather_Data');
+    this.isLoading.set(true);
+    this.weatherService.getWeatherHistory(farmId, this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Recorded', dataKey: 'recordedAt' },
+              { header: 'Field', dataKey: 'fieldName' },
+              { header: 'Temperature (°C)', dataKey: 'temperature' },
+              { header: 'Humidity (%)', dataKey: 'humidity' },
+              { header: 'Wind Speed (m/s)', dataKey: 'windSpeed' },
+              { header: 'Rainfall (mm)', dataKey: 'rainfallMm' },
+              { header: 'Condition', dataKey: 'condition' }
+            ];
+            const printData = items.map((d: any) => ({
+              ...d,
+              temperature: d.temperature ?? 'N/A',
+              humidity: d.humidity ?? 'N/A',
+              windSpeed: d.windSpeed ?? 'N/A',
+              rainfallMm: d.rainfallMm ?? 'N/A',
+              condition: d.condition || 'N/A',
+              recordedAt: this.formatDate(d.recordedAt)
+            }));
+            this.reportService.exportToPdf(printData, columns, 'Weather Data Report', 'Weather_Data');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   exportCsv(): void {
-    const data = this.weatherData();
-    if (!data || data.length === 0) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.weatherData().length) {
       this.showError('No data to export');
       return;
     }
-    const cleanData = data.map(d => ({
-      Recorded: this.formatDate(d.recordedAt),
-      Field: d.fieldName,
-      'Temperature (°C)': d.temperature ?? 'N/A',
-      'Humidity (%)': d.humidity ?? 'N/A',
-      'Wind Speed (m/s)': d.windSpeed ?? 'N/A',
-      'Rainfall (mm)': d.rainfallMm ?? 'N/A',
-      Condition: d.condition || 'N/A'
-    }));
-    this.reportService.exportToCsv(cleanData, 'Weather_Data');
+    this.isLoading.set(true);
+    this.weatherService.getWeatherHistory(farmId, this.getExportFilter())
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const cleanData = items.map((d: any) => ({
+              Recorded: this.formatDate(d.recordedAt),
+              Field: d.fieldName,
+              'Temperature (°C)': d.temperature ?? 'N/A',
+              'Humidity (%)': d.humidity ?? 'N/A',
+              'Wind Speed (m/s)': d.windSpeed ?? 'N/A',
+              'Rainfall (mm)': d.rainfallMm ?? 'N/A',
+              Condition: d.condition || 'N/A'
+            }));
+            this.reportService.exportToCsv(cleanData, 'Weather_Data');
+          } else {
+            this.showError('Failed to fetch data for export');
+          }
+        },
+        error: () => this.showError('Failed to fetch data for export')
+      });
   }
 
   ngOnDestroy(): void {

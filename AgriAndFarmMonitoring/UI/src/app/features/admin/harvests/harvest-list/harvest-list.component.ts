@@ -23,7 +23,8 @@ import { FieldService } from '../../services/field.service';
 import { CropCycleService } from '../../services/crop-cycle.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ReportGeneratorService } from '../../../../core/services/report-generator.service';
-import { HarvestDto } from '../models/admin-harvest.model';
+import { AdminHarvestService } from '../services/admin-harvest.service';
+import { HarvestDto, HarvestFilterDto } from '../models/admin-harvest.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { HarvestDetailsComponent } from '../harvest-details/harvest-details.component';
@@ -49,6 +50,7 @@ export class HarvestListComponent implements OnInit, AfterViewInit, OnDestroy {
   private fieldService = inject(FieldService);
   private cropCycleService = inject(CropCycleService);
   private authService = inject(AuthService);
+  private adminHarvestService = inject(AdminHarvestService);
   private fb = inject(FormBuilder);
   private reportService = inject(ReportGeneratorService);
   private snackBar = inject(MatSnackBar);
@@ -228,39 +230,80 @@ export class HarvestListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private getExportFilter(): HarvestFilterDto {
+    const val = this.filterForm.value;
+    return {
+      ...this.currentFilter(),
+      fieldId: val.fieldId || (undefined as any),
+      cropCycleId: val.cropCycleId || (undefined as any),
+      qualityGrade: val.qualityGrade || (undefined as any),
+      fromDate: val.fromDate ? new Date(val.fromDate).toISOString() : (undefined as any),
+      toDate: val.toDate ? new Date(val.toDate).toISOString() : (undefined as any),
+      page: 1,
+      pageSize: this.totalCount() || 100000
+    };
+  }
+
   exportPdf(): void {
-    const data = this.harvests();
-    if (!data.length) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.harvests().length) {
       this.snackBar.open('No data to export', 'Close', { duration: 3000 });
       return;
     }
-    const columns = [
-      { header: 'Date', dataKey: 'harvestDate' },
-      { header: 'Field', dataKey: 'fieldName' },
-      { header: 'Crop', dataKey: 'cropType' },
-      { header: 'Qty (Kg)', dataKey: 'quantityKg' },
-      { header: 'Grade', dataKey: 'qualityGrade' },
-      { header: 'Status', dataKey: 'approvalStatus' }
-    ];
-    this.reportService.exportToPdf(data, columns, 'Farm Harvests Report', 'Farm_Harvests');
+    
+    // Set a loading indicator if available, otherwise just proceed
+    // We can use the state's isLoading if we want, or a local one, but we don't have a local one.
+    // For simplicity, we just fetch
+    this.adminHarvestService.getHarvests(farmId, this.getExportFilter())
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const columns = [
+              { header: 'Date', dataKey: 'harvestDate' },
+              { header: 'Field', dataKey: 'fieldName' },
+              { header: 'Crop', dataKey: 'cropType' },
+              { header: 'Qty (Kg)', dataKey: 'quantityKg' },
+              { header: 'Grade', dataKey: 'qualityGrade' },
+              { header: 'Status', dataKey: 'approvalStatus' }
+            ];
+            this.reportService.exportToPdf(items, columns, 'Farm Harvests Report', 'Farm_Harvests');
+          } else {
+            this.snackBar.open('Failed to fetch data for export', 'Close', { duration: 3000 });
+          }
+        },
+        error: () => this.snackBar.open('Failed to fetch data for export', 'Close', { duration: 3000 })
+      });
   }
 
   exportCsv(): void {
-    const data = this.harvests();
-    if (!data.length) {
+    const farmId = this.authService.getFarmId();
+    if (!farmId || !this.harvests().length) {
       this.snackBar.open('No data to export', 'Close', { duration: 3000 });
       return;
     }
-    const cleanData = data.map(d => ({
-      Date: d.harvestDate,
-      Field: d.fieldName,
-      Crop: d.cropType,
-      Quantity_Kg: d.quantityKg,
-      Grade: d.qualityGrade,
-      Submitter: d.submitterName,
-      Status: d.approvalStatus,
-      Notes: d.notes || ''
-    }));
-    this.reportService.exportToCsv(cleanData, 'Farm_Harvests');
+
+    this.adminHarvestService.getHarvests(farmId, this.getExportFilter())
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            const items = response.data.items || [];
+            const cleanData = items.map((d: any) => ({
+              Date: d.harvestDate,
+              Field: d.fieldName,
+              Crop: d.cropType,
+              Quantity_Kg: d.quantityKg,
+              Grade: d.qualityGrade,
+              Submitter: d.submitterName,
+              Status: d.approvalStatus,
+              Notes: d.notes || ''
+            }));
+            this.reportService.exportToCsv(cleanData, 'Farm_Harvests');
+          } else {
+            this.snackBar.open('Failed to fetch data for export', 'Close', { duration: 3000 });
+          }
+        },
+        error: () => this.snackBar.open('Failed to fetch data for export', 'Close', { duration: 3000 })
+      });
   }
 }
