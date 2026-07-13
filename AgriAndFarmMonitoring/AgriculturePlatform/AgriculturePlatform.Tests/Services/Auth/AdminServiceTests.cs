@@ -16,6 +16,7 @@ public class AdminServiceTests
     private readonly Mock<IFarmRepository> _farmRepositoryMock;
     private readonly Mock<IRefreshTokenRepository> _refreshTokenRepositoryMock;
     private readonly Mock<IJwtService> _jwtServiceMock;
+    private readonly Mock<IEmailService> _emailServiceMock;
     private readonly AdminService _adminService;
 
     public AdminServiceTests()
@@ -24,12 +25,14 @@ public class AdminServiceTests
         _farmRepositoryMock = new Mock<IFarmRepository>();
         _refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
         _jwtServiceMock = new Mock<IJwtService>();
+        _emailServiceMock = new Mock<IEmailService>();
         
         _adminService = new AdminService(
             _adminRepositoryMock.Object,
             _farmRepositoryMock.Object,
             _refreshTokenRepositoryMock.Object,
-            _jwtServiceMock.Object);
+            _jwtServiceMock.Object,
+            _emailServiceMock.Object);
     }
 
     // =============================================

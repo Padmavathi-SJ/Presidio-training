@@ -60,7 +60,7 @@ export class Profile implements OnInit {
     if (!this.user()?.farmId) return;
     
     // We can fetch basic farm stats to show some farm details
-    this.http.get<any>(`${environment.apiUrl}/admin/farms/${this.user()?.farmId}/fields`).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/farms/${this.user()?.farmId}/fields`).subscribe({
       next: (res) => {
         const fields = Array.isArray(res) ? res : (res.data || []);
         this.farmStats.set({

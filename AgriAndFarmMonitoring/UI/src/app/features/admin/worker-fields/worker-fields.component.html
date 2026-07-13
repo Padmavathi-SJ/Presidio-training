@@ -345,7 +345,7 @@
       <mat-paginator 
         [length]="totalCount()"
         [pageSize]="pageSize()"
-        [pageSizeOptions]="[5, 10, 25, 50, 100]"
+        [hidePageSize]="true"
         (page)="onPageChange($event)"
         showFirstLastButtons
         class="border-t border-gray-200 text-xs sm:text-sm"

@@ -98,11 +98,7 @@ export const WORKER_ROUTES: Routes = [
         loadComponent: () => import('./quality-checks/quality-checks.component')
           .then(c => c.QualityChecksComponent)
       },
-      {
-        path: 'yield-reports',
-        loadComponent: () => import('./yield-reports/yield-reports')
-          .then(c => c.YieldReports)
-      },
+
       {
         path: 'profile',
         loadComponent: () => import('./profile/profile.component')

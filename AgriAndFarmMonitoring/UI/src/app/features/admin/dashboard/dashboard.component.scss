@@ -1,81 +1,159 @@
-.stat-card {
+// =============================================================
+// Admin Dashboard — Compact Agriculture Theme
+// All custom classes defined; Tailwind for utilities
+// =============================================================
+
+// Dashboard panel card override for admin
+.admin-panel-card {
+  background: #ffffff;
+  border: 1px solid #d5e1da;
+  border-radius: 10px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  background-color: #ffffff;
-  border-radius: 1rem;
-  padding: 1.25rem;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  box-shadow: 0 1px 3px rgba(45,106,79,0.04);
+  min-height: 0;
+  flex: 1;
+
+  &.card-full { flex: 0 0 auto; }
+}
+
+// Panel body scrollbar
+.admin-panel-body {
+  &::-webkit-scrollbar       { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: #c8d8cf; border-radius: 3px; }
+}
+
+// Activity feed connector line
+.activity-feed-list {
   position: relative;
-  overflow: hidden;
-}
-.stat-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border-color: #e2e8f0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    bottom: 10px;
+    width: 1.5px;
+    background: linear-gradient(to bottom, #d8f3dc, #e8f0ec);
+  }
+
+  .dash-activity-item {
+    position: relative;
+    z-index: 1;
+  }
 }
 
-.stat-icon-wrapper {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.panel-card {
-  background-color: #ffffff;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.panel-title {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.feed-item-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  z-index: 10;
-  border: 4px solid #ffffff;
-}
-
-.chart-container {
+// Revenue chart container
+.revenue-chart-wrap {
   position: relative;
   width: 100%;
-  height: 300px;
+  canvas { width: 100% !important; height: 100% !important; }
 }
 
+// Skeleton loading shimmer
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% auto;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+// Quick-actions bar
+.dashboard-quick-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #d5e1da;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(45,106,79,0.04);
+  flex-wrap: wrap;
+
+  .welcome-text {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #1a2e24;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; color: #2d6a4f; }
+  }
+
+  .quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+// Scrollable list inside panels (thin scrollbar)
 .scrollable-list {
   overflow-y: auto;
-  padding-right: 0.5rem;
+  padding-right: 2px;
+
+  &::-webkit-scrollbar       { width: 3px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #d8e8e0; border-radius: 3px; }
 }
-.scrollable-list::-webkit-scrollbar {
-  width: 6px;
+
+// Section separator label
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5a7a6a;
+  flex-shrink: 0;
+
+  mat-icon { font-size: 13px; width: 13px; height: 13px; color: #2d6a4f; }
 }
-.scrollable-list::-webkit-scrollbar-track {
-  background: transparent;
+
+// Empty alert state
+.empty-alert-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 20px;
+  color: #7aab8e;
+  font-size: 12.5px;
+  mat-icon { font-size: 24px; width: 24px; height: 24px; opacity: 0.45; }
 }
-.scrollable-list::-webkit-scrollbar-thumb {
-  background-color: #e2e8f0;
-  border-radius: 9999px;
+
+// Dashboard grid layout
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
+}
+
+.dashboard-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+// Alerts section side-by-side
+.dashboard-alerts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+
+  @media (max-width: 768px) { grid-template-columns: 1fr; }
 }

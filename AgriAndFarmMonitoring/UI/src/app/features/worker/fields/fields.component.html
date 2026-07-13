@@ -120,6 +120,11 @@
                     </div>
                   }
                 }
+                <div class="mt-4 flex justify-end border-t border-gray-100 pt-3">
+                  <button mat-stroked-button class="text-agri-primary border-agri-primary" (click)="openDetails(expandedFieldDetail()!)">
+                    <mat-icon>visibility</mat-icon> View Full Details
+                  </button>
+                </div>
               </div>
             }
           </div>
@@ -129,7 +134,7 @@
       @if (totalCount() > pageSize()) {
         <mat-paginator
           [length]="totalCount()" [pageSize]="pageSize()" [pageIndex]="pageIndex()"
-          [pageSizeOptions]="[6, 12, 18]" (page)="onPageChange($event)"
+          [hidePageSize]="true" (page)="onPageChange($event)"
           class="worker-paginator">
         </mat-paginator>
       }

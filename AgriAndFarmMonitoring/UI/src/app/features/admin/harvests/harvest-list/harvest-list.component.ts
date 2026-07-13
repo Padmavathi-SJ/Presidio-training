@@ -165,10 +165,16 @@ export class HarvestListComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onPageChange(event: PageEvent) {
-    this.harvestState.updateFilter({
-      page: event.pageIndex + 1,
-      pageSize: event.pageSize
+    this.harvestState.updateFilter({ 
+      page: event.pageIndex + 1, 
+      pageSize: event.pageSize 
     });
+  }
+
+  get dynamicPageSize(): number {
+    const count = this.totalCount();
+    if (count === 0) return 10;
+    return count > 10 ? 10 : count;
   }
 
   onSortChange(sortState: Sort) {

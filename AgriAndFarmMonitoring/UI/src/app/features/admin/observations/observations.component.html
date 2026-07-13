@@ -1,14 +1,14 @@
-<div class="p-6 max-w-7xl mx-auto space-y-6">
-  <!-- Page Header -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-outline-variant pb-4">
+<div class="admin-page-shell">
+  <!-- Compact Header -->
+  <div class="flex items-center justify-between pb-2 mb-2 border-b border-[#e8f0eb] flex-shrink-0">
     <div>
-      <h1 class="text-headline-md font-bold text-surface-on m-0">Observation Audit Center</h1>
-      <p class="text-body-sm text-surface-on-variant mt-1">Review, validate, and manage worker crop health observations</p>
+      <h1 class="admin-header-title">Observation Audit Center</h1>
+      <p class="admin-header-subtitle">Review, validate, and manage worker crop health observations</p>
     </div>
   </div>
 
   <!-- KPI Summary Cards -->
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+  <div class="admin-kpi-grid mb-2">
     <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
       <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant">Total Records</span>
       <div class="flex items-baseline gap-2 mt-2">
@@ -304,7 +304,7 @@
     
     <mat-paginator [length]="totalObservations"
                    [pageSize]="pageSize"
-                   [pageSizeOptions]="[5, 10, 25, 50]"
+                   [hidePageSize]="true"
                    (page)="onPageChange($event)"
                    showFirstLastButtons>
     </mat-paginator>

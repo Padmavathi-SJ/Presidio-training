@@ -190,7 +190,7 @@
       <mat-paginator 
         [length]="totalCount()"
         [pageSize]="pageSize()"
-        [pageSizeOptions]="[6, 12, 24]"
+        [hidePageSize]="true"
         (page)="onPageChange($event)"
         class="!bg-transparent"
       ></mat-paginator>

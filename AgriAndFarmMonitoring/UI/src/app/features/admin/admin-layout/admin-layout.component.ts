@@ -59,8 +59,7 @@ export class AdminLayoutComponent implements OnInit {
     { label: 'Weather', icon: 'cloud', route: '/admin/weather' },
     { label: 'Worker Tasks', icon: 'task', route: '/admin/tasks' },
     { label: 'Harvests', icon: 'inventory_2', route: '/admin/harvests' },
-    { label: 'Quality Checks', icon: 'verified', route: '/admin/quality-checks' },
-    { label: 'Yield Reports', icon: 'insights', route: '/admin/yield-reports' }
+    { label: 'Quality Checks', icon: 'verified', route: '/admin/quality-checks' }
   ];
 
   ngOnInit(): void {

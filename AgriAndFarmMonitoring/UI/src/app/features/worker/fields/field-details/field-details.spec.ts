@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { YieldReports } from './yield-reports';
+import { FieldDetails } from './field-details';
 
-describe('YieldReports', () => {
-  let component: YieldReports;
-  let fixture: ComponentFixture<YieldReports>;
+describe('FieldDetails', () => {
+  let component: FieldDetails;
+  let fixture: ComponentFixture<FieldDetails>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [YieldReports],
+      imports: [FieldDetails],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(YieldReports);
+    fixture = TestBed.createComponent(FieldDetails);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

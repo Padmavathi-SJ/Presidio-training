@@ -57,8 +57,7 @@ export class WorkerLayoutComponent implements OnInit {
     { label: 'Weather', icon: 'cloud', route: '/worker/weather' },
     { label: 'Sensor Data', icon: 'sensors', route: '/worker/sensors' },
     { label: 'Harvests', icon: 'inventory_2', route: '/worker/harvests' },
-    { label: 'Quality Checks', icon: 'verified', route: '/worker/quality-checks' },
-    { label: 'Yield Reports', icon: 'insights', route: '/worker/yield-reports' }
+    { label: 'Quality Checks', icon: 'verified', route: '/worker/quality-checks' }
   ];
 
   ngOnInit(): void {

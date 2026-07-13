@@ -18,12 +18,14 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatRippleModule } from '@angular/material/core';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 // App Imports
 import { AuthService } from '../../../core/services/auth.service';
 import { WorkerFieldService } from '../services/worker-field.service';
 import { 
   WorkerFieldList,
+  WorkerFieldDetail,
   WorkerCropCycle,
   FIELD_STATUS_COLORS,
   GROWTH_STAGE_COLORS,
@@ -31,6 +33,7 @@ import {
   GROWTH_STAGE_LABELS,
   CROP_TYPE_ICONS
 } from '../models/worker-field.model';
+import { FieldDetailsComponent } from './field-details/field-details';
 
 @Component({
   selector: 'app-worker-fields',
@@ -49,7 +52,9 @@ import {
     MatProgressBarModule,
     MatRippleModule,
     MatPaginatorModule,
-    MatExpansionModule
+    MatExpansionModule,
+    MatDialogModule,
+    FieldDetailsComponent
   ],
   templateUrl: './fields.component.html',
   styleUrls: ['./fields.component.scss']
@@ -58,6 +63,7 @@ export class FieldsComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private workerFieldService = inject(WorkerFieldService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   // State Signals
   isLoading = signal(false);
@@ -65,6 +71,7 @@ export class FieldsComponent implements OnInit, OnDestroy {
   fields = signal<WorkerFieldList[]>([]);
   expandedFieldId = signal<number | null>(null);
   expandedFieldCropCycles = signal<WorkerCropCycle[]>([]);
+  expandedFieldDetail = signal<WorkerFieldDetail | null>(null);
   isLoadingCropCycles = signal<number | null>(null);
   totalCount = signal(0);
   pageSize = signal(6);
@@ -107,6 +114,17 @@ export class FieldsComponent implements OnInit, OnDestroy {
       });
   }
 
+  // ✅ Open Details Dialog
+  openDetails(field: WorkerFieldDetail): void {
+    this.dialog.open(FieldDetailsComponent, {
+      data: { field },
+      panelClass: 'dialog-content-professional',
+      width: '90%',
+      maxWidth: '600px',
+      autoFocus: false
+    });
+  }
+
   refresh(): void {
     this.isRefreshing.set(true);
     this.loadFields();
@@ -119,6 +137,7 @@ export class FieldsComponent implements OnInit, OnDestroy {
       // Collapse if already expanded
       this.expandedFieldId.set(null);
       this.expandedFieldCropCycles.set([]);
+      this.expandedFieldDetail.set(null);
     } else {
       // Expand and load crop cycles
       this.expandedFieldId.set(field.fieldId);
@@ -133,14 +152,17 @@ export class FieldsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response.success) {
+            this.expandedFieldDetail.set(response.data);
             this.expandedFieldCropCycles.set(response.data.cropCycles || []);
           } else {
+            this.expandedFieldDetail.set(null);
             this.expandedFieldCropCycles.set([]);
             this.showError('Failed to load crop cycles');
           }
         },
         error: (error) => {
           console.error('Error loading crop cycles:', error);
+          this.expandedFieldDetail.set(null);
           this.expandedFieldCropCycles.set([]);
           this.showError('Failed to load crop cycles');
         }

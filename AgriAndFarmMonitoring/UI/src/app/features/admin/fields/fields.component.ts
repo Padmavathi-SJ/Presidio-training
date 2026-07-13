@@ -27,6 +27,7 @@ import { ReportGeneratorService } from '../../../core/services/report-generator.
 import { FieldService } from '../services/field.service';
 import { Field, FieldFilterDto, FIELD_STATUS_OPTIONS, SOIL_TYPE_OPTIONS, STATUS_COLORS, SOIL_TYPE_COLORS } from '../models/field.model';
 import { FieldFormComponent } from '../field-form/field-form.component';
+import { FieldDetailsComponent } from './field-details/field-details';
 import { FieldLocationComponent } from '../field-location/field-location.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CropCyclesComponent } from '../crop-cycles/crop-cycles.component';
@@ -56,6 +57,7 @@ import { CropCyclesComponent } from '../crop-cycles/crop-cycles.component';
     MatCheckboxModule,
     MatDividerModule,
     MatBadgeModule,
+    FieldDetailsComponent,
     CropCyclesComponent
   ],
   templateUrl: './fields.component.html'
@@ -298,6 +300,17 @@ export class FieldsComponent implements OnInit {
         this.triggerReload();
         this.showSuccess('Field updated successfully');
       }
+    });
+  }
+
+  // ✅ Open Details Dialog
+  openDetails(field: Field): void {
+    this.dialog.open(FieldDetailsComponent, {
+      data: { field },
+      panelClass: 'dialog-content-professional',
+      width: '90%',
+      maxWidth: '600px',
+      autoFocus: false
     });
   }
 

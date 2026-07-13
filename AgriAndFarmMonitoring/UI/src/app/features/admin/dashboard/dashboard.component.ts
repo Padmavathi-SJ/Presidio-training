@@ -23,6 +23,7 @@ import { FieldService } from '../services/field.service';
 import { CropCycleService } from '../services/crop-cycle.service';
 import { WorkerService } from '../services/worker.service';
 import { AdminObservationService } from '../services/admin-observation.service';
+import { WeatherService } from '../services/weather.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -54,6 +55,7 @@ export class DashboardComponent implements OnInit {
   private cropCycleService = inject(CropCycleService);
   private workerService = inject(WorkerService);
   private obsService = inject(AdminObservationService);
+  private weatherService = inject(WeatherService);
 
   isLoading = true;
   userName = '';
@@ -61,40 +63,39 @@ export class DashboardComponent implements OnInit {
 
   // --- STATS ---
   stats = {
+    monthlyRevenue: 0,
     totalFields: 0,
-    activeWorkers: 0,
+    totalWorkers: 0,
     activeCrops: 0,
-    pendingApprovals: 0,
-    activeAlerts: 0,
-    monthlyRevenue: 0
+    pendingObservations: 0,
+    pendingHarvests: 0,
+    pendingQualityChecks: 0,
+    unresolvedSensorAlerts: 0,
+    unresolvedWeatherAlerts: 0
   };
 
   // --- ARRAYS FOR PANELS ---
-  criticalAlerts: any[] = [];
-  pendingApprovalsList: any[] = [];
-  activeCropCycles: any[] = [];
-  topWorkers: any[] = [];
+  topCriticalSensors: any[] = [];
+  topCriticalWeathers: any[] = [];
+  recentPendingObs: any[] = [];
+  recentPendingHarvests: any[] = [];
+  recentPendingQcs: any[] = [];
   recentActivities: any[] = [];
-  fieldHealthList: any[] = [];
 
   // --- CHARTS CONFIG ---
-  revenueChartData: ChartConfiguration<'line'>['data'] = { labels: [], datasets: [] };
-  revenueChartOptions: ChartOptions<'line'> = {
+  revenueChartData: any = { labels: [], datasets: [] };
+  revenueChartOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
-    elements: {
-      line: { tension: 0.4, borderWidth: 3 },
-      point: { radius: 0, hoverRadius: 6 }
-    },
+    elements: { line: { tension: 0.4, borderWidth: 3 }, point: { radius: 0, hoverRadius: 6 } },
     scales: {
       x: { grid: { display: false } },
       y: { grid: { color: 'rgba(0,0,0,0.05)' }, beginAtZero: true }
     }
   };
 
-  taskChartData: ChartConfiguration<'line'>['data'] = { labels: [], datasets: [] };
-  taskChartOptions: ChartOptions<'line'> = { ...this.revenueChartOptions };
+
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) return;
@@ -123,7 +124,8 @@ export class DashboardComponent implements OnInit {
       tasks: this.taskService.getTasks(farmId, filter).pipe(catchError(() => of(null))),
       harvests: this.harvestService.getHarvests(farmId, filter).pipe(catchError(() => of(null))),
       obs: this.obsService.getObservations(farmId, filter).pipe(catchError(() => of(null))),
-      alerts: this.sensorService.getAlerts(farmId, filter).pipe(catchError(() => of(null))),
+      sensorAlerts: this.sensorService.getAlerts(farmId, filter).pipe(catchError(() => of(null))),
+      weatherAlerts: this.weatherService.getWeatherAlerts(farmId, filter).pipe(catchError(() => of(null))),
       qcs: this.qcService.getAll(filter).pipe(catchError(() => of(null)))
     }).pipe(
       finalize(() => this.isLoading = false)
@@ -133,48 +135,51 @@ export class DashboardComponent implements OnInit {
   }
 
   private processData(results: any): void {
-    this.stats.totalFields = results.fields?.data?.totalCount || 0;
-    this.stats.activeWorkers = results.workers?.data?.totalCount || 0;
-    this.stats.activeCrops = results.cropCycles?.data?.items?.filter((c: any) => c.status === 'ACTIVE').length || 0;
-    
-    const harvests = results.harvests?.data?.items || [];
-    const qcs = results.qcs?.data?.items || [];
-    const alerts = results.alerts?.data?.items || [];
-    const tasks = results.tasks?.data?.items || [];
-    const obs = results.obs?.data?.items || [];
+    const fields = results.fields?.data?.items || [];
+    const workers = results.workers?.data?.items || [];
     const cropCycles = results.cropCycles?.data?.items || [];
+    const harvests = results.harvests?.data?.items || [];
+    const obs = results.obs?.data?.items || [];
+    const qcs = results.qcs?.data?.items || [];
+    const sensorAlerts = results.sensorAlerts?.data?.items || [];
+    const weatherAlerts = results.weatherAlerts?.data?.items || [];
+    const tasks = results.tasks?.data?.items || [];
 
-    // Pending Approvals
-    const pendingHarvests = harvests.filter((h: any) => h.approvalStatus === 'PENDING').map((h: any) => ({ ...h, type: 'Harvest' }));
-    const pendingQcs = qcs.filter((q: any) => q.approvalStatus === 'PENDING').map((q: any) => ({ ...q, type: 'Quality Check' }));
-    this.pendingApprovalsList = [...pendingHarvests, ...pendingQcs].sort((a, b) => new Date(b.createdAt || b.recordedAt || b.harvestDate).getTime() - new Date(a.createdAt || a.recordedAt || a.harvestDate).getTime()).slice(0, 5);
-    this.stats.pendingApprovals = pendingHarvests.length + pendingQcs.length;
+    // Top Stats
+    this.stats.totalFields = results.fields?.data?.totalCount || 0;
+    this.stats.totalWorkers = results.workers?.data?.totalCount || 0;
+    this.stats.activeCrops = cropCycles.filter((c: any) => c.status?.toUpperCase() === 'ACTIVE' || c.status?.toUpperCase() === 'IN_PROGRESS').length || 0;
 
-    // Alerts
-    const activeAlertsList = alerts.filter((a: any) => !a.isResolved && a.isActive);
-    this.stats.activeAlerts = activeAlertsList.length;
-    this.criticalAlerts = activeAlertsList.filter((a: any) => a.severity === 'Critical' || a.severity === 'High').slice(0, 5);
+    // Approvals Logic
+    const pendingObsList = obs.filter((o: any) => o.validationStatus === 'pending' || o.validationStatus === 'PENDING').map((o: any) => ({ ...o, type: 'Observation' }));
+    const pendingHarvestsList = harvests.filter((h: any) => h.approvalStatus === 'PENDING').map((h: any) => ({ ...h, type: 'Harvest' }));
+    const pendingQcsList = qcs.filter((q: any) => q.approvalStatus === 'PENDING').map((q: any) => ({ ...q, type: 'Quality Check' }));
+    
+    this.stats.pendingObservations = pendingObsList.length;
+    this.stats.pendingHarvests = pendingHarvestsList.length;
+    this.stats.pendingQualityChecks = pendingQcsList.length;
+
+    this.recentPendingObs = pendingObsList.sort((a: any, b: any) => new Date(b.observationDate).getTime() - new Date(a.observationDate).getTime()).slice(0, 5);
+    this.recentPendingHarvests = pendingHarvestsList.sort((a: any, b: any) => new Date(b.harvestDate).getTime() - new Date(a.harvestDate).getTime()).slice(0, 5);
+    this.recentPendingQcs = pendingQcsList.sort((a: any, b: any) => new Date(b.checkDate).getTime() - new Date(a.checkDate).getTime()).slice(0, 5);
+
+    // Alerts Logic
+    const activeSensorAlerts = sensorAlerts.filter((a: any) => !a.isResolved);
+    const activeWeatherAlerts = weatherAlerts.filter((a: any) => !a.isAcknowledged);
+    this.stats.unresolvedSensorAlerts = activeSensorAlerts.length;
+    this.stats.unresolvedWeatherAlerts = activeWeatherAlerts.length;
+
+    const criticalSensors = activeSensorAlerts.filter((a: any) => a.severity === 'Critical' || a.severity === 'High' || a.severity === 'CRITICAL' || a.severity === 'HIGH').map((a: any) => ({ ...a, source: 'Sensor', date: a.createdAt }));
+    const criticalWeathers = activeWeatherAlerts.filter((a: any) => a.severity === 'Emergency' || a.severity === 'Warning' || a.severity === 'EMERGENCY' || a.severity === 'WARNING').map((a: any) => ({ ...a, source: 'Weather', date: a.alertTime }));
+    
+    this.topCriticalSensors = criticalSensors.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3);
+    this.topCriticalWeathers = criticalWeathers.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3);
 
     this.calculateRevenue(harvests);
-    this.calculateCropCycles(cropCycles);
-    this.calculateWorkerLeaderboard(tasks, results.workers?.data?.items || []);
     this.buildActivityFeed(tasks, harvests, obs);
-    this.buildTaskChart(tasks);
-    this.calculateFieldHealth(obs, results.fields?.data?.items || []);
   }
 
-  private calculateCropCycles(cropCycles: any[]): void {
-    const active = cropCycles.filter((c: any) => c.status === 'ACTIVE');
-    this.activeCropCycles = active.map(c => {
-      const start = new Date(c.startDate).getTime();
-      const end = new Date(c.estimatedHarvestDate).getTime();
-      const now = new Date().getTime();
-      let progress = 0;
-      if (now >= end) progress = 100;
-      else if (now > start) progress = Math.round(((now - start) / (end - start)) * 100);
-      return { ...c, progress };
-    }).slice(0, 4);
-  }
+
 
   private calculateRevenue(harvests: any[]): void {
     const now = new Date();
@@ -221,21 +226,7 @@ export class DashboardComponent implements OnInit {
     };
   }
 
-  private calculateWorkerLeaderboard(tasks: any[], workers: any[]): void {
-    const workerMap = new Map<number, { name: string, completed: number, role: string }>();
-    workers.forEach(w => workerMap.set(w.id, { name: w.fullName, completed: 0, role: w.role }));
 
-    tasks.forEach(t => {
-      if (t.status === 'COMPLETED' && t.workerId && workerMap.has(t.workerId)) {
-        workerMap.get(t.workerId)!.completed += 1;
-      }
-    });
-
-    this.topWorkers = Array.from(workerMap.values())
-      .filter(w => w.completed > 0)
-      .sort((a, b) => b.completed - a.completed)
-      .slice(0, 5);
-  }
 
   private buildActivityFeed(tasks: any[], harvests: any[], obs: any[]): void {
     const feed: any[] = [];
@@ -273,55 +264,7 @@ export class DashboardComponent implements OnInit {
     this.recentActivities = feed.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 6);
   }
 
-  private buildTaskChart(tasks: any[]): void {
-    const now = new Date();
-    const map = new Map<string, number>();
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      map.set(d.toLocaleDateString('en-US', { weekday: 'short' }), 0);
-    }
 
-    tasks.forEach(t => {
-      if (t.status === 'COMPLETED' && t.completedDate) {
-        const d = new Date(t.completedDate);
-        const diffTime = Math.abs(now.getTime() - d.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays <= 7) {
-          const key = d.toLocaleDateString('en-US', { weekday: 'short' });
-          if (map.has(key)) {
-            map.set(key, map.get(key)! + 1);
-          }
-        }
-      }
-    });
-
-    this.taskChartData = {
-      labels: Array.from(map.keys()),
-      datasets: [{
-        label: 'Tasks Completed',
-        data: Array.from(map.values()),
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        fill: true,
-      }]
-    };
-  }
-
-  private calculateFieldHealth(obs: any[], fields: any[]): void {
-    const fieldMap = new Map<number, { name: string, health: string, count: number }>();
-    fields.forEach(f => fieldMap.set(f.id, { name: f.fieldName, health: 'UNKNOWN', count: 0 }));
-
-    // Very naive latest observation per field
-    obs.sort((a, b) => new Date(b.observationDate).getTime() - new Date(a.observationDate).getTime()).forEach(o => {
-      if (o.fieldId && fieldMap.has(o.fieldId) && fieldMap.get(o.fieldId)!.count === 0) {
-        fieldMap.get(o.fieldId)!.health = o.cropHealth;
-        fieldMap.get(o.fieldId)!.count = 1;
-      }
-    });
-
-    this.fieldHealthList = Array.from(fieldMap.values()).filter(f => f.health !== 'UNKNOWN').slice(0, 4);
-  }
 
   // --- ACTIONS ---
   quickAction(action: string): void {

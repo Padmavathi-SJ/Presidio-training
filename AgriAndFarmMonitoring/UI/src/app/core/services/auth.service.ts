@@ -88,6 +88,22 @@ export class AuthService {
     this.router.navigate([redirectUrl]);
   }
 
+  // ==========================================
+  // FORGOT PASSWORD
+  // ==========================================
+
+  forgotPassword(email: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.API_URL}/auth/forgot-password`, { email });
+  }
+
+  verifyOtp(email: string, otp: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.API_URL}/auth/verify-otp`, { email, otp });
+  }
+
+  resetPassword(email: string, otp: string, newPassword: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.API_URL}/auth/reset-password`, { email, otp, newPassword });
+  }
+
   // ✅ Register - Admin only
   register(registrationData: RegisterRequest): Observable<AuthResponse> {
     this.clearUser();

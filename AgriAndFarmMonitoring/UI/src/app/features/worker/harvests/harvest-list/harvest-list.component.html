@@ -223,7 +223,7 @@
 
     <mat-paginator *ngIf="harvests().length > 0"
       [length]="totalCount()" [pageSize]="10"
-      [pageSizeOptions]="[10, 25, 50]" (page)="onPageChange($event)"
+      [hidePageSize]="true" (page)="onPageChange($event)"
       class="worker-paginator">
     </mat-paginator>
   </div>

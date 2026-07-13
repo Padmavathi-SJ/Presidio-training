@@ -1,20 +1,20 @@
-<div class="p-6 max-w-7xl mx-auto space-y-6">
-  <!-- Page Header -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-outline-variant pb-4">
+<div class="admin-page-shell">
+  <!-- Compact Header -->
+  <div class="flex items-center justify-between pb-2 mb-2 border-b border-[#e8f0eb] flex-shrink-0">
     <div>
-      <h1 class="text-headline-md font-bold text-surface-on m-0">Quality Checks Management</h1>
-      <p class="text-body-sm text-surface-on-variant mt-1">Review, audit, and manage harvest quality checks</p>
+      <h1 class="admin-header-title">Quality Checks Management</h1>
+      <p class="admin-header-subtitle">Review, audit, and manage harvest quality checks</p>
     </div>
   </div>
 
   <!-- KPI Summary Cards -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4" *ngIf="statistics() as stats">
+  <div class="admin-kpi-grid mb-2">
     <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
       <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant flex items-center gap-1">
         <mat-icon class="text-[16px] h-4 w-4">fact_check</mat-icon> Total Checks
       </span>
       <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-surface-on">{{ stats.totalChecks }}</span>
+        <span class="text-3xl font-bold text-surface-on">{{ statistics()?.totalChecks || 0 }}</span>
       </div>
     </div>
     
@@ -23,7 +23,7 @@
         <mat-icon class="text-[16px] h-4 w-4">check_circle</mat-icon> Overall Pass Rate
       </span>
       <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-primary">{{ stats.passRate | number:'1.1-1' }}%</span>
+        <span class="text-3xl font-bold text-primary">{{ statistics()?.passRate || 0 | number:'1.1-1' }}%</span>
       </div>
     </div>
 
@@ -32,7 +32,7 @@
         <mat-icon class="text-[16px] h-4 w-4">science</mat-icon> Avg Moisture / Defect
       </span>
       <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-success">{{ stats.averageMoisturePct | number:'1.1-1' }}% / {{ stats.averageDefectPct | number:'1.1-1' }}%</span>
+        <span class="text-3xl font-bold text-success">{{ statistics()?.averageMoisturePct || 0 | number:'1.1-1' }}% / {{ statistics()?.averageDefectPct || 0 | number:'1.1-1' }}%</span>
       </div>
     </div>
 
@@ -41,12 +41,14 @@
         <mat-icon class="text-[16px] h-4 w-4">grade</mat-icon> Grade Distribution
       </span>
       <div class="flex items-center gap-2 mt-2 flex-wrap">
-        <ng-container *ngFor="let item of stats.gradeDistribution | keyvalue">
+        @for (item of statistics()?.gradeDistribution | keyvalue; track item.key) {
           <span class="px-2.5 py-1 bg-surface border border-outline-variant rounded-md text-sm font-semibold text-surface-on">
             {{ item.key }}: <span class="text-accent">{{ item.value }}</span>
           </span>
-        </ng-container>
-        <span *ngIf="(stats.gradeDistribution | keyvalue).length === 0" class="text-sm text-surface-on-variant">No data available</span>
+        }
+        @if ((statistics()?.gradeDistribution | keyvalue)?.length === 0 || !statistics()?.gradeDistribution) {
+          <span class="text-sm text-surface-on-variant">No data available</span>
+        }
       </div>
     </div>
   </div>

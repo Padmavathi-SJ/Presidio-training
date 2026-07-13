@@ -196,7 +196,7 @@
   <mat-paginator [length]="totalCount()"
                  [pageSize]="currentFilter().pageSize"
                  [pageIndex]="(currentFilter().page || 1) - 1"
-                 [pageSizeOptions]="[5, 10, 25, 50]"
+                 [hidePageSize]="true"
                  (page)="onPageChange($event)"
                  showFirstLastButtons>
   </mat-paginator>

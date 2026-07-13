@@ -10,6 +10,10 @@ export interface WorkerFieldList {
   status: string | null;
   assignedDate: string | null;
   activeCropCount: number;
+  imagePath?: string;
+  thumbnailPath?: string;
+  imageCaption?: string;
+  additionalImagePaths?: string[];
 }
 
 export interface WorkerFieldDetail {
@@ -26,6 +30,10 @@ export interface WorkerFieldDetail {
   latitude: number | null;
   longitude: number | null;
   cropCycles: WorkerCropCycle[];
+  imagePath?: string;
+  thumbnailPath?: string;
+  imageCaption?: string;
+  additionalImagePaths?: string[];
 }
 
 export interface WorkerCropCycle {

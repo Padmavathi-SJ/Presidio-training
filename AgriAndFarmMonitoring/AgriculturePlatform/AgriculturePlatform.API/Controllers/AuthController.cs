@@ -254,6 +254,69 @@ public class AuthController : ControllerBase
     }
 
     // =============================================
+    // FORGOT PASSWORD
+    // =============================================
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            
+            await _adminService.ForgotPasswordAsync(dto);
+            // Always return success to prevent email enumeration
+            return Ok(new { success = true, message = "If the email is registered, an OTP has been sent." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during forgot password");
+            return StatusCode(500, new { success = false, message = "An error occurred" });
+        }
+    }
+
+    [HttpPost("verify-otp")]
+    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            
+            var isValid = await _adminService.VerifyOtpAsync(dto);
+            if (isValid)
+            {
+                return Ok(new { success = true, message = "OTP verified successfully" });
+            }
+            return BadRequest(new { success = false, message = "Invalid or expired OTP" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during verify otp");
+            return StatusCode(500, new { success = false, message = "An error occurred" });
+        }
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] AgriculturePlatform.Application.DTOs.Admin.ResetPasswordDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            
+            await _adminService.ResetPasswordAsync(dto);
+            return Ok(new { success = true, message = "Password has been reset successfully" });
+        }
+        catch (BadRequestException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during reset password");
+            return StatusCode(500, new { success = false, message = "An error occurred" });
+        }
+    }
+
+    // =============================================
     // HELPER METHODS
     // =============================================
     private string GetUserTypeFromToken()

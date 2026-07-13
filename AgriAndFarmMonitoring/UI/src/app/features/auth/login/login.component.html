@@ -45,6 +45,14 @@
             Password must be at least 6 characters
           </mat-error>
         </mat-form-field>
+        
+        <div class="flex items-center justify-end mt-1">
+          <div class="text-sm">
+            <a routerLink="/auth/forgot-password" class="font-medium text-primary-600 hover:text-primary-500">
+              Forgot your password?
+            </a>
+          </div>
+        </div>
       </div>
 
       <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">

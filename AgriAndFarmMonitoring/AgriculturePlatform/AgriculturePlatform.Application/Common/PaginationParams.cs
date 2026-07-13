@@ -3,7 +3,7 @@ namespace AgriculturePlatform.Application.Common;
 
 public class PaginationParams
 {
-    private const int MaxPageSize = 100;
+    private const int MaxPageSize = 100000;
     private int _pageSize = 10;
     
     public int Page { get; set; } = 1;

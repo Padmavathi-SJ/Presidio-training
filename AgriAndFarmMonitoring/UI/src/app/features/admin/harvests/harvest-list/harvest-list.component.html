@@ -233,9 +233,9 @@
   </div>
   
   <mat-paginator [length]="totalCount()"
-                 [pageSize]="currentFilter().pageSize"
+                 [pageSize]="dynamicPageSize"
+                 [hidePageSize]="true"
                  [pageIndex]="(currentFilter().page || 1) - 1"
-                 [pageSizeOptions]="[5, 10, 25, 50]"
                  (page)="onPageChange($event)"
                  showFirstLastButtons>
   </mat-paginator>

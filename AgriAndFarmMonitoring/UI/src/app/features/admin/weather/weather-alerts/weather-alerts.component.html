@@ -1,20 +1,20 @@
 <!-- src/app/features/admin/weather/weather-alerts/weather-alerts.component.html -->
-<div class="p-4 sm:p-6">
-  <!-- Header -->
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+<div class="admin-page-shell">
+  <!-- Compact Header -->
+  <div class="flex items-center justify-between pb-2 mb-2 border-b border-[#e8f0eb] flex-shrink-0">
     <div>
-      <h1 class="text-2xl font-bold text-gray-800">Weather Alerts</h1>
-      <p class="text-sm text-gray-500">Monitor and manage all weather alerts across your farm</p>
+      <h1 class="admin-header-title">Weather Alerts</h1>
+      <p class="admin-header-subtitle">Monitor and manage all weather alerts across your farm</p>
     </div>
-    <div class="flex flex-wrap gap-2">
+    <div class="admin-header-actions">
       <!-- Create Alert -->
       <button 
         mat-raised-button 
         color="primary"
         (click)="openCreateDialog()"
-        class="!bg-primary-600 !text-white"
+        class="!bg-[#2d6a4f] !text-white !h-[32px] !leading-[32px] !text-xs !px-3"
       >
-        <mat-icon>add_alert</mat-icon>
+        <mat-icon class="text-sm">add_alert</mat-icon>
         New Alert
       </button>
 
@@ -23,19 +23,19 @@
         mat-stroked-button 
         (click)="triggerReload()"
         [disabled]="isLoading()"
+        class="!border-[#d5e1da] !text-[#5a7a6a] !h-[32px] !leading-[32px] !text-xs !px-3"
       >
-        <mat-icon>refresh</mat-icon>
+        <mat-icon class="text-sm">refresh</mat-icon>
         Refresh
       </button>
     </div>
   </div>
 
   <!-- Filter Bar -->
-  <mat-card class="mb-4 p-4 shadow-sm border border-gray-100 rounded-xl">
-    <form [formGroup]="filterForm">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <!-- Field Filter -->
-        <div>
+  <div class="admin-filter-card">
+    <form [formGroup]="filterForm" class="admin-filter-row">
+      <!-- Field Filter -->
+      <div class="admin-filter-field">
           <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
             <mat-label class="text-gray-600 text-sm">Field</mat-label>
             <mat-select formControlName="fieldId" class="text-sm">
@@ -104,27 +104,22 @@
         </div>
 
         <!-- Search -->
-        <div class="lg:col-span-2">
+        <div class="admin-filter-field lg:col-span-2">
           <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
             <mat-label class="text-gray-600 text-sm">Search</mat-label>
             <input matInput formControlName="search" placeholder="Search alerts by title or message..." class="text-sm">
             <mat-icon matSuffix>search</mat-icon>
           </mat-form-field>
         </div>
-      </div>
 
-      <div class="flex justify-end mt-2">
-        <button 
-          mat-button 
-          (click)="resetFilters()" 
-          class="!text-gray-600"
-        >
-          <mat-icon>clear</mat-icon>
-          Reset Filters
-        </button>
-      </div>
+        <!-- Filter Actions -->
+        <div class="admin-filter-actions">
+          <button mat-stroked-button class="!border-[#d5e1da] !text-[#5a7a6a] !rounded-lg text-xs" (click)="resetFilters()">
+            <mat-icon class="text-sm">clear</mat-icon> Reset
+          </button>
+        </div>
     </form>
-  </mat-card>
+  </div>
 
   <!-- Report Generation Section -->
   <div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden mb-4 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -191,11 +186,10 @@
     </div>
   }
 
-  <!-- Table View -->
-  @if (!isLoading()) {
-    <mat-card class="shadow-sm border border-gray-100 rounded-xl overflow-hidden">
-      <div class="relative overflow-x-auto">
-        <table mat-table [dataSource]="alerts()" matSort (matSortChange)="onSortChange($event)" class="w-full">
+  <!-- Data Table Card -->
+  <div class="admin-table-card">
+    <div class="admin-table-wrap relative">
+      <table mat-table class="admin-data-table" [dataSource]="alerts()" matSort (matSortChange)="onSortChange($event)">
           
           <!-- Select Column -->
           <ng-container matColumnDef="select">
@@ -216,9 +210,7 @@
 
           <!-- Severity Column -->
           <ng-container matColumnDef="severity">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
-              Severity
-            </th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Severity</th>
             <td mat-cell *matCellDef="let alert">
               <span class="text-xs px-2 py-1 rounded-full font-medium {{ getSeverityColor(alert.severity) }}">
                 {{ alert.severity }}
@@ -228,21 +220,17 @@
 
           <!-- Alert Type Column -->
           <ng-container matColumnDef="alertType">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
-              Type
-            </th>
-            <td mat-cell *matCellDef="let alert" class="text-sm text-gray-700">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
+            <td mat-cell *matCellDef="let alert">
               {{ alert.alertType | titlecase }}
             </td>
           </ng-container>
 
           <!-- Title Column -->
           <ng-container matColumnDef="title">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
-              Title
-            </th>
-            <td mat-cell *matCellDef="let alert" class="text-sm text-gray-800">
-              <div class="cursor-pointer hover:text-primary-600" (click)="viewAlert(alert)">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
+            <td mat-cell *matCellDef="let alert">
+              <div class="cursor-pointer hover:text-primary-600 font-medium" (click)="viewAlert(alert)">
                 {{ alert.title }}
               </div>
               <div class="text-xs text-gray-500 truncate max-w-[200px]">{{ alert.message }}</div>
@@ -251,20 +239,16 @@
 
           <!-- Field Column -->
           <ng-container matColumnDef="fieldName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
-              Field
-            </th>
-            <td mat-cell *matCellDef="let alert" class="text-sm text-gray-700">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Field</th>
+            <td mat-cell *matCellDef="let alert">
               {{ alert.fieldName }}
             </td>
           </ng-container>
 
           <!-- Alert Time Column -->
           <ng-container matColumnDef="alertTime">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
-              Alert Time
-            </th>
-            <td mat-cell *matCellDef="let alert" class="text-sm text-gray-600">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Alert Time</th>
+            <td mat-cell *matCellDef="let alert">
               {{ formatDate(alert.alertTime) }}
               @if (alert.expiresAt) {
                 <div class="text-xs text-gray-400">Expires: {{ formatDate(alert.expiresAt) }}</div>
@@ -274,9 +258,7 @@
 
           <!-- Acknowledged Column -->
           <ng-container matColumnDef="isAcknowledged">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-sm">
-              Status
-            </th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
             <td mat-cell *matCellDef="let alert">
               @if (alert.isAcknowledged) {
                 <span class="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
@@ -292,52 +274,27 @@
 
           <!-- Actions Column -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-right font-semibold text-gray-700 text-sm w-24">Actions</th>
+            <th mat-header-cell *matHeaderCellDef class="text-right">Actions</th>
             <td mat-cell *matCellDef="let alert" class="text-right whitespace-nowrap">
               @if (!alert.isAcknowledged) {
-                <button 
-                  mat-icon-button 
-                  matTooltip="Acknowledge"
-                  (click)="acknowledgeAlert(alert)"
-                  class="!text-primary-600 hover:!bg-primary-50"
-                  [disabled]="isLoading()"
-                >
+                <button mat-icon-button matTooltip="Acknowledge" (click)="acknowledgeAlert(alert)" class="!text-primary-600">
                   <mat-icon class="text-sm">check_circle</mat-icon>
                 </button>
               }
-              <button 
-                mat-icon-button 
-                matTooltip="View Details"
-                (click)="viewAlert(alert)"
-                class="!text-blue-600 hover:!bg-blue-50"
-                [disabled]="isLoading()"
-              >
+              <button mat-icon-button matTooltip="View Details" (click)="viewAlert(alert)" class="!text-blue-600">
                 <mat-icon class="text-sm">visibility</mat-icon>
               </button>
-              <button 
-                mat-icon-button 
-                matTooltip="Edit"
-                (click)="editAlert(alert)"
-                class="!text-gray-600 hover:!bg-gray-50"
-                [disabled]="isLoading()"
-              >
+              <button mat-icon-button matTooltip="Edit" (click)="editAlert(alert)" class="!text-gray-600">
                 <mat-icon class="text-sm">edit</mat-icon>
               </button>
-              <button 
-                mat-icon-button 
-                matTooltip="Delete"
-                (click)="deleteAlert(alert)"
-                class="!text-red-600 hover:!bg-red-50"
-                [disabled]="isLoading()"
-              >
+              <button mat-icon-button matTooltip="Delete" (click)="deleteAlert(alert)" class="!text-red-600">
                 <mat-icon class="text-sm">delete</mat-icon>
               </button>
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
-              class="hover:bg-gray-50 transition-colors cursor-pointer"
               [class]="getSeverityClass(row.severity)"
               (click)="viewAlert(row)">
           </tr>
@@ -356,20 +313,15 @@
             </button>
           </div>
         }
-      </div>
+    </div>
 
-      <!-- Paginator -->
-      @if (totalCount() > 0) {
-        <mat-paginator 
-          [length]="totalCount()"
-          [pageSize]="pageSize()"
-          [pageIndex]="pageIndex()"
-          [pageSizeOptions]="[5, 10, 25, 50, 100]"
-          (page)="onPageChange($event)"
-          showFirstLastButtons
-          class="border-t border-gray-200 text-sm"
-        ></mat-paginator>
-      }
-    </mat-card>
-  }
+    <!-- Paginator -->
+    <mat-paginator class="admin-paginator"
+      [length]="totalCount()"
+      [pageSize]="pageSize()"
+      [hidePageSize]="true"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+  </div>
 </div>

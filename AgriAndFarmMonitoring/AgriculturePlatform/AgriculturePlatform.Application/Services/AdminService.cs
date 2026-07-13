@@ -14,18 +14,21 @@ public class AdminService : IAdminService
     private readonly IFarmRepository _farmRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IJwtService _jwtService;
+    private readonly IEmailService _emailService;
 
     public AdminService(
         IAdminRepository adminRepository,
         IFarmRepository farmRepository,
         IRefreshTokenRepository refreshTokenRepository,
-        IJwtService jwtService
+        IJwtService jwtService,
+        IEmailService emailService
         )
     {
         _adminRepository = adminRepository;
         _farmRepository = farmRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _jwtService = jwtService;
+        _emailService = emailService;
        
     }
 
@@ -324,15 +327,88 @@ public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
         // Hash new password with BCrypt
         admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
         admin.UpdatedAt = DateTime.UtcNow;
-        admin.UpdatedBy = adminId;
+        admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
         
         await _adminRepository.UpdateAsync(admin);
         
-        // Revoke all refresh tokens for security (force re-login)
+        // Revoke all tokens for security
         await _refreshTokenRepository.RevokeAllUserTokensAsync(adminId, ipAddress);
+
+        return true;
+    }
+
+    // ==========================================
+    // FORGOT PASSWORD
+    // ==========================================
+    
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordDto dto)
+    {
+        var admin = await _adminRepository.GetByEmailAsync(dto.Email.Trim().ToLower());
+        if (admin == null || !admin.IsActive)
+        {
+            // Always return true to prevent email enumeration
+            return true;
+        }
+
+        // Generate 6-char alphanumeric OTP
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var random = new Random();
+        var otp = new string(Enumerable.Repeat(chars, 6)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
+
+        // Save OTP
+        admin.PasswordResetToken = otp;
+        admin.PasswordResetExpires = DateTime.UtcNow.AddMinutes(10);
+        await _adminRepository.UpdateAsync(admin);
+
+        // Send Email
+        var emailDto = new AgriculturePlatform.Application.DTOs.Email.EmailDto
+        {
+            To = admin.Email,
+            ToName = admin.Name,
+            Subject = "Password Reset OTP",
+            Body = $"<p>Your OTP code is: <strong>{otp}</strong>. It expires in 10 minutes.</p>",
+            IsHtml = true
+        };
+
+        await _emailService.SendEmailAsync(emailDto);
+        return true;
+    }
+
+    public async Task<bool> VerifyOtpAsync(VerifyOtpDto dto)
+    {
+        var admin = await _adminRepository.GetByEmailAsync(dto.Email.Trim().ToLower());
+        if (admin == null) return false;
+
+        if (admin.PasswordResetToken != dto.Otp || 
+            admin.PasswordResetExpires == null || 
+            admin.PasswordResetExpires < DateTime.UtcNow)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public async Task<bool> ResetPasswordAsync(ResetPasswordDto dto)
+    {
+        var admin = await _adminRepository.GetByEmailAsync(dto.Email.Trim().ToLower());
+        if (admin == null) throw new BadRequestException("Invalid request");
+
+        if (admin.PasswordResetToken != dto.Otp || 
+            admin.PasswordResetExpires == null || 
+            admin.PasswordResetExpires < DateTime.UtcNow)
+        {
+            throw new BadRequestException("Invalid or expired OTP");
+        }
+
+        // Update password
+        admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        admin.PasswordResetToken = null;
+        admin.PasswordResetExpires = null;
         
-      
-        
+        await _adminRepository.UpdateAsync(admin);
+
         return true;
     }
 

@@ -121,11 +121,7 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./tasks/tasks.component')
           .then(c => c.TasksComponent)
       },
-      {
-        path: 'yield-reports',
-        loadComponent: () => import('./yield-reports/yield-reports.component')
-          .then(c => c.YieldReportsComponent)
-      },
+
       {
         path: 'profile',
         loadComponent: () => import('./profile/profile.component')
