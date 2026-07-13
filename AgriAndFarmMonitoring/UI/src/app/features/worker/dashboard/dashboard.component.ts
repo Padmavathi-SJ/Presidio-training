@@ -58,16 +58,20 @@ export class DashboardComponent implements OnInit {
     fieldsManaged: 0,
     observationsMade: 0,
     harvestsSubmitted: 0,
-    pendingApprovals: 0,
     activeAlerts: 0
+  };
+
+  // --- DETAILED TRACKING ---
+  tracking = {
+    observations: { pending: 0, changesRequired: 0 },
+    harvests: { pending: 0, changesRequired: 0 },
+    qualityChecks: { pending: 0, changesRequired: 0 }
   };
 
   // --- ARRAYS FOR PANELS ---
   todayTasks: any[] = [];
-  recentSubmissions: any[] = [];
   recentActivity: any[] = [];
   fields: any[] = [];
-  achievements: any[] = [];
 
   // --- CHARTS CONFIG ---
   performanceChartData: ChartConfiguration<'line'>['data'] = { labels: [], datasets: [] };
@@ -126,17 +130,19 @@ export class DashboardComponent implements OnInit {
 
     // Basic Counts
     this.stats.fieldsManaged = fieldsData.length;
-    this.stats.activeTasks = tasks.filter((t: any) => t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS').length;
+    this.stats.activeTasks = tasks.filter((t: any) => t.status === 'PENDING' || t.status === 'IN_PROGRESS' || t.status === 'ACTIVE').length;
     this.stats.observationsMade = obs.length;
     this.stats.harvestsSubmitted = harvests.length;
 
-    // Approvals
-    const pendingHarvests = harvests.filter((h: any) => h.approvalStatus === 'PENDING').map((h: any) => ({ ...h, type: 'Harvest' }));
-    const pendingQcs = qcs.filter((q: any) => q.approvalStatus === 'PENDING').map((q: any) => ({ ...q, type: 'Quality Check' }));
-    this.recentSubmissions = [...pendingHarvests, ...pendingQcs]
-      .sort((a, b) => new Date(b.createdAt || b.recordedAt || b.harvestDate).getTime() - new Date(a.createdAt || a.recordedAt || a.harvestDate).getTime())
-      .slice(0, 5);
-    this.stats.pendingApprovals = pendingHarvests.length + pendingQcs.length;
+    // Detailed Tracking Counts
+    this.tracking.observations.pending = obs.filter((o: any) => o.validationStatus === 'pending' || o.validationStatus === 'PENDING').length;
+    this.tracking.observations.changesRequired = obs.filter((o: any) => o.validationStatus === 'questioned' || o.validationStatus === 'REQUEST_CHANGES').length;
+    
+    this.tracking.harvests.pending = harvests.filter((h: any) => h.approvalStatus === 'PENDING').length;
+    this.tracking.harvests.changesRequired = harvests.filter((h: any) => h.approvalStatus === 'REQUEST_CHANGES').length;
+    
+    this.tracking.qualityChecks.pending = qcs.filter((q: any) => q.approvalStatus === 'PENDING').length;
+    this.tracking.qualityChecks.changesRequired = qcs.filter((q: any) => q.approvalStatus === 'REQUEST_CHANGES').length;
 
     // Fields Overview
     this.fields = fieldsData.slice(0, 4).map((f: any) => ({
@@ -154,7 +160,6 @@ export class DashboardComponent implements OnInit {
 
     this.buildActivityFeed(tasks, harvests, obs);
     this.buildPerformanceChart(tasks, obs);
-    this.calculateAchievements(tasks, harvests, obs);
   }
 
   private buildActivityFeed(tasks: any[], harvests: any[], obs: any[]): void {
@@ -244,25 +249,7 @@ export class DashboardComponent implements OnInit {
     };
   }
 
-  private calculateAchievements(tasks: any[], harvests: any[], obs: any[]): void {
-    const ach = [];
-    
-    if (obs.length >= 10) {
-      ach.push({ title: 'Observation Master', icon: 'visibility', color: 'text-purple-600', bg: 'bg-purple-100' });
-    }
-    if (harvests.length >= 5) {
-      ach.push({ title: 'Harvest Champion', icon: 'agriculture', color: 'text-green-600', bg: 'bg-green-100' });
-    }
-    const completedTasks = tasks.filter(t => t.status === 'COMPLETED').length;
-    if (completedTasks >= 20) {
-      ach.push({ title: 'Task Crusher', icon: 'task_alt', color: 'text-blue-600', bg: 'bg-blue-100' });
-    }
-    if (ach.length === 0) {
-      ach.push({ title: 'Rising Star', icon: 'star', color: 'text-amber-600', bg: 'bg-amber-100' });
-    }
-    
-    this.achievements = ach.slice(0, 3);
-  }
+
 
   private getFieldStatusColor(status: string): string {
     switch (status) {

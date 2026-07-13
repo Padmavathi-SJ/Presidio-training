@@ -103,7 +103,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("IsActive");
 
-                    b.ToTable("Admins");
+                    b.ToTable("Admins", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.AuditLog", b =>
@@ -181,7 +181,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "CreatedAt");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", b =>
@@ -259,7 +259,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Farms");
+                    b.ToTable("Farms", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Notification", b =>
@@ -332,7 +332,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("WorkerId", "IsRead");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.RefreshToken", b =>
@@ -411,7 +411,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("WorkerId", "IsRevoked");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.Alert", b =>
@@ -500,7 +500,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FieldId", "IsResolved");
 
-                    b.ToTable("Alerts");
+                    b.ToTable("Alerts", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.AlertThreshold", b =>
@@ -584,7 +584,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.HasIndex("FarmId", "CropType", "GrowthStage", "SensorType")
                         .IsUnique();
 
-                    b.ToTable("AlertThresholds");
+                    b.ToTable("AlertThresholds", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", b =>
@@ -674,7 +674,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "Status");
 
-                    b.ToTable("CropCycles");
+                    b.ToTable("CropCycles", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.Field", b =>
@@ -761,7 +761,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "Status");
 
-                    b.ToTable("Fields");
+                    b.ToTable("Fields", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.Observation", b =>
@@ -909,7 +909,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.HasIndex("FieldId", "ObservationDate")
                         .HasDatabaseName("IX_Observations_Field_Date");
 
-                    b.ToTable("Observations");
+                    b.ToTable("Observations", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.SensorReading", b =>
@@ -980,7 +980,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FieldId", "RecordedAt");
 
-                    b.ToTable("SensorReadings");
+                    b.ToTable("SensorReadings", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.WeatherAlert", b =>
@@ -1096,7 +1096,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "FieldId");
 
-                    b.ToTable("WeatherAlerts");
+                    b.ToTable("WeatherAlerts", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.WeatherData", b =>
@@ -1168,7 +1168,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FieldId", "RecordedAt");
 
-                    b.ToTable("WeatherData");
+                    b.ToTable("WeatherData", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.Worker", b =>
@@ -1267,7 +1267,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "Role");
 
-                    b.ToTable("Workers");
+                    b.ToTable("Workers", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.WorkerFieldAssignment", b =>
@@ -1345,7 +1345,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "WorkerId", "FieldId");
 
-                    b.ToTable("WorkerFieldAssignments");
+                    b.ToTable("WorkerFieldAssignments", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.WorkerTask", b =>
@@ -1583,7 +1583,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.HasIndex("FarmId", "HarvestDate")
                         .HasDatabaseName("IX_Harvests_Farm_Date");
 
-                    b.ToTable("Harvests");
+                    b.ToTable("Harvests", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.YieldReports.QualityCheck", b =>
@@ -1686,7 +1686,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("HarvestId");
 
-                    b.ToTable("QualityChecks");
+                    b.ToTable("QualityChecks", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.YieldReports.YieldReport", b =>
@@ -1866,7 +1866,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.HasIndex("FarmId", "StartDate", "EndDate")
                         .HasDatabaseName("IX_YieldReports_Farm_DateRange");
 
-                    b.ToTable("YieldReports");
+                    b.ToTable("YieldReports", (string)null);
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", b =>

@@ -20,6 +20,7 @@ using AgriculturePlatform.API.Services;
 using AgriculturePlatform.API.Configuration;
 using AgriculturePlatform.Infrastructure.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
@@ -191,6 +192,7 @@ builder.Services.AddScoped<IObservationService, ObservationService>();
 builder.Services.AddScoped<IHarvestService, HarvestService>();
 builder.Services.AddScoped<IQualityCheckService, QualityCheckService>();
 builder.Services.AddScoped<IYieldReportService, YieldReportService>();
+
         var storageProvider = builder.Configuration["FileStorage:Provider"] ?? "Local";
         if (storageProvider == "AzureBlob")
         {

@@ -10,6 +10,7 @@ using AgriculturePlatform.Domain.Entities.YieldReports;
 using AgriculturePlatform.Domain.Common;
 
 
+
 namespace AgriculturePlatform.Infrastructure.Context;
 
 public class AppDbContext : DbContext
@@ -52,6 +53,8 @@ public class AppDbContext : DbContext
     public DbSet<QualityCheck> QualityChecks { get; set; }
     public DbSet<YieldReport> YieldReports { get; set; }
     
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -868,6 +871,7 @@ modelBuilder.Entity<YieldReport>(entity =>
             entity.HasIndex(e => e.CreatedAt);
             entity.HasIndex(e => e.AdminId);
         });
+
     }
     
  // AgriculturePlatform.Infrastructure/Context/AppDbContext.cs
