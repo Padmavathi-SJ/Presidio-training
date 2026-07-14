@@ -84,6 +84,16 @@ html, body {
   --mdc-snackbar-supporting-text-color: #991b1b !important;
   border-left: 4px solid #ef4444;
 }
+.warning-snackbar {
+  --mdc-snackbar-container-color: #fffbeb !important;
+  --mdc-snackbar-supporting-text-color: #b45309 !important;
+  border-left: 4px solid #f59e0b;
+}
+.info-snackbar {
+  --mdc-snackbar-container-color: #eff6ff !important;
+  --mdc-snackbar-supporting-text-color: #1d4ed8 !important;
+  border-left: 4px solid #3b82f6;
+}
 .alert-snackbar {
   &.alert-advisory  { --mdc-snackbar-container-color: #fef3c7 !important; --mdc-snackbar-supporting-text-color: #92400e !important; border-left: 4px solid #fbbf24; }
   &.alert-watch     { --mdc-snackbar-container-color: #ffedd5 !important; --mdc-snackbar-supporting-text-color: #9a3412 !important; border-left: 4px solid #fb923c; }
@@ -160,7 +170,9 @@ html, body {
 .admin-page-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
   gap: 8px;
   animation: fadeIn 0.2s ease-out;
 

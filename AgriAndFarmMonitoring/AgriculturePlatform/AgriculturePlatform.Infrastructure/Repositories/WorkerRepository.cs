@@ -233,6 +233,8 @@ public async Task<Worker?> GetWorkerWithFarmAsync(int workerId, int farmId)
     return await _context.Workers
         .Include(w => w.Farm)
         .Include(w => w.Admin)
+        .Include(w => w.AssignedFields)
+            .ThenInclude(af => af.Field)
         .Where(w => w.Id == workerId && w.FarmId == farmId && !w.IsDeleted)
         .FirstOrDefaultAsync();
 }

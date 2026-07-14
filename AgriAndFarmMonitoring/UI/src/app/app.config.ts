@@ -5,17 +5,22 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
-import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { notificationInterceptor } from './core/interceptors/notification.interceptor';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
+import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(
-      withInterceptors([authInterceptor, errorInterceptor])
+      withInterceptors([authInterceptor, notificationInterceptor])
     ),
     provideAnimations(),  // ✅ This is critical
-    provideCharts(withDefaultRegisterables())
+    provideCharts(withDefaultRegisterables()),
+    {
+      provide: MAT_PAGINATOR_DEFAULT_OPTIONS,
+      useValue: { formFieldAppearance: 'outline', pageSize: 10, pageSizeOptions: [10] }
+    }
   ]
 };

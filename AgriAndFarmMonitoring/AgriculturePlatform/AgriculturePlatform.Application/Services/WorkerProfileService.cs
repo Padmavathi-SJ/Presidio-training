@@ -37,6 +37,19 @@ public class WorkerProfileService : IWorkerProfileService
 
         var result = _mapper.Map<WorkerProfileDto>(worker);
         result.FarmName = worker.Farm?.FarmName;
+        if (worker.AssignedFields != null)
+        {
+            result.AssignedFields = worker.AssignedFields
+                .Where(af => af.Field != null && !af.IsDeleted)
+                .Select(af => new AgriculturePlatform.Application.DTOs.Field.FieldSummaryDto
+                {
+                    Id = af.Field.Id,
+                    FieldName = af.Field.FieldName,
+                    AreaHectares = af.Field.AreaHectares,
+                    Status = af.Field.Status.ToString()
+                })
+                .ToList();
+        }
         
         return ApiResponse<WorkerProfileDto>.Ok(result);
     }

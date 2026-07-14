@@ -3,65 +3,59 @@
 
   <!-- ═══ TOPBAR ════════════════════════════════════════════ -->
   <header class="worker-topbar">
-    <!-- Menu Toggle -->
-    <button
-      mat-icon-button
-      (click)="toggleSidebar()"
-      class="!text-white !w-10 !h-10"
-      aria-label="Toggle sidebar"
-    >
-      <mat-icon>menu</mat-icon>
-    </button>
 
-    <!-- Brand -->
-    <div class="topbar-brand ml-1">
-      <span class="brand-emoji">🌱</span>
-      <span class="brand-name hidden sm:inline">AgriMonitor</span>
-      <span class="brand-badge hidden sm:inline">Worker</span>
+    <!-- LEFT: Menu Toggle + Brand -->
+    <div class="topbar-left">
+      <button
+        mat-icon-button
+        (click)="toggleSidebar()"
+        class="topbar-icon-btn"
+        aria-label="Toggle sidebar"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+      <div class="topbar-brand">
+        <span class="brand-emoji">🌱</span>
+        <span class="brand-name">AgriMonitor</span>
+        <span class="brand-badge">Worker</span>
+      </div>
     </div>
 
-    <!-- Spacer -->
-    <span class="flex-1"></span>
-
-    <!-- Route Title (desktop centre) -->
-    <div class="topbar-route-title">
+    <!-- CENTER: Route Title -->
+    <div class="topbar-center">
       <span class="topbar-highlight-title">
         <mat-icon>{{ currentRouteIcon() }}</mat-icon>
         {{ currentRoute() }}
       </span>
     </div>
 
-    <!-- Spacer -->
-    <span class="flex-1"></span>
-
-    <!-- Notifications Menu -->
-    <app-notification-menu></app-notification-menu>
-
-    <!-- User name -->
-    <span class="topbar-user-name hidden sm:inline mr-2">{{ user?.name }}</span>
-
-    <!-- User Menu -->
-    <button
-      mat-icon-button
-      [matMenuTriggerFor]="userMenu"
-      class="!text-white !w-10 !h-10"
-      aria-label="User menu"
-    >
-      <mat-icon>account_circle</mat-icon>
-    </button>
-
-    <mat-menu #userMenu="matMenu">
-      <button mat-menu-item routerLink="/worker/profile">
-        <mat-icon>person</mat-icon><span>My Profile</span>
+    <!-- RIGHT: Notifications + User -->
+    <div class="topbar-right">
+      <app-notification-menu></app-notification-menu>
+      <span class="topbar-user-name">{{ user?.name }}</span>
+      <button
+        mat-icon-button
+        [matMenuTriggerFor]="userMenu"
+        class="topbar-icon-btn"
+        aria-label="User menu"
+      >
+        <mat-icon>account_circle</mat-icon>
       </button>
-      <button mat-menu-item routerLink="/worker/settings">
-        <mat-icon>settings</mat-icon><span>Settings</span>
-      </button>
-      <mat-divider></mat-divider>
-      <button mat-menu-item (click)="logout()" class="!text-red-600">
-        <mat-icon class="!text-red-500">logout</mat-icon><span>Logout</span>
-      </button>
-    </mat-menu>
+
+      <mat-menu #userMenu="matMenu">
+        <button mat-menu-item routerLink="/worker/profile">
+          <mat-icon>person</mat-icon><span>My Profile</span>
+        </button>
+        <button mat-menu-item routerLink="/worker/settings">
+          <mat-icon>settings</mat-icon><span>Settings</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="logout()" class="!text-red-600">
+          <mat-icon class="!text-red-500">logout</mat-icon><span>Logout</span>
+        </button>
+      </mat-menu>
+    </div>
+
   </header>
 
   <!-- ═══ BODY: Sidebar + Content ══════════════════════════ -->

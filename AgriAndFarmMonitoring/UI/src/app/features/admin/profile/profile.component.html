@@ -15,20 +15,33 @@
       <mat-card-header class="pb-4">
         <mat-icon mat-card-avatar class="text-4xl text-green-600 w-10 h-10 flex items-center justify-center bg-green-50 rounded-full">admin_panel_settings</mat-icon>
         <mat-card-title class="text-lg mt-1">Administrator Details</mat-card-title>
+        <div class="absolute right-4 top-4">
+          <button mat-icon-button color="primary" (click)="toggleEditMode()">
+            <mat-icon>{{ editMode() ? 'close' : 'edit' }}</mat-icon>
+          </button>
+        </div>
       </mat-card-header>
       
       <mat-card-content class="pt-4">
-        <div class="flex flex-col gap-4">
+        <!-- View Mode -->
+        <div class="flex flex-col gap-4" *ngIf="!editMode()">
           <div class="info-group">
             <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Name</label>
-            <p class="text-gray-800 font-medium text-lg">{{ user()?.name || 'Administrator' }}</p>
+            <p class="text-gray-800 font-medium text-lg">{{ adminProfile()?.name || user()?.name || 'Administrator' }}</p>
           </div>
           
           <mat-divider></mat-divider>
 
           <div class="info-group">
             <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Email Address / Login ID</label>
-            <p class="text-gray-800">{{ user()?.email || 'N/A' }}</p>
+            <p class="text-gray-800">{{ adminProfile()?.email || user()?.email || 'N/A' }}</p>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <div class="info-group">
+            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Phone Number</label>
+            <p class="text-gray-800">{{ adminProfile()?.phone || 'N/A' }}</p>
           </div>
 
           <mat-divider></mat-divider>
@@ -46,15 +59,56 @@
 
           <div class="info-group">
             <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Farm Management</label>
-            <p class="text-gray-800" *ngIf="farmStats()">
+            <p class="text-gray-800 font-semibold">{{ adminProfile()?.farmName || 'N/A' }}</p>
+            <p class="text-gray-800 text-sm" *ngIf="farmStats()">
               Currently managing <strong>{{ farmStats().totalFields }}</strong> fields 
               ({{ farmStats().activeCrops }} active crop cycles).
             </p>
-            <p class="text-gray-500 text-sm" *ngIf="!farmStats()">
-              Managing Farm ID: {{ user()?.farmId || 'N/A' }}
-            </p>
           </div>
         </div>
+
+        <!-- Edit Mode -->
+        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="flex flex-col gap-4" *ngIf="editMode()">
+          <h3 class="text-sm font-semibold text-gray-700">Personal Information</h3>
+          <div class="grid grid-cols-1 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Name</mat-label>
+              <input matInput formControlName="name" placeholder="Full Name">
+              <mat-error *ngIf="profileForm.get('name')?.hasError('required')">Name is required</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full -mt-2">
+              <mat-label>Phone</mat-label>
+              <input matInput formControlName="phone" placeholder="Phone Number">
+            </mat-form-field>
+          </div>
+          
+          <mat-divider></mat-divider>
+          <h3 class="text-sm font-semibold text-gray-700">Farm Information</h3>
+          
+          <div class="grid grid-cols-1 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Farm Name</mat-label>
+              <input matInput formControlName="farmName" placeholder="Farm Name">
+              <mat-error *ngIf="profileForm.get('farmName')?.hasError('required')">Farm Name is required</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full -mt-2">
+              <mat-label>Farm Phone</mat-label>
+              <input matInput formControlName="farmPhone" placeholder="Farm Phone">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full -mt-2">
+              <mat-label>Farm Address</mat-label>
+              <textarea matInput formControlName="farmAddress" placeholder="Farm Address" rows="2"></textarea>
+            </mat-form-field>
+          </div>
+
+          <div class="flex justify-end gap-2 mt-2">
+            <button mat-button type="button" (click)="toggleEditMode()">Cancel</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="profileForm.invalid || isSaving()">
+              <mat-spinner *ngIf="isSaving()" diameter="20" class="inline-block mr-2"></mat-spinner>
+              Save Profile
+            </button>
+          </div>
+        </form>
       </mat-card-content>
     </mat-card>
 

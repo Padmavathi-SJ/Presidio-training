@@ -14,4 +14,5 @@ public class WorkerProfileDto
     public DateTime? LastLoginAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public List<AgriculturePlatform.Application.DTOs.Field.FieldSummaryDto> AssignedFields { get; set; } = new();
 }

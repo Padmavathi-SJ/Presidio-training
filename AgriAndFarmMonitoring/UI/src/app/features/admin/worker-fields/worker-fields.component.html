@@ -1,35 +1,6 @@
 <!-- src/app/features/admin/worker-fields/worker-fields.component.html -->
-<div class="min-h-screen bg-gradient-to-br from-amber-50/50 via-white to-green-50/30">
-  <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6">
-    <!-- Page Header -->
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-800 via-primary-700 to-primary-600 p-4 sm:p-6 md:p-8 mb-4 md:mb-6 shadow-xl">
-      <div class="absolute top-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-white/5 rounded-full blur-3xl -translate-y-12 translate-x-12"></div>
-      <div class="absolute bottom-0 left-0 w-24 sm:w-32 h-24 sm:h-32 bg-white/5 rounded-full blur-2xl translate-y-8 -translate-x-8"></div>
-      
-      <div class="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-        <div class="flex items-center gap-3 sm:gap-4">
-          <div class="p-2 sm:p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-            <mat-icon class="text-2xl sm:text-3xl text-white">assignment_ind</mat-icon>
-          </div>
-          <div>
-            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight">Worker Fields</h1>
-            <p class="text-green-100/80 text-xs sm:text-sm mt-0.5 sm:mt-1 flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-green-300 inline-block"></span>
-              Manage field assignments for workers
-            </p>
-          </div>
-        </div>
-        <button 
-          mat-raised-button 
-          class="!bg-white !text-primary-700 hover:!bg-green-50 text-xs sm:text-sm font-medium shadow-lg w-full sm:w-auto"
-          (click)="openAssignDialog()"
-          [disabled]="isLoading()"
-        >
-          <mat-icon class="!text-primary-700 text-sm">add</mat-icon>
-          Assign Field
-        </button>
-      </div>
-    </div>
+<div class="min-h-screen bg-gray-50/30">
+  <div class="px-4 sm:px-6 py-4">
 
     <!-- Statistics Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-4 md:mb-6">
@@ -130,7 +101,7 @@
         </div>
         
         <!-- Row 2 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mt-2 sm:mt-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 mt-2 sm:mt-3">
           <div>
             <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
               <mat-label class="text-gray-600 text-xs sm:text-sm">Assigned Date To</mat-label>
@@ -159,18 +130,48 @@
               <mat-datepicker #endToPicker></mat-datepicker>
             </mat-form-field>
           </div>
-          
-          <div class="flex items-end justify-end gap-2">
+        </div>
+        
+        <!-- Action Row -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 pt-3 border-t border-gray-100">
+          <div class="flex flex-wrap items-center gap-2">
             <button 
               mat-raised-button 
-              (click)="resetFilters()" 
-              matTooltip="Reset Filters"
-              class="!bg-gray-100 !text-gray-700 hover:!bg-gray-200 text-xs sm:text-sm font-medium"
+              color="primary"
+              (click)="openAssignDialog()"
+              [disabled]="isLoading()"
+              class="text-xs sm:text-sm font-medium shadow-sm"
             >
-              <mat-icon class="text-gray-500 text-sm">refresh</mat-icon>
-              Reset Filters
+              <mat-icon class="text-sm">add</mat-icon>
+              Assign Field
+            </button>
+            <button 
+              mat-stroked-button 
+              (click)="exportPdf()" 
+              class="text-xs sm:text-sm !text-red-600 !border-red-200 hover:!bg-red-50" 
+              [disabled]="isLoading() || assignments().length === 0"
+            >
+              <mat-icon class="text-sm">picture_as_pdf</mat-icon> PDF
+            </button>
+            <button 
+              mat-stroked-button 
+              (click)="exportCsv()" 
+              class="text-xs sm:text-sm !text-green-700 !border-green-200 hover:!bg-green-50" 
+              [disabled]="isLoading() || assignments().length === 0"
+            >
+              <mat-icon class="text-sm">table_chart</mat-icon> CSV
             </button>
           </div>
+          
+          <button 
+            mat-button 
+            (click)="resetFilters()" 
+            matTooltip="Reset Filters"
+            class="!text-gray-600 hover:!bg-gray-100 text-xs sm:text-sm"
+          >
+            <mat-icon class="text-gray-500 text-sm">refresh</mat-icon>
+            Reset Filters
+          </button>
         </div>
       </form>
     </mat-card>
@@ -205,23 +206,6 @@
       </div>
     }
 
-    <!-- Report Generation Section -->
-    <div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden mb-4 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-      <div>
-        <h3 class="text-sm font-bold text-surface-on flex items-center gap-2 m-0">
-          <mat-icon class="text-primary text-sm">auto_graph</mat-icon> Report Generation
-        </h3>
-        <p class="text-xs text-surface-on-variant m-0 mt-1">Export the currently filtered worker fields assignments data.</p>
-      </div>
-      <div class="flex gap-2">
-        <button mat-stroked-button (click)="exportPdf()" class="text-xs !text-red-600 !border-red-200 hover:!bg-red-50" [disabled]="isLoading() || assignments().length === 0">
-          <mat-icon>picture_as_pdf</mat-icon> Export PDF
-        </button>
-        <button mat-stroked-button (click)="exportCsv()" class="text-xs !text-green-700 !border-green-200 hover:!bg-green-50" [disabled]="isLoading() || assignments().length === 0">
-          <mat-icon>table_chart</mat-icon> Export CSV
-        </button>
-      </div>
-    </div>
 
     <!-- Table -->
     <mat-card class="shadow-sm border border-gray-100 rounded-xl overflow-hidden">

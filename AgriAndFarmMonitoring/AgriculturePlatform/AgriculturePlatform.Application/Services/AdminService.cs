@@ -443,5 +443,61 @@ public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
         return hashOfInput == passwordHash;
     }
 
+    public async Task<AgriculturePlatform.Application.Common.ApiResponse<AdminProfileDto>> GetProfileAsync(int adminId)
+    {
+        var admin = await _adminRepository.GetByIdAsync(adminId);
+        if (admin == null) return AgriculturePlatform.Application.Common.ApiResponse<AdminProfileDto>.Fail("Admin not found");
+
+        var farm = await _farmRepository.GetByIdAsync(admin.FarmId);
+        if (farm == null) return AgriculturePlatform.Application.Common.ApiResponse<AdminProfileDto>.Fail("Farm not found");
+
+        var profile = new AdminProfileDto
+        {
+            Id = admin.Id,
+            Name = admin.Name,
+            Email = admin.Email,
+            Phone = admin.Phone,
+            FarmId = farm.Id,
+            FarmName = farm.FarmName,
+            FarmEmail = farm.Email,
+            FarmPhone = farm.Phone,
+            FarmAddress = farm.Address
+        };
+
+        return AgriculturePlatform.Application.Common.ApiResponse<AdminProfileDto>.Ok(profile);
+    }
+
+    public async Task<AgriculturePlatform.Application.Common.ApiResponse<AdminProfileDto>> UpdateProfileAsync(int adminId, UpdateAdminProfileDto dto)
+    {
+        var admin = await _adminRepository.GetByIdAsync(adminId);
+        if (admin == null) return AgriculturePlatform.Application.Common.ApiResponse<AdminProfileDto>.Fail("Admin not found");
+
+        var farm = await _farmRepository.GetByIdAsync(admin.FarmId);
+        if (farm == null) return AgriculturePlatform.Application.Common.ApiResponse<AdminProfileDto>.Fail("Farm not found");
+
+        bool adminChanged = false;
+        bool farmChanged = false;
+
+        if (dto.Name != null && dto.Name != admin.Name) { admin.Name = dto.Name; adminChanged = true; }
+        if (dto.Phone != null && dto.Phone != admin.Phone) { admin.Phone = dto.Phone; adminChanged = true; }
+
+        if (dto.FarmName != null && dto.FarmName != farm.FarmName) { farm.FarmName = dto.FarmName; farmChanged = true; }
+        if (dto.FarmPhone != null && dto.FarmPhone != farm.Phone) { farm.Phone = dto.FarmPhone; farmChanged = true; }
+        if (dto.FarmAddress != null && dto.FarmAddress != farm.Address) { farm.Address = dto.FarmAddress; farmChanged = true; }
+
+        if (adminChanged)
+        {
+            admin.UpdatedAt = DateTime.UtcNow;
+            await _adminRepository.UpdateAsync(admin);
+        }
+
+        if (farmChanged)
+        {
+            farm.UpdatedAt = DateTime.UtcNow;
+            await _farmRepository.UpdateAsync(farm);
+        }
+
+        return await GetProfileAsync(adminId);
+    }
 
 }

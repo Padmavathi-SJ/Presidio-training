@@ -37,7 +37,10 @@ export class Profile implements OnInit {
   isLoading = signal<boolean>(false);
   isSaving = signal<boolean>(false);
 
+  profileForm!: FormGroup;
   passwordForm!: FormGroup;
+  editMode = signal<boolean>(false);
+  adminProfile = signal<any>(null);
 
   ngOnInit() {
     this.user.set(this.tokenService.getUser());
@@ -48,6 +51,15 @@ export class Profile implements OnInit {
       confirmNewPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
 
+    this.profileForm = this.fb.group({
+      name: ['', Validators.required],
+      phone: [''],
+      farmName: ['', Validators.required],
+      farmPhone: [''],
+      farmAddress: ['']
+    });
+
+    this.fetchProfile();
     this.fetchFarmStats();
   }
 
@@ -56,16 +68,69 @@ export class Profile implements OnInit {
       ? null : { mismatch: true };
   }
 
+  fetchProfile() {
+    this.isLoading.set(true);
+    this.http.get<any>(`${environment.apiUrl}/admin/profile`).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.adminProfile.set(res.data);
+          this.profileForm.patchValue({
+            name: res.data.name,
+            phone: res.data.phone,
+            farmName: res.data.farmName,
+            farmPhone: res.data.farmPhone,
+            farmAddress: res.data.farmAddress
+          });
+        }
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.snackBar.open('Failed to load profile details', 'Close', { duration: 3000 });
+      }
+    });
+  }
+
+  toggleEditMode() {
+    if (this.editMode()) {
+      // cancel edit
+      const profile = this.adminProfile();
+      if (profile) {
+        this.profileForm.patchValue(profile);
+      }
+    }
+    this.editMode.set(!this.editMode());
+  }
+
+  saveProfile() {
+    if (this.profileForm.invalid) return;
+    
+    this.isSaving.set(true);
+    this.http.put<any>(`${environment.apiUrl}/admin/profile`, this.profileForm.value).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.adminProfile.set(res.data);
+          this.editMode.set(false);
+          this.snackBar.open('Profile updated successfully!', 'Close', { duration: 3000, panelClass: ['bg-green-600', 'text-white'] });
+        }
+        this.isSaving.set(false);
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Failed to update profile', 'Close', { duration: 4000, panelClass: ['bg-red-600', 'text-white'] });
+        this.isSaving.set(false);
+      }
+    });
+  }
+
   fetchFarmStats() {
     if (!this.user()?.farmId) return;
     
-    // We can fetch basic farm stats to show some farm details
-    this.http.get<any>(`${environment.apiUrl}/farms/${this.user()?.farmId}/fields`).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/farms/${this.user()?.farmId}/fields/statistics`).subscribe({
       next: (res) => {
-        const fields = Array.isArray(res) ? res : (res.data || []);
+        const stats = res.data || res;
         this.farmStats.set({
-          totalFields: fields.length,
-          activeCrops: fields.filter((f: any) => f.currentCropCycleId != null).length
+          totalFields: stats.totalFields || 0,
+          activeCrops: stats.totalActiveCrops || stats.activeFields || 0
         });
       },
       error: () => console.log('Could not load farm fields stats')

@@ -1,81 +1,121 @@
-<!-- src/app/features/auth/login/login.component.html -->
-<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md w-full space-y-8">
-    <!-- Logo / Header -->
-    <div class="text-center">
-      <div class="flex justify-center">
-        <div class="h-16 w-16 bg-primary-600 rounded-full flex items-center justify-center">
-          <span class="text-2xl text-white font-bold">logo</span>
+<!-- Professional Login Page — AgriMonitor -->
+<div class="auth-page">
+
+  <!-- LEFT PANEL: Illustration / Branding -->
+  <div class="auth-left-panel">
+    <div class="auth-left-content">
+      <!-- Logo -->
+      <div class="auth-logo">
+        <div class="auth-logo-icon">
+          <span>🌿</span>
+        </div>
+        <div class="auth-logo-text">
+          <span class="logo-name">AgriMonitor</span>
+          <span class="logo-tagline">Farm Management Platform</span>
         </div>
       </div>
-      <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
-        Welcome Back
-      </h2>
-      <p class="mt-2 text-sm text-gray-600">
-        Sign in to your Farm Management Platform
-      </p>
+
+      <!-- Hero Text -->
+      <div class="auth-hero">
+        <h1 class="auth-hero-title">Smart Farming<br/>Starts Here</h1>
+        <p class="auth-hero-desc">
+          Monitor your fields, track crop cycles, manage your workforce, and make data-driven decisions — all in one place.
+        </p>
+      </div>
+
+      <!-- Feature Pills -->
+      <div class="auth-features">
+        <div class="auth-feature-pill">
+          <span class="pill-icon">🌾</span>
+          <span>Crop Monitoring</span>
+        </div>
+        <div class="auth-feature-pill">
+          <span class="pill-icon">📊</span>
+          <span>Real-time Analytics</span>
+        </div>
+        <div class="auth-feature-pill">
+          <span class="pill-icon">🛰️</span>
+          <span>Sensor Data</span>
+        </div>
+        <div class="auth-feature-pill">
+          <span class="pill-icon">☁️</span>
+          <span>Weather Alerts</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Login Form -->
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
-      <div class="space-y-4">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Email address</mat-label>
-          <input matInput formControlName="email" type="email" placeholder="you@example.com">
-          <mat-icon matPrefix class="text-gray-400">email</mat-icon>
-          <mat-error *ngIf="loginForm.get('email')?.hasError('required')">
-            Email is required
-          </mat-error>
-          <mat-error *ngIf="loginForm.get('email')?.hasError('email')">
-            Please enter a valid email
-          </mat-error>
-        </mat-form-field>
+    <!-- Decorative circles -->
+    <div class="auth-deco-circle deco-1"></div>
+    <div class="auth-deco-circle deco-2"></div>
+    <div class="auth-deco-circle deco-3"></div>
+  </div>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Password</mat-label>
-          <input matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'">
-          <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
-          <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
-            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
-            Password is required
-          </mat-error>
-          <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">
-            Password must be at least 6 characters
-          </mat-error>
-        </mat-form-field>
-        
-        <div class="flex items-center justify-end mt-1">
-          <div class="text-sm">
-            <a routerLink="/auth/forgot-password" class="font-medium text-primary-600 hover:text-primary-500">
-              Forgot your password?
-            </a>
-          </div>
+  <!-- RIGHT PANEL: Login Form -->
+  <div class="auth-right-panel">
+    <div class="auth-form-container">
+      <!-- Form Header -->
+      <div class="auth-form-header">
+        <h2 class="auth-form-title">Welcome back</h2>
+        <p class="auth-form-subtitle">Sign in to your farm dashboard</p>
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+
+        <!-- Email -->
+        <div class="auth-field">
+          <label class="auth-label">Email address</label>
+          <mat-form-field appearance="outline" class="w-full auth-mat-field">
+            <mat-icon matPrefix class="field-icon">email</mat-icon>
+            <input matInput formControlName="email" type="email" placeholder="you@farm.com" id="login-email">
+            <mat-error *ngIf="loginForm.get('email')?.hasError('required')">Email is required</mat-error>
+            <mat-error *ngIf="loginForm.get('email')?.hasError('email')">Please enter a valid email</mat-error>
+          </mat-form-field>
         </div>
-      </div>
 
-      <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-        {{ errorMessage }}
-      </div>
-
-      <button mat-raised-button color="primary" class="w-full !py-3 text-base font-semibold" 
-              [disabled]="isLoading || loginForm.invalid" type="submit">
-        <div class="flex items-center justify-center">
-          <span *ngIf="!isLoading">Sign In</span>
-          <div *ngIf="isLoading" class="flex items-center">
-            <mat-spinner [diameter]="20" class="mr-2"></mat-spinner>
-            <span>Signing in...</span>
-          </div>
+        <!-- Password -->
+        <div class="auth-field">
+          <label class="auth-label">Password</label>
+          <mat-form-field appearance="outline" class="w-full auth-mat-field">
+            <mat-icon matPrefix class="field-icon">lock_outline</mat-icon>
+            <input matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'" placeholder="••••••••" id="login-password">
+            <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button" class="!text-[#5a7a6a]">
+              <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="loginForm.get('password')?.hasError('required')">Password is required</mat-error>
+            <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">Minimum 6 characters</mat-error>
+          </mat-form-field>
         </div>
-      </button>
 
-      <div class="text-sm text-center">
-        <span class="text-gray-600">Don't have an account?</span>
-        <a routerLink="/auth/register" class="ml-1 font-medium text-primary-600 hover:text-primary-500">
-          Register your farm
-        </a>
-      </div>
-    </form>
+        <!-- Forgot Password -->
+        <div class="auth-forgot-row">
+          <a routerLink="/auth/forgot-password" class="auth-link">Forgot password?</a>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="auth-error-box">
+          <mat-icon class="text-sm">error_outline</mat-icon>
+          <span>{{ errorMessage }}</span>
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          class="auth-submit-btn"
+          [disabled]="isLoading || loginForm.invalid"
+          type="submit"
+          id="login-submit"
+        >
+          <mat-spinner *ngIf="isLoading" [diameter]="18" class="btn-spinner"></mat-spinner>
+          <mat-icon *ngIf="!isLoading">login</mat-icon>
+          <span>{{ isLoading ? 'Signing in...' : 'Sign In' }}</span>
+        </button>
+
+        <!-- Register Link -->
+        <div class="auth-switch">
+          <span>Don't have an account?</span>
+          <a routerLink="/auth/register" class="auth-link">Register your farm →</a>
+        </div>
+      </form>
+    </div>
   </div>
 </div>

@@ -45,11 +45,19 @@
           <mat-divider></mat-divider>
 
           <div class="info-group">
-            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Assigned Fields</label>
-            <p class="text-gray-800" *ngIf="workerProfile()?.assignedFields?.length">
-              {{ workerProfile().assignedFields.length }} fields assigned
-            </p>
-            <p class="text-gray-500 text-sm" *ngIf="!workerProfile()?.assignedFields?.length">
+            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Assigned Fields ({{ workerProfile()?.assignedFields?.length || 0 }})</label>
+            <div class="mt-2 space-y-2" *ngIf="workerProfile()?.assignedFields?.length">
+              <div *ngFor="let field of workerProfile()?.assignedFields" class="p-3 bg-gray-50 rounded-lg border border-gray-100 flex justify-between items-center">
+                <div>
+                  <p class="text-sm font-semibold text-gray-800">{{ field.fieldName }}</p>
+                  <p class="text-xs text-gray-500">{{ field.areaHectares }} Hectares</p>
+                </div>
+                <span class="px-2 py-1 bg-green-100 text-green-800 text-[10px] font-bold rounded uppercase tracking-wide">
+                  {{ field.status || 'ACTIVE' }}
+                </span>
+              </div>
+            </div>
+            <p class="text-gray-500 text-sm mt-2 italic" *ngIf="!workerProfile()?.assignedFields?.length">
               No fields currently assigned.
             </p>
           </div>

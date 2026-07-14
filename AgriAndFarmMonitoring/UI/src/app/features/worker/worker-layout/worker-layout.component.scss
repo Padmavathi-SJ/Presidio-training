@@ -13,79 +13,107 @@
 
 // ─── Top Navigation Bar ──────────────────────────────────────
 .worker-topbar {
-  height: 58px;
+  height: 52px;
+  min-height: 52px;
   background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%);
   box-shadow: 0 2px 8px rgba(27, 67, 50, 0.35);
   display: flex;
-  align-items: center;
-  padding: 0 12px 0 8px;
-  gap: 0;
+  align-items: center;   // vertically centers ALL direct children
+  padding: 0 8px;
   flex-shrink: 0;
   position: sticky;
   top: 0;
   z-index: 1000;
+  overflow: hidden;      // no child can push topbar taller
+}
+
+// Left, Center, Right groups — all same height as topbar
+.topbar-left,
+.topbar-center,
+.topbar-right {
+  display: flex;
+  align-items: center;   // vertically center everything inside
+  height: 100%;
+}
+
+.topbar-left {
+  flex: 0 0 auto;        // don't grow/shrink
+  gap: 4px;
+}
+
+.topbar-center {
+  flex: 1;               // take all remaining space
+  justify-content: center;
+
+  @media (max-width: 768px) { display: none; }
+}
+
+.topbar-right {
+  flex: 0 0 auto;        // don't grow/shrink
+  gap: 2px;
+  margin-left: auto;     // push to far right
+}
+
+// Icon buttons inside topbar
+.topbar-icon-btn {
+  color: white !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0;
 }
 
 .topbar-brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 8px;
+  padding: 0 6px;
   text-decoration: none;
-  min-width: 0;
+  flex-shrink: 0;
 
   .brand-emoji {
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1;
     flex-shrink: 0;
   }
 
   .brand-name {
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 700;
     color: white;
     letter-spacing: 0.02em;
     white-space: nowrap;
+
+    @media (max-width: 640px) { display: none; }
   }
 
   .brand-badge {
     background: rgba(255,255,255,0.18);
     border: 1px solid rgba(255,255,255,0.25);
-    color: rgba(255,255,255,0.9);
-    font-size: 10px;
+    color: rgba(255,255,255,0.92);
+    font-size: 9.5px;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 2px 7px;
     border-radius: 9999px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     white-space: nowrap;
+
+    @media (max-width: 640px) { display: none; }
   }
 }
 
-.topbar-spacer { flex: 1; }
-
-.topbar-route-title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-
-  @media (max-width: 768px) { display: none; }
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
 .topbar-user-name {
-  font-size: 13px;
+  font-size: 12.5px;
   color: rgba(255,255,255,0.88);
   font-weight: 500;
-  margin-right: 4px;
+  white-space: nowrap;
+  padding: 0 4px;
 
-  @media (max-width: 768px) { display: none; }
+  @media (max-width: 960px) { display: none; }
 }
 
 // ─── Sidenav Container ───────────────────────────────────────
@@ -97,7 +125,7 @@
 
 // ─── Sidebar ─────────────────────────────────────────────────
 .worker-sidebar {
-  width: 252px;
+  width: 210px;
   background: white;
   border-right: 1px solid #d5e1da;
   display: flex;
@@ -106,7 +134,7 @@
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
 
-  &.collapsed { width: 64px; }
+  &.collapsed { width: 54px; }
 
   @media (max-width: 768px) {
     position: fixed;
@@ -287,6 +315,8 @@
 // ─── Main Content Area ───────────────────────────────────────
 .worker-content-area {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
   background: #f5f8f5;
@@ -299,13 +329,26 @@
     height: 2px;
     background: linear-gradient(90deg, #2d6a4f, #40916c, transparent);
     opacity: 0.5;
+    flex-shrink: 0;
   }
 }
 
 .worker-content-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   max-width: 1440px;
+  width: 100%;
   margin: 0 auto;
   padding: 16px 20px 24px;
+
+  > *:not(router-outlet) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
 
   @media (max-width: 768px) { padding: 12px 12px 20px; }
   @media (max-width: 480px) { padding: 8px 8px 16px; }

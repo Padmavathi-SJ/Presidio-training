@@ -13,4 +13,6 @@ public interface IAdminService
     Task<bool> ForgotPasswordAsync(ForgotPasswordDto dto);
     Task<bool> VerifyOtpAsync(VerifyOtpDto dto);
     Task<bool> ResetPasswordAsync(ResetPasswordDto dto);
+    Task<AgriculturePlatform.Application.Common.ApiResponse<AdminProfileDto>> GetProfileAsync(int adminId);
+    Task<AgriculturePlatform.Application.Common.ApiResponse<AdminProfileDto>> UpdateProfileAsync(int adminId, UpdateAdminProfileDto dto);
 }

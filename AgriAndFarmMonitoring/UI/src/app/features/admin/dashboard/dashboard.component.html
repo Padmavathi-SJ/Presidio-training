@@ -129,7 +129,7 @@
         <div class="admin-panel-body" *ngIf="recentPendingObs.length > 0">
           <div *ngFor="let item of recentPendingObs" class="dash-approval-item" (click)="approveItem({type: 'Observation'})">
             <p class="font-medium text-slate-800 text-sm">Field: {{ item.fieldName || item.fieldId }}</p>
-            <p class="text-xs text-slate-500">{{ item.observationDate | date:'mediumDate' }} • By {{ item.workerName || 'Worker #' + item.workerId }}</p>
+            <p class="text-xs text-slate-500">{{ item.observationDate | date:'mediumDate' }} • By {{ item.workerName || 'Unknown Worker' }}</p>
           </div>
         </div>
         <div *ngIf="recentPendingObs.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400 py-4">

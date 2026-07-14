@@ -949,8 +949,9 @@ private JsonDocument? SerializeToJsonDocument(object? obj)
                     // Set audit fields
                     HandleAuditFields(entityEntry, adminId, workerId, now);
                     
-                    // Serialize entity with enum converter
-                    var addedJson = JsonSerializer.Serialize(entityEntry.Entity, jsonOptions);
+                    // Serialize entity with enum converter (use GetEntityState to avoid giant graphs)
+                    var addedDict = GetEntityState(entityEntry.Entity, useOriginalValues: false);
+                    var addedJson = JsonSerializer.Serialize(addedDict, jsonOptions);
                     
                     auditLogs.Add(new AuditLog
                     {
@@ -1043,56 +1044,45 @@ private Dictionary<string, object?> GetEntityState(object entity, bool useOrigin
     var state = new Dictionary<string, object?>();
     var entry = Entry(entity);
 
-    foreach (var property in entity.GetType().GetProperties())
+    foreach (var property in entry.Properties)
     {
         try
         {
-            // Skip navigation properties
-            if (property.PropertyType.IsClass &&
-                property.PropertyType != typeof(string) &&
-                property.PropertyType.Namespace?.StartsWith("AgriculturePlatform.Domain.Entities") == true)
-            {
-                continue;
-            }
-
             object? value;
 
             if (useOriginalValues)
             {
-                var propertyEntry = entry.Properties
-                    .FirstOrDefault(p => p.Metadata.Name == property.Name);
-
-                value = propertyEntry?.OriginalValue;
+                value = property.OriginalValue;
             }
             else
             {
-                value = property.GetValue(entity);
+                value = property.CurrentValue;
             }
 
             if (value == null)
             {
-                state[property.Name] = null;
+                state[property.Metadata.Name] = null;
                 continue;
             }
 
             // Convert enums to string
-            var propertyType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+            var propertyType = Nullable.GetUnderlyingType(property.Metadata.ClrType) ?? property.Metadata.ClrType;
 
             if (propertyType.IsEnum)
             {
-                state[property.Name] = value.ToString();
+                state[property.Metadata.Name] = value.ToString();
                 continue;
             }
 
             // Format DateTime
             if (value is DateTime dt)
             {
-                state[property.Name] = dt.ToUniversalTime()
+                state[property.Metadata.Name] = dt.ToUniversalTime()
                     .ToString("yyyy-MM-dd HH:mm:ss.fffZ");
                 continue;
             }
 
-            state[property.Name] = value;
+            state[property.Metadata.Name] = value;
         }
         catch
         {
