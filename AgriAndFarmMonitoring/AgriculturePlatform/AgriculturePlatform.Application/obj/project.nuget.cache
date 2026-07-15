@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "BLfVI/l4wCo=",
+  "dgSpecHash": "0Uc7LqmMebE=",
   "success": true,
   "projectFilePath": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.Application/AgriculturePlatform.Application.csproj",
   "expectedPackageFiles": [
-    "/Users/padmavathisj/.nuget/packages/automapper/13.0.1/automapper.13.0.1.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/automapper/12.0.1/automapper.12.0.1.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/automapper.extensions.microsoft.dependencyinjection/12.0.1/automapper.extensions.microsoft.dependencyinjection.12.0.1.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/bcrypt.net-next/4.2.0/bcrypt.net-next.4.2.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/epplus/6.2.10/epplus.6.2.10.nupkg.sha512",
@@ -12,6 +12,8 @@
     "/Users/padmavathisj/.nuget/packages/epplus.system.drawing/6.1.1/epplus.system.drawing.6.1.1.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/fluentvalidation/11.9.2/fluentvalidation.11.9.2.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/fluentvalidation.dependencyinjectionextensions/11.9.2/fluentvalidation.dependencyinjectionextensions.11.9.2.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.bcl.memory/9.0.0/microsoft.bcl.memory.9.0.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.csharp/4.7.0/microsoft.csharp.4.7.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.entityframeworkcore/8.0.0/microsoft.entityframeworkcore.8.0.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.entityframeworkcore.abstractions/8.0.0/microsoft.entityframeworkcore.abstractions.8.0.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.entityframeworkcore.analyzers/8.0.0/microsoft.entityframeworkcore.analyzers.8.0.0.nupkg.sha512",
@@ -35,50 +37,19 @@
     "/Users/padmavathisj/.nuget/packages/microsoft.extensions.options/8.0.2/microsoft.extensions.options.8.0.2.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.extensions.options.configurationextensions/8.0.0/microsoft.extensions.options.configurationextensions.8.0.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.extensions.primitives/8.0.0/microsoft.extensions.primitives.8.0.0.nupkg.sha512",
-    "/Users/padmavathisj/.nuget/packages/microsoft.identitymodel.abstractions/8.0.0/microsoft.identitymodel.abstractions.8.0.0.nupkg.sha512",
-    "/Users/padmavathisj/.nuget/packages/microsoft.identitymodel.jsonwebtokens/8.0.0/microsoft.identitymodel.jsonwebtokens.8.0.0.nupkg.sha512",
-    "/Users/padmavathisj/.nuget/packages/microsoft.identitymodel.logging/8.0.0/microsoft.identitymodel.logging.8.0.0.nupkg.sha512",
-    "/Users/padmavathisj/.nuget/packages/microsoft.identitymodel.tokens/8.0.0/microsoft.identitymodel.tokens.8.0.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.identitymodel.abstractions/8.8.0/microsoft.identitymodel.abstractions.8.8.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.identitymodel.jsonwebtokens/8.8.0/microsoft.identitymodel.jsonwebtokens.8.8.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.identitymodel.logging/8.8.0/microsoft.identitymodel.logging.8.8.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/microsoft.identitymodel.tokens/8.8.0/microsoft.identitymodel.tokens.8.8.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.io.recyclablememorystream/2.2.1/microsoft.io.recyclablememorystream.2.2.1.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/microsoft.win32.systemevents/7.0.0/microsoft.win32.systemevents.7.0.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/system.drawing.common/7.0.0/system.drawing.common.7.0.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/system.formats.asn1/7.0.0/system.formats.asn1.7.0.0.nupkg.sha512",
-    "/Users/padmavathisj/.nuget/packages/system.identitymodel.tokens.jwt/8.0.0/system.identitymodel.tokens.jwt.8.0.0.nupkg.sha512",
+    "/Users/padmavathisj/.nuget/packages/system.identitymodel.tokens.jwt/8.8.0/system.identitymodel.tokens.jwt.8.8.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/system.security.cryptography.pkcs/7.0.2/system.security.cryptography.pkcs.7.0.2.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/system.text.encoding.codepages/7.0.0/system.text.encoding.codepages.7.0.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/system.text.encodings.web/7.0.0/system.text.encodings.web.7.0.0.nupkg.sha512",
     "/Users/padmavathisj/.nuget/packages/system.text.json/7.0.0/system.text.json.7.0.0.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "AgriculturePlatform.Application depends on Microsoft.IdentityModel.Tokens (>= 7.8.0) but Microsoft.IdentityModel.Tokens 7.8.0 was not found. An approximate best match of Microsoft.IdentityModel.Tokens 8.0.0 was resolved.",
-      "libraryId": "Microsoft.IdentityModel.Tokens",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    },
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "AgriculturePlatform.Application depends on System.IdentityModel.Tokens.Jwt (>= 7.8.0) but System.IdentityModel.Tokens.Jwt 7.8.0 was not found. An approximate best match of System.IdentityModel.Tokens.Jwt 8.0.0 was resolved.",
-      "libraryId": "System.IdentityModel.Tokens.Jwt",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    },
-    {
-      "code": "NU1608",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Detected package version outside of dependency constraint: AutoMapper.Extensions.Microsoft.DependencyInjection 12.0.1 requires AutoMapper (= 12.0.1) but version AutoMapper 13.0.1 was resolved.",
-      "libraryId": "AutoMapper",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    }
-  ]
+  "logs": []
 }

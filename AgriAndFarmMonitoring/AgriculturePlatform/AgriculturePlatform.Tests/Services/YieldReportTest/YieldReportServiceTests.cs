@@ -211,7 +211,7 @@ public class YieldReportServiceTests
         };
         
         var fileContent = System.Text.Encoding.UTF8.GetBytes("test content");
-        var downloadUrl = "http://localhost:5000/api/downloads/reports/test.csv";
+        var downloadUrl = "https://api.example.com/api/downloads/reports/test.csv";
         
         _reportRepositoryMock.Setup(r => r.GetByIdAsync(id, farmId))
             .ReturnsAsync(report);

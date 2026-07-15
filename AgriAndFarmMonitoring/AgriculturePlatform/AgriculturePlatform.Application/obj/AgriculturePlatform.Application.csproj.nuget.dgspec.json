@@ -52,7 +52,7 @@
           "dependencies": {
             "AutoMapper": {
               "target": "Package",
-              "version": "[13.0.1, )"
+              "version": "[12.0.1, )"
             },
             "AutoMapper.Extensions.Microsoft.DependencyInjection": {
               "target": "Package",
@@ -96,11 +96,11 @@
             },
             "Microsoft.IdentityModel.Tokens": {
               "target": "Package",
-              "version": "[7.8.0, )"
+              "version": "[8.8.0, )"
             },
             "System.IdentityModel.Tokens.Jwt": {
               "target": "Package",
-              "version": "[7.8.0, )"
+              "version": "[8.8.0, )"
             }
           },
           "imports": [

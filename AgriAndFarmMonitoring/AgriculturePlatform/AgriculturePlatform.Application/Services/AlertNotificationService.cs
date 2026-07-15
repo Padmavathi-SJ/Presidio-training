@@ -1,5 +1,6 @@
 // Application/Services/AlertNotificationService.cs
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using AgriculturePlatform.Application.DTOs.Email;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Domain.Entities.CropMonitoring;
@@ -19,6 +20,7 @@ public class AlertNotificationService : IAlertNotificationService
     private readonly IWorkerFieldAssignmentRepository _assignmentRepository;
     private readonly INotificationService _inAppNotificationService;
     private readonly ILogger<AlertNotificationService> _logger;
+    private readonly IConfiguration _configuration;
     private readonly Dictionary<string, DateTime> _lastNotificationSent = new();
 
     public AlertNotificationService(
@@ -29,7 +31,8 @@ public class AlertNotificationService : IAlertNotificationService
         ICropCycleRepository cropCycleRepository,
         IWorkerFieldAssignmentRepository assignmentRepository,
         INotificationService inAppNotificationService,
-        ILogger<AlertNotificationService> logger)
+        ILogger<AlertNotificationService> logger,
+        IConfiguration configuration)
     {
         _emailService = emailService;
         _workerRepository = workerRepository;
@@ -39,6 +42,7 @@ public class AlertNotificationService : IAlertNotificationService
         _assignmentRepository = assignmentRepository;
         _inAppNotificationService = inAppNotificationService;
         _logger = logger;
+        _configuration = configuration;
     }
 
     // ✅ IMPLEMENT MISSING METHODS
@@ -102,7 +106,7 @@ public class AlertNotificationService : IAlertNotificationService
             Message = alert.Message ?? "Sensor reading exceeded threshold",
             AlertTime = alert.CreatedAt,
             RecommendedAction = GetRecommendedAction(alert),
-            DashboardLink = "http://localhost:5000/dashboard"
+            DashboardLink = $"{_configuration["BaseUrl"]}/dashboard"
         };
         
         var recipients = new List<(string Email, string Name)>();
@@ -167,7 +171,7 @@ public class AlertNotificationService : IAlertNotificationService
             Message = "This is a test alert message",
             AlertTime = DateTime.UtcNow,
             RecommendedAction = "Please check the system configuration",
-            DashboardLink = "http://localhost:5000/dashboard"
+            DashboardLink = $"{_configuration["BaseUrl"]}/dashboard"
         };
         
         await _emailService.SendSensorAlertEmailAsync(testAlert, recipientEmail, recipientName);

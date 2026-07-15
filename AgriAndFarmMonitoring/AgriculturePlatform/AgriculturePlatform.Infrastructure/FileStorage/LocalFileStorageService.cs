@@ -14,7 +14,7 @@ public class LocalFileStorageService : IFileStorageService
 
     public LocalFileStorageService(IConfiguration configuration, IWebHostEnvironment environment)
     {
-        _baseUrl = configuration["FileStorage:BaseUrl"] ?? "http://localhost:5000";
+        _baseUrl = configuration["FileStorage:BaseUrl"] ?? configuration["BaseUrl"] ?? string.Empty;
         _environment = environment;
     }
 

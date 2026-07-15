@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using FluentValidation;
 using AutoMapper;
+using Microsoft.AspNetCore.HttpOverrides;
 using AgriculturePlatform.Infrastructure.Context;
 using AgriculturePlatform.Infrastructure.FileStorage;
 using AgriculturePlatform.Application.Interfaces;
@@ -19,6 +20,7 @@ using AgriculturePlatform.API.Hubs;
 using AgriculturePlatform.API.Services;
 using AgriculturePlatform.API.Configuration;
 using AgriculturePlatform.Infrastructure.Services;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +50,9 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "API for managing farms, crops, workers, and yields"
     });
+    
+    // Handle duplicate DTO names by using full namespace
+    c.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
     
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -80,7 +85,7 @@ builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-// ✅ FIX: SINGLE CORS POLICY - Only define this ONCE
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -88,13 +93,17 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://localhost:4200",
                 "https://localhost:4200",
-                "http://localhost:5000"
+                "http://localhost:5000",
+                "https://blue-sand-0f86be800-preview.eastasia.7.azurestaticapps.net",  // Preview
+                "https://blue-sand-0f86be800.7.azurestaticapps.net",  // Production - ADD THIS!
+                "https://padma-angular-app.azurestaticapps.net"       // Custom domain - already there
             )
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
     });
 });
+
 
 // JWT Configuration 
 var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "your-super-secret-key-minimum-32-characters-long";
@@ -116,6 +125,9 @@ builder.Services.AddSignalR();
 // Background Services
 builder.Services.AddHostedService<IoTSimulatorBackgroundService>();
 builder.Services.AddHostedService<ScheduledReportBackgroundService>();
+builder.Services.AddHostedService<GrowthStageUpdateService>();  
+builder.Services.AddHostedService<WeatherUpdateBackgroundService>();
+
 
 // Add AutoMapper
 var mapperConfig = new MapperConfiguration(cfg =>
@@ -194,7 +206,9 @@ builder.Services.AddScoped<IQualityCheckService, QualityCheckService>();
 builder.Services.AddScoped<IYieldReportService, YieldReportService>();
 
         var storageProvider = builder.Configuration["FileStorage:Provider"] ?? "Local";
-        if (storageProvider == "AzureBlob")
+        
+        // Force Azure Blob Storage in Production, otherwise fall back to configuration
+        if (builder.Environment.IsProduction() || storageProvider == "AzureBlob")
         {
             builder.Services.AddTransient<IFileStorageService, AgriculturePlatform.Infrastructure.FileStorage.AzureBlobStorageService>();
         }
@@ -205,12 +219,12 @@ builder.Services.AddScoped<IYieldReportService, YieldReportService>();
         builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationImagePathResolver>();
         builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationAdditionalImagePathsResolver>();
         builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddHostedService<GrowthStageUpdateService>();      
+
+    
 
 builder.Services.AddScoped<ObservationStatisticsFormatter>();
 
 // Background Service
-builder.Services.AddHostedService<WeatherUpdateBackgroundService>();
 
 // Add JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -262,6 +276,12 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+
 // ✅ CORS must be BEFORE Authentication and Authorization
 app.UseCors("AllowAll");
 app.UseStaticFiles();
@@ -282,6 +302,7 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+
 // ✅ Authentication and Authorization
 app.UseAuthentication();
 app.UseAuthorization();
@@ -295,12 +316,29 @@ app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapControllers();
 
 
+// Health check endpoint (no database access required)
+app.MapGet("/health", () => Results.Ok(new 
+{ 
+    Status = "Healthy", 
+    Timestamp = DateTime.UtcNow,
+    Environment = app.Environment.EnvironmentName
+}));
+
+// Simplified health check for container readiness
+app.MapGet("/ping", () => "pong");
+
 
 // Create database
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.EnsureCreated();
+}
+
+var uploadPath = Path.Combine(app.Environment.WebRootPath, "uploads");
+if (!Directory.Exists(uploadPath))
+{
+    Directory.CreateDirectory(uploadPath);
 }
 
 app.Run();

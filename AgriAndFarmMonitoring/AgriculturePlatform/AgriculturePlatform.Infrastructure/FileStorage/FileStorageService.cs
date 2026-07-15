@@ -14,7 +14,7 @@ public class FileStorageService : IFileStorageService
     public FileStorageService(IConfiguration configuration, IWebHostEnvironment environment)
     {
         _reportsPath = configuration["FileStorage:ReportsPath"] ?? "Reports/YieldReports";
-        _baseUrl = configuration["FileStorage:BaseUrl"] ?? "http://localhost:5000";
+        _baseUrl = configuration["FileStorage:BaseUrl"] ?? configuration["BaseUrl"] ?? string.Empty;
         _environment = environment;
     }
 

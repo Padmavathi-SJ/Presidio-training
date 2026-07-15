@@ -622,7 +622,7 @@ export class Observations implements OnInit {
     
     try {
       const parsed = new URL(url);
-      // Extracts e.g. "observations/guid.png" from "http://localhost:5000/uploads/observations/guid.png"
+     
       const match = parsed.pathname.match(/\/uploads\/(.+)$/);
       return match ? match[1] : parsed.pathname;
     } catch {

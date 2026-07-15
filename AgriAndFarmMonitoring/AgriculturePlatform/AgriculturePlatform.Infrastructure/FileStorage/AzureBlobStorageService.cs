@@ -2,6 +2,8 @@ using Microsoft.Extensions.Configuration;
 using AgriculturePlatform.Application.Interfaces;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -10,41 +12,62 @@ namespace AgriculturePlatform.Infrastructure.FileStorage;
 public class AzureBlobStorageService : IFileStorageService
 {
     private readonly BlobServiceClient _blobServiceClient;
-    private readonly BlobContainerClient _containerClient;
 
     public AzureBlobStorageService(IConfiguration configuration)
     {
         var connectionString = configuration["FileStorage:AzureBlob:ConnectionString"] ?? "UseDevelopmentStorage=true";
-        var containerName = configuration["FileStorage:AzureBlob:ContainerName"] ?? "observations";
         _blobServiceClient = new BlobServiceClient(connectionString);
-        _containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
+    }
+
+    private (BlobContainerClient Container, string BlobName) ParseFilePath(string filePath, string defaultContainer = "uploads")
+    {
+        if (string.IsNullOrEmpty(filePath))
+            return (_blobServiceClient.GetBlobContainerClient(defaultContainer.ToLowerInvariant()), string.Empty);
+
+        var parts = filePath.Replace("\\", "/").Split('/', 2);
+        if (parts.Length > 1)
+        {
+            return (_blobServiceClient.GetBlobContainerClient(parts[0].ToLowerInvariant()), parts[1]);
+        }
+        
+        return (_blobServiceClient.GetBlobContainerClient(defaultContainer.ToLowerInvariant()), filePath);
     }
 
     public async Task<string> SaveFileAsync(byte[] fileContent, string fileName, string subDirectory)
     {
-        await _containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+        var containerName = string.IsNullOrEmpty(subDirectory) ? "uploads" : subDirectory.Split('/')[0].ToLowerInvariant();
+        var container = _blobServiceClient.GetBlobContainerClient(containerName);
         
-        var blobPath = string.IsNullOrEmpty(subDirectory) ? fileName : $"{subDirectory}/{fileName}";
-        var blobClient = _containerClient.GetBlobClient(blobPath);
+        // Create container as PRIVATE (not public)
+        await container.CreateIfNotExistsAsync();
+        
+        var blobName = string.IsNullOrEmpty(subDirectory) || !subDirectory.Contains('/') 
+            ? fileName 
+            : $"{subDirectory.Substring(subDirectory.IndexOf('/') + 1)}/{fileName}";
+            
+        var blobClient = container.GetBlobClient(blobName);
         
         using (var ms = new MemoryStream(fileContent))
         {
             await blobClient.UploadAsync(ms, true);
         }
         
-        return blobPath;
+        // Return path in the format "container/blobName" so it works identically to local folders
+        return $"{containerName}/{blobName}";
     }
 
     public async Task<byte[]> GetFileAsync(string filePath)
     {
-        var blobClient = _containerClient.GetBlobClient(filePath);
+        var (container, blobName) = ParseFilePath(filePath);
+        var blobClient = container.GetBlobClient(blobName);
         var downloadInfo = await blobClient.DownloadContentAsync();
         return downloadInfo.Value.Content.ToArray();
     }
 
     public async Task<bool> DeleteFileAsync(string filePath)
     {
-        var blobClient = _containerClient.GetBlobClient(filePath);
+        var (container, blobName) = ParseFilePath(filePath);
+        var blobClient = container.GetBlobClient(blobName);
         return await blobClient.DeleteIfExistsAsync();
     }
 
@@ -53,8 +76,21 @@ public class AzureBlobStorageService : IFileStorageService
         if (string.IsNullOrEmpty(filePath))
             return string.Empty;
             
-        var blobClient = _containerClient.GetBlobClient(filePath);
-        return blobClient.Uri.AbsoluteUri;
+        var (container, blobName) = ParseFilePath(filePath);
+        var blobClient = container.GetBlobClient(blobName);
+        
+        // Generate a SAS token for secure access (valid for 1 hour)
+        var sasBuilder = new BlobSasBuilder
+        {
+            BlobContainerName = container.Name,
+            BlobName = blobName,
+            Resource = "b",  // b = blob
+            ExpiresOn = DateTimeOffset.UtcNow.AddHours(1)
+        };
+        sasBuilder.SetPermissions(BlobSasPermissions.Read);
+        
+        var sasUri = blobClient.GenerateSasUri(sasBuilder);
+        return sasUri.ToString();
     }
 
     // ✅ Add FileExistsAsync
@@ -63,7 +99,8 @@ public class AzureBlobStorageService : IFileStorageService
         if (string.IsNullOrEmpty(filePath))
             return false;
 
-        var blobClient = _containerClient.GetBlobClient(filePath);
+        var (container, blobName) = ParseFilePath(filePath);
+        var blobClient = container.GetBlobClient(blobName);
         return await blobClient.ExistsAsync();
     }
 
@@ -72,5 +109,4 @@ public class AzureBlobStorageService : IFileStorageService
     {
         return GetDownloadUrl(filePath);
     }
-
 }

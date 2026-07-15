@@ -1,5 +1,5 @@
 export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:5000/api',
+  production: true,
+  apiUrl: 'https://padma-agri-api.politesmoke-886620c0.eastasia.azurecontainerapps.io/api',
   appName: 'Farm Management Platform'
 };
