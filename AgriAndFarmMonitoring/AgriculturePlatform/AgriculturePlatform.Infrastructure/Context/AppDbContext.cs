@@ -10,7 +10,6 @@ using AgriculturePlatform.Domain.Entities.YieldReports;
 using AgriculturePlatform.Domain.Common;
 
 
-
 namespace AgriculturePlatform.Infrastructure.Context;
 
 public class AppDbContext : DbContext
@@ -53,7 +52,12 @@ public class AppDbContext : DbContext
     public DbSet<QualityCheck> QualityChecks { get; set; }
     public DbSet<YieldReport> YieldReports { get; set; }
     
-
+    // AI Chat DbSets
+    public DbSet<AgriculturePlatform.Domain.Entities.AI.ChatSession> ChatSessions { get; set; }
+    public DbSet<AgriculturePlatform.Domain.Entities.AI.ChatMessage> ChatMessages { get; set; }
+    
+    // Disease Detection
+    public DbSet<DiseaseAnalysisEntity> DiseaseAnalyses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -829,6 +833,70 @@ modelBuilder.Entity<YieldReport>(entity =>
     entity.HasIndex(e => e.CreatedAt)
           .HasDatabaseName("IX_YieldReports_CreatedAt");
 });
+
+        // =============================================
+        // AI CHAT CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<AgriculturePlatform.Domain.Entities.AI.ChatSession>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.SessionId).IsUnique(); // Ensure SessionId is unique for foreign key mapping
+            entity.Property(e => e.SessionId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp with time zone");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany()
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => e.FarmId);
+        });
+
+        modelBuilder.Entity<AgriculturePlatform.Domain.Entities.AI.ChatMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SessionId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Query).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.Response).IsRequired().HasMaxLength(4000);
+            entity.Property(e => e.Timestamp).HasColumnType("timestamp with time zone");
+            
+            entity.HasOne(e => e.ChatSession)
+                  .WithMany(s => s.Messages)
+                  .HasPrincipalKey(s => s.SessionId)
+                  .HasForeignKey(e => e.SessionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => new { e.SessionId, e.Timestamp });
+        });
+        
+        // =============================================
+        // DISEASE ANALYSIS CONFIGURATION
+        // =============================================
+        modelBuilder.Entity<DiseaseAnalysisEntity>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ImageHash).HasMaxLength(100);
+            entity.Property(e => e.DiseaseName).HasMaxLength(200);
+            entity.Property(e => e.Category).HasMaxLength(50);
+            entity.Property(e => e.Severity).HasMaxLength(20);
+            entity.Property(e => e.AdditionalInfo).HasMaxLength(2000);
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.UpdatedAt).HasColumnType("timestamp with time zone");
+            
+            entity.HasOne(e => e.Farm)
+                  .WithMany()
+                  .HasForeignKey(e => e.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasOne(e => e.Field)
+                  .WithMany()
+                  .HasForeignKey(e => e.FieldId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasIndex(e => e.FarmId);
+            entity.HasIndex(e => e.FieldId);
+            entity.HasIndex(e => e.CreatedAt);
+        });
 
         // =============================================
         // AUDIT LOG CONFIGURATION

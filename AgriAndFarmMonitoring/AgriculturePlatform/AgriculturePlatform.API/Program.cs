@@ -177,6 +177,7 @@ builder.Services.AddScoped<IQualityCheckRepository, QualityCheckRepository>();
 builder.Services.AddScoped<IYieldReportRepository, YieldReportRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IWeatherAlertRepository, WeatherAlertRepository>();
+builder.Services.AddScoped<IDiseaseRepository, DiseaseRepository>();
 
 // Register Services
 builder.Services.AddScoped<IAdminService, AdminService>();
@@ -204,6 +205,15 @@ builder.Services.AddScoped<IObservationService, ObservationService>();
 builder.Services.AddScoped<IHarvestService, HarvestService>();
 builder.Services.AddScoped<IQualityCheckService, QualityCheckService>();
 builder.Services.AddScoped<IYieldReportService, YieldReportService>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
+builder.Services.AddHttpClient<IAiService, AnthropicService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IDiseaseDetectionService, DiseaseDetectionService>();
+
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options => 
+{ 
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; 
+});
 
         var storageProvider = builder.Configuration["FileStorage:Provider"] ?? "Local";
         

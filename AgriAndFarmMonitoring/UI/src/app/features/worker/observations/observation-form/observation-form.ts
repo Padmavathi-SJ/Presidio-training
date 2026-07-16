@@ -16,6 +16,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { WorkerObservationStateService } from '../../services/worker-observation-state.service';
 import { WorkerFieldService } from '../../services/worker-field.service';
 import { ImageCompressorService } from '../../../../core/services/image-compressor.service';
+import { DiseaseDetectionService } from '../../../ai/disease-detection/disease-detection.service';
 
 @Component({
   selector: 'app-observation-form',
@@ -46,6 +47,7 @@ export class ObservationFormComponent implements OnInit, OnDestroy {
   private data = inject(MAT_DIALOG_DATA);
   private snackBar = inject(MatSnackBar);
   private imageCompressor = inject(ImageCompressorService);
+  private diseaseService = inject(DiseaseDetectionService);
 
   isSaving = false;
   editingId: number | null = null;
@@ -76,6 +78,10 @@ export class ObservationFormComponent implements OnInit, OnDestroy {
 
   uploadProgress = 0;
   uploadStatus = '';
+  
+  // AI Disease Detection
+  isAnalyzingDisease = false;
+  aiDiseaseResult: any = null;
 
   readonly healthStatuses = ['EXCELLENT', 'GOOD', 'AVERAGE', 'POOR', 'CRITICAL'];
 
@@ -244,6 +250,53 @@ export class ObservationFormComponent implements OnInit, OnDestroy {
       this.showError('Failed to process image');
     }
     event.target.value = '';
+  }
+
+  analyzeForDisease(): void {
+    if (!this.selectedMainFile) {
+      this.showError('Please select a main photo first.');
+      return;
+    }
+    if (!this.observationForm.get('fieldId')?.value) {
+      this.showError('Please select a field first to provide context.');
+      return;
+    }
+
+    this.isAnalyzingDisease = true;
+    this.snackBar.open('Analyzing image with AI...', '', { duration: 2000 });
+
+    this.diseaseService.detectDisease({
+      image: this.selectedMainFile,
+      farmId: 0, // In real app, get from auth service
+      fieldId: this.observationForm.get('fieldId')?.value,
+      cropCycleId: this.observationForm.get('cropCycleId')?.value,
+      additionalSymptoms: this.observationForm.get('notes')?.value
+    }).subscribe({
+      next: (res) => {
+        this.isAnalyzingDisease = false;
+        this.aiDiseaseResult = res;
+        this.snackBar.open(`AI Analysis complete: Detected ${res.diseaseName}`, 'Close', { duration: 5000 });
+        
+        // Auto-fill form based on AI result
+        if (res.diseaseName && res.diseaseName.toLowerCase() !== 'healthy') {
+          this.observationForm.patchValue({
+            diseaseDetected: true,
+            diseaseType: res.diseaseName,
+            cropHealth: res.severity.toUpperCase() === 'HIGH' ? 'CRITICAL' : (res.severity.toUpperCase() === 'MEDIUM' ? 'POOR' : 'AVERAGE')
+          });
+        } else {
+          this.observationForm.patchValue({
+            diseaseDetected: false,
+            diseaseType: '',
+            cropHealth: 'GOOD'
+          });
+        }
+      },
+      error: (err) => {
+        this.isAnalyzingDisease = false;
+        this.showError('AI Analysis failed. Please try again or fill manually.');
+      }
+    });
   }
 
   async onMultipleFilesSelected(event: any): Promise<void> {

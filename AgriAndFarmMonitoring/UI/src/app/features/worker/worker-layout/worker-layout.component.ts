@@ -57,7 +57,8 @@ export class WorkerLayoutComponent implements OnInit {
     { label: 'Weather', icon: 'cloud', route: '/worker/weather' },
     { label: 'Sensor Data', icon: 'sensors', route: '/worker/sensors' },
     { label: 'Harvests', icon: 'inventory_2', route: '/worker/harvests' },
-    { label: 'Quality Checks', icon: 'verified', route: '/worker/quality-checks' }
+    { label: 'Quality Checks', icon: 'verified', route: '/worker/quality-checks' },
+    { label: 'AI Disease Detection', icon: 'psychology', route: '/worker/disease-detection' }
   ];
 
   ngOnInit(): void {
@@ -99,6 +100,9 @@ export class WorkerLayoutComponent implements OnInit {
     } else if (url.includes('/worker/settings')) {
       this.currentRoute.set('Settings');
       this.currentRouteIcon.set('settings');
+    } else if (url.includes('/worker/disease-detection')) {
+      this.currentRoute.set('AI Disease Detection');
+      this.currentRouteIcon.set('psychology');
     }
   }
 

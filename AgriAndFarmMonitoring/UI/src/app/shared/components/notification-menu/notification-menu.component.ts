@@ -23,11 +23,51 @@ import { DatePipe } from '@angular/common';
   ],
   templateUrl: './notification-menu.component.html',
   styles: [`
-    .notification-menu {
-      max-height: 400px;
-      width: 350px;
+    .notification-backdrop {
+      position: fixed;
+      top: 52px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1040;
+    }
+    
+    .notification-sidebar {
+      position: fixed;
+      top: 52px;
+      right: 0;
+      width: 25vw;
+      min-width: 320px;
+      height: calc(100vh - 52px);
+      background: white;
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+      z-index: 1050;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .notification-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .notification-list {
+      flex: 1;
       overflow-y: auto;
     }
+    
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    
     .unread {
       background-color: #f0f7ff;
     }
@@ -42,8 +82,9 @@ import { DatePipe } from '@angular/common';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 16px;
+      padding: 12px 16px;
       border-bottom: 1px solid #ddd;
+      background: #f8fafc;
     }
     .notification-content {
       display: flex;
@@ -57,7 +98,7 @@ import { DatePipe } from '@angular/common';
       font-size: 13px;
       color: #666;
       margin-top: 4px;
-      white-space: normal; /* allow wrapping */
+      white-space: normal;
       line-height: 1.4;
     }
     .notification-time {
@@ -78,14 +119,30 @@ import { DatePipe } from '@angular/common';
       text-align: center;
       color: #777;
     }
+    
+    @media (max-width: 768px) {
+      .notification-sidebar {
+        width: 100vw;
+      }
+    }
   `]
 })
 export class NotificationMenuComponent implements OnInit {
   notificationService = inject(NotificationService);
   router = inject(Router);
+  isOpen = false;
 
   ngOnInit() {
     this.notificationService.loadNotifications();
+  }
+
+  toggleMenu(event: Event) {
+    event.stopPropagation();
+    this.isOpen = !this.isOpen;
+  }
+
+  closeMenu() {
+    this.isOpen = false;
   }
 
   getIconForType(type: string): string {

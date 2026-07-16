@@ -146,3 +146,4 @@
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.AgriculturePlatform.API.props
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/staticwebassets.pack.json
 /Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/obj/Debug/net8.0/AgriculturePlatform.API.sourcelink.json
+/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/bin/Debug/net8.0/Microsoft.Bcl.Memory.dll

@@ -1,0 +1,188 @@
+<div class="disease-detection-container">
+  
+  <div class="header-section">
+    <div class="flex items-center gap-3">
+      <div class="icon-circle bg-emerald-100 text-emerald-700">
+        <mat-icon>psychology</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800 m-0">AI Disease Detection</h2>
+        <p class="text-sm text-gray-500 m-0">Upload a clear photo of the affected plant to get an instant diagnosis and treatment plan.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+    
+    <!-- Upload Section -->
+    <div class="upload-section">
+      <mat-card class="shadow-sm border border-gray-100 h-full">
+        <mat-card-content class="p-6 flex flex-col items-center justify-center min-h-[400px]">
+          
+          <!-- Image Preview -->
+          <div *ngIf="imagePreview" class="w-full">
+            <div class="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50 mb-4 h-[300px] flex items-center justify-center">
+              <img [src]="imagePreview" alt="Plant Preview" class="max-h-full max-w-full object-contain">
+              
+              <!-- Scanning Overlay -->
+              <div *ngIf="isAnalyzing" class="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center">
+                <mat-spinner diameter="40" class="mb-4"></mat-spinner>
+                <div class="text-emerald-700 font-medium animate-pulse">Analyzing Plant Features...</div>
+              </div>
+            </div>
+            
+            <div class="flex gap-3 justify-center" *ngIf="!isAnalyzing && !result">
+              <button mat-stroked-button color="warn" (click)="clearSelection()">
+                <mat-icon>close</mat-icon> Remove
+              </button>
+              <button mat-flat-button color="primary" (click)="analyzeImage()">
+                <mat-icon>document_scanner</mat-icon> Analyze Image
+              </button>
+            </div>
+            
+            <!-- Result State Actions -->
+            <div class="flex gap-3 justify-center" *ngIf="result">
+              <button mat-stroked-button (click)="clearSelection()">
+                <mat-icon>add_photo_alternate</mat-icon> New Scan
+              </button>
+            </div>
+          </div>
+
+          <!-- Upload Dropzone -->
+          <div *ngIf="!imagePreview" 
+               class="dropzone w-full rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-8 transition-colors cursor-pointer min-h-[300px]"
+               [ngClass]="{'border-emerald-500 bg-emerald-50': isDragging, 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50': !isDragging}"
+               (dragover)="onDragOver($event)"
+               (dragleave)="onDragLeave($event)"
+               (drop)="onDrop($event)"
+               (click)="triggerFileInput()">
+            
+            <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-4 shadow-sm">
+              <mat-icon class="!w-8 !h-8 text-[32px]">cloud_upload</mat-icon>
+            </div>
+            <h3 class="text-lg font-medium text-gray-800 mb-1">Drag & Drop Image Here</h3>
+            <p class="text-sm text-gray-500 text-center mb-4">or click to browse from your computer<br>Supported: JPG, PNG (Max 10MB)</p>
+            
+            <button mat-flat-button color="primary" class="!rounded-full px-6 pointer-events-none">
+              Browse Files
+            </button>
+            
+            <input type="file" #fileInput class="hidden" accept="image/*" (change)="onFileSelected($event)">
+          </div>
+
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section">
+      <mat-card class="shadow-sm border border-gray-100 h-full">
+        
+        <!-- Empty State -->
+        <div *ngIf="!result && !isAnalyzing" class="h-full flex flex-col items-center justify-center p-8 text-center min-h-[400px]">
+          <mat-icon class="text-gray-300 !w-16 !h-16 text-[64px] mb-4">troubleshoot</mat-icon>
+          <h3 class="text-xl font-medium text-gray-400">Awaiting Image</h3>
+          <p class="text-gray-400 max-w-xs mt-2">Upload a photo to let our AI analyze the plant health and detect potential diseases.</p>
+        </div>
+
+        <!-- Result Content -->
+        <mat-card-content *ngIf="result" class="p-6">
+          <div class="flex justify-between items-start mb-6">
+            <div>
+              <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Detected Disease</div>
+              <h2 class="text-2xl font-bold text-gray-900 m-0 flex items-center gap-2">
+                {{ result.diseaseName }}
+                <mat-icon *ngIf="result.diseaseName.toLowerCase() === 'healthy'" class="text-emerald-500">verified</mat-icon>
+                <mat-icon *ngIf="result.diseaseName.toLowerCase() !== 'healthy'" class="text-amber-500">warning</mat-icon>
+              </h2>
+            </div>
+            <div class="flex flex-col items-end">
+              <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide" [ngClass]="getSeverityBadgeClass(result.severity)">
+                {{ result.severity }} Severity
+              </span>
+              <div class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <mat-icon class="!w-4 !h-4 text-[16px]">verified_user</mat-icon>
+                {{ result.confidenceScore }}% Confidence
+              </div>
+            </div>
+          </div>
+
+          <mat-divider class="!mb-4"></mat-divider>
+
+          <!-- Symptoms -->
+          <div class="mb-4" *ngIf="result.symptoms && result.symptoms.length > 0">
+            <h4 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <mat-icon class="text-rose-500 !w-4 !h-4 text-[16px]">coronavirus</mat-icon> Symptoms
+            </h4>
+            <div class="flex flex-wrap gap-2">
+              <span *ngFor="let sym of result.symptoms" class="px-2 py-1 bg-rose-50 text-rose-700 text-xs rounded-md border border-rose-100">
+                {{ sym }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Treatment -->
+          <div class="mb-4" *ngIf="result.treatment && result.treatment.length > 0">
+            <h4 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <mat-icon class="text-blue-500 !w-4 !h-4 text-[16px]">medical_services</mat-icon> Treatment Plan
+            </h4>
+            <ul class="list-disc pl-5 m-0 text-sm text-gray-600 space-y-1">
+              <li *ngFor="let item of result.treatment">{{ item }}</li>
+            </ul>
+          </div>
+
+          <!-- Prevention -->
+          <div class="mb-4" *ngIf="result.prevention && result.prevention.length > 0">
+            <h4 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <mat-icon class="text-emerald-500 !w-4 !h-4 text-[16px]">shield</mat-icon> Prevention
+            </h4>
+            <ul class="list-disc pl-5 m-0 text-sm text-gray-600 space-y-1">
+              <li *ngFor="let item of result.prevention">{{ item }}</li>
+            </ul>
+          </div>
+
+          <mat-divider class="!my-6"></mat-divider>
+
+          <!-- Follow-up Chat -->
+          <div class="chat-section">
+            <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <mat-icon class="text-indigo-500 !w-4 !h-4 text-[16px]">forum</mat-icon> Ask Follow-up Questions
+            </h4>
+            
+            <div #chatContainer class="chat-history mb-4 max-h-[300px] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+              <div *ngFor="let msg of chatHistory" 
+                   class="p-4 rounded-xl text-sm shadow-sm"
+                   [ngClass]="msg.role === 'user' ? 'bg-indigo-50 text-indigo-950 ml-12 rounded-tr-sm border border-indigo-100' : 'bg-white text-gray-800 mr-12 rounded-tl-sm border border-gray-200'">
+                <!-- Render markdown HTML -->
+                <div class="markdown-content" [innerHTML]="msg.html"></div>
+              </div>
+              
+              <div *ngIf="isAsking" class="bg-white text-gray-500 mr-12 rounded-tl-none border border-gray-200 p-3 rounded-lg text-sm flex items-center gap-2">
+                <mat-spinner diameter="16"></mat-spinner> AI is thinking...
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <input 
+                type="text" 
+                class="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                placeholder="e.g., When should I apply this treatment?"
+                [(ngModel)]="followUpQuestion"
+                (keyup.enter)="sendFollowUpQuestion()"
+                [disabled]="isAsking"
+              >
+              <button 
+                mat-mini-fab 
+                color="primary" 
+                class="!bg-indigo-600 !shadow-none"
+                (click)="sendFollowUpQuestion()"
+                [disabled]="isAsking || !followUpQuestion.trim()">
+                <mat-icon>send</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

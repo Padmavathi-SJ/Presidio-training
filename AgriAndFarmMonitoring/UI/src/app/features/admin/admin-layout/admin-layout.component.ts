@@ -59,7 +59,8 @@ export class AdminLayoutComponent implements OnInit {
     { label: 'Weather', icon: 'cloud', route: '/admin/weather' },
     { label: 'Worker Tasks', icon: 'task', route: '/admin/tasks' },
     { label: 'Harvests', icon: 'inventory_2', route: '/admin/harvests' },
-    { label: 'Quality Checks', icon: 'verified', route: '/admin/quality-checks' }
+    { label: 'Quality Checks', icon: 'verified', route: '/admin/quality-checks' },
+    { label: 'AI Disease Detection', icon: 'psychology', route: '/admin/disease-detection' }
   ];
 
   ngOnInit(): void {
@@ -101,6 +102,9 @@ export class AdminLayoutComponent implements OnInit {
     } else if (url.includes('/admin/settings')) {
       this.currentRoute.set('Settings');
       this.currentRouteIcon.set('settings');
+    } else if (url.includes('/admin/disease-detection')) {
+      this.currentRoute.set('AI Disease Detection');
+      this.currentRouteIcon.set('psychology');
     }
   }
 

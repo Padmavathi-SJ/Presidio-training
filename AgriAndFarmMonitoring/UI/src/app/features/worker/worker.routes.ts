@@ -104,6 +104,11 @@ export const WORKER_ROUTES: Routes = [
         loadComponent: () => import('./profile/profile.component')
           .then(c => c.ProfileComponent)
       },
+      {
+        path: 'disease-detection',
+        loadComponent: () => import('../ai/disease-detection/disease-detection.component')
+          .then(c => c.DiseaseDetectionComponent)
+      },
 
       {
         path: 'settings',

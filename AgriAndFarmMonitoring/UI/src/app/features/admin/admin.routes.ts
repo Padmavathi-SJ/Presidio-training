@@ -128,6 +128,11 @@ export const ADMIN_ROUTES: Routes = [
           .then(c => c.Profile)
       },
       {
+        path: 'disease-detection',
+        loadComponent: () => import('../ai/disease-detection/disease-detection.component')
+          .then(c => c.DiseaseDetectionComponent)
+      },
+      {
         path: 'settings',
         loadComponent: () => import('./settings/settings.component')
           .then(c => c.Settings)

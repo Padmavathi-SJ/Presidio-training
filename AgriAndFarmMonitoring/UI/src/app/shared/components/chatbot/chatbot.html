@@ -1,0 +1,54 @@
+<!-- Floating Action Button -->
+<button 
+  class="chatbot-fab" 
+  (click)="toggleChat()"
+  [class.active]="isOpen"
+  aria-label="Open Chat">
+  <span class="material-icons" *ngIf="!isOpen">chat</span>
+  <span class="material-icons" *ngIf="isOpen">close</span>
+</button>
+
+<!-- Chat Window -->
+<div class="chatbot-window" [class.open]="isOpen">
+  <!-- Header -->
+  <div class="chatbot-header">
+    <div class="header-info">
+      <span class="material-icons text-green-600 mr-2">agriculture</span>
+      <div>
+        <h3 class="font-semibold text-gray-800">AgriMonitor AI</h3>
+        <p class="text-xs text-green-600 flex items-center">
+          <span class="w-2 h-2 rounded-full bg-green-500 mr-1"></span> Online
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages Area -->
+  <div class="chatbot-messages" #scrollMe>
+    <div class="empty-state" *ngIf="messages.length === 0">
+      <span class="material-icons">eco</span>
+      <p>Hello! How can I help with your farm today?</p>
+    </div>
+    
+    <div class="message-wrapper" *ngFor="let msg of messages" [class.user]="msg.sender === 'user'" [class.bot]="msg.sender === 'bot'">
+      <div class="message-bubble">
+        <div class="markdown-content" [innerHTML]="msg.html || msg.text"></div>
+        <span class="timestamp">{{ msg.timestamp | date:'shortTime' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input Area -->
+  <div class="chatbot-input">
+    <input 
+      type="text" 
+      [(ngModel)]="newMessage" 
+      (keyup.enter)="sendMessage()"
+      placeholder="Type your message..."
+      class="message-input"
+    >
+    <button class="send-btn" (click)="sendMessage()" [disabled]="!newMessage.trim()">
+      <span class="material-icons">send</span>
+    </button>
+  </div>
+</div>

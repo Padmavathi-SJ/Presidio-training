@@ -24,6 +24,71 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AI.ChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Query")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Response")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("SessionId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "Timestamp");
+
+                    b.ToTable("ChatMessages");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AI.ChatSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SessionId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FarmId");
+
+                    b.HasIndex("SessionId")
+                        .IsUnique();
+
+                    b.ToTable("ChatSessions");
+                });
+
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", b =>
                 {
                     b.Property<int>("Id")
@@ -103,7 +168,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("IsActive");
 
-                    b.ToTable("Admins", (string)null);
+                    b.ToTable("Admins");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.AuditLog", b =>
@@ -181,7 +246,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "CreatedAt");
 
-                    b.ToTable("AuditLogs", (string)null);
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", b =>
@@ -259,7 +324,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Farms", (string)null);
+                    b.ToTable("Farms");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Notification", b =>
@@ -332,7 +397,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("WorkerId", "IsRead");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.RefreshToken", b =>
@@ -411,7 +476,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("WorkerId", "IsRevoked");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.Alert", b =>
@@ -500,7 +565,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FieldId", "IsResolved");
 
-                    b.ToTable("Alerts", (string)null);
+                    b.ToTable("Alerts");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.AlertThreshold", b =>
@@ -584,7 +649,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.HasIndex("FarmId", "CropType", "GrowthStage", "SensorType")
                         .IsUnique();
 
-                    b.ToTable("AlertThresholds", (string)null);
+                    b.ToTable("AlertThresholds");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.CropCycle", b =>
@@ -674,7 +739,103 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "Status");
 
-                    b.ToTable("CropCycles", (string)null);
+                    b.ToTable("CropCycles");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.DiseaseAnalysisEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdditionalInfo")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("ConfidenceScore")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CropCycleId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DiseaseName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FieldId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ImageHash")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OrganicRemedies")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Prevention")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Symptoms")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Treatment")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("FarmId");
+
+                    b.HasIndex("FieldId");
+
+                    b.ToTable("DiseaseAnalyses");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.Field", b =>
@@ -761,7 +922,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "Status");
 
-                    b.ToTable("Fields", (string)null);
+                    b.ToTable("Fields");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.Observation", b =>
@@ -909,7 +1070,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.HasIndex("FieldId", "ObservationDate")
                         .HasDatabaseName("IX_Observations_Field_Date");
 
-                    b.ToTable("Observations", (string)null);
+                    b.ToTable("Observations");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.SensorReading", b =>
@@ -980,7 +1141,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FieldId", "RecordedAt");
 
-                    b.ToTable("SensorReadings", (string)null);
+                    b.ToTable("SensorReadings");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.WeatherAlert", b =>
@@ -1096,7 +1257,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "FieldId");
 
-                    b.ToTable("WeatherAlerts", (string)null);
+                    b.ToTable("WeatherAlerts");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.WeatherData", b =>
@@ -1168,7 +1329,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FieldId", "RecordedAt");
 
-                    b.ToTable("WeatherData", (string)null);
+                    b.ToTable("WeatherData");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.Worker", b =>
@@ -1267,7 +1428,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "Role");
 
-                    b.ToTable("Workers", (string)null);
+                    b.ToTable("Workers");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.WorkerFieldAssignment", b =>
@@ -1345,7 +1506,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("FarmId", "WorkerId", "FieldId");
 
-                    b.ToTable("WorkerFieldAssignments", (string)null);
+                    b.ToTable("WorkerFieldAssignments");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.WorkerManagement.WorkerTask", b =>
@@ -1583,7 +1744,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.HasIndex("FarmId", "HarvestDate")
                         .HasDatabaseName("IX_Harvests_Farm_Date");
 
-                    b.ToTable("Harvests", (string)null);
+                    b.ToTable("Harvests");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.YieldReports.QualityCheck", b =>
@@ -1686,7 +1847,7 @@ namespace AgriculturePlatform.Infrastructure.Migrations
 
                     b.HasIndex("HarvestId");
 
-                    b.ToTable("QualityChecks", (string)null);
+                    b.ToTable("QualityChecks");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.YieldReports.YieldReport", b =>
@@ -1866,7 +2027,30 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.HasIndex("FarmId", "StartDate", "EndDate")
                         .HasDatabaseName("IX_YieldReports_Farm_DateRange");
 
-                    b.ToTable("YieldReports", (string)null);
+                    b.ToTable("YieldReports");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AI.ChatMessage", b =>
+                {
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AI.ChatSession", "ChatSession")
+                        .WithMany("Messages")
+                        .HasForeignKey("SessionId")
+                        .HasPrincipalKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChatSession");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AI.ChatSession", b =>
+                {
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany()
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Farm");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", b =>
@@ -2027,6 +2211,25 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Admin");
+
+                    b.Navigation("Farm");
+
+                    b.Navigation("Field");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.CropMonitoring.DiseaseAnalysisEntity", b =>
+                {
+                    b.HasOne("AgriculturePlatform.Domain.Entities.AdminEntities.Farm", "Farm")
+                        .WithMany()
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AgriculturePlatform.Domain.Entities.CropMonitoring.Field", "Field")
+                        .WithMany()
+                        .HasForeignKey("FieldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Farm");
 
@@ -2450,6 +2653,11 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Navigation("Farm");
 
                     b.Navigation("Field");
+                });
+
+            modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AI.ChatSession", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("AgriculturePlatform.Domain.Entities.AdminEntities.Admin", b =>

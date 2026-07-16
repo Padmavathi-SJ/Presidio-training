@@ -1,4 +1,4 @@
-<button mat-icon-button [matMenuTriggerFor]="notificationMenu" class="relative mr-2">
+<button mat-icon-button (click)="toggleMenu($event)" class="relative mr-2">
   <mat-icon>notifications</mat-icon>
   <span *ngIf="notificationService.unreadCount() > 0" 
         class="absolute top-1 right-1 flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full border-2 border-white">
@@ -6,17 +6,24 @@
   </span>
 </button>
 
-<mat-menu #notificationMenu="matMenu" class="notification-menu">
-  <div class="notification-header" (click)="$event.stopPropagation()">
-    <h3 class="m-0 font-medium text-gray-800">Notifications</h3>
+<!-- Backdrop -->
+<div class="notification-backdrop" *ngIf="isOpen" (click)="closeMenu()"></div>
+
+<!-- Side Panel -->
+<div class="notification-sidebar" [class.open]="isOpen" (click)="$event.stopPropagation()">
+  <div class="notification-header">
+    <h3 class="m-0 font-medium text-gray-800 flex-1">Notifications</h3>
     <button mat-button color="primary" class="text-xs" 
             [disabled]="notificationService.unreadCount() === 0"
             (click)="markAllAsRead($event)">
       Mark all as read
     </button>
+    <button mat-icon-button (click)="closeMenu()" class="text-gray-500">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 
-  <div class="notification-list" *ngIf="notificationService.notifications().length > 0; else emptyState">
+  <div class="notification-list custom-scrollbar" *ngIf="notificationService.notifications().length > 0; else emptyState">
     <mat-nav-list class="pt-0">
       <a mat-list-item *ngFor="let notification of notificationService.notifications()"
          class="notification-item"
@@ -40,9 +47,9 @@
   </div>
 
   <ng-template #emptyState>
-    <div class="empty-state flex flex-col items-center justify-center p-6 text-gray-500">
+    <div class="empty-state flex flex-col items-center justify-center p-6 text-gray-500 h-full">
       <mat-icon class="mb-2 text-4xl text-gray-300">notifications_none</mat-icon>
       <p class="m-0">No notifications yet</p>
     </div>
   </ng-template>
-</mat-menu>
+</div>
