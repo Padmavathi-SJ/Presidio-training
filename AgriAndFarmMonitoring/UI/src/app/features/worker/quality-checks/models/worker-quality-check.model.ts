@@ -73,6 +73,7 @@ export interface QualityStatisticsDto {
   approvedChecks: number;
   rejectedChecks: number;
   pendingChecks: number;
+  changesRequestedChecks: number;
   passRate: number;
   rejectionRate: number;
   gradeDistribution: Record<string, number>;

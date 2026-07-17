@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
 import { HarvestListComponent } from './harvest-list/harvest-list.component';
 import { HarvestFormComponent } from './harvest-form/harvest-form.component';
@@ -18,17 +19,11 @@ import { HarvestDto } from '../models/worker-harvest.model';
   imports: [
     CommonModule,
     HarvestListComponent,
-    MatIconModule
+    MatIconModule,
+    MatButtonModule
   ],
-  template: `
-    <app-harvest-list
-      (createHarvest)="openCreateForm()"
-      (editHarvest)="openEditForm($event)"
-      (viewHarvest)="viewDetails($event)"
-      (respondHarvest)="openRespondDialog($event)"
-      (deleteHarvest)="deleteHarvest($event)">
-    </app-harvest-list>
-  `
+  styleUrls: ['./harvests.component.scss'],
+  templateUrl: './harvests.component.html'
 })
 export class HarvestsComponent {
   private dialog = inject(MatDialog);

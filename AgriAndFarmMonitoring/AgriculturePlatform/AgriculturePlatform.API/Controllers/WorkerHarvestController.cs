@@ -54,7 +54,7 @@ public class WorkerHarvestController : ControllerBase
     }
 
     // GET: api/worker/harvests/{id}
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         var farmId = GetCurrentFarmId();
@@ -91,7 +91,7 @@ public class WorkerHarvestController : ControllerBase
     }
 
     // ✅ PATCH: api/worker/harvests/{id} - Partial update
-    [HttpPatch("{id}")]
+    [HttpPatch("{id:int}")]
     public async Task<IActionResult> Patch(int id, [FromBody] UpdateHarvestDto dto)
     {
         var farmId = GetCurrentFarmId();
@@ -105,7 +105,7 @@ public class WorkerHarvestController : ControllerBase
     }
 
     // Keep PUT for backward compatibility or full updates
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateHarvestDto dto)
     {
         var farmId = GetCurrentFarmId();
@@ -119,7 +119,7 @@ public class WorkerHarvestController : ControllerBase
     }
 
     // DELETE: api/worker/harvests/{id}
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
         var farmId = GetCurrentFarmId();
@@ -133,7 +133,7 @@ public class WorkerHarvestController : ControllerBase
     }
 
     // POST: api/worker/harvests/{id}/respond
-    [HttpPost("{id}/respond")]
+    [HttpPost("{id:int}/respond")]
     public async Task<IActionResult> RespondToAdmin(int id, [FromBody] HarvestWorkerResponseDto response)
     {
         var farmId = GetCurrentFarmId();
@@ -155,6 +155,16 @@ public class WorkerHarvestController : ControllerBase
         var hasPending = await _harvestService.HasPendingApprovalsAsync(workerId, farmId);
         
         return Ok(new { HasPendingApprovals = hasPending });
+    }
+
+    // GET: api/worker/harvests/statistics
+    [HttpGet("statistics")]
+    public async Task<IActionResult> GetHarvestStatistics()
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        var result = await _harvestService.GetYieldStatisticsAsync(farmId, null, null, null, workerId);
+        return Ok(result);
     }
 
     // POST: api/worker/harvests/upload

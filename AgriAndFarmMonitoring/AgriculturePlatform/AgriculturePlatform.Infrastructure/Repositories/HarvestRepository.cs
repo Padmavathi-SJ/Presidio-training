@@ -221,12 +221,15 @@ private string? CleanPath(string? path)
             .ToListAsync();
     }
 
-    public async Task<YieldStatisticsDto> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate)
+    public async Task<YieldStatisticsDto> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate, int? workerId = null)
     {
         var query = _context.Harvests
             .Include(h => h.Field)
             .Include(h => h.CropCycle)
-            .Where(h => h.FarmId == farmId && h.ApprovalStatus == "APPROVED" && !h.IsDeleted);
+            .Where(h => h.FarmId == farmId && !h.IsDeleted);
+
+        if (workerId.HasValue)
+            query = query.Where(h => h.HarvestedBy == workerId.Value || h.SubmittedBy == workerId.Value);
 
         if (cropCycleId.HasValue)
             query = query.Where(h => h.CropCycleId == cropCycleId.Value);
@@ -242,11 +245,15 @@ private string? CleanPath(string? path)
         var stats = new YieldStatisticsDto
         {
             TotalHarvests = harvests.Count,
-            TotalYieldKg = harvests.Sum(h => h.QuantityKg),
-            YieldByField = harvests.Where(h => h.Field != null)
+            PendingHarvests = harvests.Count(h => h.ApprovalStatus == "PENDING"),
+            ApprovedHarvests = harvests.Count(h => h.ApprovalStatus == "APPROVED"),
+            RejectedHarvests = harvests.Count(h => h.ApprovalStatus == "REJECTED"),
+            ChangesRequestedHarvests = harvests.Count(h => h.ApprovalStatus == "REQUEST_CHANGES"),
+            TotalYieldKg = harvests.Where(h => h.ApprovalStatus == "APPROVED").Sum(h => h.QuantityKg),
+            YieldByField = harvests.Where(h => h.Field != null && h.ApprovalStatus == "APPROVED")
                 .GroupBy(h => h.Field!.FieldName)
                 .ToDictionary(g => g.Key, g => g.Sum(h => h.QuantityKg)),
-            YieldByCropType = harvests.Where(h => h.CropCycle != null && h.CropCycle.CropType != null)
+            YieldByCropType = harvests.Where(h => h.CropCycle != null && h.CropCycle.CropType != null && h.ApprovalStatus == "APPROVED")
                 .GroupBy(h => h.CropCycle!.CropType!.ToString())
                 .ToDictionary(g => g.Key, g => g.Sum(h => h.QuantityKg)),
             QualityDistribution = harvests.Where(h => h.QualityGrade.HasValue)

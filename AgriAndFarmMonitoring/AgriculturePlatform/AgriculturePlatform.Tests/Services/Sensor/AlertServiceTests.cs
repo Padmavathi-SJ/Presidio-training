@@ -191,7 +191,7 @@ public class AlertServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _alertService.ResolveAlertAsync(alertId, resolveDto, farmId, adminId);
+        var result = await _alertService.ResolveAlertAsync(alertId, resolveDto, farmId, adminId, null);
 
         // Assert
         result.Should().NotBeNull();
@@ -217,7 +217,7 @@ public class AlertServiceTests
             .ReturnsAsync(alert);
 
         // Act
-        var result = await _alertService.ResolveAlertAsync(alertId, resolveDto, farmId, adminId);
+        var result = await _alertService.ResolveAlertAsync(alertId, resolveDto, farmId, adminId, null);
 
         // Assert
         result.Success.Should().BeFalse();
@@ -235,7 +235,7 @@ public class AlertServiceTests
             .ReturnsAsync((DomainAlert?)null);
 
         // Act
-        var result = await _alertService.ResolveAlertAsync(alertId, resolveDto, farmId, adminId);
+        var result = await _alertService.ResolveAlertAsync(alertId, resolveDto, farmId, adminId, null);
 
         // Assert
         result.Success.Should().BeFalse();

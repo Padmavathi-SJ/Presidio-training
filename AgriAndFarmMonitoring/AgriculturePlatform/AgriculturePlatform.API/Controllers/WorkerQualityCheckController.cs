@@ -48,7 +48,7 @@ public class WorkerQualityCheckController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         var farmId = GetCurrentFarmId();
@@ -80,7 +80,7 @@ public class WorkerQualityCheckController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Data?.Id }, result);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateQualityCheckDto dto)
     {
         var farmId = GetCurrentFarmId();
@@ -91,7 +91,7 @@ public class WorkerQualityCheckController : ControllerBase
         return Ok(result);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
         var farmId = GetCurrentFarmId();
@@ -102,7 +102,7 @@ public class WorkerQualityCheckController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("{id}/respond")]
+    [HttpPost("{id:int}/respond")]
     public async Task<IActionResult> RespondToAdmin(int id, [FromBody] QualityCheckWorkerResponseDto response)
     {
         var farmId = GetCurrentFarmId();

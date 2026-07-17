@@ -25,7 +25,7 @@ public interface IHarvestService
     Task<ApiResponse<PagedResult<HarvestDto>>> GetPendingApprovalsAsync(int farmId, PaginationParams pagination);
     
     // Statistics
-    Task<ApiResponse<YieldStatisticsDto>> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate);
+    Task<ApiResponse<YieldStatisticsDto>> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate, int? workerId = null);
     Task<ApiResponse<YieldStatisticsDto>> GetYearOverYearComparisonAsync(int farmId, int currentYear, int? previousYear);
     
     // Validation

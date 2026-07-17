@@ -15,7 +15,7 @@ public interface IAlertService
     Task<ApiResponse<IEnumerable<AlertDto>>> GetCriticalAlertsAsync(int farmId);
     
     // Action methods
-    Task<ApiResponse<AlertDto>> ResolveAlertAsync(int id, ResolveAlertDto dto, int farmId, int adminId);
+    Task<ApiResponse<AlertDto>> ResolveAlertAsync(int id, ResolveAlertDto dto, int farmId, int? adminId = null, int? workerId = null);
     
     // Alert creation
     Task<Alert?> CheckAndCreateAlertAsync(int fieldId, int cropCycleId, string sensorType, decimal value, int farmId, int adminId);

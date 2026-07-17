@@ -6,7 +6,8 @@ import {
   ObservationFilterDto, 
   CreateObservationDto, 
   UpdateObservationDto,
-  ObservationWorkerResponseDto
+  ObservationWorkerResponseDto,
+  ObservationStatisticsDto
 } from '../models/worker-observation.model';
 import { ApiResponse, PagedResult } from '../../../features/admin/services/task.service';
 
@@ -18,6 +19,7 @@ export interface ObservationState {
   selectedObservation: ObservationDto | null;
   isSubmitting: boolean;
   lastUpdated: Date | null;
+  statistics: ObservationStatisticsDto | null;
 }
 
 @Injectable({
@@ -34,7 +36,8 @@ export class WorkerObservationStateService {
     error: null,
     selectedObservation: null,
     isSubmitting: false,
-    lastUpdated: null
+    lastUpdated: null,
+    statistics: null
   });
 
   // ✅ Computed values (derived state)
@@ -45,15 +48,7 @@ export class WorkerObservationStateService {
   public readonly selectedObservation = computed(() => this.state().selectedObservation);
   public readonly isSubmitting = computed(() => this.state().isSubmitting);
   public readonly lastUpdated = computed(() => this.state().lastUpdated);
-
-  // ✅ Computed stats
-  public readonly pendingCount = computed(() => 
-    this.state().observations.filter(o => o.validationStatus === 'pending').length
-  );
-  
-  public readonly verifiedCount = computed(() => 
-    this.state().observations.filter(o => o.validationStatus === 'verified').length
-  );
+  public readonly statistics = computed(() => this.state().statistics);
 
   // ✅ Current filter state
   private currentFilter = signal<ObservationFilterDto>({
@@ -68,6 +63,18 @@ export class WorkerObservationStateService {
     effect(() => {
       const filter = this.currentFilter();
       this.loadObservations(filter);
+    });
+    this.loadStatistics();
+  }
+
+  loadStatistics(): void {
+    this.observationService.getObservationStatistics().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.updateState({ statistics: res.data });
+        }
+      },
+      error: (err) => console.error('Failed to load observation statistics', err)
     });
   }
 

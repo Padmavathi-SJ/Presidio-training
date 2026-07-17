@@ -1,59 +1,37 @@
-<!-- src/app/features/admin/task-statistics/task-statistics.component.html -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+<div class="admin-kpi-grid mb-4">
   <!-- Total Tasks -->
-  <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-primary-500">
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Tasks</p>
-        <p class="text-2xl font-bold text-gray-800 mt-1">{{ statistics.totalTasks }}</p>
-      </div>
-      <div class="p-2 bg-primary-50 rounded-lg">
-        <mat-icon class="text-primary-600">assignment</mat-icon>
-      </div>
+  <div class="admin-kpi-card kpi-blue">
+    <div class="kpi-icon-wrap"><mat-icon>assignment</mat-icon></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Total Tasks</span>
+      <span class="kpi-value">{{ statistics.totalTasks }}</span>
     </div>
   </div>
 
   <!-- Completion Rate -->
-  <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Completion Rate</p>
-        <p class="text-2xl font-bold text-green-600 mt-1">{{ completionRate() }}%</p>
-      </div>
-      <div class="p-2 bg-green-50 rounded-lg">
-        <mat-icon class="text-green-600">trending_up</mat-icon>
-      </div>
+  <div class="admin-kpi-card kpi-green">
+    <div class="kpi-icon-wrap"><mat-icon>trending_up</mat-icon></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Completion Rate</span>
+      <span class="kpi-value">{{ completionRate() }}%</span>
     </div>
-    <mat-progress-bar 
-      mode="determinate" 
-      [value]="completionRate()" 
-      class="mt-2 h-1.5 rounded-full"
-    ></mat-progress-bar>
   </div>
 
   <!-- Overdue Tasks -->
-  <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Overdue</p>
-        <p class="text-2xl font-bold text-red-600 mt-1">{{ statistics.overdueTasks }}</p>
-      </div>
-      <div class="p-2 bg-red-50 rounded-lg">
-        <mat-icon class="text-red-600">warning</mat-icon>
-      </div>
+  <div class="admin-kpi-card kpi-red">
+    <div class="kpi-icon-wrap"><mat-icon>warning</mat-icon></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Overdue</span>
+      <span class="kpi-value">{{ statistics.overdueTasks }}</span>
     </div>
   </div>
 
   <!-- Avg Completion Time -->
-  <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Completion</p>
-        <p class="text-2xl font-bold text-blue-600 mt-1">{{ statistics.averageCompletionTimeDays }} days</p>
-      </div>
-      <div class="p-2 bg-blue-50 rounded-lg">
-        <mat-icon class="text-blue-600">schedule</mat-icon>
-      </div>
+  <div class="admin-kpi-card kpi-purple">
+    <div class="kpi-icon-wrap"><mat-icon>schedule</mat-icon></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Avg Completion</span>
+      <span class="kpi-value">{{ statistics.averageCompletionTimeDays }} days</span>
     </div>
   </div>
 </div>

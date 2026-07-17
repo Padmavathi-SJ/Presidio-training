@@ -31,7 +31,7 @@ public interface IObservationService
     Task<ApiResponse<PagedResult<ObservationDto>>> GetQuestionedObservationsAsync(int farmId, PaginationParams pagination);
     
     // Statistics
-    Task<ApiResponse<ObservationStatisticsDto>> GetPestStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate);
+    Task<ApiResponse<ObservationStatisticsDto>> GetPestStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate, int? workerId = null);
     
     // Validation
     Task<bool> ValidateObservationOwnershipAsync(int observationId, int workerId, int farmId);

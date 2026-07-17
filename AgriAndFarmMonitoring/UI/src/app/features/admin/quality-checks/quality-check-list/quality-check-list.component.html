@@ -1,6 +1,6 @@
-<div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden mb-6">
+<div class="admin-filter-card p-0">
   <!-- Status Filter Tabs -->
-  <div class="border-b border-outline-variant bg-surface flex overflow-x-auto">
+  <div class="border-b border-[#e8f0eb] bg-surface flex overflow-x-auto">
     <button class="px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
             [class.border-primary]="selectedTabIndex === 0" [class.text-primary]="selectedTabIndex === 0"
             [class.border-transparent]="selectedTabIndex !== 0" [class.text-surface-on-variant]="selectedTabIndex !== 0"
@@ -28,34 +28,56 @@
   </div>
 
   <!-- Active Filters Form -->
-  <form [formGroup]="filterForm" class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-surface/50">
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>Quality Grade</mat-label>
-      <mat-select formControlName="finalGrade">
-        <mat-option value="">All Grades</mat-option>
-        <mat-option value="A_PLUS">Grade A+ (Premium)</mat-option>
-        <mat-option value="A">Grade A</mat-option>
-        <mat-option value="B">Grade B</mat-option>
-        <mat-option value="C">Grade C</mat-option>
-        <mat-option value="D">Grade D</mat-option>
-        <mat-option value="REJECTED">Rejected</mat-option>
-      </mat-select>
-    </mat-form-field>
+  <form [formGroup]="filterForm" class="p-4">
+    <div class="admin-filter-row">
+      <div class="admin-filter-field">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+          <mat-label class="text-xs sm:text-sm">Quality Grade</mat-label>
+          <mat-select formControlName="finalGrade" class="text-sm">
+            <mat-option value="">All Grades</mat-option>
+            <mat-option value="A_PLUS">Grade A+ (Premium)</mat-option>
+            <mat-option value="A">Grade A</mat-option>
+            <mat-option value="B">Grade B</mat-option>
+            <mat-option value="C">Grade C</mat-option>
+            <mat-option value="D">Grade D</mat-option>
+            <mat-option value="REJECTED">Rejected</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
 
-    <div class="flex gap-2 w-full sm:col-span-1 md:col-span-2">
-      <mat-form-field appearance="outline" class="w-full">
-        <mat-label>From</mat-label>
-        <input matInput [matDatepicker]="fromPicker" formControlName="fromDate">
-        <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
-        <mat-datepicker #fromPicker></mat-datepicker>
-      </mat-form-field>
-  
-      <mat-form-field appearance="outline" class="w-full">
-        <mat-label>To</mat-label>
-        <input matInput [matDatepicker]="toPicker" formControlName="toDate">
-        <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
-        <mat-datepicker #toPicker></mat-datepicker>
-      </mat-form-field>
+      <div class="admin-filter-field flex gap-2">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+          <mat-label class="text-xs sm:text-sm">From</mat-label>
+          <input matInput [matDatepicker]="fromPicker" formControlName="fromDate" class="text-sm">
+          <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+        </mat-form-field>
+    
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+          <mat-label class="text-xs sm:text-sm">To</mat-label>
+          <input matInput [matDatepicker]="toPicker" formControlName="toDate" class="text-sm">
+          <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+    
+    <!-- Report Generation Section within Filter Card -->
+    <div class="flex items-center justify-between gap-2 pt-2 border-t border-[#e8f0eb] mt-2">
+      <div>
+        <h3 class="text-xs font-semibold text-gray-700 flex items-center gap-1 m-0">
+          <mat-icon class="text-[#2d6a4f] text-sm">auto_graph</mat-icon> Report Generation
+        </h3>
+        <p class="text-xs text-gray-500 m-0 mt-1">Export the currently filtered quality checks data.</p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <button mat-stroked-button (click)="exportPdf()" class="text-xs !text-red-600 !border-red-200 hover:!bg-red-50 !rounded-lg" [disabled]="isLoading() || dataSource.data.length === 0">
+          <mat-icon>picture_as_pdf</mat-icon> Export PDF
+        </button>
+        <button mat-stroked-button (click)="exportCsv()" class="text-xs !text-green-700 !border-green-200 hover:!bg-green-50 !rounded-lg" [disabled]="isLoading() || dataSource.data.length === 0">
+          <mat-icon>table_chart</mat-icon> Export CSV
+        </button>
+      </div>
     </div>
   </form>
 </div>
@@ -73,84 +95,65 @@
   <p class="text-sm text-surface-on-variant mt-1">Try adjusting your filters or tab criteria.</p>
 </div>
 
-<!-- Report Generation Section -->
-<div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden mb-6 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-  <div>
-    <h3 class="text-sm font-bold text-surface-on flex items-center gap-2 m-0">
-      <mat-icon class="text-primary text-sm">auto_graph</mat-icon> Report Generation
-    </h3>
-    <p class="text-xs text-surface-on-variant m-0 mt-1">Export the currently filtered quality checks data.</p>
-  </div>
-  <div class="flex gap-2">
-    <button mat-stroked-button (click)="exportPdf()" class="text-xs !text-red-600 !border-red-200 hover:!bg-red-50" [disabled]="isLoading() || dataSource.data.length === 0">
-      <mat-icon>picture_as_pdf</mat-icon> Export PDF
-    </button>
-    <button mat-stroked-button (click)="exportCsv()" class="text-xs !text-green-700 !border-green-200 hover:!bg-green-50" [disabled]="isLoading() || dataSource.data.length === 0">
-      <mat-icon>table_chart</mat-icon> Export CSV
-    </button>
-  </div>
-</div>
-
 <!-- Quality Checks Table -->
-<div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden" 
-     *ngIf="dataSource.data.length > 0">
-  <div class="overflow-x-auto">
-    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)" class="w-full">
+<div class="admin-table-card" *ngIf="dataSource.data.length > 0">
+  <div class="admin-table-wrap">
+    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)" class="w-full admin-data-table">
       
       <!-- Date Column -->
       <ng-container matColumnDef="checkDate">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
-        <td mat-cell *matCellDef="let check">
-          <span class="font-medium text-surface-on">{{ check.checkDate | date:'mediumDate' }}</span>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Date</th>
+        <td mat-cell *matCellDef="let check" class="font-medium text-gray-800 text-xs sm:text-sm">
+          {{ check.checkDate | date:'mediumDate' }}
         </td>
       </ng-container>
 
       <!-- Harvest Batch Column -->
       <ng-container matColumnDef="harvestBatchNumber">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Harvest Batch</th>
-        <td mat-cell *matCellDef="let check">
-          <span class="font-semibold text-surface-on">{{ check.harvestBatchNumber || 'N/A' }}</span>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Harvest Batch</th>
+        <td mat-cell *matCellDef="let check" class="font-semibold text-gray-800 text-xs sm:text-sm">
+          {{ check.harvestBatchNumber || 'N/A' }}
         </td>
       </ng-container>
       
       <!-- Worker Column -->
       <ng-container matColumnDef="checkerName">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Worker</th>
-        <td mat-cell *matCellDef="let check">
-          <span class="text-surface-on">{{ check.checkerName || 'N/A' }}</span>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Worker</th>
+        <td mat-cell *matCellDef="let check" class="text-gray-700 text-xs sm:text-sm">
+          {{ check.checkerName || 'N/A' }}
         </td>
       </ng-container>
 
       <!-- Moisture Column -->
       <ng-container matColumnDef="moisturePct">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Moisture %</th>
-        <td mat-cell *matCellDef="let check">
-          <span class="font-medium text-surface-on">{{ check.moisturePct || 0 | number:'1.1-1' }}%</span>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Moisture %</th>
+        <td mat-cell *matCellDef="let check" class="font-medium text-gray-800 text-xs sm:text-sm">
+          {{ check.moisturePct || 0 | number:'1.1-1' }}%
         </td>
       </ng-container>
 
       <!-- Defect Column -->
       <ng-container matColumnDef="defectPct">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Defect %</th>
-        <td mat-cell *matCellDef="let check">
-          <span class="font-medium text-surface-on">{{ check.defectPct || 0 | number:'1.1-1' }}%</span>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Defect %</th>
+        <td mat-cell *matCellDef="let check" class="font-medium text-gray-800 text-xs sm:text-sm">
+          {{ check.defectPct || 0 | number:'1.1-1' }}%
         </td>
       </ng-container>
       
       <!-- Grade Column -->
       <ng-container matColumnDef="finalGrade">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Grade</th>
-        <td mat-cell *matCellDef="let check">
-          <span class="text-surface-on">{{ check.finalGrade || 'N/A' }}</span>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Grade</th>
+        <td mat-cell *matCellDef="let check" class="text-gray-700 text-xs sm:text-sm">
+          {{ check.finalGrade || 'N/A' }}
         </td>
       </ng-container>
 
       <!-- Status Column -->
       <ng-container matColumnDef="approvalStatus">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Status</th>
         <td mat-cell *matCellDef="let check">
           <div class="flex flex-col gap-1 items-start">
-            <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider border"
+            <span class="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider border"
                   [ngClass]="{
                     'bg-green-50 text-green-700 border-green-200': check.approvalStatus === 'APPROVED',
                     'bg-yellow-50 text-yellow-700 border-yellow-200': check.approvalStatus === 'PENDING',
@@ -159,7 +162,7 @@
                   }">
               {{ check.approvalStatus.replace('_', ' ') }}
             </span>
-            <span *ngIf="check.workerResponse" class="inline-flex items-center gap-1 text-xs text-primary font-medium" [matTooltip]="check.workerResponse">
+            <span *ngIf="check.workerResponse" class="inline-flex items-center gap-1 text-[10px] sm:text-xs text-primary-600 font-medium" [matTooltip]="check.workerResponse">
               <mat-icon class="text-[14px] w-[14px] h-[14px]">forum</mat-icon> Replied
             </span>
           </div>
@@ -168,10 +171,10 @@
 
       <!-- Actions Column -->
       <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef class="text-right">Actions</th>
-        <td mat-cell *matCellDef="let check" class="text-right">
+        <th mat-header-cell *matHeaderCellDef class="text-right font-semibold text-gray-700 text-xs sm:text-sm">Actions</th>
+        <td mat-cell *matCellDef="let check" class="text-right whitespace-nowrap">
           <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
-            <mat-icon>more_vert</mat-icon>
+            <mat-icon class="text-gray-500">more_vert</mat-icon>
           </button>
           <mat-menu #menu="matMenu" xPosition="before">
             <button mat-menu-item (click)="viewDetails(check)">
@@ -186,10 +189,10 @@
         </td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
           (click)="viewDetails(row)" 
-          class="hover:bg-surface-low/80 cursor-pointer transition-colors duration-150"></tr>
+          class="hover:bg-gray-50 cursor-pointer transition-colors duration-150"></tr>
     </table>
   </div>
   
@@ -198,6 +201,7 @@
                  [pageIndex]="(currentFilter().page || 1) - 1"
                  [hidePageSize]="true"
                  (page)="onPageChange($event)"
-                 showFirstLastButtons>
+                 showFirstLastButtons
+                 class="admin-paginator">
   </mat-paginator>
 </div>

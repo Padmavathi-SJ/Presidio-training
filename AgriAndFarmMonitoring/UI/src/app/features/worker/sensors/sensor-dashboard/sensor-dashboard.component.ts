@@ -121,11 +121,11 @@ export class SensorDashboardComponent implements OnInit, OnDestroy {
   // Charts
   temperatureChartData!: ChartConfiguration['data'];
   temperatureChartOptions!: ChartConfiguration['options'];
-  temperatureChartType: ChartType = 'bar';
+  temperatureChartType: ChartType = 'polarArea';
 
   humidityChartData!: ChartConfiguration['data'];
   humidityChartOptions!: ChartConfiguration['options'];
-  humidityChartType: ChartType = 'bar';
+  humidityChartType: ChartType = 'doughnut';
 
   constructor() {
     this.filterForm = this.fb.group({
@@ -200,10 +200,18 @@ export class SensorDashboardComponent implements OnInit, OnDestroy {
     this.temperatureChartOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { 
+        legend: { display: true, position: 'right' },
+        tooltip: {
+          callbacks: {
+            label: (context) => ` ${context.label}: ${context.raw}°C`
+          }
+        }
+      },
       scales: {
-        y: { beginAtZero: false, grid: { color: 'rgba(0,0,0,0.05)' } },
-        x: { grid: { display: false } }
+        r: {
+          ticks: { display: false }
+        }
       }
     };
 
@@ -223,10 +231,13 @@ export class SensorDashboardComponent implements OnInit, OnDestroy {
     this.humidityChartOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
-        x: { grid: { display: false } }
+      plugins: { 
+        legend: { display: true, position: 'right' },
+        tooltip: {
+          callbacks: {
+            label: (context) => ` ${context.label}: ${context.raw}%`
+          }
+        }
       }
     };
   }

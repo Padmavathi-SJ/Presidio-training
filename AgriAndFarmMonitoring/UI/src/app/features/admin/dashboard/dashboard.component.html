@@ -30,253 +30,253 @@
 
   <!-- Dashboard Content -->
   <ng-container *ngIf="!isLoading">
+    <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-5 pb-6">
 
-    <!-- 1. Quick Stats Cards (3x3 Grid) -->
-    <div class="admin-stat-grid-9">
+      <!-- 1. Quick Stats Cards (Auto-fit Grid - 2 Rows) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-      <div class="dash-stat-card green cursor-default">
-        <div class="dash-stat-icon"><mat-icon>payments</mat-icon></div>
-        <div class="dash-stat-body">
-          <span class="dash-stat-label">Monthly Rev</span>
-          <span class="dash-stat-value">${{ stats.monthlyRevenue | number:'1.0-0' }}</span>
-        </div>
-      </div>
-
-      <div class="dash-stat-card purple cursor-pointer" [routerLink]="['/admin/observations']">
-        <div class="dash-stat-icon"><mat-icon>visibility</mat-icon></div>
-        <div class="dash-stat-body">
-          <span class="dash-stat-label">Pending Observations</span>
-          <span class="dash-stat-value">{{ stats.pendingObservations }}</span>
-        </div>
-      </div>
-
-      <div class="dash-stat-card emerald cursor-pointer" [routerLink]="['/admin/harvests']">
-        <div class="dash-stat-icon"><mat-icon>agriculture</mat-icon></div>
-        <div class="dash-stat-body">
-          <span class="dash-stat-label">Pending Harvests</span>
-          <span class="dash-stat-value">{{ stats.pendingHarvests }}</span>
-        </div>
-      </div>
-
-      <div class="dash-stat-card blue cursor-pointer" [routerLink]="['/admin/quality-checks']">
-        <div class="dash-stat-icon"><mat-icon>fact_check</mat-icon></div>
-        <div class="dash-stat-body">
-          <span class="dash-stat-label">Pending Quality Checks</span>
-          <span class="dash-stat-value">{{ stats.pendingQualityChecks }}</span>
-        </div>
-      </div>
-
-      <div class="dash-stat-card red cursor-pointer" [routerLink]="['/admin/sensors/alerts']"
-           [class.!border-red-300]="stats.unresolvedSensorAlerts > 0"
-           [class.!bg-red-50]="stats.unresolvedSensorAlerts > 0">
-        <div class="dash-stat-icon"><mat-icon>sensors</mat-icon></div>
-        <div class="dash-stat-body">
-          <span class="dash-stat-label" [class.!text-red-700]="stats.unresolvedSensorAlerts > 0">Unresolved Sensor Alerts</span>
-          <span class="dash-stat-value">{{ stats.unresolvedSensorAlerts }}</span>
-        </div>
-      </div>
-
-      <div class="dash-stat-card red cursor-pointer" [routerLink]="['/admin/weather/alerts']"
-           [class.!border-red-300]="stats.unresolvedWeatherAlerts > 0"
-           [class.!bg-red-50]="stats.unresolvedWeatherAlerts > 0">
-        <div class="dash-stat-icon"><mat-icon>cloud_alert</mat-icon></div>
-        <div class="dash-stat-body">
-          <span class="dash-stat-label" [class.!text-red-700]="stats.unresolvedWeatherAlerts > 0">Unresolved Weather Alerts</span>
-          <span class="dash-stat-value">{{ stats.unresolvedWeatherAlerts }}</span>
-        </div>
-      </div>
-
-      <div class="dash-stat-card teal cursor-pointer" [routerLink]="['/admin/fields']">
-        <div class="dash-stat-icon"><mat-icon>grass</mat-icon></div>
-        <div class="dash-stat-body">
-          <span class="dash-stat-label">Active Crops</span>
-          <span class="dash-stat-value">{{ stats.activeCrops }}</span>
-        </div>
-      </div>
-
-      <div class="dash-stat-card sky cursor-pointer" [routerLink]="['/admin/fields']">
-        <div class="dash-stat-icon"><mat-icon>landscape</mat-icon></div>
-        <div class="dash-stat-body">
-          <span class="dash-stat-label">Total Fields</span>
-          <span class="dash-stat-value">{{ stats.totalFields }}</span>
-        </div>
-      </div>
-
-      <div class="dash-stat-card indigo cursor-pointer" [routerLink]="['/admin/workers']">
-        <div class="dash-stat-icon"><mat-icon>group</mat-icon></div>
-        <div class="dash-stat-body">
-          <span class="dash-stat-label">Total Workers</span>
-          <span class="dash-stat-value">{{ stats.totalWorkers }}</span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- 2. Priority Approvals -->
-    <div class="flex items-center gap-2">
-      <mat-icon class="text-sm text-[#2d6a4f]">pending_actions</mat-icon>
-      <span class="text-xs font-bold uppercase tracking-wider text-[#5a7a6a]">Priority Approvals</span>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-      <!-- Observations pending -->
-      <div class="admin-panel-card">
-        <div class="admin-panel-header">
-          <h2 class="panel-title !mb-0 text-purple-600">
-            <mat-icon>visibility</mat-icon> Observations
-          </h2>
-          <span class="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full">{{ recentPendingObs.length }} Pending</span>
-        </div>
-        <div class="admin-panel-body" *ngIf="recentPendingObs.length > 0">
-          <div *ngFor="let item of recentPendingObs" class="dash-approval-item" (click)="approveItem({type: 'Observation'})">
-            <p class="font-medium text-slate-800 text-sm">Field: {{ item.fieldName || item.fieldId }}</p>
-            <p class="text-xs text-slate-500">{{ item.observationDate | date:'mediumDate' }} • By {{ item.workerName || 'Unknown Worker' }}</p>
+        <!-- 1. Monthly Rev -->
+        <div class="admin-kpi-card kpi-emerald cursor-default">
+          <div class="kpi-icon-wrap"><mat-icon>payments</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Monthly Rev</span>
+            <span class="kpi-value">${{ stats.monthlyRevenue | number:'1.0-0' }}</span>
           </div>
         </div>
-        <div *ngIf="recentPendingObs.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400 py-4">
-          <p>No pending observations.</p>
-        </div>
-      </div>
 
-      <!-- Harvests pending -->
-      <div class="admin-panel-card">
-        <div class="admin-panel-header">
-          <h2 class="panel-title !mb-0 text-green-600">
-            <mat-icon>agriculture</mat-icon> Harvests
-          </h2>
-          <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">{{ recentPendingHarvests.length }} Pending</span>
-        </div>
-        <div class="admin-panel-body" *ngIf="recentPendingHarvests.length > 0">
-          <div *ngFor="let item of recentPendingHarvests" class="dash-approval-item" (click)="approveItem({type: 'Harvest'})">
-            <p class="font-medium text-slate-800 text-sm">Field: {{ item.fieldName || item.fieldId }} - {{ item.quantityKg }}kg</p>
-            <p class="text-xs text-slate-500">{{ item.harvestDate | date:'mediumDate' }} • By {{ item.harvesterName || item.workerName || 'Worker' }}</p>
+        <!-- 2. Pending Observations -->
+        <div class="admin-kpi-card kpi-violet cursor-pointer" [routerLink]="['/admin/observations']">
+          <div class="kpi-icon-wrap"><mat-icon>visibility</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Pending Observations</span>
+            <span class="kpi-value">{{ stats.pendingObservations }}</span>
           </div>
         </div>
-        <div *ngIf="recentPendingHarvests.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400 py-4">
-          <p>No pending harvests.</p>
-        </div>
-      </div>
 
-      <!-- Quality Checks pending -->
-      <div class="admin-panel-card">
-        <div class="admin-panel-header">
-          <h2 class="panel-title !mb-0 text-blue-600">
-            <mat-icon>fact_check</mat-icon> Quality Checks
-          </h2>
-          <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">{{ recentPendingQcs.length }} Pending</span>
-        </div>
-        <div class="admin-panel-body" *ngIf="recentPendingQcs.length > 0">
-          <div *ngFor="let item of recentPendingQcs" class="dash-approval-item" (click)="approveItem({type: 'QualityCheck'})">
-            <p class="font-medium text-slate-800 text-sm">Harvest Batch {{ item.harvestBatchNumber || '#' + item.harvestId }} Check</p>
-            <p class="text-xs text-slate-500">{{ item.checkDate | date:'mediumDate' }} • By {{ item.checkerName || item.workerName || 'Inspector' }}</p>
+        <!-- 3. Pending Harvests -->
+        <div class="admin-kpi-card kpi-green cursor-pointer" [routerLink]="['/admin/harvests']">
+          <div class="kpi-icon-wrap"><mat-icon>agriculture</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Pending Harvests</span>
+            <span class="kpi-value">{{ stats.pendingHarvests }}</span>
           </div>
         </div>
-        <div *ngIf="recentPendingQcs.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400 py-4">
-          <p>No pending quality checks.</p>
+
+        <!-- 4. Pending Quality Checks -->
+        <div class="admin-kpi-card kpi-sky cursor-pointer" [routerLink]="['/admin/quality-checks']">
+          <div class="kpi-icon-wrap"><mat-icon>fact_check</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Pending Quality Checks</span>
+            <span class="kpi-value">{{ stats.pendingQualityChecks }}</span>
+          </div>
         </div>
+
+        <!-- 5. Active Crops -->
+        <div class="admin-kpi-card kpi-teal cursor-pointer" [routerLink]="['/admin/fields']">
+          <div class="kpi-icon-wrap"><mat-icon>grass</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Active Crops</span>
+            <span class="kpi-value">{{ stats.activeCrops }}</span>
+          </div>
+        </div>
+
+        <!-- 6. Total Fields -->
+        <div class="admin-kpi-card kpi-amber cursor-pointer" [routerLink]="['/admin/fields']">
+          <div class="kpi-icon-wrap"><mat-icon>landscape</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Total Fields</span>
+            <span class="kpi-value">{{ stats.totalFields }}</span>
+          </div>
+        </div>
+
+        <!-- 7. Total Workers -->
+        <div class="admin-kpi-card kpi-indigo cursor-pointer" [routerLink]="['/admin/workers']">
+          <div class="kpi-icon-wrap"><mat-icon>group</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Total Workers</span>
+            <span class="kpi-value">{{ stats.totalWorkers }}</span>
+          </div>
+        </div>
+
+        <!-- 8. Unresolved Alerts (Combined Sensor & Weather) -->
+        <div class="admin-kpi-card kpi-red cursor-default"
+             [class.!border-red-300]="(stats.unresolvedSensorAlerts + stats.unresolvedWeatherAlerts) > 0"
+             [class.!bg-red-50]="(stats.unresolvedSensorAlerts + stats.unresolvedWeatherAlerts) > 0">
+          <div class="kpi-icon-wrap"><mat-icon>warning</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label" [class.!text-red-700]="(stats.unresolvedSensorAlerts + stats.unresolvedWeatherAlerts) > 0">Active Alerts</span>
+            <span class="kpi-value" [class.!text-red-700]="(stats.unresolvedSensorAlerts + stats.unresolvedWeatherAlerts) > 0">{{ stats.unresolvedSensorAlerts + stats.unresolvedWeatherAlerts }}</span>
+          </div>
+        </div>
+
       </div>
-    </div>
 
-    <!-- 3. Critical Alerts & Recent Activity -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
-      <!-- Critical Alerts -->
-      <div class="admin-panel-card">
-        <div class="admin-panel-header">
-          <h2 class="panel-title !mb-0 text-red-600">
-            <mat-icon>warning</mat-icon> Critical Alerts
-          </h2>
-        </div>
-
-        <div class="admin-panel-body">
-
-          <!-- Sensor Alerts -->
-          <div *ngIf="topCriticalSensors.length > 0">
-            <div class="flex justify-between items-center mb-2">
-              <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sensor Alerts</h3>
-              <a routerLink="/admin/sensors/alerts" class="text-[10px] font-medium text-red-600 hover:underline">View All</a>
+      <!-- 2. Priority Approvals -->
+      <div class="flex items-center gap-2 mt-2">
+        <mat-icon class="text-base text-[#2d6a4f]">pending_actions</mat-icon>
+        <span class="text-sm font-bold uppercase tracking-wider text-[#5a7a6a]">Priority Approvals</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Observations pending -->
+        <div class="admin-panel-card !h-auto min-h-[250px]">
+          <div class="admin-panel-header">
+            <h2 class="panel-title !mb-0 text-purple-600">
+              <mat-icon>visibility</mat-icon> Observations
+            </h2>
+            <span class="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full">{{ recentPendingObs.length }} Pending</span>
+          </div>
+          <div class="admin-panel-body" *ngIf="recentPendingObs.length > 0">
+            <div *ngFor="let item of recentPendingObs" class="dash-approval-item" (click)="approveItem({type: 'Observation'})">
+              <p class="font-medium text-slate-800 text-sm">Field: {{ item.fieldName || item.fieldId }}</p>
+              <p class="text-xs text-slate-500">{{ item.observationDate | date:'mediumDate' }} • By {{ item.workerName || 'Unknown Worker' }}</p>
             </div>
-            <div *ngFor="let alert of topCriticalSensors" class="dash-alert-item">
-              <div class="flex items-center gap-3 w-full overflow-hidden">
-                <mat-icon class="text-red-500 shrink-0 h-5 w-5 flex items-center justify-center">sensors</mat-icon>
-                <div class="flex-1 min-w-0 pr-2">
-                  <p class="font-medium text-red-800 text-xs">{{ alert.alertType }} • Field {{ alert.fieldId || 'All' }}</p>
-                  <p class="text-[10px] text-red-600 truncate">{{ alert.message }}</p>
+          </div>
+          <div *ngIf="recentPendingObs.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400 py-4">
+            <p>No pending observations.</p>
+          </div>
+        </div>
+
+        <!-- Harvests pending -->
+        <div class="admin-panel-card !h-auto min-h-[250px]">
+          <div class="admin-panel-header">
+            <h2 class="panel-title !mb-0 text-green-600">
+              <mat-icon>agriculture</mat-icon> Harvests
+            </h2>
+            <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">{{ recentPendingHarvests.length }} Pending</span>
+          </div>
+          <div class="admin-panel-body" *ngIf="recentPendingHarvests.length > 0">
+            <div *ngFor="let item of recentPendingHarvests" class="dash-approval-item" (click)="approveItem({type: 'Harvest'})">
+              <p class="font-medium text-slate-800 text-sm">Field: {{ item.fieldName || item.fieldId }} - {{ item.quantityKg }}kg</p>
+              <p class="text-xs text-slate-500">{{ item.harvestDate | date:'mediumDate' }} • By {{ item.harvesterName || item.workerName || 'Worker' }}</p>
+            </div>
+          </div>
+          <div *ngIf="recentPendingHarvests.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400 py-4">
+            <p>No pending harvests.</p>
+          </div>
+        </div>
+
+        <!-- Quality Checks pending -->
+        <div class="admin-panel-card !h-auto min-h-[250px]">
+          <div class="admin-panel-header">
+            <h2 class="panel-title !mb-0 text-blue-600">
+              <mat-icon>fact_check</mat-icon> Quality Checks
+            </h2>
+            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">{{ recentPendingQcs.length }} Pending</span>
+          </div>
+          <div class="admin-panel-body" *ngIf="recentPendingQcs.length > 0">
+            <div *ngFor="let item of recentPendingQcs" class="dash-approval-item" (click)="approveItem({type: 'QualityCheck'})">
+              <p class="font-medium text-slate-800 text-sm">Harvest Batch {{ item.harvestBatchNumber || '#' + item.harvestId }} Check</p>
+              <p class="text-xs text-slate-500">{{ item.checkDate | date:'mediumDate' }} • By {{ item.checkerName || item.workerName || 'Inspector' }}</p>
+            </div>
+          </div>
+          <div *ngIf="recentPendingQcs.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400 py-4">
+            <p>No pending quality checks.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Critical Alerts & Recent Activity -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-2">
+        <!-- Critical Alerts -->
+        <div class="admin-panel-card !h-auto min-h-[300px]">
+          <div class="admin-panel-header">
+            <h2 class="panel-title !mb-0 text-red-600">
+              <mat-icon>warning</mat-icon> Critical Alerts
+            </h2>
+          </div>
+
+          <div class="admin-panel-body">
+
+            <!-- Sensor Alerts -->
+            <div *ngIf="topCriticalSensors.length > 0">
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sensor Alerts</h3>
+                <a routerLink="/admin/sensors/alerts" class="text-xs font-medium text-red-600 hover:underline">View All</a>
+              </div>
+              <div *ngFor="let alert of topCriticalSensors" class="dash-alert-item mb-2 p-3">
+                <div class="flex items-center gap-3 w-full overflow-hidden">
+                  <mat-icon class="text-red-500 shrink-0 h-6 w-6 flex items-center justify-center">sensors</mat-icon>
+                  <div class="flex-1 min-w-0 pr-2">
+                    <p class="font-medium text-red-800 text-sm">{{ alert.alertType }} • Field {{ alert.fieldId || 'All' }}</p>
+                    <p class="text-xs text-red-600 truncate mt-0.5">{{ alert.message }}</p>
+                  </div>
+                  <button mat-icon-button class="text-red-700 shrink-0 !w-8 !h-8" (click)="resolveAlert(alert)" matTooltip="Resolve">
+                    <mat-icon>arrow_forward_ios</mat-icon>
+                  </button>
                 </div>
-                <button mat-icon-button class="text-red-700 shrink-0 !w-6 !h-6 !leading-[24px]" (click)="resolveAlert(alert)" matTooltip="Resolve">
-                  <mat-icon class="!text-[18px]">arrow_forward_ios</mat-icon>
-                </button>
               </div>
             </div>
-          </div>
 
-          <!-- Weather Alerts -->
-          <div *ngIf="topCriticalWeathers.length > 0" [class.mt-4]="topCriticalSensors.length > 0">
-            <div class="flex justify-between items-center mb-2">
-              <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Weather Alerts</h3>
-              <a routerLink="/admin/weather/alerts" class="text-[10px] font-medium text-red-600 hover:underline">View All</a>
-            </div>
-            <div *ngFor="let alert of topCriticalWeathers" class="dash-alert-item">
-              <div class="flex items-center gap-3 w-full overflow-hidden">
-                <mat-icon class="text-red-500 shrink-0 h-5 w-5 flex items-center justify-center">cloud_alert</mat-icon>
-                <div class="flex-1 min-w-0 pr-2">
-                  <p class="font-medium text-red-800 text-xs">{{ alert.severity }} • Field {{ alert.fieldId || 'All' }}</p>
-                  <p class="text-[10px] text-red-600 truncate">{{ alert.title || alert.message }}</p>
+            <!-- Weather Alerts -->
+            <div *ngIf="topCriticalWeathers.length > 0" [class.mt-6]="topCriticalSensors.length > 0">
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Weather Alerts</h3>
+                <a routerLink="/admin/weather/alerts" class="text-xs font-medium text-red-600 hover:underline">View All</a>
+              </div>
+              <div *ngFor="let alert of topCriticalWeathers" class="dash-alert-item mb-2 p-3">
+                <div class="flex items-center gap-3 w-full overflow-hidden">
+                  <mat-icon class="text-red-500 shrink-0 h-6 w-6 flex items-center justify-center">cloud_alert</mat-icon>
+                  <div class="flex-1 min-w-0 pr-2">
+                    <p class="font-medium text-red-800 text-sm">{{ alert.severity }} • Field {{ alert.fieldId || 'All' }}</p>
+                    <p class="text-xs text-red-600 truncate mt-0.5">{{ alert.title || alert.message }}</p>
+                  </div>
+                  <button mat-icon-button class="text-red-700 shrink-0 !w-8 !h-8" (click)="resolveAlert(alert)" matTooltip="Acknowledge">
+                    <mat-icon>arrow_forward_ios</mat-icon>
+                  </button>
                 </div>
-                <button mat-icon-button class="text-red-700 shrink-0 !w-6 !h-6 !leading-[24px]" (click)="resolveAlert(alert)" matTooltip="Acknowledge">
-                  <mat-icon class="!text-[18px]">arrow_forward_ios</mat-icon>
-                </button>
               </div>
             </div>
-          </div>
 
-          <div *ngIf="topCriticalSensors.length === 0 && topCriticalWeathers.length === 0" class="flex flex-col items-center justify-center text-emerald-500 py-6">
-            <mat-icon class="text-4xl mb-2 opacity-50">verified_user</mat-icon>
-            <p>No critical alerts right now.</p>
+            <div *ngIf="topCriticalSensors.length === 0 && topCriticalWeathers.length === 0" class="flex flex-col items-center justify-center text-emerald-500 py-8">
+              <mat-icon class="text-5xl mb-3 opacity-50">verified_user</mat-icon>
+              <p class="text-base font-medium">No critical alerts right now.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="admin-panel-card !h-auto min-h-[300px]">
+          <div class="admin-panel-header">
+            <h2 class="panel-title !mb-0">
+              <mat-icon class="text-purple-500">history</mat-icon> Recent Activity Feed
+            </h2>
+          </div>
+          <div class="admin-panel-body relative before:absolute before:inset-y-0 before:left-[23px] before:w-[2px] before:bg-slate-100 p-4">
+            <div *ngFor="let activity of recentActivities" class="dash-activity-item relative flex gap-5 mb-4 last:mb-0 pb-2">
+              <div class="feed-item-icon {{ activity.bg }} {{ activity.color }} shrink-0 w-8 h-8 rounded-full flex items-center justify-center z-10 bg-white border-2 border-slate-50">
+                <mat-icon class="scale-[0.8]">{{ activity.icon }}</mat-icon>
+              </div>
+              <div class="flex-1 pt-1">
+                <div class="flex justify-between items-start mb-1">
+                  <span class="text-sm font-semibold text-slate-800">{{ activity.title }}</span>
+                  <span class="text-xs text-slate-500 font-medium bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">{{ activity.date | date:'MMM d, h:mm a' }}</span>
+                </div>
+                <p class="text-sm text-slate-500">{{ activity.desc }}</p>
+              </div>
+            </div>
+            <div *ngIf="recentActivities.length === 0" class="text-center text-slate-400 py-8 pl-10 text-base">
+              No recent activity across the farm.
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Recent Activity Feed -->
-      <div class="admin-panel-card">
+      <!-- 4. Revenue Chart (Full Width) -->
+      <div class="admin-panel-card !h-auto mt-2">
         <div class="admin-panel-header">
           <h2 class="panel-title !mb-0">
-            <mat-icon class="text-purple-500">history</mat-icon> Recent Activity Feed
+            <mat-icon class="text-emerald-500">trending_up</mat-icon> Revenue Overview (6 Months)
           </h2>
         </div>
-        <div class="admin-panel-body relative before:absolute before:inset-y-0 before:left-[19px] before:w-[2px] before:bg-slate-100">
-          <div *ngFor="let activity of recentActivities" class="dash-activity-item relative flex gap-4 mb-3 last:mb-0">
-            <div class="feed-item-icon {{ activity.bg }} {{ activity.color }} shrink-0">
-              <mat-icon class="scale-75">{{ activity.icon }}</mat-icon>
-            </div>
-            <div class="flex-1 pt-1">
-              <div class="flex justify-between items-start mb-0.5">
-                <span class="text-sm font-semibold text-slate-800">{{ activity.title }}</span>
-                <span class="text-[11px] text-slate-400 font-medium bg-slate-50 px-2 py-0.5 rounded-full">{{ activity.date | date:'MMM d, h:mm a' }}</span>
-              </div>
-              <p class="text-sm text-slate-500">{{ activity.desc }}</p>
-            </div>
-          </div>
-          <div *ngIf="recentActivities.length === 0" class="text-center text-slate-400 py-6 pl-10">
-            No recent activity across the farm.
-          </div>
+        <div class="h-[250px] relative w-full p-4">
+          <canvas baseChart
+            [data]="revenueChartData"
+            [options]="revenueChartOptions"
+            [type]="'line'">
+          </canvas>
         </div>
       </div>
-    </div>
 
-    <!-- 4. Revenue Chart (Full Width) -->
-    <div class="admin-panel-card">
-      <div class="admin-panel-header">
-        <h2 class="panel-title !mb-0">
-          <mat-icon class="text-emerald-500">trending_up</mat-icon> Revenue Overview (6 Months)
-        </h2>
-      </div>
-      <div class="h-[180px] relative w-full">
-        <canvas baseChart
-          [data]="revenueChartData"
-          [options]="revenueChartOptions"
-          [type]="'line'">
-        </canvas>
-      </div>
     </div>
-
   </ng-container>
 </div>

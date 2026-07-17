@@ -34,7 +34,7 @@ public interface IHarvestRepository
     Task<IEnumerable<Harvest>> GetByDateRangeAsync(int farmId, DateTime fromDate, DateTime toDate);
     
     // Statistics
-    Task<YieldStatisticsDto> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate);
+    Task<YieldStatisticsDto> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate, int? workerId = null);
     Task<Dictionary<string, decimal>> GetYieldByFieldAsync(int farmId, int year);
     Task<decimal> GetTotalYieldForSeasonAsync(int farmId, int cropCycleId);
     

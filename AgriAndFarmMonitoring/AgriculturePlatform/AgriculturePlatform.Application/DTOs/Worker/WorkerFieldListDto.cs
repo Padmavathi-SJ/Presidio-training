@@ -12,4 +12,8 @@ public class WorkerFieldListDto
     public string? Status { get; set; }
     public DateTime? AssignedDate { get; set; }
     public int ActiveCropCount { get; set; }
+    public string? ImagePath { get; set; }
+    public string? ThumbnailPath { get; set; }
+    public string? ImageCaption { get; set; }
+    public List<string>? AdditionalImagePaths { get; set; }
 }

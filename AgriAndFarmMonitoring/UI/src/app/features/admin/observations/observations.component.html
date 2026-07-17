@@ -1,54 +1,58 @@
 <div class="admin-page-shell">
   <!-- Compact Header -->
-  <div class="flex items-center justify-between pb-2 mb-2 border-b border-[#e8f0eb] flex-shrink-0">
-    <div>
-      <h1 class="admin-header-title">Observation Audit Center</h1>
-      <p class="admin-header-subtitle">Review, validate, and manage worker crop health observations</p>
+  <div class="admin-compact-header">
+    <div class="admin-header-left">
+      <div class="admin-header-icon"><mat-icon>remove_red_eye</mat-icon></div>
+      <div>
+        <h1 class="admin-header-title">Observation Audit Center</h1>
+        <p class="admin-header-subtitle">Review, validate, and manage worker crop health observations</p>
+      </div>
     </div>
   </div>
 
   <!-- KPI Summary Cards -->
-  <div class="admin-kpi-grid mb-2">
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
-      <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant">Total Records</span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-surface-on">{{ summary.total }}</span>
+  <div class="admin-kpi-grid">
+    <div class="admin-kpi-card kpi-blue">
+      <div class="kpi-icon-wrap"><mat-icon>list_alt</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Total Records</span>
+        <span class="kpi-value">{{ summary.total }}</span>
       </div>
     </div>
-    
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-warning">
-      <span class="text-xs font-semibold uppercase tracking-wider text-warning">Pending Audit</span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-warning">{{ summary.pending }}</span>
+    <div class="admin-kpi-card kpi-amber">
+      <div class="kpi-icon-wrap"><mat-icon>pending_actions</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Pending Audit</span>
+        <span class="kpi-value">{{ summary.pending }}</span>
       </div>
     </div>
-
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-accent">
-      <span class="text-xs font-semibold uppercase tracking-wider text-orange-500">Questioned</span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-orange-500">{{ summary.questioned }}</span>
+    <div class="admin-kpi-card kpi-orange">
+      <div class="kpi-icon-wrap"><mat-icon>help_outline</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Questioned</span>
+        <span class="kpi-value">{{ summary.questioned }}</span>
       </div>
     </div>
-
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-success">
-      <span class="text-xs font-semibold uppercase tracking-wider text-success">Verified</span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-success">{{ summary.verified }}</span>
+    <div class="admin-kpi-card kpi-green">
+      <div class="kpi-icon-wrap"><mat-icon>verified</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Verified</span>
+        <span class="kpi-value">{{ summary.verified }}</span>
       </div>
     </div>
-
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-error">
-      <span class="text-xs font-semibold uppercase tracking-wider text-error">Invalid</span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-error">{{ summary.invalid }}</span>
+    <div class="admin-kpi-card kpi-red">
+      <div class="kpi-icon-wrap"><mat-icon>cancel</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Invalid</span>
+        <span class="kpi-value">{{ summary.invalid }}</span>
       </div>
     </div>
   </div>
 
   <!-- Filter & Tab Control Panel -->
-  <div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+  <div class="admin-filter-card p-0">
     <!-- Status Filter Tabs -->
-    <div class="border-b border-outline-variant bg-surface flex overflow-x-auto">
+    <div class="border-b border-[#e8f0eb] bg-surface flex overflow-x-auto">
       <button class="px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
               [class.border-primary]="selectedTabIndex === 0"
               [class.text-primary]="selectedTabIndex === 0"
@@ -84,62 +88,94 @@
     </div>
 
     <!-- Active Filters Form -->
-    <form [formGroup]="filterForm" class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-surface/50">
-      <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Field</mat-label>
-        <mat-select formControlName="fieldId">
-          <mat-option value="">All Fields</mat-option>
-          <mat-option *ngFor="let field of fields" [value]="field.id">
-            {{ field.fieldName }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
+    <form [formGroup]="filterForm" class="p-4">
+      <div class="admin-filter-row">
+        <div class="admin-filter-field">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <mat-label class="text-xs sm:text-sm">Field</mat-label>
+            <mat-select formControlName="fieldId" class="text-sm">
+              <mat-option value="">All Fields</mat-option>
+              <mat-option *ngFor="let field of fields" [value]="field.id">
+                {{ field.fieldName }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
 
-      <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Crop Cycle</mat-label>
-        <mat-select formControlName="cropCycleId">
-          <mat-option value="">All Cycles</mat-option>
-          <mat-option *ngFor="let cycle of filteredCropCycles" [value]="cycle.id">
-            {{ cycle.cropType }} ({{ cycle.plantingDate | date:'shortDate' }})
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
+        <div class="admin-filter-field">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <mat-label class="text-xs sm:text-sm">Crop Cycle</mat-label>
+            <mat-select formControlName="cropCycleId" class="text-sm">
+              <mat-option value="">All Cycles</mat-option>
+              <mat-option *ngFor="let cycle of filteredCropCycles" [value]="cycle.id">
+                {{ cycle.cropType }} ({{ cycle.plantingDate | date:'shortDate' }})
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
 
-      <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Recorded By</mat-label>
-        <mat-select formControlName="workerId">
-          <mat-option value="">All Workers</mat-option>
-          <mat-option *ngFor="let worker of workers" [value]="worker.id">
-            {{ worker.name }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
+        <div class="admin-filter-field">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <mat-label class="text-xs sm:text-sm">Recorded By</mat-label>
+            <mat-select formControlName="workerId" class="text-sm">
+              <mat-option value="">All Workers</mat-option>
+              <mat-option *ngFor="let worker of workers" [value]="worker.id">
+                {{ worker.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
 
-      <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Crop Health</mat-label>
-        <mat-select formControlName="cropHealth">
-          <mat-option value="">All Health Statuses</mat-option>
-          <mat-option value="EXCELLENT">Excellent</mat-option>
-          <mat-option value="GOOD">Good</mat-option>
-          <mat-option value="AVERAGE">Average</mat-option>
-          <mat-option value="POOR">Poor</mat-option>
-          <mat-option value="CRITICAL">Critical</mat-option>
-        </mat-select>
-      </mat-form-field>
+        <div class="admin-filter-field">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <mat-label class="text-xs sm:text-sm">Crop Health</mat-label>
+            <mat-select formControlName="cropHealth" class="text-sm">
+              <mat-option value="">All Health Statuses</mat-option>
+              <mat-option value="EXCELLENT">Excellent</mat-option>
+              <mat-option value="GOOD">Good</mat-option>
+              <mat-option value="AVERAGE">Average</mat-option>
+              <mat-option value="POOR">Poor</mat-option>
+              <mat-option value="CRITICAL">Critical</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+      
+      <div class="admin-filter-row mt-2">
+        <div class="admin-filter-field flex gap-2 w-1/4">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <mat-label class="text-xs sm:text-sm">From Date</mat-label>
+            <input matInput [matDatepicker]="fromPicker" formControlName="fromDate" class="text-sm">
+            <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+            <mat-datepicker #fromPicker></mat-datepicker>
+          </mat-form-field>
 
-      <mat-form-field appearance="outline" class="w-full">
-        <mat-label>From Date</mat-label>
-        <input matInput [matDatepicker]="fromPicker" formControlName="fromDate">
-        <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
-        <mat-datepicker #fromPicker></mat-datepicker>
-      </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <mat-label class="text-xs sm:text-sm">To Date</mat-label>
+            <input matInput [matDatepicker]="toPicker" formControlName="toDate" class="text-sm">
+            <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+            <mat-datepicker #toPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
 
-      <mat-form-field appearance="outline" class="w-full">
-        <mat-label>To Date</mat-label>
-        <input matInput [matDatepicker]="toPicker" formControlName="toDate">
-        <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
-        <mat-datepicker #toPicker></mat-datepicker>
-      </mat-form-field>
+      <!-- Report Generation Section within Filter Card -->
+      <div class="flex items-center justify-between gap-2 pt-2 border-t border-[#e8f0eb] mt-2">
+        <div>
+          <h3 class="text-xs font-semibold text-gray-700 flex items-center gap-1 m-0">
+            <mat-icon class="text-[#2d6a4f] text-sm">auto_graph</mat-icon> Report Generation
+          </h3>
+          <p class="text-xs text-gray-500 m-0 mt-1">Export the currently filtered observations data.</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button mat-stroked-button (click)="exportPdf()" class="text-xs !text-red-600 !border-red-200 hover:!bg-red-50 !rounded-lg" [disabled]="isLoading || observations.data.length === 0">
+            <mat-icon>picture_as_pdf</mat-icon> Export PDF
+          </button>
+          <button mat-stroked-button (click)="exportCsv()" class="text-xs !text-green-700 !border-green-200 hover:!bg-green-50 !rounded-lg" [disabled]="isLoading || observations.data.length === 0">
+            <mat-icon>table_chart</mat-icon> Export CSV
+          </button>
+        </div>
+      </div>
     </form>
   </div>
 
@@ -156,61 +192,42 @@
     <p class="text-sm text-surface-on-variant mt-1">Try adjusting your filters or tab criteria.</p>
   </div>
 
-  <!-- Report Generation Section -->
-  <div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden mb-6 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-    <div>
-      <h3 class="text-sm font-bold text-surface-on flex items-center gap-2 m-0">
-        <mat-icon class="text-primary text-sm">auto_graph</mat-icon> Report Generation
-      </h3>
-      <p class="text-xs text-surface-on-variant m-0 mt-1">Export the currently filtered observations data.</p>
-    </div>
-    <div class="flex gap-2">
-      <button mat-stroked-button (click)="exportPdf()" class="text-xs !text-red-600 !border-red-200 hover:!bg-red-50" [disabled]="isLoading || observations.data.length === 0">
-        <mat-icon>picture_as_pdf</mat-icon> Export PDF
-      </button>
-      <button mat-stroked-button (click)="exportCsv()" class="text-xs !text-green-700 !border-green-200 hover:!bg-green-50" [disabled]="isLoading || observations.data.length === 0">
-        <mat-icon>table_chart</mat-icon> Export CSV
-      </button>
-    </div>
-  </div>
-
   <!-- Observations Table -->
-  <div class="bg-surface-low rounded-xl border border-outline-variant shadow-sm overflow-hidden" 
-       *ngIf="observations.data.length > 0">
-    <div class="overflow-x-auto">
-      <table mat-table [dataSource]="observations" matSort (matSortChange)="onSortChange($event)" class="w-full">
+  <div class="admin-table-card" *ngIf="observations.data.length > 0">
+    <div class="admin-table-wrap">
+      <table mat-table [dataSource]="observations" matSort (matSortChange)="onSortChange($event)" class="w-full admin-data-table">
         <!-- Date Column -->
         <ng-container matColumnDef="observationDate">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
-          <td mat-cell *matCellDef="let obs">
-            <span class="font-medium text-surface-on">{{ obs.observationDate | date:'mediumDate' }}</span>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Date</th>
+          <td mat-cell *matCellDef="let obs" class="font-medium text-gray-800 text-xs sm:text-sm">
+            {{ obs.observationDate | date:'mediumDate' }}
           </td>
         </ng-container>
 
         <!-- Field Column -->
         <ng-container matColumnDef="fieldName">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Field / Crop</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Field / Crop</th>
           <td mat-cell *matCellDef="let obs">
             <div class="flex flex-col">
-              <span class="font-semibold text-surface-on">{{ obs.fieldName }}</span>
-              <span class="text-xs text-primary mt-0.5" *ngIf="obs.cropType">{{ obs.cropType }}</span>
+              <span class="font-semibold text-gray-800 text-xs sm:text-sm">{{ obs.fieldName }}</span>
+              <span class="text-[10px] sm:text-xs text-primary-600 mt-0.5" *ngIf="obs.cropType">{{ obs.cropType }}</span>
             </div>
           </td>
         </ng-container>
 
         <!-- Worker Column -->
         <ng-container matColumnDef="workerName">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Recorded By</th>
-          <td mat-cell *matCellDef="let obs">
-            <span class="text-surface-on">{{ obs.workerName || 'N/A' }}</span>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Recorded By</th>
+          <td mat-cell *matCellDef="let obs" class="text-gray-700 text-xs sm:text-sm">
+            {{ obs.workerName || 'N/A' }}
           </td>
         </ng-container>
 
         <!-- Crop Health Column -->
         <ng-container matColumnDef="cropHealth">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Health Status</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Health Status</th>
           <td mat-cell *matCellDef="let obs">
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 text-xs sm:text-sm">
               <span class="inline-block w-2.5 h-2.5 rounded-full"
                     [ngClass]="{
                       'bg-green-500': obs.cropHealth === 'EXCELLENT',
@@ -219,42 +236,42 @@
                       'bg-orange-500': obs.cropHealth === 'POOR',
                       'bg-red-600': obs.cropHealth === 'CRITICAL'
                     }"></span>
-              <span class="text-sm font-medium text-surface-on">{{ obs.cropHealth | titlecase }}</span>
+              <span class="font-medium text-gray-800">{{ obs.cropHealth | titlecase }}</span>
             </div>
           </td>
         </ng-container>
 
         <!-- Pest Detected Column -->
         <ng-container matColumnDef="pestDetected">
-          <th mat-header-cell *matHeaderCellDef>Pest/Disease</th>
-          <td mat-cell *matCellDef="let obs">
-            <div class="flex items-center gap-1 text-error" *ngIf="obs.pestType">
-              <mat-icon class="text-base h-4 w-4">bug_report</mat-icon>
-              <span class="text-sm font-medium">{{ obs.pestType }}</span>
+          <th mat-header-cell *matHeaderCellDef class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Pest/Disease</th>
+          <td mat-cell *matCellDef="let obs" class="text-xs sm:text-sm">
+            <div class="flex items-center gap-1 text-red-600" *ngIf="obs.pestType">
+              <mat-icon class="text-[14px] w-[14px] h-[14px]">bug_report</mat-icon>
+              <span class="font-medium">{{ obs.pestType }}</span>
             </div>
-            <span class="text-sm text-surface-on-variant" *ngIf="!obs.pestType">None</span>
+            <span class="text-gray-500" *ngIf="!obs.pestType">None</span>
           </td>
         </ng-container>
 
         <!-- Images Column -->
         <ng-container matColumnDef="images">
-          <th mat-header-cell *matHeaderCellDef>Photos</th>
+          <th mat-header-cell *matHeaderCellDef class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Photos</th>
           <td mat-cell *matCellDef="let obs">
             <div class="flex items-center gap-1.5" *ngIf="obs.imagePath">
-              <img [src]="obs.imagePath" alt="Preview" class="w-8 h-8 rounded object-cover border border-outline" />
-              <span class="text-xs text-surface-on-variant" *ngIf="obs.additionalImagePaths?.length">
+              <img [src]="obs.imagePath" alt="Preview" class="w-8 h-8 rounded object-cover border border-gray-200 shadow-sm" />
+              <span class="text-xs text-gray-500" *ngIf="obs.additionalImagePaths?.length">
                 +{{ obs.additionalImagePaths.length }}
               </span>
             </div>
-            <span class="text-sm text-surface-on-variant" *ngIf="!obs.imagePath">No Photos</span>
+            <span class="text-[10px] sm:text-xs text-gray-400" *ngIf="!obs.imagePath">No Photos</span>
           </td>
         </ng-container>
 
         <!-- Validation Status Column -->
         <ng-container matColumnDef="validationStatus">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Validation</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Validation</th>
           <td mat-cell *matCellDef="let obs">
-            <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider border"
+            <span class="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider border"
                   [ngClass]="{
                     'bg-green-50 text-green-700 border-green-200': obs.validationStatus === 'verified',
                     'bg-yellow-50 text-yellow-700 border-yellow-200': obs.validationStatus === 'pending',
@@ -268,10 +285,10 @@
 
         <!-- Actions Column -->
         <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef class="text-right">Actions</th>
-          <td mat-cell *matCellDef="let obs" class="text-right">
+          <th mat-header-cell *matHeaderCellDef class="text-right font-semibold text-gray-700 text-xs sm:text-sm">Actions</th>
+          <td mat-cell *matCellDef="let obs" class="text-right whitespace-nowrap">
             <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
-              <mat-icon>more_vert</mat-icon>
+              <mat-icon class="text-gray-500">more_vert</mat-icon>
             </button>
             <mat-menu #menu="matMenu" xPosition="before">
               <button mat-menu-item (click)="viewDetails(obs)">
@@ -287,18 +304,18 @@
                 <span>Edit Record</span>
               </button>
               <mat-divider></mat-divider>
-              <button mat-menu-item class="text-error" (click)="deleteObservation(obs)">
-                <mat-icon class="text-error">delete</mat-icon>
+              <button mat-menu-item class="text-red-600" (click)="deleteObservation(obs)">
+                <mat-icon class="text-red-600">delete</mat-icon>
                 <span>Delete</span>
               </button>
             </mat-menu>
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
             (click)="viewDetails(row)" 
-            class="hover:bg-surface-low/80 cursor-pointer transition-colors duration-150"></tr>
+            class="hover:bg-gray-50 cursor-pointer transition-colors duration-150"></tr>
       </table>
     </div>
     
@@ -306,7 +323,8 @@
                    [pageSize]="pageSize"
                    [hidePageSize]="true"
                    (page)="onPageChange($event)"
-                   showFirstLastButtons>
+                   showFirstLastButtons
+                   class="admin-paginator">
     </mat-paginator>
   </div>
 </div>
@@ -501,6 +519,15 @@
       </div>
     </form>
   </mat-dialog-content>
+
+  <!-- Uploading Overlay Modal -->
+  <div *ngIf="isMainUploading || isRefsUploading || isLoading" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl flex flex-col items-center text-center transform transition-all">
+      <mat-spinner diameter="48" color="primary" class="mb-6"></mat-spinner>
+      <h3 class="text-xl font-bold text-gray-900 mb-2">Processing...</h3>
+      <p class="text-gray-500 mb-6 w-full">Please wait while we process your request...</p>
+    </div>
+  </div>
 
   <mat-dialog-actions align="end" class="gap-2">
     <button mat-button mat-dialog-close>Cancel</button>

@@ -86,3 +86,17 @@ export interface ObservationFilterDto {
   sortBy?: string;
   isDescending?: boolean;
 }
+
+export interface ObservationStatisticsDto {
+  totalObservations: number;
+  pendingObservations: number;
+  questionedObservations: number;
+  verifiedObservations: number;
+  invalidObservations: number;
+  observationsWithPest: number;
+  observationsWithoutPest: number;
+  pestTypeDistribution: Record<string, number>;
+  cropHealthDistribution: Record<string, number>;
+  observationsByField: Record<string, number>;
+  observationsByWorker: Record<string, number>;
+}

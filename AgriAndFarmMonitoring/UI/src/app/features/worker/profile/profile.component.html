@@ -1,112 +1,118 @@
-<div class="profile-container p-6 max-w-4xl mx-auto">
-  <div class="header mb-6">
-    <h1 class="text-2xl font-semibold text-gray-800">My Profile</h1>
-    <p class="text-sm text-gray-600">Manage your personal information and security settings.</p>
+<div class="h-full flex flex-col">
+  <!-- Compact Header -->
+  <div class="worker-page-header flex-shrink-0">
+    <div class="worker-page-header-content">
+      <div class="worker-page-icon"><mat-icon>account_circle</mat-icon></div>
+      <div>
+        <h1 class="worker-page-title">My Profile</h1>
+        <p class="worker-page-subtitle">Manage your personal information and security settings</p>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="isLoading()" class="flex justify-center p-12">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div *ngIf="!isLoading()" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- Content Area -->
+  <div *ngIf="!isLoading()" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pb-4 mt-4">
     
-    <!-- Profile Info Card -->
-    <mat-card class="shadow-sm border border-gray-100">
-      <mat-card-header class="pb-4">
-        <mat-icon mat-card-avatar class="text-4xl text-green-600 w-10 h-10 flex items-center justify-center bg-green-50 rounded-full">account_circle</mat-icon>
-        <mat-card-title class="text-lg mt-1">Personal Details</mat-card-title>
-      </mat-card-header>
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
       
-      <mat-card-content class="pt-4">
-        <div class="flex flex-col gap-4">
-          <div class="info-group">
-            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Name</label>
-            <p class="text-gray-800 font-medium text-lg">{{ user()?.name || workerProfile()?.name || 'Unknown User' }}</p>
-          </div>
-          
-          <mat-divider></mat-divider>
+      <!-- Profile Info Card -->
+      <div class="admin-panel-card !h-auto border-t-4 border-t-[#2d6a4f]">
+        <div class="admin-panel-header">
+          <h3 class="panel-title !mb-0 text-[#2d6a4f]">
+            <mat-icon>badge</mat-icon> Personal Details
+          </h3>
+        </div>
+        
+        <div class="admin-panel-body p-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+            <div class="info-group">
+              <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Name</label>
+              <p class="text-gray-800 font-medium text-sm mt-0.5">{{ user()?.name || workerProfile()?.name || 'Unknown User' }}</p>
+            </div>
+            
+            <div class="info-group">
+              <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Email Address</label>
+              <p class="text-gray-800 text-sm mt-0.5">{{ user()?.email || workerProfile()?.email || 'N/A' }}</p>
+            </div>
 
-          <div class="info-group">
-            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Email Address</label>
-            <p class="text-gray-800">{{ user()?.email || workerProfile()?.email || 'N/A' }}</p>
-          </div>
-
-          <mat-divider></mat-divider>
-
-          <div class="info-group">
-            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Role</label>
-            <div class="mt-1">
-              <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                {{ user()?.role || 'WORKER' }}
-              </span>
+            <div class="info-group">
+              <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Role</label>
+              <div class="mt-1">
+                <span class="px-2 py-0.5 bg-[#1b4332] text-white rounded text-[10px] font-bold tracking-wide">
+                  {{ user()?.role || 'WORKER' }}
+                </span>
+              </div>
             </div>
           </div>
 
-          <mat-divider></mat-divider>
-
-          <div class="info-group">
-            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Assigned Fields ({{ workerProfile()?.assignedFields?.length || 0 }})</label>
-            <div class="mt-2 space-y-2" *ngIf="workerProfile()?.assignedFields?.length">
-              <div *ngFor="let field of workerProfile()?.assignedFields" class="p-3 bg-gray-50 rounded-lg border border-gray-100 flex justify-between items-center">
+          <div class="mt-6 border-t border-gray-100 pt-4">
+            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Assigned Fields ({{ workerProfile()?.assignedFields?.length || 0 }})</label>
+            <div class="mt-3 grid grid-cols-1 gap-2" *ngIf="workerProfile()?.assignedFields?.length">
+              <div *ngFor="let field of workerProfile()?.assignedFields" class="p-3 bg-[#f8faf9] rounded-lg border border-gray-200 flex justify-between items-center hover:border-[#40916c] transition-colors">
                 <div>
                   <p class="text-sm font-semibold text-gray-800">{{ field.fieldName }}</p>
-                  <p class="text-xs text-gray-500">{{ field.areaHectares }} Hectares</p>
+                  <p class="text-xs text-gray-500 mt-0.5">{{ field.areaHectares }} Hectares</p>
                 </div>
-                <span class="px-2 py-1 bg-green-100 text-green-800 text-[10px] font-bold rounded uppercase tracking-wide">
+                <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded uppercase tracking-wide">
                   {{ field.status || 'ACTIVE' }}
                 </span>
               </div>
             </div>
-            <p class="text-gray-500 text-sm mt-2 italic" *ngIf="!workerProfile()?.assignedFields?.length">
+            <p class="text-gray-500 text-sm mt-3 italic" *ngIf="!workerProfile()?.assignedFields?.length">
               No fields currently assigned.
             </p>
           </div>
         </div>
-      </mat-card-content>
-    </mat-card>
+      </div>
 
-    <!-- Password Reset Card -->
-    <mat-card class="shadow-sm border border-gray-100">
-      <mat-card-header class="pb-4">
-        <mat-icon mat-card-avatar class="text-4xl text-blue-600 w-10 h-10 flex items-center justify-center bg-blue-50 rounded-full">lock</mat-icon>
-        <mat-card-title class="text-lg mt-1">Change Password</mat-card-title>
-      </mat-card-header>
-      
-      <mat-card-content class="pt-4">
-        <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()" class="flex flex-col gap-3">
-          
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Current Password</mat-label>
-            <input matInput type="password" formControlName="currentPassword" placeholder="Enter current password">
-            <mat-error *ngIf="passwordForm.get('currentPassword')?.hasError('required')">Current password is required</mat-error>
-          </mat-form-field>
+      <!-- Password Reset Card -->
+      <div class="admin-panel-card !h-auto border-t-4 border-t-[#0284c7]">
+        <div class="admin-panel-header">
+          <h3 class="panel-title !mb-0 text-[#0284c7]">
+            <mat-icon>security</mat-icon> Change Password
+          </h3>
+        </div>
+        
+        <div class="admin-panel-body p-5">
+          <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()" class="flex flex-col gap-4">
+            
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Current Password</mat-label>
+              <input matInput type="password" formControlName="currentPassword" placeholder="Enter current password">
+              <mat-error *ngIf="passwordForm.get('currentPassword')?.hasError('required')">Current password is required</mat-error>
+            </mat-form-field>
 
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>New Password</mat-label>
-            <input matInput type="password" formControlName="newPassword" placeholder="Enter new password (min 6 chars)">
-            <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('required')">New password is required</mat-error>
-            <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('minlength')">Must be at least 6 characters</mat-error>
-          </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full -mt-2">
+              <mat-label>New Password</mat-label>
+              <input matInput type="password" formControlName="newPassword" placeholder="Enter new password (min 6 chars)">
+              <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('required')">New password is required</mat-error>
+              <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('minlength')">Must be at least 6 characters</mat-error>
+            </mat-form-field>
 
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Confirm New Password</mat-label>
-            <input matInput type="password" formControlName="confirmPassword" placeholder="Confirm your new password">
-            <mat-error *ngIf="passwordForm.get('confirmPassword')?.hasError('required')">Please confirm your new password</mat-error>
-            <mat-error *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirmPassword')?.touched">
-              Passwords do not match
-            </mat-error>
-          </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full -mt-2">
+              <mat-label>Confirm New Password</mat-label>
+              <input matInput type="password" formControlName="confirmPassword" placeholder="Confirm your new password">
+              <mat-error *ngIf="passwordForm.get('confirmPassword')?.hasError('required')">Please confirm your new password</mat-error>
+              <mat-error *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirmPassword')?.touched">
+                Passwords do not match
+              </mat-error>
+            </mat-form-field>
 
-          <div class="mt-2 text-right">
-            <button mat-flat-button color="primary" type="submit" [disabled]="passwordForm.invalid || isSaving()">
-              <mat-icon *ngIf="!isSaving()">save</mat-icon>
-              <mat-spinner *ngIf="isSaving()" diameter="20" class="inline-block mr-2"></mat-spinner>
-              Update Password
-            </button>
-          </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
+            <div class="mt-2 text-right pt-2 border-t border-gray-100">
+              <button mat-flat-button type="submit" [disabled]="passwordForm.invalid || isSaving()" class="!rounded-md !text-sm !bg-[#0284c7] !text-white">
+                <mat-icon *ngIf="!isSaving()">save</mat-icon>
+                <mat-spinner *ngIf="isSaving()" diameter="20" class="inline-block mr-2"></mat-spinner>
+                Update Password
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
 
+    </div>
   </div>
 </div>

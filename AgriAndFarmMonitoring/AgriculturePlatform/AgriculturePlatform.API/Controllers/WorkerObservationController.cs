@@ -52,7 +52,7 @@ public class WorkerObservationController : ControllerBase
     }
 
     // GET: api/worker/observations/{id}
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         var farmId = GetCurrentFarmId();
@@ -95,7 +95,7 @@ public class WorkerObservationController : ControllerBase
     }
 
     // PUT: api/worker/observations/{id}
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateObservationDto dto)
     {
         var farmId = GetCurrentFarmId();
@@ -109,7 +109,7 @@ public class WorkerObservationController : ControllerBase
     }
 
     // DELETE: api/worker/observations/{id}
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
         var farmId = GetCurrentFarmId();
@@ -123,7 +123,7 @@ public class WorkerObservationController : ControllerBase
     }
 
     // POST: api/worker/observations/{id}/respond
-    [HttpPost("{id}/respond")]
+    [HttpPost("{id:int}/respond")]
     public async Task<IActionResult> RespondToAdmin(int id, [FromBody] ObservationWorkerResponseDto dto)
     {
         var farmId = GetCurrentFarmId();
@@ -134,6 +134,16 @@ public class WorkerObservationController : ControllerBase
         if (!result.Success)
             return BadRequest(result);
             
+        return Ok(result);
+    }
+
+    // GET: api/worker/observations/statistics
+    [HttpGet("statistics")]
+    public async Task<IActionResult> GetObservationStatistics()
+    {
+        var farmId = GetCurrentFarmId();
+        var workerId = GetCurrentWorkerId();
+        var result = await _observationService.GetPestStatisticsAsync(farmId, null, null, workerId);
         return Ok(result);
     }
 
@@ -187,7 +197,7 @@ public async Task<IActionResult> UploadImage(IFormFile file)
 }
 
 // ✅ PATCH: api/worker/observations/{id}
-[HttpPatch("{id}")]
+[HttpPatch("{id:int}")]
 public async Task<IActionResult> Patch(int id, [FromBody] UpdateObservationDto dto)
 {
     var farmId = GetCurrentFarmId();

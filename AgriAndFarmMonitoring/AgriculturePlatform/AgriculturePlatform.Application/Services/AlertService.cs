@@ -94,7 +94,7 @@ public class AlertService : IAlertService
         return ApiResponse<IEnumerable<AlertDto>>.Ok(dtos);
     }
 
-    public async Task<ApiResponse<AlertDto>> ResolveAlertAsync(int id, ResolveAlertDto dto, int farmId, int adminId)
+    public async Task<ApiResponse<AlertDto>> ResolveAlertAsync(int id, ResolveAlertDto dto, int farmId, int? adminId = null, int? workerId = null)
     {
         var alert = await _alertRepository.GetByIdAsync(id, farmId);
         if (alert == null)
@@ -109,12 +109,12 @@ public class AlertService : IAlertService
 
         alert.IsResolved = true;
         alert.ResolvedAt = DateTime.UtcNow;
-        alert.UpdatedBy = adminId;
+        alert.UpdatedBy = adminId ?? workerId;
         alert.UpdatedAt = DateTime.UtcNow;
 
         await _alertRepository.UpdateAsync(alert);
         
-        await _auditLogService.LogUpdateAsync(farmId, adminId, "Alert", alert.Id, null, 
+        await _auditLogService.LogAsync(farmId, adminId, workerId, "UPDATE", "Alert", alert.Id, null, 
             new { IsResolved = true, ResolutionNotes = dto.ResolutionNotes }, null, null);
 
         await _notificationService.NotifyAlertResolvedAsync(farmId, new { AlertId = id, ResolvedAt = DateTime.UtcNow });

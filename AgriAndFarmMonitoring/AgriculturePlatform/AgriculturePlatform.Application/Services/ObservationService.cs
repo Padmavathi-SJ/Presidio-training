@@ -741,28 +741,10 @@ public class ObservationService : IObservationService
         return ApiResponse<PagedResult<ObservationDto>>.Ok(result);
     }
 
-    public async Task<ApiResponse<ObservationStatisticsDto>> GetPestStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate)
+    public async Task<ApiResponse<ObservationStatisticsDto>> GetPestStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate, int? workerId = null)
     {
-        var stats = await _observationRepository.GetPestDetectionStatisticsAsync(farmId, fromDate?.ToUniversalTime(), toDate?.ToUniversalTime());
-        
-        var result = new ObservationStatisticsDto
-        {
-            TotalObservations = stats.TotalObservations,
-            ObservationsWithPest = stats.ObservationsWithPest,
-            ObservationsWithoutPest = stats.ObservationsWithoutPest,
-            PestTypeDistribution = stats.PestTypeDistribution,
-            CropHealthDistribution = stats.CropHealthDistribution,
-            ObservationsByField = stats.ObservationsByField,
-            ObservationsByWorker = stats.ObservationsByWorker,
-            RecentTrend = stats.RecentTrend.Select(t => new DailyObservationTrendDto
-            {
-                Date = t.Date,
-                TotalCount = t.TotalCount,
-                PestCount = t.PestCount
-            }).ToList()
-        };
-
-        return ApiResponse<ObservationStatisticsDto>.Ok(result);
+        var stats = await _observationRepository.GetPestDetectionStatisticsAsync(farmId, fromDate?.ToUniversalTime(), toDate?.ToUniversalTime(), workerId);
+        return ApiResponse<ObservationStatisticsDto>.Ok(stats);
     }
 
     public async Task<bool> ValidateObservationOwnershipAsync(int observationId, int workerId, int farmId)

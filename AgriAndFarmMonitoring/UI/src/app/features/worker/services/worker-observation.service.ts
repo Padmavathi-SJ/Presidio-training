@@ -61,4 +61,8 @@ export class WorkerObservationService {
     formData.append('file', file);
     return this.http.post<ApiResponse<{ fileName: string, url: string }>>(`${this.API_URL}/worker/observations/upload`, formData);
   }
+
+  getObservationStatistics(): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.API_URL}/worker/observations/statistics`);
+  }
 }

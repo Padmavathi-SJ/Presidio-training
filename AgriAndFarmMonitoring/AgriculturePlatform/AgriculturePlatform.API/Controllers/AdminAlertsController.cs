@@ -88,7 +88,7 @@ public class AdminAlertsController : ControllerBase
     {
         var farmId = GetCurrentFarmId();
         var adminId = GetCurrentAdminId();
-        var result = await _alertService.ResolveAlertAsync(id, dto, farmId, adminId);
+        var result = await _alertService.ResolveAlertAsync(id, dto, farmId, adminId, null);
         
         if (!result.Success)
             return BadRequest(result);

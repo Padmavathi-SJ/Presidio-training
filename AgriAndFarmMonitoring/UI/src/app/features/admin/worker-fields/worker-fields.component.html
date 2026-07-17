@@ -1,339 +1,319 @@
 <!-- src/app/features/admin/worker-fields/worker-fields.component.html -->
-<div class="min-h-screen bg-gray-50/30">
-  <div class="px-4 sm:px-6 py-4">
+<div class="admin-page-shell">
 
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-4 md:mb-6">
-      <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-3 sm:p-4 border-l-4 border-primary-500 hover:border-primary-600 hover:-translate-y-0.5">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Total</p>
-            <p class="text-lg sm:text-2xl font-bold text-gray-800 mt-0.5 sm:mt-1">{{ assignments().length }}</p>
-          </div>
-          <div class="p-1.5 sm:p-2 bg-primary-50 rounded-lg group-hover:bg-primary-100 transition-colors">
-            <mat-icon class="text-base sm:text-xl text-primary-600">assignment</mat-icon>
-          </div>
-        </div>
-      </div>
-      <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-3 sm:p-4 border-l-4 border-green-500 hover:border-green-600 hover:-translate-y-0.5">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Active</p>
-            <p class="text-lg sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">{{ activeAssignments() }}</p>
-          </div>
-          <div class="p-1.5 sm:p-2 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
-            <mat-icon class="text-base sm:text-xl text-green-600">check_circle</mat-icon>
-          </div>
-        </div>
-      </div>
-      <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-3 sm:p-4 border-l-4 border-red-500 hover:border-red-600 hover:-translate-y-0.5">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Inactive</p>
-            <p class="text-lg sm:text-2xl font-bold text-red-600 mt-0.5 sm:mt-1">{{ inactiveAssignments() }}</p>
-          </div>
-          <div class="p-1.5 sm:p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors">
-            <mat-icon class="text-base sm:text-xl text-red-600">pause_circle</mat-icon>
-          </div>
-        </div>
-      </div>
-      <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-3 sm:p-4 border-l-4 border-blue-500 hover:border-blue-600 hover:-translate-y-0.5">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Workers</p>
-            <p class="text-lg sm:text-2xl font-bold text-blue-600 mt-0.5 sm:mt-1">{{ workers().length }}</p>
-          </div>
-          <div class="p-1.5 sm:p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
-            <mat-icon class="text-base sm:text-xl text-blue-600">people</mat-icon>
-          </div>
-        </div>
+  <!-- Compact Header -->
+  <div class="admin-compact-header">
+    <div class="admin-header-left">
+      <div class="admin-header-icon"><mat-icon>assignment_ind</mat-icon></div>
+      <div>
+        <h1 class="admin-header-title">Worker Fields</h1>
+        <p class="admin-header-subtitle">Manage worker field assignments</p>
       </div>
     </div>
+    <div class="admin-header-actions">
+      <button mat-flat-button class="!bg-[#2d6a4f] !text-white !rounded-lg text-xs" (click)="openAssignDialog()" [disabled]="isLoading()">
+        <mat-icon>add</mat-icon> Assign Field
+      </button>
+    </div>
+  </div>
 
-    <!-- Filter Bar -->
-    <mat-card class="mb-4 md:mb-6 p-2 sm:p-3 md:p-4 shadow-sm border border-gray-100 rounded-xl">
-      <form [formGroup]="filterForm">
-        <!-- Row 1 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-          <div>
-            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
-              <mat-label class="text-gray-600 text-xs sm:text-sm">Worker</mat-label>
-              <mat-select formControlName="workerId" class="text-sm">
-                <mat-option [value]="null">All Workers</mat-option>
-                @for (worker of workers(); track worker.id) {
-                  <mat-option [value]="worker.id">{{ worker.name }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-          
-          <div>
-            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
-              <mat-label class="text-gray-600 text-xs sm:text-sm">Field</mat-label>
-              <mat-select formControlName="fieldId" class="text-sm">
-                <mat-option [value]="null">All Fields</mat-option>
-                @for (field of fields(); track field.id) {
-                  <mat-option [value]="field.id">{{ field.fieldName }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-          
-          <div>
-            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
-              <mat-label class="text-gray-600 text-xs sm:text-sm">Status</mat-label>
-              <mat-select formControlName="isActive" class="text-sm">
-                <mat-option [value]="null">All</mat-option>
-                <mat-option [value]="true">Active</mat-option>
-                <mat-option [value]="false">Inactive</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-          
-          <div>
-            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
-              <mat-label class="text-gray-600 text-xs sm:text-sm">Assigned Date From</mat-label>
-              <input matInput formControlName="assignedDateFrom" placeholder="From Date" [matDatepicker]="fromPicker" class="text-sm">
-              <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
-              <mat-datepicker #fromPicker></mat-datepicker>
-            </mat-form-field>
-          </div>
+  <!-- Statistics Cards -->
+  <div class="admin-kpi-grid">
+    <!-- Total -->
+    <div class="admin-kpi-card kpi-blue">
+      <div class="kpi-icon-wrap"><mat-icon>assignment</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Total</span>
+        <span class="kpi-value">{{ assignments().length }}</span>
+      </div>
+    </div>
+    <!-- Active -->
+    <div class="admin-kpi-card kpi-green">
+      <div class="kpi-icon-wrap"><mat-icon>check_circle</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Active</span>
+        <span class="kpi-value">{{ activeAssignments() }}</span>
+      </div>
+    </div>
+    <!-- Inactive -->
+    <div class="admin-kpi-card kpi-red">
+      <div class="kpi-icon-wrap"><mat-icon>pause_circle</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Inactive</span>
+        <span class="kpi-value">{{ inactiveAssignments() }}</span>
+      </div>
+    </div>
+    <!-- Workers -->
+    <div class="admin-kpi-card kpi-purple">
+      <div class="kpi-icon-wrap"><mat-icon>people</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Workers</span>
+        <span class="kpi-value">{{ workers().length }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="admin-filter-card">
+    <form [formGroup]="filterForm">
+      <div class="admin-filter-row">
+        <div class="admin-filter-field">
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-xs sm:text-sm">Worker</mat-label>
+            <mat-select formControlName="workerId" class="text-sm">
+              <mat-option [value]="null">All Workers</mat-option>
+              @for (worker of workers(); track worker.id) {
+                <mat-option [value]="worker.id">{{ worker.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
         </div>
         
-        <!-- Row 2 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 mt-2 sm:mt-3">
-          <div>
-            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
-              <mat-label class="text-gray-600 text-xs sm:text-sm">Assigned Date To</mat-label>
-              <input matInput formControlName="assignedDateTo" placeholder="To Date" [matDatepicker]="toPicker" class="text-sm">
-              <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
-              <mat-datepicker #toPicker></mat-datepicker>
-            </mat-form-field>
-          </div>
-          
-          <!-- ✅ End Date From -->
-          <div>
-            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
-              <mat-label class="text-gray-600 text-xs sm:text-sm">End Date From</mat-label>
-              <input matInput formControlName="endDateFrom" placeholder="End Date From" [matDatepicker]="endFromPicker" class="text-sm">
-              <mat-datepicker-toggle matSuffix [for]="endFromPicker"></mat-datepicker-toggle>
-              <mat-datepicker #endFromPicker></mat-datepicker>
-            </mat-form-field>
-          </div>
-          
-          <!-- ✅ End Date To -->
-          <div>
-            <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
-              <mat-label class="text-gray-600 text-xs sm:text-sm">End Date To</mat-label>
-              <input matInput formControlName="endDateTo" placeholder="End Date To" [matDatepicker]="endToPicker" class="text-sm">
-              <mat-datepicker-toggle matSuffix [for]="endToPicker"></mat-datepicker-toggle>
-              <mat-datepicker #endToPicker></mat-datepicker>
-            </mat-form-field>
-          </div>
+        <div class="admin-filter-field">
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-xs sm:text-sm">Field</mat-label>
+            <mat-select formControlName="fieldId" class="text-sm">
+              <mat-option [value]="null">All Fields</mat-option>
+              @for (field of fields(); track field.id) {
+                <mat-option [value]="field.id">{{ field.fieldName }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
         </div>
         
-        <!-- Action Row -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 pt-3 border-t border-gray-100">
-          <div class="flex flex-wrap items-center gap-2">
-            <button 
-              mat-raised-button 
-              color="primary"
-              (click)="openAssignDialog()"
-              [disabled]="isLoading()"
-              class="text-xs sm:text-sm font-medium shadow-sm"
-            >
-              <mat-icon class="text-sm">add</mat-icon>
-              Assign Field
-            </button>
-            <button 
-              mat-stroked-button 
-              (click)="exportPdf()" 
-              class="text-xs sm:text-sm !text-red-600 !border-red-200 hover:!bg-red-50" 
-              [disabled]="isLoading() || assignments().length === 0"
-            >
-              <mat-icon class="text-sm">picture_as_pdf</mat-icon> PDF
-            </button>
-            <button 
-              mat-stroked-button 
-              (click)="exportCsv()" 
-              class="text-xs sm:text-sm !text-green-700 !border-green-200 hover:!bg-green-50" 
-              [disabled]="isLoading() || assignments().length === 0"
-            >
-              <mat-icon class="text-sm">table_chart</mat-icon> CSV
-            </button>
-          </div>
-          
-          <button 
-            mat-button 
-            (click)="resetFilters()" 
-            matTooltip="Reset Filters"
-            class="!text-gray-600 hover:!bg-gray-100 text-xs sm:text-sm"
-          >
-            <mat-icon class="text-gray-500 text-sm">refresh</mat-icon>
-            Reset Filters
-          </button>
+        <div class="admin-filter-field">
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-xs sm:text-sm">Status</mat-label>
+            <mat-select formControlName="isActive" class="text-sm">
+              <mat-option [value]="null">All</mat-option>
+              <mat-option [value]="true">Active</mat-option>
+              <mat-option [value]="false">Inactive</mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
-      </form>
-    </mat-card>
 
-    <!-- Bulk Actions -->
-    @if (hasSelected()) {
-      <div class="bg-primary-50 rounded-xl p-2 sm:p-3 mb-3 sm:mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 border border-primary-100">
-        <span class="text-xs sm:text-sm text-gray-700 font-medium">
-          <span class="bg-primary-600 text-white px-2 py-0.5 rounded-full text-xs mr-2">{{ selectedCount() }}</span>
-          assignment(s) selected
-        </span>
-        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-          <button 
-            mat-stroked-button 
-            color="warn"
-            (click)="bulkRemove()"
-            [disabled]="isLoading()"
-            class="text-xs sm:text-sm"
-          >
-            <mat-icon>delete</mat-icon>
-            Remove Selected
-          </button>
-          <button 
-            mat-button 
-            (click)="selectedAssignments.set([])"
-            [disabled]="isLoading()"
-            class="text-xs sm:text-sm text-gray-500"
-          >
-            Clear Selection
-          </button>
+        <div class="admin-filter-field flex gap-2">
+           <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+             <mat-label class="text-gray-600 text-xs sm:text-sm">Assigned Date From</mat-label>
+             <input matInput formControlName="assignedDateFrom" [matDatepicker]="fromPicker" class="text-sm">
+             <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+             <mat-datepicker #fromPicker></mat-datepicker>
+           </mat-form-field>
+           <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+             <mat-label class="text-gray-600 text-xs sm:text-sm">To</mat-label>
+             <input matInput formControlName="assignedDateTo" [matDatepicker]="toPicker" class="text-sm">
+             <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+             <mat-datepicker #toPicker></mat-datepicker>
+           </mat-form-field>
         </div>
       </div>
-    }
+      
+      <div class="admin-filter-row mt-2">
+        <div class="admin-filter-field flex gap-2 w-1/4">
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-xs sm:text-sm">End Date From</mat-label>
+            <input matInput formControlName="endDateFrom" [matDatepicker]="endFromPicker" class="text-sm">
+            <mat-datepicker-toggle matSuffix [for]="endFromPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endFromPicker></mat-datepicker>
+          </mat-form-field>
+          <mat-form-field class="w-full" appearance="outline" subscriptSizing="dynamic">
+            <mat-label class="text-gray-600 text-xs sm:text-sm">To</mat-label>
+            <input matInput formControlName="endDateTo" [matDatepicker]="endToPicker" class="text-sm">
+            <mat-datepicker-toggle matSuffix [for]="endToPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endToPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
 
+      <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
+        <div class="flex-1"></div>
+        <button 
+          mat-stroked-button 
+          (click)="resetFilters()" 
+          matTooltip="Reset Filters"
+          class="!border-[#d5e1da] !text-[#5a7a6a] !rounded-lg text-xs"
+        >
+          <mat-icon class="text-sm">refresh</mat-icon>
+          Reset Filters
+        </button>
+      </div>
+    </form>
 
-    <!-- Table -->
-    <mat-card class="shadow-sm border border-gray-100 rounded-xl overflow-hidden">
-      <div class="relative overflow-x-auto">
-        @if (isLoading()) {
-          <div class="flex justify-center items-center py-12 sm:py-20">
-            <mat-spinner [diameter]="40"></mat-spinner>
-          </div>
-        } @else {
-          <table mat-table [dataSource]="assignments()" matSort (matSortChange)="onSortChange($event)" class="w-full">
-            <!-- Select Column -->
-            <ng-container matColumnDef="select">
-              <th mat-header-cell *matHeaderCellDef class="w-8 sm:w-10">
-                <mat-checkbox 
-                  [checked]="allSelected()"
-                  [indeterminate]="isIndeterminate()"
-                  (change)="toggleAllSelection()"
-                ></mat-checkbox>
-              </th>
-              <td mat-cell *matCellDef="let assignment">
-                <mat-checkbox 
-                  [checked]="isSelected(assignment.id)"
-                  (change)="toggleSelection(assignment.id)"
-                ></mat-checkbox>
-              </td>
-            </ng-container>
+    <!-- Report Generation -->
+    <div class="flex items-center justify-between gap-2 pt-2 border-t border-[#e8f0eb] mt-2">
+      <div>
+        <h3 class="text-xs font-semibold text-gray-700 flex items-center gap-1 m-0">
+          <mat-icon class="text-[#2d6a4f] text-sm">auto_graph</mat-icon> Report Generation
+        </h3>
+        <p class="text-xs text-gray-500 m-0">Export the currently filtered assignments.</p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button mat-stroked-button (click)="exportPdf()" class="text-xs !text-red-600 !border-red-200 hover:!bg-red-50 !rounded-lg" [disabled]="isLoading() || assignments().length === 0">
+          <mat-icon>picture_as_pdf</mat-icon> Export PDF
+        </button>
+        <button mat-stroked-button (click)="exportCsv()" class="text-xs !text-green-700 !border-green-200 hover:!bg-green-50 !rounded-lg" [disabled]="isLoading() || assignments().length === 0">
+          <mat-icon>table_chart</mat-icon> Export CSV
+        </button>
+      </div>
+    </div>
+  </div>
 
-            <!-- Worker Name -->
-            <ng-container matColumnDef="workerName">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Worker</th>
-              <td mat-cell *matCellDef="let assignment" class="font-medium text-gray-800 text-xs sm:text-sm">
-                {{ assignment.workerName }}
-              </td>
-            </ng-container>
+  <!-- Bulk Actions -->
+  @if (hasSelected()) {
+    <div class="bg-[#e8f5ee] rounded-lg p-2 flex items-center justify-between gap-2 border border-[#d5e1da]">
+      <span class="text-xs sm:text-sm text-gray-700 font-medium">
+        <span class="bg-[#2d6a4f] text-white px-2 py-0.5 rounded-full text-xs mr-2">{{ selectedCount() }}</span>
+        assignment(s) selected
+      </span>
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+        <button 
+          mat-stroked-button 
+          color="warn"
+          (click)="bulkRemove()"
+          [disabled]="isLoading()"
+          class="text-xs sm:text-sm"
+        >
+          <mat-icon>delete</mat-icon>
+          Remove Selected
+        </button>
+        <button 
+          mat-button 
+          (click)="selectedAssignments.set([])"
+          [disabled]="isLoading()"
+          class="text-xs sm:text-sm text-gray-500"
+        >
+          Clear Selection
+        </button>
+      </div>
+    </div>
+  }
 
-            <!-- Field Name -->
-            <ng-container matColumnDef="fieldName">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Field</th>
-              <td mat-cell *matCellDef="let assignment" class="text-gray-800 text-xs sm:text-sm">
-                {{ assignment.fieldName }}
-              </td>
-            </ng-container>
+  <!-- Table View -->
+  <div class="admin-table-card">
+    <div class="admin-table-wrap">
+      @if (isLoading()) {
+        <div class="flex justify-center items-center py-12 sm:py-20">
+          <mat-spinner [diameter]="40"></mat-spinner>
+        </div>
+      } @else {
+        <table mat-table [dataSource]="assignments()" matSort (matSortChange)="onSortChange($event)" class="w-full admin-data-table">
+          <!-- Select Column -->
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef class="w-8 sm:w-10">
+              <mat-checkbox 
+                [checked]="allSelected()"
+                [indeterminate]="isIndeterminate()"
+                (change)="toggleAllSelection()"
+              ></mat-checkbox>
+            </th>
+            <td mat-cell *matCellDef="let assignment">
+              <mat-checkbox 
+                [checked]="isSelected(assignment.id)"
+                (change)="toggleSelection(assignment.id)"
+              ></mat-checkbox>
+            </td>
+          </ng-container>
 
-            <!-- Field Location -->
-            <ng-container matColumnDef="fieldLocation">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Location</th>
-              <td mat-cell *matCellDef="let assignment" class="text-gray-600 text-xs sm:text-sm">
-                {{ assignment.fieldLocation || '-' }}
-              </td>
-            </ng-container>
+          <!-- Worker Name -->
+          <ng-container matColumnDef="workerName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Worker</th>
+            <td mat-cell *matCellDef="let assignment" class="font-medium text-gray-800 text-xs sm:text-sm">
+              {{ assignment.workerName }}
+            </td>
+          </ng-container>
 
-            <!-- Assigned Date -->
-            <ng-container matColumnDef="assignedDate">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Assigned Date</th>
-              <td mat-cell *matCellDef="let assignment" class="text-gray-600 text-xs sm:text-sm">
-                {{ formatDate(assignment.assignedDate) }}
-              </td>
-            </ng-container>
+          <!-- Field Name -->
+          <ng-container matColumnDef="fieldName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Field</th>
+            <td mat-cell *matCellDef="let assignment" class="text-gray-800 text-xs sm:text-sm">
+              {{ assignment.fieldName }}
+            </td>
+          </ng-container>
 
-            <!-- End Date -->
-            <ng-container matColumnDef="endDate">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">End Date</th>
-              <td mat-cell *matCellDef="let assignment" class="text-gray-600 text-xs sm:text-sm">
-                {{ assignment.endDate ? formatDate(assignment.endDate) : '-' }}
-              </td>
-            </ng-container>
+          <!-- Field Location -->
+          <ng-container matColumnDef="fieldLocation">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Location</th>
+            <td mat-cell *matCellDef="let assignment" class="text-gray-600 text-xs sm:text-sm">
+              {{ assignment.fieldLocation || '-' }}
+            </td>
+          </ng-container>
 
-            <!-- Status -->
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Status</th>
-              <td mat-cell *matCellDef="let assignment">
-                <span class="text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium {{ getStatusColor(assignment.isActive) }}">
-                  {{ getStatusLabel(assignment.isActive) }}
-                </span>
-              </td>
-            </ng-container>
+          <!-- Assigned Date -->
+          <ng-container matColumnDef="assignedDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Assigned Date</th>
+            <td mat-cell *matCellDef="let assignment" class="text-gray-600 text-xs sm:text-sm">
+              {{ formatDate(assignment.assignedDate) }}
+            </td>
+          </ng-container>
 
-            <!-- Actions -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="text-right font-semibold text-gray-700 text-xs sm:text-sm">Actions</th>
-              <td mat-cell *matCellDef="let assignment" class="text-right whitespace-nowrap">
-                <button 
-                  mat-icon-button 
-                  matTooltip="Edit Assignment"
-                  (click)="openEditDialog(assignment)"
-                  class="!text-blue-600 hover:!bg-blue-50"
-                  [disabled]="isLoading()"
-                >
-                  <mat-icon class="text-sm sm:text-base">edit</mat-icon>
-                </button>
-                <button 
-                  mat-icon-button 
-                  matTooltip="Remove Assignment"
-                  (click)="removeAssignment(assignment)"
-                  class="!text-red-600 hover:!bg-red-50"
-                  [disabled]="isLoading()"
-                >
-                  <mat-icon class="text-sm sm:text-base">delete</mat-icon>
-                </button>
-              </td>
-            </ng-container>
+          <!-- End Date -->
+          <ng-container matColumnDef="endDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">End Date</th>
+            <td mat-cell *matCellDef="let assignment" class="text-gray-600 text-xs sm:text-sm">
+              {{ assignment.endDate ? formatDate(assignment.endDate) : '-' }}
+            </td>
+          </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-gray-50 transition-colors"></tr>
-          </table>
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-left font-semibold text-gray-700 text-xs sm:text-sm">Status</th>
+            <td mat-cell *matCellDef="let assignment">
+              <span class="text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium {{ getStatusColor(assignment.isActive) }}">
+                {{ getStatusLabel(assignment.isActive) }}
+              </span>
+            </td>
+          </ng-container>
 
-          <!-- Empty State -->
-          @if (isEmpty()) {
-            <div class="text-center py-12 sm:py-16">
-              <div class="w-16 h-16 sm:w-24 sm:h-24 mx-auto bg-primary-50 rounded-full flex items-center justify-center mb-3 sm:mb-4">
-                <mat-icon class="text-3xl sm:text-5xl text-primary-300">assignment_ind</mat-icon>
-              </div>
-              <p class="text-gray-500 text-base sm:text-lg font-medium">No assignments found</p>
-              <p class="text-gray-400 text-xs sm:text-sm mt-1">Click "Assign Field" to assign a field to a worker</p>
+          <!-- Actions -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="text-right font-semibold text-gray-700 text-xs sm:text-sm">Actions</th>
+            <td mat-cell *matCellDef="let assignment" class="text-right whitespace-nowrap">
+              <button 
+                mat-icon-button 
+                matTooltip="Edit Assignment"
+                (click)="openEditDialog(assignment)"
+                class="!text-blue-600 hover:!bg-blue-50"
+                [disabled]="isLoading()"
+              >
+                <mat-icon class="text-sm sm:text-base">edit</mat-icon>
+              </button>
+              <button 
+                mat-icon-button 
+                matTooltip="Remove Assignment"
+                (click)="removeAssignment(assignment)"
+                class="!text-red-600 hover:!bg-red-50"
+                [disabled]="isLoading()"
+              >
+                <mat-icon class="text-sm sm:text-base">delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-gray-50 transition-colors"></tr>
+        </table>
+
+        <!-- Empty State -->
+        @if (isEmpty()) {
+          <div class="text-center py-12 sm:py-16">
+            <div class="w-16 h-16 sm:w-24 sm:h-24 mx-auto bg-primary-50 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+              <mat-icon class="text-3xl sm:text-5xl text-primary-300">assignment_ind</mat-icon>
             </div>
-          }
+            <p class="text-gray-500 text-base sm:text-lg font-medium">No assignments found</p>
+            <p class="text-gray-400 text-xs sm:text-sm mt-1">Click "Assign Field" to assign a field to a worker</p>
+          </div>
         }
-      </div>
+      }
+    </div>
 
-      <!-- Paginator -->
-      <mat-paginator 
-        [length]="totalCount()"
-        [pageSize]="pageSize()"
-        [hidePageSize]="true"
-        (page)="onPageChange($event)"
-        showFirstLastButtons
-        class="border-t border-gray-200 text-xs sm:text-sm"
-      ></mat-paginator>
-    </mat-card>
+    <!-- Paginator -->
+    <mat-paginator 
+      [length]="totalCount()"
+      [pageSize]="pageSize()"
+      [hidePageSize]="true"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+      class="admin-paginator"
+    ></mat-paginator>
   </div>
 </div>

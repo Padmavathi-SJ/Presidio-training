@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ViewChild, EventEmitter, Output, effect, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, EventEmitter, Output, effect, OnDestroy, computed } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -65,10 +65,10 @@ export class ObservationListComponent implements OnInit, OnDestroy {
 
   // ✅ Signals for reactive data
   readonly observations = this.observationState.observations;
-  readonly totalCount = this.observationState.totalCount;
   readonly isLoading = this.observationState.isLoading;
-  readonly pendingCount = this.observationState.pendingCount;
-  readonly verifiedCount = this.observationState.verifiedCount;
+  readonly totalCount = this.observationState.totalCount;
+  readonly pendingCount = computed(() => this.observationState.statistics()?.pendingObservations || 0);
+  readonly verifiedCount = computed(() => this.observationState.statistics()?.verifiedObservations || 0);
 
   // ✅ MatTableDataSource for the table
   dataSource = new MatTableDataSource<ObservationDto>([]);

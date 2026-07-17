@@ -15,6 +15,7 @@ public class WorkerFieldServiceTests
     private readonly Mock<IWorkerFieldAssignmentRepository> _assignmentRepositoryMock;
     private readonly Mock<IFieldRepository> _fieldRepositoryMock;
     private readonly Mock<ICropCycleRepository> _cropCycleRepositoryMock;
+    private readonly Mock<IFileStorageService> _fileStorageServiceMock;
     private readonly WorkerFieldService _workerFieldService;
 
     public WorkerFieldServiceTests()
@@ -22,6 +23,7 @@ public class WorkerFieldServiceTests
         _assignmentRepositoryMock = new Mock<IWorkerFieldAssignmentRepository>();
         _fieldRepositoryMock = new Mock<IFieldRepository>();
         _cropCycleRepositoryMock = new Mock<ICropCycleRepository>();
+        _fileStorageServiceMock = new Mock<IFileStorageService>();
         
         var mapper = MapperHelper.CreateMapper();
         
@@ -29,7 +31,8 @@ public class WorkerFieldServiceTests
             _assignmentRepositoryMock.Object,
             _fieldRepositoryMock.Object,
             _cropCycleRepositoryMock.Object,
-            mapper);
+            mapper,
+            _fileStorageServiceMock.Object);
     }
 
     [Fact]

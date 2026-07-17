@@ -1,7 +1,7 @@
 <!-- src/app/features/worker/fields/fields.component.html -->
 <div class="worker-page-container">
 
-  <!-- Compact Page Header -->
+  <!-- Page Header -->
   <div class="worker-page-header">
     <div class="worker-page-header-content">
       <div class="worker-page-icon">
@@ -37,96 +37,179 @@
     @if (hasFields()) {
       <div class="fields-grid">
         @for (field of getPaginatedFields(); track field.fieldId) {
-          <div class="field-card" [class.field-card--expanded]="expandedFieldId() === field.fieldId">
 
-            <!-- Clickable Header -->
-            <div class="field-card-header" (click)="toggleField(field)" matRipple>
-              <div class="field-card-ident">
-                <div class="field-avatar">
-                  <mat-icon>agriculture</mat-icon>
+          <!-- Each card: when expanded it spans full row -->
+          <div
+            class="field-card"
+            [class.field-card--expanded]="expandedFieldId() === field.fieldId"
+            (click)="toggleField(field)"
+            matRipple>
+
+            <!-- ═══ COLLAPSED: Compact Card Face ═══ -->
+            <div class="field-card-face">
+
+              <!-- Top: Thumbnail + Status -->
+              <div class="field-card-top">
+                <div class="field-thumb">
+                  @if (field.thumbnailPath || field.imagePath) {
+                    <img [src]="field.thumbnailPath || field.imagePath" alt="{{ field.fieldName }}" loading="lazy">
+                  } @else {
+                    <mat-icon>landscape</mat-icon>
+                  }
                 </div>
-                <div class="field-text">
-                  <span class="field-name">{{ field.fieldName }}</span>
-                  <span class="field-loc">
-                    <mat-icon>place</mat-icon>{{ field.location || 'No location' }}
-                  </span>
-                </div>
-              </div>
-              <div class="field-card-badges">
-                @if (field.activeCropCount > 0) {
-                  <span class="crop-count-badge">
-                    <mat-icon>grass</mat-icon>{{ field.activeCropCount }}
-                  </span>
-                }
                 <span class="field-status-pill" [ngClass]="getStatusColor(field.status)">
                   {{ field.status || 'Unknown' }}
                 </span>
-                <mat-icon class="expand-caret">{{ expandedFieldId() === field.fieldId ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+
+              <!-- Field Name + Location -->
+              <div class="field-card-body">
+                <h3 class="field-name">{{ field.fieldName }}</h3>
+                <p class="field-loc">
+                  <mat-icon>place</mat-icon>{{ field.location || 'No location' }}
+                </p>
+              </div>
+
+              <!-- Bottom: Meta chips -->
+              <div class="field-card-footer">
+                <span class="field-meta-chip">
+                  <mat-icon>straighten</mat-icon>{{ formatArea(field.areaHectares) }}
+                </span>
+                <span class="field-meta-chip">
+                  <mat-icon>landscape</mat-icon>{{ getSoilTypeLabel(field.soilType) }}
+                </span>
+                @if (field.activeCropCount > 0) {
+                  <span class="crop-count-badge">
+                    <mat-icon>grass</mat-icon>{{ field.activeCropCount }} Crop{{ field.activeCropCount !== 1 ? 's' : '' }}
+                  </span>
+                }
+                <mat-icon class="expand-caret" [class.rotated]="expandedFieldId() === field.fieldId">expand_more</mat-icon>
               </div>
             </div>
 
-            <!-- Meta Strip -->
-            <div class="field-meta-strip">
-              <span><mat-icon>straighten</mat-icon>{{ formatArea(field.areaHectares) }}</span>
-              <span><mat-icon>landscape</mat-icon>{{ getSoilTypeLabel(field.soilType) }}</span>
-              <span><mat-icon>event</mat-icon>Since {{ formatDate(field.assignedDate) }}</span>
-            </div>
-
-            <!-- Crop Cycles Panel -->
+            <!-- ═══ EXPANDED DETAILS (only renders when open) ═══ -->
             @if (expandedFieldId() === field.fieldId) {
-              <div class="crop-panel animate-fadeIn">
-                <div class="crop-panel-title">
-                  <mat-icon>grass</mat-icon>
-                  <span>Crop Cycles</span>
-                  @if (isLoadingCropCycles() === field.fieldId) {
-                    <mat-spinner [diameter]="13"></mat-spinner>
-                  }
-                </div>
+              <div class="field-expand-content" (click)="$event.stopPropagation()">
 
                 @if (isLoadingCropCycles() === field.fieldId) {
-                  <div class="flex justify-center py-3">
-                    <mat-spinner [diameter]="24"></mat-spinner>
+                  <div class="flex justify-center items-center py-10">
+                    <mat-spinner [diameter]="32"></mat-spinner>
                   </div>
                 } @else {
-                  @if (expandedFieldCropCycles().length > 0) {
-                    <div class="crop-list">
-                      @for (cycle of expandedFieldCropCycles(); track cycle.id) {
-                        <div class="crop-item">
-                          <div class="crop-item-top">
-                            <span class="crop-item-name">
-                              <mat-icon>{{ getCropTypeIcon(cycle.cropType) }}</mat-icon>
-                              {{ cycle.cropType || 'Unknown Crop' }}
-                            </span>
-                            <span class="crop-stage-badge" [ngClass]="getGrowthStageColor(cycle.growthStage)">
-                              {{ getGrowthStageLabel(cycle.growthStage) }}
-                            </span>
+
+                  <div class="expand-layout">
+
+                    <!-- LEFT: Images + Core Info -->
+                    <div class="expand-left">
+
+                      <!-- Image Gallery -->
+                      @if (expandedFieldDetail()?.imagePath || (expandedFieldDetail()?.additionalImagePaths?.length ?? 0) > 0) {
+                        <div class="detail-images">
+                          @if (expandedFieldDetail()?.imagePath) {
+                            <div class="detail-img-main">
+                              <img [src]="expandedFieldDetail()!.imagePath" alt="Primary" loading="lazy">
+                              <span class="img-badge">Primary</span>
+                            </div>
+                          }
+                          @if ((expandedFieldDetail()?.additionalImagePaths?.length ?? 0) > 0) {
+                            <div class="detail-img-extras">
+                              @for (img of expandedFieldDetail()?.additionalImagePaths; track img) {
+                                <div class="detail-img-thumb">
+                                  <img [src]="img" alt="Additional" loading="lazy">
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <div class="no-image-placeholder">
+                          <mat-icon>image_not_supported</mat-icon>
+                          <span>No images uploaded</span>
+                        </div>
+                      }
+
+                      <!-- Field Info Card -->
+                      <div class="info-grid">
+                        <div class="info-row">
+                          <span class="info-label"><mat-icon>place</mat-icon>Location</span>
+                          <span class="info-value">{{ expandedFieldDetail()?.location || 'Not specified' }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label"><mat-icon>straighten</mat-icon>Total Area</span>
+                          <span class="info-value">{{ formatArea(expandedFieldDetail()?.areaHectares ?? null) }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label"><mat-icon>landscape</mat-icon>Soil Type</span>
+                          <span class="info-value">{{ getSoilTypeLabel(expandedFieldDetail()?.soilType ?? null) }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label"><mat-icon>event</mat-icon>Assigned Since</span>
+                          <span class="info-value">{{ formatDate(expandedFieldDetail()?.assignedDate ?? null) }}</span>
+                        </div>
+                        @if (expandedFieldDetail()?.latitude && expandedFieldDetail()?.longitude) {
+                          <div class="info-row">
+                            <span class="info-label"><mat-icon>my_location</mat-icon>GPS</span>
+                            <span class="info-value">{{ expandedFieldDetail()!.latitude }}, {{ expandedFieldDetail()!.longitude }}</span>
                           </div>
-                          <mat-progress-bar mode="determinate" [value]="getGrowthProgress(cycle.growthStage)" class="crop-progress"></mat-progress-bar>
-                          <div class="crop-item-dates">
-                            <span><mat-icon>eco</mat-icon>{{ formatDate(cycle.plantingDate) }}</span>
-                            <span [class.harvest-near]="(cycle.daysToHarvest || 0) > 0 && (cycle.daysToHarvest || 0) <= 7"
+                        }
+                        @if (expandedFieldDetail()?.notes) {
+                          <div class="info-row info-row--full">
+                            <span class="info-label"><mat-icon>notes</mat-icon>Notes</span>
+                            <span class="info-value notes-text">{{ expandedFieldDetail()!.notes }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- RIGHT: Crop Cycles -->
+                    <div class="expand-right">
+                      <div class="crop-section-title">
+                        <mat-icon>grass</mat-icon>
+                        <span>Crop Cycles</span>
+                        <span class="crop-count-num">{{ expandedFieldCropCycles().length }}</span>
+                      </div>
+
+                      @if (expandedFieldCropCycles().length > 0) {
+                        <div class="crop-list">
+                          @for (cycle of expandedFieldCropCycles(); track cycle.id) {
+                            <div class="crop-item">
+                              <div class="crop-item-top">
+                                <span class="crop-item-name">
+                                  <mat-icon>{{ getCropTypeIcon(cycle.cropType) }}</mat-icon>
+                                  {{ cycle.cropType || 'Unknown Crop' }}
+                                </span>
+                                <span class="crop-stage-badge" [ngClass]="getGrowthStageColor(cycle.growthStage)">
+                                  {{ getGrowthStageLabel(cycle.growthStage) }}
+                                </span>
+                              </div>
+                              <div class="crop-progress-wrap">
+                                <mat-progress-bar mode="determinate" [value]="getGrowthProgress(cycle.growthStage)"></mat-progress-bar>
+                                <span class="progress-pct">{{ getGrowthProgress(cycle.growthStage) }}%</span>
+                              </div>
+                              <div class="crop-item-dates">
+                                <span><mat-icon>eco</mat-icon>Planted: {{ formatDate(cycle.plantingDate) }}</span>
+                                <span
+                                  [class.harvest-near]="(cycle.daysToHarvest || 0) > 0 && (cycle.daysToHarvest || 0) <= 7"
                                   [class.harvest-overdue]="(cycle.daysToHarvest || 0) < 0">
-                              <mat-icon>agriculture</mat-icon>{{ formatDate(cycle.expectedHarvestDate) }}
-                            </span>
-                            <span><mat-icon>schedule</mat-icon>{{ getDaysSincePlanting(cycle) }}</span>
-                          </div>
+                                  <mat-icon>agriculture</mat-icon>Harvest: {{ formatDate(cycle.expectedHarvestDate) }}
+                                </span>
+                                <span><mat-icon>schedule</mat-icon>{{ getDaysSincePlanting(cycle) }}</span>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <div class="crop-empty">
+                          <mat-icon>grass</mat-icon>
+                          <p>No active crop cycles</p>
                         </div>
                       }
                     </div>
-                  } @else {
-                    <div class="crop-empty">
-                      <mat-icon>grass</mat-icon>
-                      <span>No active crop cycles</span>
-                    </div>
-                  }
+                  </div>
                 }
-                <div class="mt-4 flex justify-end border-t border-gray-100 pt-3">
-                  <button mat-stroked-button class="text-agri-primary border-agri-primary" (click)="openDetails(expandedFieldDetail()!)">
-                    <mat-icon>visibility</mat-icon> View Full Details
-                  </button>
-                </div>
               </div>
             }
+
           </div>
         }
       </div>
@@ -138,6 +221,7 @@
           class="worker-paginator">
         </mat-paginator>
       }
+
     } @else {
       <div class="worker-empty-state">
         <div class="worker-empty-icon"><mat-icon>crop_free</mat-icon></div>

@@ -133,6 +133,10 @@
       "PackagePath": "staticwebassets/uploads/observations/2026/07/13/ab70f98cce4a4a50b181f23be024dfe8.jpeg"
     },
     {
+      "Id": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/observations/2026/07/16/8ccb43195f8b4196ac8da12a55d3525f.jpeg",
+      "PackagePath": "staticwebassets/uploads/observations/2026/07/16/8ccb43195f8b4196ac8da12a55d3525f.jpeg"
+    },
+    {
       "Id": "obj/Debug/net8.0/staticwebassets/msbuild.AgriculturePlatform.API.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },

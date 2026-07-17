@@ -5,7 +5,6 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatBadgeModule } from '@angular/material/badge';
-import { MatListModule } from '@angular/material/list';
 import { NotificationService, NotificationDto } from '../../../core/services/notification.service';
 import { DatePipe } from '@angular/common';
 
@@ -18,7 +17,6 @@ import { DatePipe } from '@angular/common';
     MatIconModule,
     MatButtonModule,
     MatBadgeModule,
-    MatListModule,
     DatePipe
   ],
   templateUrl: './notification-menu.component.html',
@@ -36,25 +34,16 @@ import { DatePipe } from '@angular/common';
       position: fixed;
       top: 52px;
       right: 0;
-      width: 25vw;
-      min-width: 320px;
+      width: 28vw;
+      min-width: 360px;
       height: calc(100vh - 52px);
-      background: white;
-      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
       z-index: 1050;
-      display: flex;
-      flex-direction: column;
       transform: translateX(100%);
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .notification-sidebar.open {
       transform: translateX(0);
-    }
-
-    .notification-list {
-      flex: 1;
-      overflow-y: auto;
     }
     
     .custom-scrollbar::-webkit-scrollbar {
@@ -64,60 +53,19 @@ import { DatePipe } from '@angular/common';
       background: transparent;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
+      background: #c1d1c8;
       border-radius: 3px;
     }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #a3b8ad;
+    }
     
-    .unread {
-      background-color: #f0f7ff;
+    .unread-item {
+      background-color: #f5f8f5;
     }
-    .notification-item {
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-    }
-    .notification-item:hover {
-      background-color: #f9f9f9;
-    }
-    .notification-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      border-bottom: 1px solid #ddd;
-      background: #f8fafc;
-    }
-    .notification-content {
-      display: flex;
-      flex-direction: column;
-    }
-    .notification-title {
-      font-weight: 500;
-      font-size: 14px;
-    }
-    .notification-message {
-      font-size: 13px;
-      color: #666;
-      margin-top: 4px;
-      white-space: normal;
-      line-height: 1.4;
-    }
-    .notification-time {
-      font-size: 11px;
-      color: #999;
-      margin-top: 4px;
-    }
-    .notification-count {
-      background-color: #007bff;
-      color: white;
-      border-radius: 50%;
-      padding: 2px 6px;
-      font-size: 11px;
-      margin-left: 8px;
-    }
-    .empty-state {
-      padding: 24px;
-      text-align: center;
-      color: #777;
+    .unread-item .notification-title {
+      font-weight: 700;
+      color: #1b4332;
     }
     
     @media (max-width: 768px) {
@@ -146,30 +94,42 @@ export class NotificationMenuComponent implements OnInit {
   }
 
   getIconForType(type: string): string {
-    switch(type) {
-      case 'NewHarvest': return 'agriculture';
-      case 'HarvestUpdated': return 'edit';
-      case 'HarvestStatus': return 'fact_check';
-      case 'NewObservation': return 'visibility';
-      case 'ObservationUpdated': return 'edit';
-      case 'ObservationValidation': return 'verified';
-      case 'NewQualityCheck': return 'high_quality';
-      case 'QualityCheckUpdated': return 'edit';
-      case 'QualityCheckStatus': return 'fact_check';
-      case 'NewTask': return 'assignment';
-      case 'TaskReassigned': return 'assignment_ind';
-      case 'TaskStatus': return 'task_alt';
-      case 'FieldAssigned': return 'landscape';
-      case 'SensorAlert': return 'sensors';
-      case 'WeatherAlert': return 'cloud_queue';
-      default: return 'notifications';
-    }
+    if (!type) return 'notifications';
+    
+    if (type.includes('Harvest')) return 'agriculture';
+    if (type.includes('Observation')) return 'visibility';
+    if (type.includes('QualityCheck')) return 'high_quality';
+    if (type.includes('Task')) return 'assignment';
+    if (type.includes('Field')) return 'landscape';
+    if (type.includes('Sensor')) return 'sensors';
+    if (type.includes('Weather')) return 'cloud_queue';
+    
+    return 'notifications';
   }
 
-  getColorForType(type: string): string {
-    if (type.includes('Alert')) return 'warn';
-    if (type.includes('Status') || type.includes('Validation')) return 'primary';
-    return 'accent';
+  getBgColorForType(type: string): string {
+    if (!type) return 'bg-gradient-to-br from-gray-500 to-gray-600';
+    
+    // Alerts (Professional Danger Colors)
+    // Sensor Alert: Deep crimson/red for critical hardware/threshold failures
+    if (type.includes('Sensor')) return 'bg-gradient-to-br from-red-600 to-red-800 shadow-red-900/20';
+    // Weather Alert: Deep amber/orange for severe weather warnings
+    if (type.includes('Weather')) return 'bg-gradient-to-br from-orange-500 to-orange-700 shadow-orange-900/20';
+    
+    // Harvests (Greens/Teals)
+    if (type.includes('Harvest')) return 'bg-gradient-to-br from-green-500 to-green-600';
+    
+    // Observations (Blues/Indigos)
+    if (type.includes('Observation')) return 'bg-gradient-to-br from-blue-500 to-blue-600';
+    
+    // Quality Checks (Purples/Pinks)
+    if (type.includes('QualityCheck')) return 'bg-gradient-to-br from-purple-500 to-purple-600';
+    
+    // Tasks & Assignments (Oranges/Yellows/Limes)
+    if (type.includes('Task')) return 'bg-gradient-to-br from-orange-500 to-orange-600';
+    if (type.includes('Field')) return 'bg-gradient-to-br from-amber-500 to-amber-600';
+
+    return 'bg-gradient-to-br from-gray-500 to-gray-600';
   }
 
   onNotificationClick(notification: NotificationDto) {
@@ -179,6 +139,7 @@ export class NotificationMenuComponent implements OnInit {
     if (notification.actionUrl) {
       this.router.navigateByUrl(notification.actionUrl);
     }
+    this.closeMenu();
   }
 
   markAllAsRead(event: Event) {

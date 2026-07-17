@@ -216,14 +216,21 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 });
 
         var storageProvider = builder.Configuration["FileStorage:Provider"] ?? "Local";
-        
-        // Force Azure Blob Storage in Production, otherwise fall back to configuration
-        if (builder.Environment.IsProduction() || storageProvider == "AzureBlob")
+
+        // Use the Provider config key as the primary decision.
+        // "Local" always uses local disk storage (for local development).
+        // "AzureBlob" or unset-in-production falls back to Azure Blob.
+        if (storageProvider == "Local")
+        {
+            builder.Services.AddTransient<IFileStorageService, AgriculturePlatform.Infrastructure.FileStorage.LocalFileStorageService>();
+        }
+        else if (storageProvider == "AzureBlob" || builder.Environment.IsProduction())
         {
             builder.Services.AddTransient<IFileStorageService, AgriculturePlatform.Infrastructure.FileStorage.AzureBlobStorageService>();
         }
         else
         {
+            // Safe fallback: always use Local if nothing matches
             builder.Services.AddTransient<IFileStorageService, AgriculturePlatform.Infrastructure.FileStorage.LocalFileStorageService>();
         }
         builder.Services.AddTransient<AgriculturePlatform.Application.Mappings.ObservationImagePathResolver>();
@@ -296,10 +303,18 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 app.UseCors("AllowAll");
 app.UseStaticFiles();
 
+// Ensure wwwroot/uploads exists and WebRootPath is set before static file middleware
+var webRoot = app.Environment.WebRootPath
+    ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+if (!Directory.Exists(webRoot))
+    Directory.CreateDirectory(webRoot);
+var uploadsDir = Path.Combine(webRoot, "uploads");
+if (!Directory.Exists(uploadsDir))
+    Directory.CreateDirectory(uploadsDir);
+
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
-        Path.Combine(app.Environment.WebRootPath, "uploads")),
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsDir),
     RequestPath = "/uploads"
 });
 
@@ -345,10 +360,10 @@ using (var scope = app.Services.CreateScope())
     dbContext.Database.EnsureCreated();
 }
 
-var uploadPath = Path.Combine(app.Environment.WebRootPath, "uploads");
-if (!Directory.Exists(uploadPath))
+// uploadsDir was already created above when setting up static file middleware
+if (!Directory.Exists(uploadsDir))
 {
-    Directory.CreateDirectory(uploadPath);
+    Directory.CreateDirectory(uploadsDir);
 }
 
 app.Run();

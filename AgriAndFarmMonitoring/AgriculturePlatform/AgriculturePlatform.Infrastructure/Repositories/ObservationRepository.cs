@@ -159,13 +159,16 @@ public class ObservationRepository : IObservationRepository
             .ToListAsync();
     }
 
-public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate)
+public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate, int? workerId = null)
 {
     var query = _context.Observations
         .Include(o => o.Field)
         .Include(o => o.Worker)
         .Include(o => o.CropCycle)
         .Where(o => o.FarmId == farmId && !o.IsDeleted);
+
+    if (workerId.HasValue)
+        query = query.Where(o => o.WorkerId == workerId.Value);
 
     if (fromDate.HasValue)
         query = query.Where(o => o.ObservationDate >= fromDate.Value);
@@ -201,6 +204,10 @@ public async Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int 
     return new ObservationStatisticsDto
     {
         TotalObservations = observations.Count,
+        PendingObservations = observations.Count(o => o.ValidationStatus == "pending"),
+        QuestionedObservations = observations.Count(o => o.ValidationStatus == "questioned"),
+        VerifiedObservations = observations.Count(o => o.ValidationStatus == "verified"),
+        InvalidObservations = observations.Count(o => o.ValidationStatus == "invalid"),
         ObservationsWithPest = observations.Count(o => !string.IsNullOrWhiteSpace(o.PestType)),
         ObservationsWithoutPest = observations.Count(o => string.IsNullOrWhiteSpace(o.PestType)),
         PestTypeDistribution = pestTypeDist,

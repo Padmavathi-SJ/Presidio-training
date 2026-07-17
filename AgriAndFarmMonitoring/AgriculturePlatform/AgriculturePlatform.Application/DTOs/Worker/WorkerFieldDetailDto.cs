@@ -16,6 +16,11 @@ public class WorkerFieldDetailDto
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     
+    public string? ImagePath { get; set; }
+    public string? ThumbnailPath { get; set; }
+    public string? ImageCaption { get; set; }
+    public List<string>? AdditionalImagePaths { get; set; }
+
     // Crop cycles in this field
     public List<WorkerCropCycleDto> CropCycles { get; set; } = new();
 }

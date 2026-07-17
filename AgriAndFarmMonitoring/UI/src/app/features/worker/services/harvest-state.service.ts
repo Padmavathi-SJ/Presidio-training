@@ -10,7 +10,8 @@ import {
   UpdateHarvestDto,
   HarvestWorkerResponseDto,
   ApiResponse,
-  PagedResult
+  PagedResult,
+  YieldStatisticsDto
 } from '../models/worker-harvest.model';
 
 export interface HarvestState {
@@ -21,6 +22,7 @@ export interface HarvestState {
   selectedHarvest: HarvestDto | null;
   isSubmitting: boolean;
   lastUpdated: Date | null;
+  statistics: YieldStatisticsDto | null;
 }
 
 @Injectable({
@@ -38,7 +40,8 @@ export class HarvestStateService {
     error: null,
     selectedHarvest: null,
     isSubmitting: false,
-    lastUpdated: null
+    lastUpdated: null,
+    statistics: null
   });
 
   // ✅ Computed values (derived state)
@@ -49,27 +52,7 @@ export class HarvestStateService {
   public readonly selectedHarvest = computed(() => this.state().selectedHarvest);
   public readonly isSubmitting = computed(() => this.state().isSubmitting);
   public readonly lastUpdated = computed(() => this.state().lastUpdated);
-
-  // ✅ Computed stats
-  public readonly pendingCount = computed(() => 
-    this.state().harvests.filter(h => h.approvalStatus === 'PENDING').length
-  );
-  
-  public readonly approvedCount = computed(() => 
-    this.state().harvests.filter(h => h.approvalStatus === 'APPROVED').length
-  );
-  
-  public readonly totalQuantityKg = computed(() => 
-    this.state().harvests
-      .filter(h => h.approvalStatus === 'APPROVED')
-      .reduce((sum, h) => sum + (h.quantityKg || 0), 0)
-  );
-
-  public readonly totalValue = computed(() => 
-    this.state().harvests
-      .filter(h => h.approvalStatus === 'APPROVED')
-      .reduce((sum, h) => sum + (h.totalValue || 0), 0)
-  );
+  public readonly statistics = computed(() => this.state().statistics);
 
   // ✅ Current filter state
   private currentFilter = signal<HarvestFilterDto>({
@@ -85,6 +68,19 @@ export class HarvestStateService {
       const filter = this.currentFilter();
       this.loadHarvests(filter);
     });
+    this.loadStatistics();
+  }
+
+  loadStatistics(): void {
+    this.http.get<ApiResponse<YieldStatisticsDto>>(`${this.API_URL}/worker/harvests/statistics`)
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.updateState({ statistics: res.data });
+          }
+        },
+        error: (err) => console.error('Failed to load harvest statistics', err)
+      });
   }
 
   // =============================================

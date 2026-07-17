@@ -1,89 +1,85 @@
 <div class="admin-page-shell">
   <!-- Compact Header -->
-  <div class="flex items-center justify-between pb-2 mb-2 border-b border-[#e8f0eb] flex-shrink-0">
-    <div>
-      <h1 class="admin-header-title">Harvest Management</h1>
-      <p class="admin-header-subtitle">Review, audit, and manage crop harvests</p>
+  <div class="admin-compact-header">
+    <div class="admin-header-left">
+      <div class="admin-header-icon"><mat-icon>agriculture</mat-icon></div>
+      <div>
+        <h1 class="admin-header-title">Harvest Management</h1>
+        <p class="admin-header-subtitle">Review, audit, and manage crop harvests</p>
+      </div>
     </div>
   </div>
 
   <!-- KPI Summary Cards -->
   @if (statistics(); as stats) {
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
-      <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant flex items-center gap-1">
-        <mat-icon class="text-[16px] h-4 w-4">inventory</mat-icon> Total Yield (Kg)
-      </span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-surface-on">{{ stats.totalYieldKg | number:'1.0-0' }}</span>
+    <div class="admin-kpi-grid">
+      <div class="admin-kpi-card kpi-blue">
+        <div class="kpi-icon-wrap"><mat-icon>inventory</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Total Yield (Kg)</span>
+          <span class="kpi-value">{{ stats.totalYieldKg | number:'1.0-0' }}</span>
+        </div>
       </div>
-    </div>
-    
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-primary">
-      <span class="text-xs font-semibold uppercase tracking-wider text-primary flex items-center gap-1">
-        <mat-icon class="text-[16px] h-4 w-4">agriculture</mat-icon> Total Harvests
-      </span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-primary">{{ stats.totalHarvests }}</span>
+      
+      <div class="admin-kpi-card kpi-green">
+        <div class="kpi-icon-wrap"><mat-icon>agriculture</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Total Harvests</span>
+          <span class="kpi-value">{{ stats.totalHarvests }}</span>
+        </div>
       </div>
-    </div>
 
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-success">
-      <span class="text-xs font-semibold uppercase tracking-wider text-success flex items-center gap-1">
-        <mat-icon class="text-[16px] h-4 w-4">payments</mat-icon> Total Value
-      </span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-success">${{ stats.totalValue | number:'1.2-2' }}</span>
+      <div class="admin-kpi-card kpi-amber">
+        <div class="kpi-icon-wrap"><mat-icon>payments</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Total Value</span>
+          <span class="kpi-value">${{ stats.totalValue | number:'1.2-2' }}</span>
+        </div>
       </div>
-    </div>
 
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between border-l-4 border-l-accent">
-      <span class="text-xs font-semibold uppercase tracking-wider text-accent flex items-center gap-1">
-        <mat-icon class="text-[16px] h-4 w-4">trending_up</mat-icon> Yield Growth
-      </span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-accent" [class.text-error]="stats.yieldGrowthPercentage < 0">
-          {{ stats.yieldGrowthPercentage > 0 ? '+' : '' }}{{ stats.yieldGrowthPercentage }}%
-        </span>
-      </div>
-    </div>
-    </div>
-    
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
-      <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant flex items-center gap-1">
-        <mat-icon class="text-[16px] h-4 w-4">sell</mat-icon> Avg Price/Kg
-      </span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-surface-on">${{ stats.averagePricePerKg | number:'1.2-2' }}</span>
-      </div>
-    </div>
-    
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
-      <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant flex items-center gap-1">
-        <mat-icon class="text-[16px] h-4 w-4">landscape</mat-icon> Avg Yield/Ha
-      </span>
-      <div class="flex items-baseline gap-2 mt-2">
-        <span class="text-3xl font-bold text-surface-on">{{ stats.averageYieldPerHectare | number:'1.1-1' }} kg</span>
-      </div>
-    </div>
-    
-    <div class="bg-surface-low p-4 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between sm:col-span-2 lg:col-span-2">
-      <span class="text-xs font-semibold uppercase tracking-wider text-surface-on-variant flex items-center gap-1">
-        <mat-icon class="text-[16px] h-4 w-4">stars</mat-icon> Quality Distribution
-      </span>
-      <div class="flex items-center gap-2 mt-2 flex-wrap">
-        @for (item of stats.qualityDistribution | keyvalue; track item.key) {
-          <span class="px-2.5 py-1 bg-surface border border-outline-variant rounded-md text-sm font-semibold text-surface-on">
-            {{ item.key }}: <span class="text-accent">{{ item.value }}</span>
+      <div class="admin-kpi-card kpi-purple">
+        <div class="kpi-icon-wrap"><mat-icon>trending_up</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Yield Growth</span>
+          <span class="kpi-value" [class.text-red-500]="stats.yieldGrowthPercentage < 0">
+            {{ stats.yieldGrowthPercentage > 0 ? '+' : '' }}{{ stats.yieldGrowthPercentage }}%
           </span>
-        }
-        @if ((stats.qualityDistribution | keyvalue).length === 0) {
-          <span class="text-sm text-surface-on-variant">No data available</span>
-        }
+        </div>
+      </div>
+      
+      <div class="admin-kpi-card kpi-red">
+        <div class="kpi-icon-wrap"><mat-icon>sell</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Avg Price/Kg</span>
+          <span class="kpi-value">${{ stats.averagePricePerKg | number:'1.2-2' }}</span>
+        </div>
+      </div>
+      
+      <div class="admin-kpi-card kpi-blue">
+        <div class="kpi-icon-wrap"><mat-icon>landscape</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Avg Yield/Ha</span>
+          <span class="kpi-value">{{ stats.averageYieldPerHectare | number:'1.1-1' }} kg</span>
+        </div>
+      </div>
+      
+      <div class="admin-kpi-card kpi-green lg:col-span-2">
+        <div class="kpi-icon-wrap"><mat-icon>stars</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Quality Distribution</span>
+          <div class="flex items-center gap-2 mt-1.5 flex-wrap w-full">
+            @for (item of stats.qualityDistribution | keyvalue; track item.key) {
+              <span class="px-2 py-1 bg-white rounded-md font-semibold text-gray-800 text-xs shadow-sm border border-green-100">
+                {{ item.key }}: <span class="text-green-600">{{ item.value }}</span>
+              </span>
+            }
+            @if ((stats.qualityDistribution | keyvalue).length === 0) {
+              <span class="text-gray-400 text-xs font-normal">No data</span>
+            }
+          </div>
+        </div>
       </div>
     </div>
-  </div>
   }
   
   <app-harvest-list></app-harvest-list>

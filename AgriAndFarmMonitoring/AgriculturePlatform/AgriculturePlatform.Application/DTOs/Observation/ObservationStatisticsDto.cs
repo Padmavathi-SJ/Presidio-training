@@ -5,6 +5,10 @@ namespace AgriculturePlatform.Application.DTOs.Observation;
 public class ObservationStatisticsDto
 {
     public int TotalObservations { get; set; }
+    public int PendingObservations { get; set; }
+    public int QuestionedObservations { get; set; }
+    public int VerifiedObservations { get; set; }
+    public int InvalidObservations { get; set; }
     public int ObservationsWithPest { get; set; }
     public int ObservationsWithoutPest { get; set; }
     public Dictionary<string, int> PestTypeDistribution { get; set; } = new();

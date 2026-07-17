@@ -1,5 +1,5 @@
 // src/app/features/worker/harvests/components/harvest-list/harvest-list.component.ts
-import { Component, OnInit, inject, ViewChild, EventEmitter, Output, effect, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, EventEmitter, Output, effect, OnDestroy, computed } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe, CurrencyPipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -65,9 +65,9 @@ export class HarvestListComponent implements OnInit, OnDestroy {
   readonly harvests = this.harvestState.harvests;
   readonly totalCount = this.harvestState.totalCount;
   readonly isLoading = this.harvestState.isLoading;
-  readonly pendingCount = this.harvestState.pendingCount;
-  readonly approvedCount = this.harvestState.approvedCount;
-  readonly totalQuantityKg = this.harvestState.totalQuantityKg;
+  readonly pendingCount = computed(() => this.harvestState.statistics()?.pendingHarvests || 0);
+  readonly approvedCount = computed(() => this.harvestState.statistics()?.approvedHarvests || 0);
+  readonly totalQuantityKg = computed(() => this.harvestState.statistics()?.totalYieldKg || 0);
 
   // ✅ MatTableDataSource for the table
   dataSource = new MatTableDataSource<HarvestDto>([]);

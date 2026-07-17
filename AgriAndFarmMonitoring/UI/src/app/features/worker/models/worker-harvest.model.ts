@@ -121,3 +121,14 @@ export interface HarvestFilterDto {
   sortBy?: string;
   isDescending?: boolean;
 }
+
+export interface YieldStatisticsDto {
+  totalHarvests: number;
+  pendingHarvests: number;
+  approvedHarvests: number;
+  rejectedHarvests: number;
+  changesRequestedHarvests: number;
+  totalYieldKg: number;
+  yieldByField: Record<string, number>;
+  yieldByCropType: Record<string, number>;
+}

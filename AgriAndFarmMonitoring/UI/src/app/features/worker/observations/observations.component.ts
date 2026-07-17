@@ -8,28 +8,25 @@ import { ObservationFormComponent } from './observation-form/observation-form';
 import { ObservationDetailsComponent } from './observation-details/observation-details';
 import { WorkerObservationStateService } from '../services/worker-observation-state.service';
 import { ObservationDto } from '../models/worker-observation.model';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-observations',
   standalone: true,
   imports: [
     CommonModule,
+    MatButtonModule,
+    MatIconModule,
     ObservationListComponent
   ],
-  template: `
-    <app-observation-list
-      (createObservation)="openCreateForm()"
-      (editObservation)="openEditForm($event)"
-      (viewObservation)="viewDetails($event)"
-      (respondObservation)="openRespondDialog($event)"
-      (deleteObservation)="deleteObservation($event)">
-    </app-observation-list>
-  `
+  styleUrls: ['./observations.component.scss'],
+  templateUrl: './observations.component.html'
 })
 export class ObservationsComponent {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
-  private observationState = inject(WorkerObservationStateService);
+  public state = inject(WorkerObservationStateService);
 
   private formDialogRef: any = null;
 
@@ -92,7 +89,7 @@ export class ObservationsComponent {
 
   deleteObservation(id: number): void {
     if (confirm('Are you sure you want to delete this observation?')) {
-      this.observationState.deleteObservation(id).subscribe({
+      this.state.deleteObservation(id).subscribe({
         next: (res) => {
           if (res.success) {
             this.snackBar.open('Observation deleted successfully', 'Close', { duration: 3000 });

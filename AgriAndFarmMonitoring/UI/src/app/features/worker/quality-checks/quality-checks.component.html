@@ -30,7 +30,7 @@
     <div class="qc-kpi-card kpi-pending">
       <div class="kpi-icon"><mat-icon>pending_actions</mat-icon></div>
       <div class="kpi-body">
-        <span class="kpi-label">Pending Reviews</span>
+        <span class="kpi-label">Pending</span>
         <span class="kpi-value">{{ state.pendingCount() }}</span>
       </div>
     </div>
@@ -43,11 +43,19 @@
       </div>
     </div>
 
-    <div class="qc-kpi-card kpi-rate">
-      <div class="kpi-icon"><mat-icon>analytics</mat-icon></div>
+    <div class="qc-kpi-card kpi-rejected">
+      <div class="kpi-icon"><mat-icon>cancel</mat-icon></div>
       <div class="kpi-body">
-        <span class="kpi-label">Pass Rate</span>
-        <span class="kpi-value">{{ state.passRate() | number:'1.0-1' }}<small>%</small></span>
+        <span class="kpi-label">Rejected</span>
+        <span class="kpi-value">{{ state.rejectedCount() }}</span>
+      </div>
+    </div>
+
+    <div class="qc-kpi-card kpi-changes">
+      <div class="kpi-icon"><mat-icon>edit_note</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Changes Req.</span>
+        <span class="kpi-value">{{ state.changesRequestedCount() }}</span>
       </div>
     </div>
   </div>

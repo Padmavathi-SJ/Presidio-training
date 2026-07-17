@@ -67,4 +67,8 @@ updateHarvest(id: number, data: UpdateHarvestDto): Observable<ApiResponse<Harves
   deleteUploadedImage(fileName: string): Observable<any> {
     return this.http.delete<any>(`${this.API_URL}/worker/harvests/upload/${encodeURIComponent(fileName)}`);
   }
+
+  getHarvestStatistics(): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.API_URL}/worker/harvests/statistics`);
+  }
 }

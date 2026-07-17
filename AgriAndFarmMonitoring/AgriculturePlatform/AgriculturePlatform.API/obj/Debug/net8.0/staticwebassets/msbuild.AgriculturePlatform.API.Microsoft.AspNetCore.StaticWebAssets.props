@@ -528,5 +528,21 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\observations\2026\07\13\ab70f98cce4a4a50b181f23be024dfe8.jpeg))</OriginalItemSpec>
     </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\observations\2026\07\16\8ccb43195f8b4196ac8da12a55d3525f.jpeg))">
+      <SourceType>Package</SourceType>
+      <SourceId>AgriculturePlatform.API</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/AgriculturePlatform.API</BasePath>
+      <RelativePath>uploads/observations/2026/07/16/8ccb43195f8b4196ac8da12a55d3525f.jpeg</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\observations\2026\07\16\8ccb43195f8b4196ac8da12a55d3525f.jpeg))</OriginalItemSpec>
+    </StaticWebAsset>
   </ItemGroup>
 </Project>

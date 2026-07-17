@@ -1,7 +1,7 @@
-<button mat-icon-button (click)="toggleMenu($event)" class="relative mr-2">
+<button mat-icon-button (click)="toggleMenu($event)" class="relative mr-2 text-white hover:bg-white/10 transition-colors">
   <mat-icon>notifications</mat-icon>
   <span *ngIf="notificationService.unreadCount() > 0" 
-        class="absolute top-1 right-1 flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full border-2 border-white">
+        class="absolute top-1 right-1 flex items-center justify-center w-[18px] h-[18px] text-[10px] font-bold text-white bg-red-500 rounded-full border-2 border-[#2d6a4f] shadow-sm">
     {{ notificationService.unreadCount() > 99 ? '99+' : notificationService.unreadCount() }}
   </span>
 </button>
@@ -10,46 +10,71 @@
 <div class="notification-backdrop" *ngIf="isOpen" (click)="closeMenu()"></div>
 
 <!-- Side Panel -->
-<div class="notification-sidebar" [class.open]="isOpen" (click)="$event.stopPropagation()">
-  <div class="notification-header">
-    <h3 class="m-0 font-medium text-gray-800 flex-1">Notifications</h3>
-    <button mat-button color="primary" class="text-xs" 
-            [disabled]="notificationService.unreadCount() === 0"
-            (click)="markAllAsRead($event)">
-      Mark all as read
-    </button>
-    <button mat-icon-button (click)="closeMenu()" class="text-gray-500">
-      <mat-icon>close</mat-icon>
-    </button>
+<div class="notification-sidebar shadow-2xl flex flex-col h-full bg-white" [class.open]="isOpen" (click)="$event.stopPropagation()">
+  <!-- Premium Header -->
+  <div class="px-5 py-4 bg-gradient-to-r from-[#1b4332] via-[#2d6a4f] to-[#40916c] text-white flex justify-between items-center shadow-md z-10">
+    <div class="flex items-center gap-2">
+      <mat-icon>notifications_active</mat-icon>
+      <h3 class="m-0 font-semibold text-lg">Notifications</h3>
+    </div>
+    <div class="flex items-center gap-1">
+      <button mat-button class="text-white hover:bg-white/10 rounded-full px-3 transition-colors text-sm font-medium" 
+              [disabled]="notificationService.unreadCount() === 0"
+              (click)="markAllAsRead($event)">
+        Mark all read
+      </button>
+      <button mat-icon-button (click)="closeMenu()" class="text-white hover:bg-white/20 transition-colors scale-90">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
   </div>
 
-  <div class="notification-list custom-scrollbar" *ngIf="notificationService.notifications().length > 0; else emptyState">
-    <mat-nav-list class="pt-0">
-      <a mat-list-item *ngFor="let notification of notificationService.notifications()"
-         class="notification-item"
-         [class.unread]="!notification.isRead"
+  <div class="flex-1 overflow-y-auto custom-scrollbar bg-[#f8faf9]" *ngIf="notificationService.notifications().length > 0; else emptyState">
+    <div class="flex flex-col">
+      <a *ngFor="let notification of notificationService.notifications()"
+         class="notification-item flex gap-4 p-4 border-b border-[#e9f2ee] hover:bg-white transition-colors cursor-pointer relative"
+         [class.unread-item]="!notification.isRead"
          (click)="onNotificationClick(notification)">
-        <mat-icon matListItemIcon [color]="getColorForType(notification.type)">
-          {{ getIconForType(notification.type) }}
-        </mat-icon>
-        <div matListItemTitle class="notification-title flex items-center">
-          {{ notification.title }}
-          <span class="notification-count" *ngIf="notification.count > 1">{{ notification.count }}</span>
+        
+        <!-- Unread Indicator Line -->
+        <div *ngIf="!notification.isRead" class="absolute left-0 top-0 bottom-0 w-1 bg-[#2d6a4f]"></div>
+
+        <div class="flex-shrink-0 mt-1 pl-1">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm"
+               [ngClass]="getBgColorForType(notification.type)">
+            <mat-icon class="text-white scale-90">{{ getIconForType(notification.type) }}</mat-icon>
+          </div>
         </div>
-        <div matListItemLine class="notification-message whitespace-normal leading-tight mt-1 text-gray-600">
-          {{ notification.message }}
-        </div>
-        <div matListItemLine class="notification-time text-xs text-gray-400 mt-1">
-          {{ notification.createdAt | date:'MMM d, y, h:mm a' }}
+        
+        <div class="flex-1 min-w-0 pr-1">
+          <div class="flex justify-between items-start mb-1 gap-2">
+            <div class="notification-title font-semibold text-gray-800 text-[14px] truncate">{{ notification.title }}</div>
+            <div class="text-[11px] text-gray-400 whitespace-nowrap font-medium flex-shrink-0 mt-0.5">
+              {{ notification.createdAt | date:'MMM d, h:mm a' }}
+            </div>
+          </div>
+          <div class="text-[13px] text-gray-600 leading-snug line-clamp-2">
+            {{ notification.message }}
+          </div>
+          
+          <div class="mt-2 flex items-center gap-2" *ngIf="notification.count > 1">
+            <span class="inline-flex items-center gap-1 bg-[#e9f2ee] text-[#1b4332] px-2 py-0.5 rounded-full text-[11px] font-bold border border-[#d5e1da] shadow-sm">
+              <mat-icon class="text-[12px] w-[12px] h-[12px] leading-none">repeat</mat-icon>
+              {{ notification.count }} occurrences
+            </span>
+          </div>
         </div>
       </a>
-    </mat-nav-list>
+    </div>
   </div>
 
   <ng-template #emptyState>
-    <div class="empty-state flex flex-col items-center justify-center p-6 text-gray-500 h-full">
-      <mat-icon class="mb-2 text-4xl text-gray-300">notifications_none</mat-icon>
-      <p class="m-0">No notifications yet</p>
+    <div class="flex-1 flex flex-col items-center justify-center p-8 text-gray-400 bg-white">
+      <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
+        <mat-icon class="text-5xl text-gray-300">notifications_off</mat-icon>
+      </div>
+      <h4 class="text-lg font-medium text-gray-600 mb-1">All Caught Up!</h4>
+      <p class="text-sm text-center">You have no new notifications.</p>
     </div>
   </ng-template>
 </div>

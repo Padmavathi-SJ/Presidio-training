@@ -41,8 +41,8 @@ export class WorkerQualityCheckStateService {
   readonly pendingCount = computed(() => this.state().statistics?.pendingChecks || 0);
   readonly approvedCount = computed(() => this.state().statistics?.approvedChecks || 0);
   readonly rejectedCount = computed(() => this.state().statistics?.rejectedChecks || 0);
+  readonly changesRequestedCount = computed(() => this.state().statistics?.changesRequestedChecks || 0);
   readonly totalCountGlobal = computed(() => this.state().statistics?.totalChecks || 0);
-  
   readonly passRate = computed(() => {
     const totalFinished = this.approvedCount() + this.rejectedCount();
     if (totalFinished === 0) return 0;

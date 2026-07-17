@@ -1,0 +1,73 @@
+<div class="worker-page-container">
+  <!-- Page Header -->
+  <div class="worker-page-header">
+    <div class="worker-page-header-content">
+      <div class="worker-page-icon obs-icon">
+        <mat-icon>visibility</mat-icon>
+      </div>
+      <div>
+        <h1 class="worker-page-title">Observations</h1>
+        <p class="worker-page-subtitle">Submit, manage and track your field observations</p>
+      </div>
+    </div>
+    <button mat-flat-button color="primary" (click)="openCreateForm()" class="obs-create-btn">
+      <mat-icon>add</mat-icon> New Observation
+    </button>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="obs-kpi-grid" style="margin-bottom: 24px;">
+    <!-- Total Observations -->
+    <div class="obs-kpi-card kpi-total">
+      <div class="kpi-icon"><mat-icon>visibility</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Total</span>
+        <span class="kpi-value">{{ state.statistics()?.totalObservations || 0 }}</span>
+      </div>
+    </div>
+
+    <!-- Pending Reviews -->
+    <div class="obs-kpi-card kpi-pending">
+      <div class="kpi-icon"><mat-icon>pending_actions</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Pending</span>
+        <span class="kpi-value">{{ state.statistics()?.pendingObservations || 0 }}</span>
+      </div>
+    </div>
+
+    <!-- Questioned -->
+    <div class="obs-kpi-card kpi-questioned">
+      <div class="kpi-icon"><mat-icon>help_outline</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Questioned</span>
+        <span class="kpi-value">{{ state.statistics()?.questionedObservations || 0 }}</span>
+      </div>
+    </div>
+
+    <!-- Verified -->
+    <div class="obs-kpi-card kpi-verified">
+      <div class="kpi-icon"><mat-icon>verified</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Verified</span>
+        <span class="kpi-value">{{ state.statistics()?.verifiedObservations || 0 }}</span>
+      </div>
+    </div>
+
+    <!-- Invalid -->
+    <div class="obs-kpi-card kpi-invalid">
+      <div class="kpi-icon"><mat-icon>cancel</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Invalid</span>
+        <span class="kpi-value">{{ state.statistics()?.invalidObservations || 0 }}</span>
+      </div>
+    </div>
+  </div>
+
+  <app-observation-list
+    (createObservation)="openCreateForm()"
+    (editObservation)="openEditForm($event)"
+    (viewObservation)="viewDetails($event)"
+    (respondObservation)="openRespondDialog($event)"
+    (deleteObservation)="deleteObservation($event)">
+  </app-observation-list>
+</div>

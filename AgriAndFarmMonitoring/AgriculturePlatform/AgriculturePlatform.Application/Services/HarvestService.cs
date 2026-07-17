@@ -568,9 +568,9 @@ public class HarvestService : IHarvestService
     // STATISTICS
     // =============================================
 
-    public async Task<ApiResponse<YieldStatisticsDto>> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate)
+    public async Task<ApiResponse<YieldStatisticsDto>> GetYieldStatisticsAsync(int farmId, int? cropCycleId, DateTime? fromDate, DateTime? toDate, int? workerId = null)
     {
-        var stats = await _harvestRepository.GetYieldStatisticsAsync(farmId, cropCycleId, fromDate, toDate);
+        var stats = await _harvestRepository.GetYieldStatisticsAsync(farmId, cropCycleId, fromDate, toDate, workerId);
         return ApiResponse<YieldStatisticsDto>.Ok(stats);
     }
 

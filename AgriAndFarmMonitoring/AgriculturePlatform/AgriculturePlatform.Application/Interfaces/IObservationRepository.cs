@@ -37,7 +37,7 @@ public interface IObservationRepository
     Task<IEnumerable<Observation>> GetQuestionedObservationsAsync(int farmId);
     
     // Statistics
-    Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate);
+    Task<ObservationStatisticsDto> GetPestDetectionStatisticsAsync(int farmId, DateTime? fromDate, DateTime? toDate, int? workerId = null);
     Task<Dictionary<string, int>> GetPestTypeDistributionAsync(int farmId);
     
     // Ownership validation

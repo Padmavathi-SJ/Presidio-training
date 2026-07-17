@@ -180,7 +180,7 @@ public class ObservationServiceTests
             RecentTrend = new List<DailyObservationTrendDto>()
         };
         
-        _observationRepositoryMock.Setup(r => r.GetPestDetectionStatisticsAsync(farmId, null, null))
+        _observationRepositoryMock.Setup(r => r.GetPestDetectionStatisticsAsync(farmId, It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), null))
             .ReturnsAsync(stats);
 
         // Act

@@ -4,10 +4,8 @@
 
 .harvests-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
-
-  @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
 }
 
 .harvests-kpi-card {
@@ -20,10 +18,12 @@
   background: white;
   border-left: 4px solid;
 
-  &.kpi-yield   { border-left-color: var(--color-primary); }
-  &.kpi-value   { border-left-color: #22c55e; }
-  &.kpi-pending { border-left-color: #eab308; }
-  &.kpi-total   { border-left-color: #8b5cf6; }
+  &.kpi-yield    { border-left-color: var(--color-primary); }
+  &.kpi-total    { border-left-color: #8b5cf6; }
+  &.kpi-pending  { border-left-color: #eab308; }
+  &.kpi-approved { border-left-color: #22c55e; }
+  &.kpi-rejected { border-left-color: #ef4444; }
+  &.kpi-changes  { border-left-color: #f97316; }
 
   .kpi-icon {
     width: 38px;
@@ -37,10 +37,12 @@
     mat-icon { font-size: 20px; width: 20px; height: 20px; }
   }
 
-  &.kpi-yield .kpi-icon   { background: rgba(45,106,79,0.1); color: var(--color-primary); }
-  &.kpi-value .kpi-icon   { background: rgba(34,197,94,0.1); color: #15803d; }
-  &.kpi-pending .kpi-icon { background: rgba(234,179,8,0.1); color: #a16207; }
-  &.kpi-total .kpi-icon   { background: rgba(139,92,246,0.1); color: #6d28d9; }
+  &.kpi-yield .kpi-icon    { background: rgba(45,106,79,0.1); color: var(--color-primary); }
+  &.kpi-total .kpi-icon    { background: rgba(139,92,246,0.1); color: #6d28d9; }
+  &.kpi-pending .kpi-icon  { background: rgba(234,179,8,0.1); color: #a16207; }
+  &.kpi-approved .kpi-icon { background: rgba(34,197,94,0.1); color: #15803d; }
+  &.kpi-rejected .kpi-icon { background: rgba(239,68,68,0.1); color: #b91c1c; }
+  &.kpi-changes .kpi-icon  { background: rgba(249,115,22,0.1); color: #c2410c; }
 
   .kpi-body {
     display: flex;
@@ -73,4 +75,11 @@
 .harvests-icon {
   background: rgba(45, 106, 79, 0.12) !important;
   mat-icon { color: var(--color-primary) !important; }
+}
+
+.harvests-create-btn {
+  height: 36px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  white-space: nowrap;
 }

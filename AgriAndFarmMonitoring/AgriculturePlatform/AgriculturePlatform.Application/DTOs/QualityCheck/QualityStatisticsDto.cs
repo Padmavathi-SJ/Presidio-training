@@ -7,6 +7,7 @@ public class QualityStatisticsDto
     public int ApprovedChecks { get; set; }
     public int RejectedChecks { get; set; }
     public int PendingChecks { get; set; }
+    public int ChangesRequestedChecks { get; set; }
     
     public decimal PassRate => TotalChecks > 0 ? Math.Round((ApprovedChecks / (decimal)TotalChecks) * 100, 2) : 0;
     public decimal RejectionRate => TotalChecks > 0 ? Math.Round((RejectedChecks / (decimal)TotalChecks) * 100, 2) : 0;

@@ -188,6 +188,7 @@ public class QualityCheckRepository : IQualityCheckRepository
             ApprovedChecks = checks.Count(q => q.ApprovalStatus == "APPROVED"),
             RejectedChecks = checks.Count(q => q.ApprovalStatus == "REJECTED"),
             PendingChecks = checks.Count(q => q.ApprovalStatus == "PENDING"),
+            ChangesRequestedChecks = checks.Count(q => q.ApprovalStatus == "REQUEST_CHANGES"),
             GradeDistribution = checks.Where(q => q.FinalGrade.HasValue)
                 .GroupBy(q => q.FinalGrade!.Value.ToString())
                 .ToDictionary(g => g.Key, g => g.Count()),

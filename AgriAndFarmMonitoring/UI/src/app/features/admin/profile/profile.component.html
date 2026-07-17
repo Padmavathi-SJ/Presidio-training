@@ -1,159 +1,185 @@
-<div class="profile-container p-6 max-w-4xl mx-auto">
-  <div class="header mb-6">
-    <h1 class="text-2xl font-semibold text-gray-800">Admin Profile</h1>
-    <p class="text-sm text-gray-600">Manage your farm platform credentials and details.</p>
+<div class="admin-page-shell">
+  <!-- Compact Header -->
+  <div class="admin-compact-header flex-shrink-0">
+    <div class="admin-header-left">
+      <div class="admin-header-icon"><mat-icon>admin_panel_settings</mat-icon></div>
+      <div>
+        <h1 class="admin-header-title">Admin Profile</h1>
+        <p class="admin-header-subtitle">Manage your farm platform credentials and details</p>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="isLoading()" class="flex justify-center p-12">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div *ngIf="!isLoading()" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- Content Area -->
+  <div *ngIf="!isLoading()" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pb-4">
     
-    <!-- Profile & Farm Info Card -->
-    <mat-card class="shadow-sm border border-gray-100">
-      <mat-card-header class="pb-4">
-        <mat-icon mat-card-avatar class="text-4xl text-green-600 w-10 h-10 flex items-center justify-center bg-green-50 rounded-full">admin_panel_settings</mat-icon>
-        <mat-card-title class="text-lg mt-1">Administrator Details</mat-card-title>
-        <div class="absolute right-4 top-4">
-          <button mat-icon-button color="primary" (click)="toggleEditMode()">
-            <mat-icon>{{ editMode() ? 'close' : 'edit' }}</mat-icon>
-          </button>
-        </div>
-      </mat-card-header>
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
       
-      <mat-card-content class="pt-4">
-        <!-- View Mode -->
-        <div class="flex flex-col gap-4" *ngIf="!editMode()">
-          <div class="info-group">
-            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Name</label>
-            <p class="text-gray-800 font-medium text-lg">{{ adminProfile()?.name || user()?.name || 'Administrator' }}</p>
+      <!-- Profile & Farm Info Card -->
+      <div class="admin-panel-card !h-auto border-t-4 border-t-[#2d6a4f]">
+        <div class="admin-panel-header relative">
+          <h3 class="panel-title !mb-0 text-[#2d6a4f]">
+            <mat-icon>manage_accounts</mat-icon> Administrator Details
+          </h3>
+          <div class="absolute right-2 top-1">
+            <button mat-icon-button (click)="toggleEditMode()" class="!w-8 !h-8 !leading-8">
+              <mat-icon class="!text-[#2d6a4f] !text-[18px]">{{ editMode() ? 'close' : 'edit' }}</mat-icon>
+            </button>
           </div>
-          
-          <mat-divider></mat-divider>
+        </div>
+        
+        <div class="admin-panel-body p-5">
+          <!-- View Mode -->
+          <div class="flex flex-col gap-5" *ngIf="!editMode()">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+              <div class="info-group">
+                <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Name</label>
+                <p class="text-gray-800 font-medium text-sm mt-0.5">{{ adminProfile()?.name || user()?.name || 'Administrator' }}</p>
+              </div>
+              
+              <div class="info-group">
+                <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Email / Login ID</label>
+                <p class="text-gray-800 text-sm mt-0.5">{{ adminProfile()?.email || user()?.email || 'N/A' }}</p>
+              </div>
 
-          <div class="info-group">
-            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Email Address / Login ID</label>
-            <p class="text-gray-800">{{ adminProfile()?.email || user()?.email || 'N/A' }}</p>
-          </div>
+              <div class="info-group">
+                <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Phone Number</label>
+                <p class="text-gray-800 text-sm mt-0.5">{{ adminProfile()?.phone || 'N/A' }}</p>
+              </div>
 
-          <mat-divider></mat-divider>
+              <div class="info-group">
+                <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Role</label>
+                <div class="mt-1">
+                  <span class="px-2 py-0.5 bg-[#1b4332] text-white rounded text-[10px] font-bold tracking-wide">
+                    ADMINISTRATOR
+                  </span>
+                </div>
+              </div>
+            </div>
 
-          <div class="info-group">
-            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Phone Number</label>
-            <p class="text-gray-800">{{ adminProfile()?.phone || 'N/A' }}</p>
-          </div>
+            <!-- Farm Management Section -->
+            <div class="border-t border-gray-100 pt-4 mt-2">
+              <h3 class="text-xs font-bold text-gray-800 mb-3 flex items-center gap-1.5"><mat-icon class="text-emerald-600 scale-75 origin-left">agriculture</mat-icon> Farm Details</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6 bg-[#f8faf9] p-4 rounded-lg border border-gray-200">
+                <div class="info-group">
+                  <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Farm Name</label>
+                  <p class="text-gray-800 font-semibold text-sm mt-0.5">{{ adminProfile()?.farmName || 'N/A' }}</p>
+                </div>
+                
+                <div class="info-group">
+                  <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Farm Phone</label>
+                  <p class="text-gray-800 text-sm mt-0.5">{{ adminProfile()?.farmPhone || 'N/A' }}</p>
+                </div>
 
-          <mat-divider></mat-divider>
+                <div class="info-group md:col-span-2">
+                  <label class="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Farm Address</label>
+                  <p class="text-gray-800 text-sm mt-0.5">{{ adminProfile()?.farmAddress || 'N/A' }}</p>
+                </div>
 
-          <div class="info-group">
-            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Role</label>
-            <div class="mt-1">
-              <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
-                ADMINISTRATOR
-              </span>
+                <div class="info-group md:col-span-2 mt-2 pt-2 border-t border-gray-200">
+                  <p class="text-gray-700 text-xs" *ngIf="farmStats()">
+                    Currently managing <strong class="text-emerald-700">{{ farmStats().totalFields }}</strong> fields 
+                    (<strong class="text-emerald-700">{{ farmStats().activeCrops }}</strong> active crop cycles).
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <mat-divider></mat-divider>
+          <!-- Edit Mode -->
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="flex flex-col gap-4" *ngIf="editMode()">
+            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Personal Information</h3>
+            <div class="grid grid-cols-1 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Name</mat-label>
+                <input matInput formControlName="name" placeholder="Full Name">
+                <mat-error *ngIf="profileForm.get('name')?.hasError('required')">Name is required</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full -mt-2">
+                <mat-label>Phone</mat-label>
+                <input matInput formControlName="phone" placeholder="Phone Number">
+              </mat-form-field>
+            </div>
+            
+            <mat-divider></mat-divider>
+            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mt-1">Farm Information</h3>
+            
+            <div class="grid grid-cols-1 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Farm Name</mat-label>
+                <input matInput formControlName="farmName" placeholder="Farm Name">
+                <mat-error *ngIf="profileForm.get('farmName')?.hasError('required')">Farm Name is required</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full -mt-2">
+                <mat-label>Farm Phone</mat-label>
+                <input matInput formControlName="farmPhone" placeholder="Farm Phone">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full -mt-2">
+                <mat-label>Farm Address</mat-label>
+                <textarea matInput formControlName="farmAddress" placeholder="Farm Address" rows="2"></textarea>
+              </mat-form-field>
+            </div>
 
-          <div class="info-group">
-            <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Farm Management</label>
-            <p class="text-gray-800 font-semibold">{{ adminProfile()?.farmName || 'N/A' }}</p>
-            <p class="text-gray-800 text-sm" *ngIf="farmStats()">
-              Currently managing <strong>{{ farmStats().totalFields }}</strong> fields 
-              ({{ farmStats().activeCrops }} active crop cycles).
-            </p>
-          </div>
+            <div class="flex justify-end gap-2 mt-2 pt-2 border-t border-gray-100">
+              <button mat-button type="button" (click)="toggleEditMode()" class="!rounded-md !text-sm">Cancel</button>
+              <button mat-flat-button color="primary" type="submit" [disabled]="profileForm.invalid || isSaving()" class="!rounded-md !text-sm !bg-[#2d6a4f]">
+                <mat-spinner *ngIf="isSaving()" diameter="20" class="inline-block mr-2"></mat-spinner>
+                Save Profile
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
 
-        <!-- Edit Mode -->
-        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="flex flex-col gap-4" *ngIf="editMode()">
-          <h3 class="text-sm font-semibold text-gray-700">Personal Information</h3>
-          <div class="grid grid-cols-1 gap-4">
+      <!-- Password Reset Card -->
+      <div class="admin-panel-card !h-auto border-t-4 border-t-[#0284c7]">
+        <div class="admin-panel-header">
+          <h3 class="panel-title !mb-0 text-[#0284c7]">
+            <mat-icon>security</mat-icon> Change Password
+          </h3>
+        </div>
+        
+        <div class="admin-panel-body p-5">
+          <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()" class="flex flex-col gap-4">
+            
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Name</mat-label>
-              <input matInput formControlName="name" placeholder="Full Name">
-              <mat-error *ngIf="profileForm.get('name')?.hasError('required')">Name is required</mat-error>
+              <mat-label>Current Password</mat-label>
+              <input matInput type="password" formControlName="currentPassword" placeholder="Enter current password">
+              <mat-error *ngIf="passwordForm.get('currentPassword')?.hasError('required')">Current password is required</mat-error>
             </mat-form-field>
+
             <mat-form-field appearance="outline" class="w-full -mt-2">
-              <mat-label>Phone</mat-label>
-              <input matInput formControlName="phone" placeholder="Phone Number">
+              <mat-label>New Password</mat-label>
+              <input matInput type="password" formControlName="newPassword" placeholder="Enter new password (min 6 chars)">
+              <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('required')">New password is required</mat-error>
+              <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('minlength')">Must be at least 6 characters</mat-error>
             </mat-form-field>
-          </div>
-          
-          <mat-divider></mat-divider>
-          <h3 class="text-sm font-semibold text-gray-700">Farm Information</h3>
-          
-          <div class="grid grid-cols-1 gap-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Farm Name</mat-label>
-              <input matInput formControlName="farmName" placeholder="Farm Name">
-              <mat-error *ngIf="profileForm.get('farmName')?.hasError('required')">Farm Name is required</mat-error>
-            </mat-form-field>
+
             <mat-form-field appearance="outline" class="w-full -mt-2">
-              <mat-label>Farm Phone</mat-label>
-              <input matInput formControlName="farmPhone" placeholder="Farm Phone">
+              <mat-label>Confirm New Password</mat-label>
+              <input matInput type="password" formControlName="confirmNewPassword" placeholder="Confirm your new password">
+              <mat-error *ngIf="passwordForm.get('confirmNewPassword')?.hasError('required')">Please confirm your new password</mat-error>
+              <mat-error *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirmNewPassword')?.touched">
+                Passwords do not match
+              </mat-error>
             </mat-form-field>
-            <mat-form-field appearance="outline" class="w-full -mt-2">
-              <mat-label>Farm Address</mat-label>
-              <textarea matInput formControlName="farmAddress" placeholder="Farm Address" rows="2"></textarea>
-            </mat-form-field>
-          </div>
 
-          <div class="flex justify-end gap-2 mt-2">
-            <button mat-button type="button" (click)="toggleEditMode()">Cancel</button>
-            <button mat-flat-button color="primary" type="submit" [disabled]="profileForm.invalid || isSaving()">
-              <mat-spinner *ngIf="isSaving()" diameter="20" class="inline-block mr-2"></mat-spinner>
-              Save Profile
-            </button>
-          </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
+            <div class="mt-2 text-right pt-2 border-t border-gray-100">
+              <button mat-flat-button type="submit" [disabled]="passwordForm.invalid || isSaving()" class="!rounded-md !text-sm !bg-[#0284c7] !text-white">
+                <mat-icon *ngIf="!isSaving()">save</mat-icon>
+                <mat-spinner *ngIf="isSaving()" diameter="20" class="inline-block mr-2"></mat-spinner>
+                Update Password
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
 
-    <!-- Password Reset Card -->
-    <mat-card class="shadow-sm border border-gray-100">
-      <mat-card-header class="pb-4">
-        <mat-icon mat-card-avatar class="text-4xl text-blue-600 w-10 h-10 flex items-center justify-center bg-blue-50 rounded-full">security</mat-icon>
-        <mat-card-title class="text-lg mt-1">Change Password</mat-card-title>
-      </mat-card-header>
-      
-      <mat-card-content class="pt-4">
-        <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()" class="flex flex-col gap-3">
-          
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Current Password</mat-label>
-            <input matInput type="password" formControlName="currentPassword" placeholder="Enter current password">
-            <mat-error *ngIf="passwordForm.get('currentPassword')?.hasError('required')">Current password is required</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>New Password</mat-label>
-            <input matInput type="password" formControlName="newPassword" placeholder="Enter new password (min 6 chars)">
-            <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('required')">New password is required</mat-error>
-            <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('minlength')">Must be at least 6 characters</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Confirm New Password</mat-label>
-            <input matInput type="password" formControlName="confirmNewPassword" placeholder="Confirm your new password">
-            <mat-error *ngIf="passwordForm.get('confirmNewPassword')?.hasError('required')">Please confirm your new password</mat-error>
-            <mat-error *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirmNewPassword')?.touched">
-              Passwords do not match
-            </mat-error>
-          </mat-form-field>
-
-          <div class="mt-2 text-right">
-            <button mat-flat-button color="primary" type="submit" [disabled]="passwordForm.invalid || isSaving()">
-              <mat-icon *ngIf="!isSaving()">save</mat-icon>
-              <mat-spinner *ngIf="isSaving()" diameter="20" class="inline-block mr-2"></mat-spinner>
-              Update Password
-            </button>
-          </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
-
+    </div>
   </div>
 </div>

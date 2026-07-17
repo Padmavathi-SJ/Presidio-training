@@ -17,24 +17,26 @@ public class DownloadController : ControllerBase
         _fileStorageService = fileStorageService;
     }
 
-    [HttpGet("reports/{fileName}")]
-    public async Task<IActionResult> DownloadReportFile(string fileName)
+    [HttpGet("{*filePath}")]
+    public async Task<IActionResult> DownloadFile(string filePath)
     {
         try
         {
-            var fileBytes = await _fileStorageService.GetFileAsync($"Reports/YieldReports/{fileName}");
+            var fileBytes = await _fileStorageService.GetFileAsync(filePath);
             
-            var extension = Path.GetExtension(fileName).ToLower();
+            var extension = Path.GetExtension(filePath).ToLower();
             var contentType = extension switch
             {
                 ".csv" => "text/csv",
                 ".json" => "application/json",
                 ".pdf" => "application/pdf",
                 ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
                 _ => "application/octet-stream"
             };
             
-            return File(fileBytes, contentType, fileName);
+            return File(fileBytes, contentType, Path.GetFileName(filePath));
         }
         catch (FileNotFoundException)
         {

@@ -122,7 +122,7 @@ public class WorkerSensorController : ControllerBase
         if (!allowedFieldIds.Contains(alertResult.Data.FieldId))
             return Forbid();
 
-        var result = await _alertService.ResolveAlertAsync(id, dto, farmId, workerId);
+        var result = await _alertService.ResolveAlertAsync(id, dto, farmId, null, workerId);
         if (!result.Success)
             return BadRequest(result);
 

@@ -607,7 +607,7 @@ public class HarvestServiceTests
             MonthlyTrend = new List<MonthlyYieldDto>()
         };
         
-        _harvestRepositoryMock.Setup(r => r.GetYieldStatisticsAsync(farmId, null, null, null))
+        _harvestRepositoryMock.Setup(r => r.GetYieldStatisticsAsync(farmId, null, null, null, null))
             .ReturnsAsync(stats);
 
         // Act
@@ -634,10 +634,10 @@ public class HarvestServiceTests
         var previousStats = new YieldStatisticsDto { TotalYieldKg = 12000 };
         
         _harvestRepositoryMock.Setup(r => r.GetYieldStatisticsAsync(farmId, null, 
-            new DateTime(2024, 1, 1), new DateTime(2024, 12, 31)))
+            new DateTime(2024, 1, 1), new DateTime(2024, 12, 31), null))
             .ReturnsAsync(currentStats);
         _harvestRepositoryMock.Setup(r => r.GetYieldStatisticsAsync(farmId, null,
-            new DateTime(2023, 1, 1), new DateTime(2023, 12, 31)))
+            new DateTime(2023, 1, 1), new DateTime(2023, 12, 31), null))
             .ReturnsAsync(previousStats);
 
         // Act

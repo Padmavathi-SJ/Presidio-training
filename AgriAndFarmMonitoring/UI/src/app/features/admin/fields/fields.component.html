@@ -201,6 +201,7 @@
               <mat-checkbox
                 [checked]="isSelected(field.id)"
                 (change)="toggleSelection(field.id)"
+                (click)="$event.stopPropagation()"
               ></mat-checkbox>
             </td>
           </ng-container>
@@ -297,7 +298,7 @@
               <button
                 mat-icon-button
                 matTooltip="Crop Cycles"
-                (click)="openCropCycles(field)"
+                (click)="$event.stopPropagation(); openCropCycles(field)"
                 class="!text-green-600 hover:!bg-green-50"
                 [disabled]="isLoading()"
               >
@@ -306,7 +307,7 @@
               <button
                 mat-icon-button
                 matTooltip="Location"
-                (click)="openLocationDialog(field)"
+                (click)="$event.stopPropagation(); openLocationDialog(field)"
                 class="!text-primary-600 hover:!bg-primary-50"
                 [disabled]="isLoading()"
               >
@@ -315,7 +316,7 @@
               <button
                 mat-icon-button
                 matTooltip="Edit"
-                (click)="openEditDialog(field)"
+                (click)="$event.stopPropagation(); openEditDialog(field)"
                 class="!text-blue-600 hover:!bg-blue-50"
                 [disabled]="isLoading()"
               >
@@ -325,7 +326,7 @@
                 <button
                   mat-icon-button
                   matTooltip="Delete"
-                  (click)="deleteField(field)"
+                  (click)="$event.stopPropagation(); deleteField(field)"
                   class="!text-red-600 hover:!bg-red-50"
                   [disabled]="isLoading()"
                 >
@@ -363,33 +364,44 @@
     ></mat-paginator>
   </div>
 
-  <!-- Crop Cycles Section -->
+  <!-- Crop Cycles Section (Modal Overlay) -->
   @if (selectedField()) {
-    <div class="bg-white rounded-lg border border-[#d5e1da] mt-2 p-4 sm:p-6 animate-fadeIn">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
-        <div class="flex items-center gap-3">
-          <div class="p-2 bg-primary-50 rounded-lg">
-            <mat-icon class="text-primary-600">grass</mat-icon>
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm animate-fadeIn" (click)="closeCropCycles()">
+      
+      <!-- Modal Container -->
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col relative" (click)="$event.stopPropagation()">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 border-b border-gray-100 sticky top-0 bg-white rounded-t-xl z-10 gap-3">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-primary-50 rounded-lg">
+              <mat-icon class="text-primary-600">grass</mat-icon>
+            </div>
+            <h2 class="text-xl font-semibold text-gray-800 m-0">
+              Crop Cycles for <span class="text-primary-700">{{ selectedField()?.fieldName }}</span>
+            </h2>
           </div>
-          <h2 class="text-xl font-semibold text-gray-800">
-            Crop Cycles for <span class="text-primary-700">{{ selectedField()?.fieldName }}</span>
-          </h2>
+          <button
+            mat-icon-button
+            (click)="closeCropCycles()"
+            matTooltip="Close"
+            class="!text-gray-400 hover:!text-gray-600 absolute sm:static right-4 top-4"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
-        <button
-          mat-icon-button
-          (click)="closeCropCycles()"
-          matTooltip="Close"
-          class="!text-gray-400 hover:!text-gray-600"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
+
+        <!-- Content (Scrollable) -->
+        <div class="p-4 sm:p-6 overflow-y-auto flex-1">
+          <!-- ✅ Add (cropCyclesChanged) event binding -->
+          <app-crop-cycles
+            [fieldId]="selectedField()?.id || 0"
+            [fieldName]="selectedField()?.fieldName || ''"
+            (cropCyclesChanged)="onCropCyclesChanged()"
+          ></app-crop-cycles>
+        </div>
       </div>
-      <!-- ✅ Add (cropCyclesChanged) event binding -->
-      <app-crop-cycles
-        [fieldId]="selectedField()?.id || 0"
-        [fieldName]="selectedField()?.fieldName || ''"
-        (cropCyclesChanged)="onCropCyclesChanged()"
-      ></app-crop-cycles>
     </div>
   }
 

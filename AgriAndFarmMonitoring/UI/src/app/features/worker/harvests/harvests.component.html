@@ -12,48 +12,64 @@
         <p class="worker-page-subtitle">Submit, manage and track your harvest records</p>
       </div>
     </div>
+    <button mat-flat-button color="primary" (click)="openCreateForm()" class="harvests-create-btn">
+      <mat-icon>add</mat-icon> New Harvest
+    </button>
   </div>
 
   <!-- KPI Summary Cards -->
   <div class="harvests-kpi-grid">
     <!-- Approved Yield -->
     <div class="harvests-kpi-card kpi-yield">
-      <div class="kpi-icon">
-        <mat-icon>inventory_2</mat-icon>
-      </div>
+      <div class="kpi-icon"><mat-icon>inventory_2</mat-icon></div>
       <div class="kpi-body">
         <span class="kpi-label">Approved Yield</span>
-        <span class="kpi-value">{{ harvestState.totalQuantityKg() | number:'1.0-0' }} <small>kg</small></span>
+        <span class="kpi-value">{{ harvestState.statistics()?.totalYieldKg || 0 | number:'1.0-0' }} <small>kg</small></span>
       </div>
     </div>
 
-    <div class="harvests-kpi-card kpi-value">
-      <div class="kpi-icon">
-        <mat-icon>payments</mat-icon>
-      </div>
+    <!-- Total Submissions -->
+    <div class="harvests-kpi-card kpi-total">
+      <div class="kpi-icon"><mat-icon>format_list_numbered</mat-icon></div>
       <div class="kpi-body">
-        <span class="kpi-label">Total Value</span>
-        <span class="kpi-value">${{ harvestState.totalValue() | number:'1.0-0' }}</span>
+        <span class="kpi-label">Total</span>
+        <span class="kpi-value">{{ harvestState.statistics()?.totalHarvests || 0 }}</span>
       </div>
     </div>
 
+    <!-- Pending -->
     <div class="harvests-kpi-card kpi-pending">
-      <div class="kpi-icon">
-        <mat-icon>pending_actions</mat-icon>
-      </div>
+      <div class="kpi-icon"><mat-icon>pending_actions</mat-icon></div>
       <div class="kpi-body">
         <span class="kpi-label">Pending</span>
-        <span class="kpi-value">{{ harvestState.pendingCount() }}</span>
+        <span class="kpi-value">{{ harvestState.statistics()?.pendingHarvests || 0 }}</span>
       </div>
     </div>
 
-    <div class="harvests-kpi-card kpi-total">
-      <div class="kpi-icon">
-        <mat-icon>format_list_numbered</mat-icon>
-      </div>
+    <!-- Approved -->
+    <div class="harvests-kpi-card kpi-approved">
+      <div class="kpi-icon"><mat-icon>verified</mat-icon></div>
       <div class="kpi-body">
-        <span class="kpi-label">Total Submissions</span>
-        <span class="kpi-value">{{ harvestState.totalCount() }}</span>
+        <span class="kpi-label">Approved</span>
+        <span class="kpi-value">{{ harvestState.statistics()?.approvedHarvests || 0 }}</span>
+      </div>
+    </div>
+
+    <!-- Rejected -->
+    <div class="harvests-kpi-card kpi-rejected">
+      <div class="kpi-icon"><mat-icon>cancel</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Rejected</span>
+        <span class="kpi-value">{{ harvestState.statistics()?.rejectedHarvests || 0 }}</span>
+      </div>
+    </div>
+
+    <!-- Changes Required -->
+    <div class="harvests-kpi-card kpi-changes">
+      <div class="kpi-icon"><mat-icon>edit_note</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Changes Req.</span>
+        <span class="kpi-value">{{ harvestState.statistics()?.changesRequestedHarvests || 0 }}</span>
       </div>
     </div>
   </div>

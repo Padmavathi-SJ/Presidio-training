@@ -8,8 +8,8 @@
     </div>
     <div class="flex flex-wrap gap-2">
       <!-- ✅ Field Selector with formGroup -->
-      <form [formGroup]="filterForm" class="flex flex-wrap gap-2">
-        <mat-form-field appearance="outline" class="!w-48">
+      <form [formGroup]="filterForm" class="flex items-center m-0">
+        <mat-form-field appearance="outline" class="!w-48 !m-0" subscriptSizing="dynamic">
           <mat-label>Filter by Field</mat-label>
           <mat-select formControlName="fieldId">
             <mat-option [value]="null">All Fields</mat-option>

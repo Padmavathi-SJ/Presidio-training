@@ -13,17 +13,20 @@ public class WorkerFieldService : IWorkerFieldService
     private readonly IFieldRepository _fieldRepository;
     private readonly ICropCycleRepository _cropCycleRepository;
     private readonly IMapper _mapper;
+    private readonly IFileStorageService _fileStorageService;
 
     public WorkerFieldService(
         IWorkerFieldAssignmentRepository assignmentRepository,
         IFieldRepository fieldRepository,
         ICropCycleRepository cropCycleRepository,
-        IMapper mapper)
+        IMapper mapper,
+        IFileStorageService fileStorageService)
     {
         _assignmentRepository = assignmentRepository;
         _fieldRepository = fieldRepository;
         _cropCycleRepository = cropCycleRepository;
         _mapper = mapper;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<ApiResponse<List<WorkerFieldListDto>>> GetMyAssignedFieldsAsync(int workerId, int farmId)
@@ -55,7 +58,11 @@ public class WorkerFieldService : IWorkerFieldService
                 SoilType = assignment.Field.SoilType?.ToString(),
                 Status = assignment.Field.Status?.ToString(),
                 AssignedDate = assignment.AssignedDate,
-                ActiveCropCount = activeCropCount
+                ActiveCropCount = activeCropCount,
+                ImagePath = !string.IsNullOrEmpty(assignment.Field.ImagePath) ? _fileStorageService.GetDownloadUrl(assignment.Field.ImagePath) : null,
+                ThumbnailPath = !string.IsNullOrEmpty(assignment.Field.ThumbnailPath) ? _fileStorageService.GetDownloadUrl(assignment.Field.ThumbnailPath) : null,
+                ImageCaption = assignment.Field.ImageCaption,
+                AdditionalImagePaths = assignment.Field.AdditionalImagePaths?.Select(p => _fileStorageService.GetDownloadUrl(p)).Where(url => !string.IsNullOrEmpty(url)).Cast<string>().ToList()
             });
         }
 
@@ -129,6 +136,12 @@ public class WorkerFieldService : IWorkerFieldService
             AssignedDate = assignment?.AssignedDate,
             Notes = assignment?.Notes,
             CreatedAt = field.CreatedAt,
+            Latitude = field.Latitude,
+            Longitude = field.Longitude,
+            ImagePath = !string.IsNullOrEmpty(field.ImagePath) ? _fileStorageService.GetDownloadUrl(field.ImagePath) : null,
+            ThumbnailPath = !string.IsNullOrEmpty(field.ThumbnailPath) ? _fileStorageService.GetDownloadUrl(field.ThumbnailPath) : null,
+            ImageCaption = field.ImageCaption,
+            AdditionalImagePaths = field.AdditionalImagePaths?.Select(p => _fileStorageService.GetDownloadUrl(p)).Where(url => !string.IsNullOrEmpty(url)).Cast<string>().ToList(),
             CropCycles = cropCycleDtos
         };
 
