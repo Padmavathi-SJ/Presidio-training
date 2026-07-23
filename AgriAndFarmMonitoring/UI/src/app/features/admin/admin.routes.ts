@@ -128,6 +128,11 @@ export const ADMIN_ROUTES: Routes = [
           .then(c => c.Profile)
       },
       {
+        path: 'ai-chat',
+        loadComponent: () => import('../ai/ai-chat/ai-chat.component')
+          .then(c => c.AiChatComponent)
+      },
+      {
         path: 'disease-detection',
         loadComponent: () => import('../ai/disease-detection/disease-detection.component')
           .then(c => c.DiseaseDetectionComponent)

@@ -9,18 +9,24 @@ using System.Threading.Tasks;
 using AgriculturePlatform.Application.Interfaces;
 using AgriculturePlatform.Domain.Entities.AI;
 
+using Microsoft.Extensions.Configuration;
+
 namespace AgriculturePlatform.Infrastructure.Services
 {
     public class AnthropicService : IAiService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _apiKey = "sk-g-cfPBY7OtUI7pP6AjJTDw"; 
-        private readonly string _model = "claude-sonnet-4-6";
+        private readonly string _apiKey; 
+        private readonly string _model;
 
-        public AnthropicService(HttpClient httpClient)
+        public AnthropicService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            _httpClient.BaseAddress = new Uri("https://proxy.llm-gateway.ready.presidio.com/");
+            _apiKey = configuration["AnthropicApi:ApiKey"] ?? throw new ArgumentNullException("AnthropicApi:ApiKey configuration is missing");
+            _model = configuration["AnthropicApi:Model"] ?? "claude-sonnet-4-6";
+            var baseUrl = configuration["AnthropicApi:BaseUrl"] ?? "https://proxy.llm-gateway.ready.presidio.com/";
+
+            _httpClient.BaseAddress = new Uri(baseUrl);
             _httpClient.DefaultRequestHeaders.Add("x-api-key", _apiKey);
             _httpClient.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));

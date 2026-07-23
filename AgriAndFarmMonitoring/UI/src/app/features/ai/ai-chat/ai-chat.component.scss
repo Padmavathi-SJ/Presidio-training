@@ -1,0 +1,71 @@
+.ai-chat-container {
+  // No extra padding — the layout's .admin-content-inner already provides 10px 16px
+  // Fill all available height so the chat area stretches to the bottom
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  mat-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+  }
+}
+
+.custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 20px;
+  }
+}
+
+// Markdown formatting overrides inside chat bubbles
+::ng-deep .markdown-content {
+  p { margin-bottom: 0.5em; }
+  p:last-child { margin-bottom: 0; }
+  ul {
+    list-style-type: disc;
+    padding-left: 1.5em;
+    margin-bottom: 0.5em;
+  }
+  ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+    margin-bottom: 0.5em;
+  }
+  code {
+    background-color: rgba(0,0,0,0.05);
+    padding: 0.1em 0.3em;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+  }
+  pre {
+    background-color: rgba(0,0,0,0.05);
+    padding: 1em;
+    border-radius: 6px;
+    overflow-x: auto;
+    code { background: transparent; padding: 0; }
+  }
+  a {
+    text-decoration: underline;
+    color: inherit;
+    font-weight: 500;
+  }
+  strong { font-weight: 700; }
+}

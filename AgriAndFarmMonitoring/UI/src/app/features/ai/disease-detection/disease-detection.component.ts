@@ -52,6 +52,7 @@ export class DiseaseDetectionComponent implements OnInit, AfterViewChecked {
   isAsking = false;
   imageError = false;
   chatHistory: { role: 'user' | 'assistant', text: string, html: string }[] = [];
+  scanHistory: any[] = [];
 
   constructor(
     private diseaseService: DiseaseDetectionService,
@@ -68,6 +69,47 @@ export class DiseaseDetectionComponent implements OnInit, AfterViewChecked {
     if (user?.farmId) {
       this.farmId = user.farmId;
     }
+    this.loadHistory();
+  }
+
+  loadHistory() {
+    this.diseaseService.getMyHistory().subscribe({
+      next: (data) => {
+        this.scanHistory = data;
+      },
+      error: (err) => {
+        console.error('Failed to load history', err);
+      }
+    });
+  }
+
+  async loadAnalysis(id: number) {
+    this.diseaseService.getAnalysisById(id).subscribe({
+      next: async (res) => {
+        this.result = res;
+        this.selectedFile = null;
+        this.imagePreview = null;
+        
+        // Load chat history
+        this.diseaseService.getChatHistory(id).subscribe({
+          next: async (chats: any[]) => {
+            this.chatHistory = [];
+            for (let chat of chats) {
+              this.chatHistory.push({
+                role: 'user',
+                text: chat.query,
+                html: await marked.parse(chat.query)
+              });
+              this.chatHistory.push({
+                role: 'assistant',
+                text: chat.response,
+                html: await marked.parse(chat.response)
+              });
+            }
+          }
+        });
+      }
+    });
   }
 
   ngAfterViewChecked() {

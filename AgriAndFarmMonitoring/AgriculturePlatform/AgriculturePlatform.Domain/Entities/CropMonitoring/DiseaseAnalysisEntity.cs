@@ -14,6 +14,9 @@ namespace AgriculturePlatform.Domain.Entities.CropMonitoring
         public int CreatedBy { get; set; }
         
         [MaxLength(100)]
+        public string? SessionId { get; set; }
+        
+        [MaxLength(100)]
         public string ImageHash { get; set; } = string.Empty;
         
         [MaxLength(200)]

@@ -58,7 +58,8 @@ export class WorkerLayoutComponent implements OnInit {
     { label: 'Sensor Data', icon: 'sensors', route: '/worker/sensors' },
     { label: 'Harvests', icon: 'inventory_2', route: '/worker/harvests' },
     { label: 'Quality Checks', icon: 'verified', route: '/worker/quality-checks' },
-    { label: 'AI Disease Detection', icon: 'psychology', route: '/worker/disease-detection' }
+    { label: 'AI Disease Detection', icon: 'psychology', route: '/worker/disease-detection' },
+    { label: 'AI Chat Assistant', icon: 'auto_awesome', route: '/worker/ai-chat' }
   ];
 
   ngOnInit(): void {

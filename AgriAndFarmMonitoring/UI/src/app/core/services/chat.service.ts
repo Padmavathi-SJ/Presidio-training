@@ -65,4 +65,12 @@ export class ChatService {
     this.messagesSubject.next([]);
     this.currentSessionId = undefined;
   }
+
+  public getMySessions(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/sessions`);
+  }
+
+  public getSessionMessages(sessionId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${sessionId}/messages`);
+  }
 }

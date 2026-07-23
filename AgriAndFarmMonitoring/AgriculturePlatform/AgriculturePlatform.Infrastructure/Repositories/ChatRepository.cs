@@ -24,6 +24,14 @@ namespace AgriculturePlatform.Infrastructure.Repositories
                 .FirstOrDefaultAsync(s => s.SessionId == sessionId);
         }
 
+        public async Task<IEnumerable<ChatSession>> GetSessionsByUserIdAsync(int userId)
+        {
+            return await _context.ChatSessions
+                .Where(s => s.UserId == userId)
+                .OrderByDescending(s => s.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<ChatSession> CreateSessionAsync(ChatSession session)
         {
             _context.ChatSessions.Add(session);

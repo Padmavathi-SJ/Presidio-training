@@ -109,6 +109,11 @@ export const WORKER_ROUTES: Routes = [
         loadComponent: () => import('../ai/disease-detection/disease-detection.component')
           .then(c => c.DiseaseDetectionComponent)
       },
+      {
+        path: 'ai-chat',
+        loadComponent: () => import('../ai/ai-chat/ai-chat.component')
+          .then(c => c.AiChatComponent)
+      },
 
       {
         path: 'settings',

@@ -1,7 +1,10 @@
 .disease-detection-container {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  // No extra padding — the layout's .admin-content-inner already provides 10px 16px
+  // We fill all available height so content sits flush against the sidebar
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 
   .header-section {
     .icon-circle {

@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "t0OAZeEIVSi3sN9RMs10PFxJ/O8pVf8fjP4/domW2Nc=",
+  "Hash": "aA45+1YJtN3nbVu2qjjqznwbBlwFjdTNUkYcEs1tV/s=",
   "Source": "AgriculturePlatform.API",
   "BasePath": "_content/AgriculturePlatform.API",
   "Mode": "Default",
@@ -53,6 +53,25 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot/uploads/fields/4a6806bd-7da2-4826-9cdd-a0331f666c18.jpeg"
+    },
+    {
+      "Identity": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/fields/4e7bbae8-b614-4cab-a767-bc4e1e379ed3.webp",
+      "SourceId": "AgriculturePlatform.API",
+      "SourceType": "Discovered",
+      "ContentRoot": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/",
+      "BasePath": "_content/AgriculturePlatform.API",
+      "RelativePath": "uploads/fields/4e7bbae8-b614-4cab-a767-bc4e1e379ed3.webp",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot/uploads/fields/4e7bbae8-b614-4cab-a767-bc4e1e379ed3.webp"
     },
     {
       "Identity": "/Users/padmavathisj/Documents/Presidio-Training/AgriAndFarmMonitoring/AgriculturePlatform/AgriculturePlatform.API/wwwroot/uploads/fields/a44216a2-2f33-4859-bc9b-cb6fbf9ab124.jpeg",

@@ -13,11 +13,13 @@ namespace AgriculturePlatform.Application.Services
     {
         private readonly IAiService _aiService;
         private readonly IDiseaseRepository _diseaseRepository;
+        private readonly IChatRepository _chatRepository;
 
-        public DiseaseDetectionService(IAiService aiService, IDiseaseRepository diseaseRepository)
+        public DiseaseDetectionService(IAiService aiService, IDiseaseRepository diseaseRepository, IChatRepository chatRepository)
         {
             _aiService = aiService;
             _diseaseRepository = diseaseRepository;
+            _chatRepository = chatRepository;
         }
 
         public async Task<DiseaseAnalysisResultDto> AnalyzeImageAsync(DiseaseDetectionRequestDto request)
@@ -53,6 +55,19 @@ namespace AgriculturePlatform.Application.Services
             var hashBytes = System.Security.Cryptography.SHA256.HashData(request.ImageData);
             var imageHash = Convert.ToHexString(hashBytes);
 
+            var sessionId = $"disease-{Guid.NewGuid().ToString().Substring(0, 8)}";
+
+            // Create ChatSession for disease tracking
+            var chatSession = new AgriculturePlatform.Domain.Entities.AI.ChatSession
+            {
+                SessionId = sessionId,
+                FarmId = request.FarmId,
+                UserId = request.UserId,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _chatRepository.CreateSessionAsync(chatSession);
+
             // Create Entity
             var entity = new DiseaseAnalysisEntity
             {
@@ -60,6 +75,7 @@ namespace AgriculturePlatform.Application.Services
                 FieldId = request.FieldId,
                 CropCycleId = request.CropCycleId,
                 CreatedBy = request.UserId,
+                SessionId = sessionId,
                 ImageHash = imageHash,
                 DiseaseName = diseaseName,
                 Category = category,
@@ -111,6 +127,24 @@ namespace AgriculturePlatform.Application.Services
                 .ToList();
         }
 
+        public async Task<List<DiseaseHistoryDto>> GetMyDiseaseHistoryAsync(int userId)
+        {
+            var analyses = await _diseaseRepository.GetByUserIdAsync(userId);
+            
+            return analyses
+                .Select(a => new DiseaseHistoryDto
+                {
+                    Id = a.Id,
+                    DiseaseName = a.DiseaseName,
+                    Category = a.Category,
+                    Severity = a.Severity,
+                    ConfidenceScore = a.ConfidenceScore,
+                    IsResolved = a.IsResolved,
+                    CreatedAt = a.CreatedAt
+                })
+                .ToList();
+        }
+
         public async Task<DiseaseAnalysisResultDto?> GetAnalysisByIdAsync(int id)
         {
             var entity = await _diseaseRepository.GetByIdAsync(id);
@@ -133,7 +167,7 @@ namespace AgriculturePlatform.Application.Services
             };
         }
 
-        public async Task<string> GetFollowUpAnswerAsync(int analysisId, string question)
+        public async Task<string> GetFollowUpAnswerAsync(int analysisId, string question, int userId)
         {
             var analysis = await _diseaseRepository.GetByIdAsync(analysisId);
             if (analysis == null)
@@ -146,9 +180,47 @@ namespace AgriculturePlatform.Application.Services
                              $"Symptoms: {analysis.Symptoms}\n" +
                              $"Treatment: {analysis.Treatment}\n" +
                              $"Please answer the following user question based on this context. Answer concisely.";
+
+            IEnumerable<AgriculturePlatform.Domain.Entities.AI.ChatMessage> history = Array.Empty<AgriculturePlatform.Domain.Entities.AI.ChatMessage>();
+            if (!string.IsNullOrEmpty(analysis.SessionId))
+            {
+                history = await _chatRepository.GetSessionMessagesAsync(analysis.SessionId);
+            }
                              
-            var aiResponse = await _aiService.GetChatCompletionAsync(question, Array.Empty<AgriculturePlatform.Domain.Entities.AI.ChatMessage>(), systemPrompt);
+            var aiResponse = await _aiService.GetChatCompletionAsync(question, history, systemPrompt);
+
+            if (!string.IsNullOrEmpty(analysis.SessionId))
+            {
+                var message = new AgriculturePlatform.Domain.Entities.AI.ChatMessage
+                {
+                    SessionId = analysis.SessionId,
+                    Query = question,
+                    Response = aiResponse,
+                    Timestamp = DateTime.UtcNow
+                };
+                await _chatRepository.SaveMessageAsync(message);
+            }
+
             return aiResponse;
+        }
+
+        public async Task<IEnumerable<ChatMessageDto>> GetChatHistoryAsync(int analysisId)
+        {
+            var analysis = await _diseaseRepository.GetByIdAsync(analysisId);
+            if (analysis == null || string.IsNullOrEmpty(analysis.SessionId))
+            {
+                return new List<ChatMessageDto>();
+            }
+
+            var messages = await _chatRepository.GetSessionMessagesAsync(analysis.SessionId);
+            return messages.Select(m => new ChatMessageDto
+            {
+                Id = m.Id,
+                SessionId = m.SessionId,
+                Query = m.Query,
+                Response = m.Response,
+                Timestamp = m.Timestamp
+            }).ToList();
         }
     }
 }

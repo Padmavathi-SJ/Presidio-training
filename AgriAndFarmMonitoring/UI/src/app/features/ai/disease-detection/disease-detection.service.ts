@@ -54,6 +54,10 @@ export class DiseaseDetectionService {
     return this.http.get<any[]>(`${this.apiUrl}/history?farmId=${farmId}&fieldId=${fieldId}`);
   }
 
+  getMyHistory(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/my-history`);
+  }
+
   getAnalysisById(id: number): Observable<DiseaseAnalysisResultDto> {
     return this.http.get<DiseaseAnalysisResultDto>(`${this.apiUrl}/${id}`);
   }
@@ -63,5 +67,9 @@ export class DiseaseDetectionService {
       analysisId,
       question
     });
+  }
+
+  getChatHistory(analysisId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${analysisId}/chat-history`);
   }
 }

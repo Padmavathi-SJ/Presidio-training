@@ -79,6 +79,9 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FarmId");
@@ -807,6 +810,10 @@ namespace AgriculturePlatform.Infrastructure.Migrations
                     b.Property<string>("Prevention")
                         .IsRequired()
                         .HasColumnType("jsonb");
+
+                    b.Property<string>("SessionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Severity")
                         .IsRequired()

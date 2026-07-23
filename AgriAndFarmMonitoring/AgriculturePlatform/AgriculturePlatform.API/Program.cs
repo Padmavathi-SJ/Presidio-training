@@ -90,20 +90,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:4200",
-                "https://localhost:4200",
-                "http://localhost:5000",
-                "https://blue-sand-0f86be800-preview.eastasia.7.azurestaticapps.net",  // Preview
-                "https://blue-sand-0f86be800.7.azurestaticapps.net",  // Production - ADD THIS!
-                "https://padma-angular-app.azurestaticapps.net"       // Custom domain - already there
-            )
+        policy.SetIsOriginAllowed(origin => true)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
     });
 });
-
 
 // JWT Configuration 
 var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "your-super-secret-key-minimum-32-characters-long";

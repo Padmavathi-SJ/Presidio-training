@@ -53,6 +53,14 @@ namespace AgriculturePlatform.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<DiseaseAnalysisEntity>> GetByUserIdAsync(int userId)
+        {
+            return await _context.DiseaseAnalyses
+                .Where(d => d.CreatedBy == userId && !d.IsDeleted)
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task UpdateAsync(DiseaseAnalysisEntity entity)
         {
             entity.UpdatedAt = DateTime.UtcNow;

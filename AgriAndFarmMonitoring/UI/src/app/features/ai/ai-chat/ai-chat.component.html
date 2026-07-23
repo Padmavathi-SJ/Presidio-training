@@ -1,0 +1,122 @@
+<div class="ai-chat-container">
+  <div class="header-section">
+    <div class="flex items-center gap-3">
+      <div class="icon-circle bg-indigo-100 text-indigo-700">
+        <mat-icon>auto_awesome</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800 m-0">AgriMonitor AI Assistant</h2>
+        <p class="text-sm text-gray-500 m-0">Ask questions about farming, crops, weather, or your farm's data.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-col md:flex-row gap-4 mt-4 flex-1 min-h-0">
+    <!-- Sidebar: Chat History -->
+    <div class="md:w-1/4 w-full flex flex-col">
+      <mat-card class="shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
+        <div class="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+          <h3 class="font-bold text-gray-800 m-0 flex items-center gap-2">
+            <mat-icon class="text-indigo-500">history</mat-icon> Chat History
+          </h3>
+          <button mat-icon-button color="primary" (click)="startNewChat()" matTooltip="New Chat">
+            <mat-icon>add_comment</mat-icon>
+          </button>
+        </div>
+        <div class="p-0 overflow-y-auto flex-1 custom-scrollbar">
+          <div *ngIf="sessions.length === 0" class="p-6 text-center text-gray-500 text-sm">
+            No previous chats found.
+          </div>
+          <div *ngFor="let session of sessions" 
+               class="p-4 border-b border-gray-100 hover:bg-indigo-50 cursor-pointer transition-colors"
+               (click)="loadSession(session.sessionId)">
+            <div class="flex justify-between items-start">
+              <span class="font-semibold text-gray-800 text-sm truncate pr-2">{{ session.snippet }}</span>
+            </div>
+            <div class="flex justify-between items-end mt-1">
+              <span class="text-[11px] text-gray-400 whitespace-nowrap">{{ session.createdAt | date:'short' }}</span>
+              <span *ngIf="session.isActive" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            </div>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- Main Chat Window -->
+    <div class="md:w-3/4 w-full flex flex-col">
+      <mat-card class="shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 overflow-y-auto p-5 bg-gray-50/50 custom-scrollbar" #chatScroll style="min-height: 0">
+          
+          <div *ngIf="messages.length === 0" class="h-full flex flex-col items-center justify-center text-center text-gray-500">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center mb-4">
+              <mat-icon class="!w-10 !h-10 text-[40px]">psychology</mat-icon>
+            </div>
+            <h3 class="text-xl font-medium text-gray-800 mb-2">How can I help you today?</h3>
+            <p class="max-w-md text-sm">
+              I can help analyze your farm's data, answer general agriculture questions, provide weather insights, or assist with crop disease identification.
+            </p>
+          </div>
+
+          <div class="space-y-6">
+            <div *ngFor="let msg of messages" 
+                 class="flex"
+                 [ngClass]="msg.role === 'user' ? 'justify-end' : 'justify-start'">
+              
+              <!-- Bot Avatar -->
+              <div *ngIf="msg.role === 'assistant'" class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3 flex-shrink-0 mt-1">
+                <mat-icon class="!w-5 !h-5 text-[20px]">smart_toy</mat-icon>
+              </div>
+
+              <!-- Message Bubble -->
+              <div class="max-w-[80%] rounded-2xl p-4 shadow-sm"
+                   [ngClass]="msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'">
+                <div class="markdown-content" [innerHTML]="msg.html"></div>
+              </div>
+
+              <!-- User Avatar -->
+              <div *ngIf="msg.role === 'user'" class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center ml-3 flex-shrink-0 mt-1">
+                <mat-icon class="!w-5 !h-5 text-[20px]">person</mat-icon>
+              </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div *ngIf="isTyping" class="flex justify-start">
+              <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3 flex-shrink-0 mt-1">
+                <mat-icon class="!w-5 !h-5 text-[20px]">smart_toy</mat-icon>
+              </div>
+              <div class="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-4 shadow-sm flex items-center gap-2">
+                <div class="flex gap-1">
+                  <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+                  <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                  <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-white border-t border-gray-100">
+          <div class="relative flex items-center">
+            <input 
+              type="text" 
+              class="w-full pl-5 pr-14 py-4 rounded-full border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all text-sm shadow-inner"
+              placeholder="Type your question here..."
+              [(ngModel)]="inputText"
+              (keyup.enter)="sendMessage()"
+              [disabled]="isTyping">
+              
+            <button 
+              mat-mini-fab 
+              color="primary" 
+              class="!absolute right-2 !w-10 !h-10 !bg-indigo-600 !shadow-md transition-transform hover:scale-105 active:scale-95"
+              (click)="sendMessage()"
+              [disabled]="isTyping || !inputText.trim()">
+              <mat-icon>send</mat-icon>
+            </button>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+</div>

@@ -60,7 +60,8 @@ export class AdminLayoutComponent implements OnInit {
     { label: 'Worker Tasks', icon: 'task', route: '/admin/tasks' },
     { label: 'Harvests', icon: 'inventory_2', route: '/admin/harvests' },
     { label: 'Quality Checks', icon: 'verified', route: '/admin/quality-checks' },
-    { label: 'AI Disease Detection', icon: 'psychology', route: '/admin/disease-detection' }
+    { label: 'AI Disease Detection', icon: 'psychology', route: '/admin/disease-detection' },
+    { label: 'AI Chat Assistant', icon: 'auto_awesome', route: '/admin/ai-chat' }
   ];
 
   ngOnInit(): void {

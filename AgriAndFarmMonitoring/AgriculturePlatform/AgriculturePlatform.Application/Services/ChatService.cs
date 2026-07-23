@@ -54,6 +54,7 @@ namespace AgriculturePlatform.Application.Services
                 {
                     SessionId = sessionId,
                     FarmId = request.FarmId,
+                    UserId = request.UserId,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };

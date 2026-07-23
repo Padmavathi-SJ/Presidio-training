@@ -9,6 +9,7 @@ namespace AgriculturePlatform.Application.Interfaces
         Task<DiseaseAnalysisEntity> CreateAsync(DiseaseAnalysisEntity entity);
         Task<DiseaseAnalysisEntity?> GetByIdAsync(int id);
         Task<List<DiseaseAnalysisEntity>> GetByFarmIdAsync(int farmId);
+        Task<List<DiseaseAnalysisEntity>> GetByUserIdAsync(int userId);
         Task UpdateAsync(DiseaseAnalysisEntity entity);
         Task DeleteAsync(int id);
     }

@@ -62,6 +62,18 @@ namespace AgriculturePlatform.API.Controllers
             return Ok(history);
         }
 
+        [HttpGet("my-history")]
+        public async Task<IActionResult> GetMyHistory()
+        {
+            var userIdClaim = User.FindFirst("workerId")?.Value ?? User.FindFirst("adminId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized("User ID not found in token.");
+            }
+            var history = await _diseaseDetectionService.GetMyDiseaseHistoryAsync(userId);
+            return Ok(history);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -73,8 +85,19 @@ namespace AgriculturePlatform.API.Controllers
         [HttpPost("chat-with-context")]
         public async Task<IActionResult> ChatWithContext([FromBody] ChatContextRequest request)
         {
-            var answer = await _diseaseDetectionService.GetFollowUpAnswerAsync(request.AnalysisId, request.Question);
+            var userIdClaim = User.FindFirst("workerId")?.Value ?? User.FindFirst("adminId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            int userId = 0;
+            if (!string.IsNullOrEmpty(userIdClaim)) int.TryParse(userIdClaim, out userId);
+            
+            var answer = await _diseaseDetectionService.GetFollowUpAnswerAsync(request.AnalysisId, request.Question, userId);
             return Ok(new { Answer = answer });
+        }
+
+        [HttpGet("{id}/chat-history")]
+        public async Task<IActionResult> GetChatHistory(int id)
+        {
+            var history = await _diseaseDetectionService.GetChatHistoryAsync(id);
+            return Ok(history);
         }
     }
 

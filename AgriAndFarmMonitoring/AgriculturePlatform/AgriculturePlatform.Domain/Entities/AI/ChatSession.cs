@@ -19,6 +19,9 @@ public class ChatSession
     public DateTime CreatedAt { get; set; }
     
     public bool IsActive { get; set; }
+
+    [Required]
+    public int UserId { get; set; }
     
     // Navigation property
     [ForeignKey("FarmId")]

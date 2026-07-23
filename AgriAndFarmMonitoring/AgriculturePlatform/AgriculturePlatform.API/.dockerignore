@@ -1,0 +1,15 @@
+# Ignore these files/directories for faster builds
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.git/
+.gitignore
+README.md
+*.md
+.vscode/
+.DS_Store
+node_modules/
+dist/
+*.log
